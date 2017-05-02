@@ -1,0 +1,21 @@
+PLUGIN_SPOTTY
+	EN	Spotty Spotify Connect for Squeezebox
+	
+SPT
+	EN	Spotty
+	
+PLUGIN_SPOTTY_AUTH
+	EN	Spotify Connect Authentication
+	
+PLUGIN_SPOTTY_AUTH_NAME
+	EN	Spotty Authentication
+	
+PLUGIN_SPOTTY_HELPER_MISSING
+	EN	Spotify Connect Helper missing 
+	
+PLUGIN_SPOTTY_HELPER_MISSING_HELP
+	EN	Couldn't find the helper application. Maybe your platform isn't supported?
+	
+PLUGIN_SPOTTY_TRANSCODING_NAME
+	DE	🔇 Nicht verwenden! - Squeezebox $CLIENTID$
+	EN	🔇 Don't Touch! - Squeezebox $CLIENTID$ 

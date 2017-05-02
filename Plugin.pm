@@ -1,0 +1,105 @@
+package Plugins::Spotty::Plugin;
+
+use strict;
+
+use vars qw($VERSION);
+use File::Slurp;
+use File::Spec::Functions qw(catdir catfile);
+use JSON::XS::VersionOneAndTwo;
+
+use Slim::Utils::Log;
+use Slim::Utils::Prefs;
+use Slim::Utils::Strings qw(string cstring);
+
+use Plugins::Spotty::ProtocolHandler;
+
+my $prefs = preferences('plugin.spotty');
+
+my $log = Slim::Utils::Log->addLogCategory( {
+	category     => 'plugin.spotty',
+	defaultLevel => 'DEBUG',
+	description  => 'PLUGIN_SPOTTY',
+} );
+
+
+sub initPlugin {
+	my $class = shift;
+
+	$VERSION = $class->pluginDataFor('version');
+	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
+
+	if (main::WEBUI) {
+		require Plugins::Spotty::Settings;
+		require Plugins::Spotty::SettingsAuth;
+		Plugins::Spotty::Settings->new();
+	}
+}
+
+sub postinitPlugin {
+	my $class = shift;
+
+	# we're going to hijack the Spotify URI schema
+	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
+
+	# modify the transcoding helper table to inject our cache folder
+	my $cacheDir = $class->cacheFolder();
+	my $namePlaceholder = string('PLUGIN_SPOTTY_TRANSCODING_NAME');
+
+	# LMS older than 7.9 can't use the player name in the transcoding
+	if ( Slim::Utils::Versions::compareVersions($::VERSION, '7.9') < 0 ) {
+		$namePlaceholder =~ s/\$(?:NAME|CLIENTID)\$/\$FILE\$/g;
+	}
+
+	foreach ( keys %Slim::Player::TranscodingHelper::commandTable ) {
+		if ($_ =~ /^spt-/ && $Slim::Player::TranscodingHelper::commandTable{$_} =~ /single-track/) {
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$CACHE\$/$cacheDir/g;
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$NAME\$/$namePlaceholder/g;
+		}
+	}
+}
+
+sub pluginDataFor {
+	my $class = shift;
+	my $key   = shift;
+
+	my $pluginData = Slim::Utils::PluginManager->dataForPlugin($class);
+
+	if ($pluginData && ref($pluginData) && $pluginData->{$key}) {
+		return $pluginData->{$key};
+	}
+
+	return undef;
+}
+
+sub cacheFolder {
+	my ($class) = @_;
+	
+	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty');
+	mkdir $cacheDir unless -d $cacheDir;
+
+	return $cacheDir;
+}
+
+sub hasCredentials {
+	return -f catfile($_[0]->cacheFolder(), 'credentials.json') ? 1 : 0;
+}
+
+sub getCredentials {
+	my ($class, $client) = @_;
+	if ( $class->hasCredentials() ) {
+		my $credentials = eval {
+			from_json(read_file(catfile($class->cacheFolder(), 'credentials.json')));
+		};
+		
+		return $credentials || {};
+	}
+}
+
+sub shutdownPlugin {
+	# make sure we don't leave our helper app running
+	if (main::WEBUI) {
+		Plugins::Spotty::SettingsAuth->shutdown();
+	}
+}
+
+1;
