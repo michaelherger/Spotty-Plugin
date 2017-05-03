@@ -1,19 +1,36 @@
 PLUGIN_SPOTTY
+	DE	Spotty Spotify Connect für Squeezebox
 	EN	Spotty Spotify Connect for Squeezebox
 	
 SPT
 	EN	Spotty
-	
+
+PLUGIN_SPOTTY_NOT_AUTHORIZED
+	DE	Spotify Anmeldedaten fehlen
+	EN	Spotify Credentials missing
+
+PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT
+	DE	Bitte überprüfen Sie Einstellungen/Erweitert/Spotty Spotify Connect im Web Interface
+	EN	Please check Settings/Advanced/Spotty Spotify Connect in the web interface
+
 PLUGIN_SPOTTY_AUTH
-	EN	Spotify Connect Authentication
+	DE	Spotify Connect Anmeldung
+	EN	Spotify Connect Authorization
 	
 PLUGIN_SPOTTY_AUTH_NAME
-	EN	Spotty Authentication
+	DE	Spotty Anmeldung
+	EN	Spotty Authorization
+
+PLUGIN_SPOTTY_AUTH_RESET
+	DE	Anmeldung zurücksetzen
+	EN	Reset Authorization
 	
 PLUGIN_SPOTTY_HELPER_MISSING
+	DE	Die Spotify Connect Helferanwendung fehlt
 	EN	Spotify Connect Helper missing 
-	
+
 PLUGIN_SPOTTY_HELPER_MISSING_HELP
+	DE	Konnte die Spotify Connect Helferanwendung nicht finden. Ist ihr Betriebssystem unterstützt?
 	EN	Couldn't find the helper application. Maybe your platform isn't supported?
 	
 PLUGIN_SPOTTY_TRANSCODING_NAME

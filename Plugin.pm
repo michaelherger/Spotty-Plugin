@@ -17,7 +17,7 @@ my $prefs = preferences('plugin.spotty');
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.spotty',
-	defaultLevel => 'DEBUG',
+	defaultLevel => 'WARN',
 	description  => 'PLUGIN_SPOTTY',
 } );
 
@@ -72,7 +72,14 @@ sub pluginDataFor {
 }
 
 sub cacheFolder {
-	my ($class) = @_;
+	my ($class, $client) = @_;
+	
+	my $id;
+	
+	if ($client) {
+		$id = lc($client->id());
+		$id =~ s/://g;
+	}
 	
 	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty');
 	mkdir $cacheDir unless -d $cacheDir;
@@ -81,14 +88,15 @@ sub cacheFolder {
 }
 
 sub hasCredentials {
-	return -f catfile($_[0]->cacheFolder(), 'credentials.json') ? 1 : 0;
+	my $credentialsFile = catfile($_[0]->cacheFolder(), 'credentials.json');
+	return -f $credentialsFile ? $credentialsFile : '';
 }
 
 sub getCredentials {
 	my ($class, $client) = @_;
-	if ( $class->hasCredentials() ) {
+	if ( my $credentialsFile = $class->hasCredentials() ) {
 		my $credentials = eval {
-			from_json(read_file(catfile($class->cacheFolder(), 'credentials.json')));
+			from_json(read_file($credentialsFile));
 		};
 		
 		return $credentials || {};

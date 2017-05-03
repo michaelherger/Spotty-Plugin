@@ -4,5 +4,8 @@
 		[% credentials.username %]
 	[% END %]
 
+	[% WRAPPER setting title="" desc="" %]
+		<input name="pref_resetAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_RESET" | string %]" class="stdclick" />
+	[% END %]
 
 [% PROCESS settings/footer.html %]

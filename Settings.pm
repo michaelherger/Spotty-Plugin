@@ -34,6 +34,11 @@ sub prefs {
 
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
+	
+	if ($paramRef->{'pref_resetAuthorization'}) {
+		my $credentialsFile = Plugins::Spotty::Plugin->hasCredentials();
+		unlink $credentialsFile;
+	}
 
 	if ( !Plugins::Spotty::Plugin->hasCredentials() ) {
 		$response->code(RC_MOVED_TEMPORARILY);

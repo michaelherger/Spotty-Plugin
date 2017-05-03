@@ -1,13 +1,9 @@
 [% PROCESS "plugins/spotty/settings/auth-header.html" %]
-[% PROCESS settings/header.html %]
-
-	[% IF helperMissing; WRAPPER setting title="PLUGIN_SPOTTY_HELPER_MISSING" desc="" %]
-		[% "PLUGIN_SPOTTY_HELPER_MISSING_HELP" | string %]
-	[% END; END %]
 
 	[% WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
-		[% IF helperMissing %][% "PLUGIN_SPOTTY_HELPER_MISSING" | string %][% END %]
-		<div>In order to use your Squeezebox with Spotify Connect, you'll need to authorize Logitech Media Server using one of Spotify's applications. This can be their desktop client, or one of their mobile apps. Just follow these simple steps:</div>
+		<div>In order to use your Squeezebox with Spotify Connect, you'll need to authorize 
+		Logitech Media Server using one of Spotify's applications. This can be their desktop 
+		client, or one of their mobile apps. Just follow these simple steps:</div>
 
 		<div class="spotty-instructions">
 			<ol class="spotty">
@@ -15,6 +11,8 @@
 				<li>Play some tune in Spotify</li>
 				<li>Open Spotify's list of available devices<br><img src="[% webroot %]plugins/Spotty/html/images/desktop-auth.png"></li>
 				<li>Pick the "[% "PLUGIN_SPOTTY_AUTH_NAME" | string %]" item (music playback might go silence at this point)</li>
+				<li>Wait a few seconds while the application is authorizing Logitech Media Server to use Spotify</li>
+				<li>Don't panic - sometimes it can take a dozen or two seconds &#x1F603;</li>
 			</ol>
 		</div>
 

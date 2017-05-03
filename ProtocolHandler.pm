@@ -8,6 +8,8 @@ use Slim::Plugin::SpotifyLogi::Plugin;
 use Slim::Plugin::SpotifyLogi::ProtocolHandler;
 use Slim::Utils::Strings qw(cstring);
 
+use Plugins::Spotty::Plugin;
+
 sub contentType { 'spt' }
 
 sub formatOverride { 
@@ -19,6 +21,19 @@ sub canDirectStream { 0 }
 
 sub getMetadataFor {
 	my ( $class, $client, $url, undef, $song ) = @_;
+	
+	if ( !Plugins::Spotty::Plugin->hasCredentials() ) {
+		return {
+			artist    => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
+			album     => '',
+			title     => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED'),
+			duration  => 0,
+			cover     => Slim::Networking::SqueezeNetwork->url('/static/images/icons/spotify/album.png'),
+			icon      => Slim::Networking::SqueezeNetwork->url('/static/images/icons/spotify/album.png'),
+			bitrate   => 0,
+			type      => 'Ogg Vorbis (Spotify)',
+		}
+	}
 
 	$song ||= $client->currentSongForUrl($url);
 
