@@ -1,5 +1,9 @@
 [% PROCESS settings/header.html %]
 
+	[% IF helperMissing; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
+		<div style="color: red">[% helperMissing %]</div>
+	[% END; END %]
+
 	[% IF credentials && credentials.username; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
 		[% credentials.username %]
 	[% END; END %]

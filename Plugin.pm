@@ -107,7 +107,7 @@ sub getCredentials {
 	}
 }
 
-sub getHelperPath {
+sub getHelper {
 	my ($class) = @_;
 
 	if (!$helperPath) {

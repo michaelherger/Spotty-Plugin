@@ -74,9 +74,14 @@ sub checkCredentials {
 }
 
 sub startHelper {
-	if ( my $helperPath = Plugins::Spotty::Plugin->getHelperPath() ) {
+	if ( my $helperPath = Plugins::Spotty::Plugin->getHelper() ) {
 		if ( !($helper && $helper->alive) ) {
-			my $command = sprintf('%s -c "%s" -n "%s" -a', $helperPath, Plugins::Spotty::Plugin->cacheFolder, Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'));
+			my $command = sprintf('%s -c "%s" -n "%s (%s)" -a', 
+				$helperPath, 
+				Plugins::Spotty::Plugin->cacheFolder, 
+				Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'),
+				preferences('server')->get('libraryname'),
+			);
 			main::INFOLOG && $log->is_info && $log->info("Starting authentication deamon: $command");
 			
 			eval { 

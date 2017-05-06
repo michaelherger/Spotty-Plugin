@@ -56,3 +56,11 @@ PLUGIN_SPOTTY_HELPER_MISSING_HELP
 PLUGIN_SPOTTY_TRANSCODING_NAME
 	DE	🔇 Nicht verwenden! - Squeezebox $CLIENTID$
 	EN	🔇 Don't Touch! - Squeezebox $CLIENTID$ 
+	
+PLUGIN_SPOTTY_MISSING_HELPER
+	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Vermutlich wird diese auf ihrem System nicht unterstützt. Bitte wenden Sie sich an mich, unter Angabe der folgenden Plattform-Informationen: %s
+	EN	There has been a problem running the Spotty helper application. Most likely your operating system and/or platform is not supported. Please report the following details to me: %s
+
+PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS
+	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Bitte stellen Sie sicher, dass die <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime</a> installiert ist.
+	EN	There has been a problem running the Spotty helper application. Please make sure you have the <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime</a> installed on your system.

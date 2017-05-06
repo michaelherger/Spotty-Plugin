@@ -7,6 +7,7 @@ use File::Spec::Functions qw(catfile);
 use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 
 use Slim::Utils::Prefs;
+use Slim::Utils::Strings qw(string);
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::SettingsAuth;
 
@@ -35,15 +36,20 @@ sub prefs {
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
 	
-=pod
-	my $helperPath = Slim::Utils::Misc::findbin(HELPER);
+	my $helperPath = $class->getHelper();
 	
 	# don't even continue if we're missing the helper application
 	if ( !$helperPath ) {
-		$paramRef->{helperMissing} = 1;
-		return $class->SUPER::handler($client, $paramRef);
+		my $osDetails = Slim::Utils::OSDetect::details();
+		
+		# Windows should just work - except if the MSVC 2015 runtime was missing
+		if (main::ISWINDOWS) {
+			$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS');
+		}
+		else {
+			$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER', $osDetails->{'osName'} . ' / ' . ($osDetails->{'osArch'} ? $osDetails->{'osArch'} : 'unknown'));
+		}
 	}
-=cut
 		
 	if ($paramRef->{'pref_resetAuthorization'}) {
 		my $credentialsFile = Plugins::Spotty::Plugin->hasCredentials();
@@ -51,27 +57,26 @@ sub handler {
 	}
 
 	if ($paramRef->{'saveSettings'}) {
-		if ( $paramRef->{'username'} && $paramRef->{'password'} ) {
-			if ( my $helperPath = Plugins::Spotty::Plugin->getHelperPath() ) {
-				my $command = sprintf(
-					'%s -c "%s" -n "%s" -u "%s" -p "%s" -a --disable-discovery', 
-					$helperPath, 
-					Plugins::Spotty::Plugin->cacheFolder, 
-					Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'),
-					$paramRef->{'username'},
-					$paramRef->{'password'},
-				);
-				
-				my $response = `$command`;
-				
-				if ( !($response && $response =~ /authorized/) ) {
-					$paramRef->{'warning'} = Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_FAILED');
-				}
+		if ( $paramRef->{'username'} && $paramRef->{'password'} && $helperPath ) {
+			my $command = sprintf(
+				'%s -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery', 
+				$helperPath, 
+				Plugins::Spotty::Plugin->cacheFolder, 
+				string('PLUGIN_SPOTTY_AUTH_NAME'),
+				preferences('server')->get('libraryname'),
+				$paramRef->{'username'},
+				$paramRef->{'password'},
+			);
+			
+			my $response = `$command`;
+			
+			if ( !($response && $response =~ /authorized/) ) {
+				$paramRef->{'warning'} = string('PLUGIN_SPOTTY_AUTH_FAILED');
 			}
 		}
 	}
 
-	if ( !Plugins::Spotty::Plugin->hasCredentials() ) {
+	if ( !$paramRef->{helperMissing} && !Plugins::Spotty::Plugin->hasCredentials() ) {
 		if ( !main::ISWINDOWS && !$paramRef->{basicAuth} ) {
 			$response->code(RC_MOVED_TEMPORARILY);
 			$response->header('Location' => 'authentication.html');
@@ -89,6 +94,22 @@ sub handler {
 	$paramRef->{credentials} = $credentials;
 	
 	return $class->SUPER::handler($client, $paramRef);
+}
+
+# check whether the helper is available and executable
+# it requires MSVC 2015 libraries
+sub getHelper {
+	my $helper = sprintf('%s -n "%s (%s)" --check', 
+		Plugins::Spotty::Plugin->getHelper(),
+		string('PLUGIN_SPOTTY_AUTH_NAME'),
+		preferences('server')->get('libraryname')
+	);
+	
+	my $check = `$helper`;
+	
+	if ( $check && $check =~ /ok/i ) {
+		return Plugins::Spotty::Plugin->getHelper();
+	}
 }
 
 
