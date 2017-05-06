@@ -13,6 +13,9 @@ use Slim::Utils::Strings qw(string cstring);
 
 use Plugins::Spotty::ProtocolHandler;
 
+use constant HELPER => 'spotty';
+
+# TODO - add init call to disable spt-flc transcoding by default (see S::W::S::S::FileTypes)
 my $prefs = preferences('plugin.spotty');
 
 my $log = Slim::Utils::Log->addLogCategory( {
@@ -21,6 +24,7 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	description  => 'PLUGIN_SPOTTY',
 } );
 
+my $helperPath;
 
 sub initPlugin {
 	my $class = shift;
@@ -102,6 +106,18 @@ sub getCredentials {
 		return $credentials || {};
 	}
 }
+
+sub getHelperPath {
+	my ($class) = @_;
+
+	if (!$helperPath) {
+		$helperPath = Slim::Utils::Misc::findbin(HELPER);
+		$helperPath &&= Slim::Utils::OSDetect::getOS->decodeExternalHelperPath($helperPath);
+	}	
+	
+	return $helperPath;
+}
+
 
 sub shutdownPlugin {
 	# make sure we don't leave our helper app running

@@ -1,11 +1,22 @@
 [% PROCESS settings/header.html %]
 
-	[% WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
+	[% IF credentials && credentials.username; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
 		[% credentials.username %]
-	[% END %]
+	[% END; END %]
 
-	[% WRAPPER setting title="" desc="" %]
-		<input name="pref_resetAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_RESET" | string %]" class="stdclick" />
+	[% IF basicAuth %]
+		[% WRAPPER setting title="PLUGIN_SPOTTY_USERNAME" desc="PLUGIN_SPOTTY_USERNAME_DESC" %]
+			<input type="text" class="stdedit" name="username" id="username" value="[% username %]" size="40">
+		[% END %]
+	
+		[% WRAPPER setting title="PLUGIN_SPOTTY_PASSWORD" desc="PLUGIN_SPOTTY_PASSWORD_DESC" %]
+			<input type="password" class="stdedit" name="password" id="password" value="[% password %]" size="40">
+			<input type="hidden" name="basicAuth" value="1">
+		[% END %]
+	[% ELSE %]
+		[% WRAPPER setting title="" desc="" %]
+			<input name="pref_resetAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_RESET" | string %]" class="stdclick" />
+		[% END %]
 	[% END %]
 
 [% PROCESS settings/footer.html %]

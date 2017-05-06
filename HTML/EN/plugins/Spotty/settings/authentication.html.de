@@ -19,5 +19,9 @@
 		<div>Fertig. Nun sollte dieser Bildschirm verschwinden..</div>
 	[% END %]
 
+	[% WRAPPER setting title="PLUGIN_SPOTTY_USERNAME" desc="" %]
+		<div>Unter Umst&auml;nden schl&auml;gt die Anmeldung &uuml;ber die Spotify App fehl. In diesem Fall folgen Sie 
+		<a href="basic.html?basicAuth=1">diesem Link</a>, um sich mit Benutzernamen und Passwort anzumelden.</div>
+	[% END %]
 
 [% PROCESS settings/footer.html %]

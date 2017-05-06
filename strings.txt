@@ -24,6 +24,26 @@ PLUGIN_SPOTTY_AUTH_NAME
 PLUGIN_SPOTTY_AUTH_RESET
 	DE	Anmeldung zurücksetzen
 	EN	Reset Authorization
+
+PLUGIN_SPOTTY_USERNAME
+	DE	Spotify Benutzername
+	EN	Spotify Username	
+
+PLUGIN_SPOTTY_PASSWORD
+	DE	Spotify Passwort
+	EN	Spotify Password
+
+PLUGIN_SPOTTY_USERNAME_DESC
+	DE	Gib deinen Spotify Benutzernamen ein (Premium Account notwendig)
+	EN	Enter your Spotify username (Premium Account required)
+
+PLUGIN_SPOTTY_PASSWORD_DESC
+	DE	Gib dein Spotify Passwort ein (Premium Account notwendig)
+	EN	Enter your Spotify password (Premium Account required)
+
+PLUGIN_SPOTTY_AUTH_FAILED
+	DE	Anmeldung fehlgeschlagen
+	EN	Authorization failed
 	
 PLUGIN_SPOTTY_HELPER_MISSING
 	DE	Die Spotify Connect Helferanwendung fehlt

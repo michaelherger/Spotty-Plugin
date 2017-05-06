@@ -13,8 +13,6 @@ use Slim::Utils::Log;
 
 use Plugins::Spotty::Plugin;
 
-use constant HELPER => 'spotty';
-
 my $prefs = preferences('plugin.spotty');
 my $log   = logger('plugin.spotty');
 my $helper;
@@ -76,11 +74,9 @@ sub checkCredentials {
 }
 
 sub startHelper {
-	if ( my $helperPath = Slim::Utils::Misc::findbin(HELPER) ) {
+	if ( my $helperPath = Plugins::Spotty::Plugin->getHelperPath() ) {
 		if ( !($helper && $helper->alive) ) {
-			$helperPath = Slim::Utils::OSDetect::getOS->decodeExternalHelperPath($helperPath);
-			
-			my $command = sprintf('%s -c "%s" -n "%s" > /dev/null', $helperPath, Plugins::Spotty::Plugin->cacheFolder, Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'));
+			my $command = sprintf('%s -c "%s" -n "%s" -a', $helperPath, Plugins::Spotty::Plugin->cacheFolder, Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'));
 			main::INFOLOG && $log->is_info && $log->info("Starting authentication deamon: $command");
 			
 			eval { 
