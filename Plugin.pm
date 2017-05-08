@@ -47,11 +47,11 @@ sub postinitPlugin {
 
 	# modify the transcoding helper table to inject our cache folder
 	my $cacheDir = $class->cacheFolder();
-	my $namePlaceholder = string('PLUGIN_SPOTTY_TRANSCODING_NAME');
+	my $namePlaceholder = '$CLIENTID$';
 
 	# LMS older than 7.9 can't use the player name in the transcoding
-	if ( Slim::Utils::Versions::compareVersions($::VERSION, '7.9') < 0 ) {
-		$namePlaceholder =~ s/\$(?:NAME|CLIENTID)\$/\$FILE\$/g;
+	if ( Slim::Utils::Versions->compareVersions($::VERSION, '7.9') < 0 ) {
+		$namePlaceholder = '$FILE$';
 	}
 
 	foreach ( keys %Slim::Player::TranscodingHelper::commandTable ) {

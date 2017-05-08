@@ -11,8 +11,10 @@ use Slim::Utils::Strings qw(cstring);
 use Plugins::Spotty::Plugin;
 
 sub contentType { 'spt' }
-sub canSeek { 1 }
-sub canTranscodeSeek { 1 }
+
+# transcoding needs a fix only available in 7.9.1
+sub canSeek { Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 }
+sub canTranscodeSeek { Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 }
 
 sub getSeekData {
 	my ($class, $client, $song, $newtime) = @_;

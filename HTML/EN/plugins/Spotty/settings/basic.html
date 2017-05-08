@@ -19,7 +19,7 @@
 		[% END %]
 	[% ELSE %]
 		[% WRAPPER setting title="" desc="" %]
-<!-- 			<input name="addAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_ADD" | string %]" class="stdclick" /></br> -->
+<!-- 			[% IF canMultipleAccounts %]<input name="addAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_ADD" | string %]" class="stdclick" /></br>[% END %] -->
 			<input name="resetAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_RESET" | string %]" class="stdclick" />
 		[% END %]
 	[% END %]

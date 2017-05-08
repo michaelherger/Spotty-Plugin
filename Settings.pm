@@ -98,6 +98,7 @@ sub handler {
 	Plugins::Spotty::SettingsAuth->shutdown();
 	
 	$paramRef->{credentials} = $prefs->get('credentials');
+	$paramRef->{canMultipleAccounts} = Slim::Utils::Versions->compareVersions($::VERSION, '7.9') >= 0 ? 1 : 0; 
 	
 	return $class->SUPER::handler($client, $paramRef);
 }
