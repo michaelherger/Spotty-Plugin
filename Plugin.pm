@@ -31,6 +31,10 @@ sub initPlugin {
 
 	$VERSION = $class->pluginDataFor('version');
 	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
+	
+	$prefs->init({
+		credentials => $class->parseCredentialFiles()
+	});
 
 	if (main::WEBUI) {
 		require Plugins::Spotty::Settings;
@@ -133,6 +137,22 @@ sub shutdownPlugin {
 	# make sure we don't leave our helper app running
 	if (main::WEBUI) {
 		Plugins::Spotty::SettingsAuth->shutdown();
+	}
+}
+
+sub parseCredentialFiles {
+	my $class = shift;
+	
+	require File::Next;
+	
+	# update list of stored credentials
+	my $credentialFiles = File::Next::files( { file_filter => sub { /credentials.json$/ } }, $class->cacheFolder() );
+	$prefs->set('credentials', []) unless $prefs->get('credentials');
+
+	while ( defined ( my $file = $credentialFiles->() ) ) {
+		eval {
+			$class->addCredentials( from_json(read_file($file)) );
+		};
 	}
 }
 
