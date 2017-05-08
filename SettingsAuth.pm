@@ -80,7 +80,7 @@ sub startHelper {
 				$helperPath, 
 				Plugins::Spotty::Plugin->cacheFolder(), 
 				Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'),
-				preferences('server')->get('libraryname'),
+				Slim::Utils::Misc::getLibraryName(),
 			);
 			main::INFOLOG && $log->is_info && $log->info("Starting authentication deamon: $command");
 			

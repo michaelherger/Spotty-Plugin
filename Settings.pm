@@ -62,7 +62,7 @@ sub handler {
 				$helperPath, 
 				Plugins::Spotty::Plugin->cacheFolder(), 
 				string('PLUGIN_SPOTTY_AUTH_NAME'),
-				preferences('server')->get('libraryname'),
+				Slim::Utils::Misc::getLibraryName(),
 				$paramRef->{'username'},
 				$paramRef->{'password'},
 			);
@@ -100,7 +100,7 @@ sub getHelper {
 	my $helper = sprintf('%s -n "%s (%s)" --check', 
 		Plugins::Spotty::Plugin->getHelper(),
 		string('PLUGIN_SPOTTY_AUTH_NAME'),
-		preferences('server')->get('libraryname')
+		Slim::Utils::Misc::getLibraryName()
 	);
 	
 	my $check = `$helper`;
