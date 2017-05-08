@@ -11,6 +11,13 @@ use Slim::Utils::Strings qw(cstring);
 use Plugins::Spotty::Plugin;
 
 sub contentType { 'spt' }
+sub canSeek { 1 }
+sub canTranscodeSeek { 1 }
+
+sub getSeekData {
+	my ($class, $client, $song, $newtime) = @_;
+	return { timeOffset => $newtime };
+}
 
 sub formatOverride { 
 	my ($class, $song) = @_;
