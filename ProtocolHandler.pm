@@ -34,6 +34,18 @@ sub getMetadataFor {
 			type      => 'Ogg Vorbis (Spotify)',
 		}
 	}
+	elsif ($url =~ m|/connect\.|) {
+		return {
+			artist    => '',
+			album     => '',
+			title     => 'Spotify Connect',
+			duration  => 0,
+			cover     => Slim::Networking::SqueezeNetwork->url('/static/images/icons/spotify/album.png'),
+			icon      => Slim::Networking::SqueezeNetwork->url('/static/images/icons/spotify/album.png'),
+			bitrate   => 0,
+			type      => 'Ogg Vorbis (Spotify)',
+		}
+	}
 
 	$song ||= $client->currentSongForUrl($url);
 

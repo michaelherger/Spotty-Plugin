@@ -5,7 +5,7 @@
 			new Ext.util.TaskRunner().start({
 				run: function() {
 					Ext.Ajax.request({
-						url: '/plugins/Spotty/settings/hasCredentials',
+						url: '/plugins/Spotty/settings/hasCredentials[% addAuthorization ? "?addAuthorization=1" : "" %]',
 						success: function(response, options){
 							response = Ext.util.JSON.decode(response.responseText);
 

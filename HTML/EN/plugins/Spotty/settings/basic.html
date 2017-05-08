@@ -4,8 +4,8 @@
 		<div style="color: red">[% helperMissing %]</div>
 	[% END; END %]
 
-	[% IF credentials && credentials.username; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
-		[% credentials.username %]
+	[% FOREACH creds = credentials; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
+		[% creds.username %]
 	[% END; END %]
 
 	[% IF basicAuth %]
@@ -19,7 +19,8 @@
 		[% END %]
 	[% ELSE %]
 		[% WRAPPER setting title="" desc="" %]
-			<input name="pref_resetAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_RESET" | string %]" class="stdclick" />
+<!-- 			<input name="addAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_ADD" | string %]" class="stdclick" /></br> -->
+			<input name="resetAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_RESET" | string %]" class="stdclick" />
 		[% END %]
 	[% END %]
 

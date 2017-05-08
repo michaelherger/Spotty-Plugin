@@ -76,29 +76,39 @@ sub pluginDataFor {
 }
 
 sub cacheFolder {
-	my ($class, $client) = @_;
+	my ($class, $subfolder) = @_;
 	
-	my $id;
-	
-	if ($client) {
-		$id = lc($client->id());
-		$id =~ s/://g;
-	}
-	
-	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty');
+	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty', $subfolder);
 	mkdir $cacheDir unless -d $cacheDir;
 
 	return $cacheDir;
 }
 
+sub addCredentials {
+	my ($class, $credentials) = @_;
+	
+	my @credentials = @{$prefs->get('credentials')};
+	
+	push @credentials, $credentials;
+	
+	my %seen;
+	@credentials = grep {
+		!$seen{$_->{username}}++
+	} @credentials;
+	
+	$prefs->set('credentials', \@credentials);
+}
+
 sub hasCredentials {
-	my $credentialsFile = catfile($_[0]->cacheFolder(), 'credentials.json');
+	my ($class, $subfolder) = @_;
+	
+	my $credentialsFile = catfile($class->cacheFolder($subfolder), 'credentials.json');
 	return -f $credentialsFile ? $credentialsFile : '';
 }
 
 sub getCredentials {
-	my ($class, $client) = @_;
-	if ( my $credentialsFile = $class->hasCredentials() ) {
+	my ($class, $subfolder) = @_;
+	if ( my $credentialsFile = $class->hasCredentials($subfolder) ) {
 		my $credentials = eval {
 			from_json(read_file($credentialsFile));
 		};
