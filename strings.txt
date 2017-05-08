@@ -21,10 +21,6 @@ PLUGIN_SPOTTY_AUTH_NAME
 	DE	Spotty Anmeldung
 	EN	Spotty Authorization
 
-PLUGIN_SPOTTY_AUTH_ADD
-	DE	Anmeldedaten hinzufügen
-	EN	Add Authorization
-
 PLUGIN_SPOTTY_AUTH_RESET
 	DE	Anmeldung zurücksetzen
 	EN	Reset Authorization

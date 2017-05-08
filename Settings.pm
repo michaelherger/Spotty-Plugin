@@ -3,7 +3,6 @@ package Plugins::Spotty::Settings;
 use strict;
 use base qw(Slim::Web::Settings);
 
-use File::Path qw(rmtree);
 use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 
 use Slim::Utils::Prefs;
@@ -17,7 +16,6 @@ sub new {
 	my $class = shift;
 
 	Plugins::Spotty::SettingsAuth->new();
-	rmtree($class->cacheFolder(1));
 	
 	return $class->SUPER::new(@_);
 }
@@ -62,7 +60,7 @@ sub handler {
 			my $command = sprintf(
 				'%s -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery', 
 				$helperPath, 
-				$class->cacheFolder($paramRef->{addAuthorization}), 
+				Plugins::Spotty::Plugin->cacheFolder(), 
 				string('PLUGIN_SPOTTY_AUTH_NAME'),
 				preferences('server')->get('libraryname'),
 				$paramRef->{'username'},
@@ -77,16 +75,10 @@ sub handler {
 		}
 	}
 	
-	# read new credentials if available
-	if ( my $credentials = $class->getCredentials(1) ) {
-		Plugins::Spotty::Plugin->addCredentials($credentials);
-	}
-	rmtree($class->cacheFolder(1));
-
-	if ( !$paramRef->{helperMissing} && !$class->hasCredentials($paramRef->{addAuthorization}) ) {
+	if ( !$paramRef->{helperMissing} && !Plugins::Spotty::Plugin->hasCredentials() ) {
 		if ( !main::ISWINDOWS && !$paramRef->{basicAuth} ) {
 			$response->code(RC_MOVED_TEMPORARILY);
-			$response->header('Location' => 'authentication.html' . ($paramRef->{addAuthorization} ? '?addAuthorization=1' : ''));
+			$response->header('Location' => 'authentication.html');
 			return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 		}
 	}
@@ -97,8 +89,7 @@ sub handler {
 	# make sure our authentication helper isn't running
 	Plugins::Spotty::SettingsAuth->shutdown();
 	
-	$paramRef->{credentials} = $prefs->get('credentials');
-	$paramRef->{canMultipleAccounts} = Slim::Utils::Versions->compareVersions($::VERSION, '7.9') >= 0 ? 1 : 0; 
+	$paramRef->{credentials} = Plugins::Spotty::Plugin->getCredentials();
 	
 	return $class->SUPER::handler($client, $paramRef);
 }
@@ -119,19 +110,5 @@ sub getHelper {
 	}
 }
 
-sub cacheFolder {
-	my ($class, $addAuthorization) = @_;
-	return Plugins::Spotty::Plugin->cacheFolder($addAuthorization ? '_add_' : undef);
-}
-
-sub hasCredentials {
-	my ($class, $addAuthorization) = @_;
-	return Plugins::Spotty::Plugin->hasCredentials($addAuthorization ? '_add_' : undef);
-}
-
-sub getCredentials {
-	my ($class, $addAuthorization) = @_;
-	return Plugins::Spotty::Plugin->getCredentials($addAuthorization ? '_add_' : undef);
-}
 
 1;

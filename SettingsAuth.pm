@@ -33,19 +33,19 @@ sub page {
 }
 
 sub prefs {
-	return ($prefs, 'maxfilesize');
+	return ($prefs);
 }
 
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
 
-	if ( !$paramRef->{addAuthorization} && Plugins::Spotty::Plugin->hasCredentials() ) {
+	if ( Plugins::Spotty::Plugin->hasCredentials() ) {
 		$response->code(RC_MOVED_TEMPORARILY);
 		$response->header('Location' => 'basic.html');
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 	}
 
-	if ( !$class->startHelper($paramRef->{addAuthorization}) ) {
+	if ( !$class->startHelper() ) {
 		$paramRef->{helperMissing} = 1;
 	}
 	
@@ -57,13 +57,12 @@ sub handler {
 sub checkCredentials {
 	my ($httpClient, $response, $func) = @_;
 
-	my $addAuthorization = $response->request->uri->query_param('addAuthorization');
 	my $result = {
-		hasCredentials => Plugins::Spotty::Settings->hasCredentials($addAuthorization)
+		hasCredentials => Plugins::Spotty::Plugin->hasCredentials()
 	};
 	
 	# make sure our authentication helper is running
-	__PACKAGE__->startHelper($addAuthorization);
+	__PACKAGE__->startHelper();
 	
 	my $content = to_json($result);
 	$response->header( 'Content-Length' => length($content) );
@@ -75,13 +74,11 @@ sub checkCredentials {
 }
 
 sub startHelper {
-	my ($class, $addAuthorization) = @_;
-	
 	if ( my $helperPath = Plugins::Spotty::Plugin->getHelper() ) {
 		if ( !($helper && $helper->alive) ) {
 			my $command = sprintf('%s -c "%s" -n "%s (%s)" -a', 
 				$helperPath, 
-				Plugins::Spotty::Settings->cacheFolder($addAuthorization), 
+				Plugins::Spotty::Plugin->cacheFolder(), 
 				Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'),
 				preferences('server')->get('libraryname'),
 			);
