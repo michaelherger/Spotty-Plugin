@@ -81,6 +81,9 @@ sub handler {
 			$response->header('Location' => 'authentication.html');
 			return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 		}
+		else {
+			$paramRef->{basicAuth} = 1;
+		}
 	}
 	else {
 		delete $paramRef->{basicAuth};
