@@ -5,6 +5,9 @@ PLUGIN_SPOTTY
 SPT
 	EN	Spotty
 
+SPTC
+	EN	Spotty Connectivity
+
 PLUGIN_SPOTTY_NOT_AUTHORIZED
 	DE	Spotify Anmeldedaten fehlen
 	EN	Spotify Credentials missing
