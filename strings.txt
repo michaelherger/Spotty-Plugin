@@ -1,6 +1,9 @@
 PLUGIN_SPOTTY
 	DE	Spotty Spotify Connect für Squeezebox
 	EN	Spotty Spotify Connect for Squeezebox
+
+PLUGIN_SPOTTY_NAME
+	EN	Spotty
 	
 SPT
 	EN	Spotty
@@ -67,3 +70,37 @@ PLUGIN_SPOTTY_MISSING_HELPER
 PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Bitte stellen Sie sicher, dass die <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime</a> installiert ist.
 	EN	There has been a problem running the Spotty helper application. Please make sure you have the <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime</a> installed on your system.
+
+PLUGIN_SPOTTY_WHATS_NEW
+	CS	Novinky
+	DA	Nyheder
+	DE	Neuigkeiten
+	EN	What's New
+	ES	Novedades
+	FI	Uutuudet
+	FR	Nouveautés
+	IT	Novità
+	NL	Wat is er nieuw?
+	NO	Hva er nytt?
+	PL	Co nowego
+	RU	Новые возможности
+	SV	Nyheter
+
+PLUGIN_SPOTTY_TOP_TRACKS
+	CS	Nejlepší stopy
+	DA	Mest populære numre
+	DE	Top-Titel
+	EN	Top Tracks
+	ES	Pistas principales
+	FI	Suositut kappaleet
+	FR	Pistes principales
+	IT	Brani più ascoltati
+	NL	Topnummers
+	NO	Mest populære spor
+	PL	Najpopularniejsze utwory
+	RU	Лучшие дорожки
+	SV	Toppspår
+
+PLUGIN_SPOTTY_GENRES_MOODS
+	DE	Genres und Stimmungen
+	EN	Genres and Moods

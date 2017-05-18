@@ -1,6 +1,6 @@
 <?xml version='1.0' standalone='yes'?>
 <extension>
-	<name>PLUGIN_SPOTTY</name>
+	<name>PLUGIN_SPOTTY_NAME</name>
 	<creator>Michael Herger</creator>
 	<defaultState>enabled</defaultState>
 	<description>PLUGIN_SPOTTY</description>
@@ -8,11 +8,12 @@
 	<!-- <homepageURL>http://www.herger.net/RadioParadise</homepageURL> -->
 	<id>21cbb80e-67b8-44a8-a662-21c6c7ae5260</id>
 	<module>Plugins::Spotty::Plugin</module>
+	<icon>plugins/Spotty/html/images/icon.png</icon>
 	<targetApplication>
 		<id>SqueezeCenter</id>
 		<maxVersion>*</maxVersion>
 		<minVersion>7.7</minVersion>
 	</targetApplication>
 	<type>2</type>
-	<version>0.0.1</version>
+	<version>0.1.0</version>
 </extension>

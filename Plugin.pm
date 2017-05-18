@@ -2,6 +2,8 @@ package Plugins::Spotty::Plugin;
 
 use strict;
 
+#use base qw(Slim::Plugin::OPMLBased);
+
 use vars qw($VERSION);
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
@@ -29,7 +31,7 @@ my $helperPath;
 sub initPlugin {
 	my $class = shift;
 
-	$VERSION = $class->pluginDataFor('version');
+	$VERSION = $class->_pluginDataFor('version');
 	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
 
 #                                                                |requires Client
@@ -58,7 +60,23 @@ sub initPlugin {
 		require Plugins::Spotty::SettingsAuth;
 		Plugins::Spotty::Settings->new();
 	}
+	
+	if ( $class->isa('Slim::Plugin::OPMLBased') ) {
+		require Plugins::Spotty::OPML;
+		$class->SUPER::initPlugin(
+			feed   => \&Plugins::Spotty::OPML::handleFeed,
+			tag    => 'spotty',
+			menu   => 'radios',
+			is_app => 1,
+			weight => 1,
+		);
+	}
 }
+
+sub getDisplayName { 'PLUGIN_SPOTTY_NAME' }
+
+# don't add this plugin to the Extras menu
+sub playerMenu {}
 
 sub _skipAhead {
 	my ($client, $usage) = @_;
@@ -95,7 +113,7 @@ sub postinitPlugin {
 	}
 }
 
-sub pluginDataFor {
+sub _pluginDataFor {
 	my $class = shift;
 	my $key   = shift;
 
