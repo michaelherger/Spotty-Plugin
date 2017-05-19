@@ -46,7 +46,17 @@ sub handler {
 			$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS');
 		}
 		else {
-			$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER', $osDetails->{'osName'} . ' / ' . ($osDetails->{'osArch'} ? $osDetails->{'osArch'} : 'unknown'));
+			$paramRef->{helperMissing} = string(
+				'PLUGIN_SPOTTY_MISSING_HELPER', 
+				sprintf('<br><br>%s %s / %s<br><br>%s<br>%s<br>%s',
+					string('INFORMATION_OPERATINGSYSTEM') . string('COLON'), 
+					$osDetails->{'osName'},
+					($osDetails->{'osArch'} ? $osDetails->{'osArch'} : 'unknown'),
+					string('INFORMATION_BINDIRS') . string('COLON'),
+					join("<br>", Slim::Utils::Misc::getBinPaths()),
+					Slim::Utils::OSDetect::isLinux() ? `ldd --version | head -n1` : ''
+				)
+			);
 		}
 	}
 		
