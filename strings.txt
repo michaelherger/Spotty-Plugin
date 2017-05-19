@@ -104,3 +104,36 @@ PLUGIN_SPOTTY_TOP_TRACKS
 PLUGIN_SPOTTY_GENRES_MOODS
 	DE	Genres und Stimmungen
 	EN	Genres and Moods
+
+PLUGIN_SPOTTY_COMPILATIONS
+	CS	Sbírka
+	DA	Kompilationer
+	DE	Kompilationen
+	EN	Compilations
+	ES	Recopilaciones
+	FI	Kokoelmat
+	FR	Compilations
+	HE	אוספים
+	IT	Compilation
+	NL	Verzamelingen
+	NO	Samlinger
+	PL	Kompilacje
+	RU	Сборки
+	SV	Samlingar
+	ZH_CN	合辑
+
+PLUGIN_SPOTTY_TOP_TRACKS
+	CS	Nejlepší stopy
+	DA	Mest populære numre
+	DE	Top-Titel
+	EN	Top Tracks
+	ES	Pistas principales
+	FI	Suositut kappaleet
+	FR	Pistes principales
+	IT	Brani più ascoltati
+	NL	Topnummers
+	NO	Mest populære spor
+	PL	Najpopularniejsze utwory
+	RU	Лучшие дорожки
+	SV	Toppspår
+	

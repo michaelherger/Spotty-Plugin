@@ -34,6 +34,7 @@ sub initPlugin {
 	$VERSION = $class->_pluginDataFor('version');
 	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
 
+# TODO - needs to be renamed, as "spotty" is being used by OPMLBased
 #                                                                |requires Client
 #                                                                |  |is a Query
 #                                                                |  |  |has Tags
