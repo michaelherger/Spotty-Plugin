@@ -41,7 +41,6 @@ sub handleFeed {
 			type  => 'search',
 			image => IMG_SEARCH,
 			url   => \&search,
-#			setSelectedIndex => 1,
 		};
 #	}
 	
@@ -130,8 +129,8 @@ sub search {
 				}]
 			};
 			push @items, @{trackList($client, $results)};
-			
-			splice(@items, $params->{quantity}) if !$params->{index} && $params->{quantity} < scalar @items;
+
+			splice(@items, $params->{quantity}) if defined $params->{index} && !$params->{index} && $params->{quantity} < scalar @items;
 		}
 		elsif ($type eq 'album') {
 			push @items, @{albumList($client, $results)};
@@ -149,7 +148,7 @@ sub search {
 		$cb->({ items => \@items });
 	}, {
 		query => $params->{search},
-		type  => $params->{type},
+		type  => $type || 'track',
 	});
 }
 
