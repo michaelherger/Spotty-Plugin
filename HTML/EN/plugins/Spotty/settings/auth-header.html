@@ -35,5 +35,6 @@
 [% PROCESS settings/header.html %]
 
 	[% IF helperMissing; WRAPPER setting title="PLUGIN_SPOTTY_HELPER_MISSING" desc="" %]
-		[% "PLUGIN_SPOTTY_HELPER_MISSING_HELP" | string %]
+		<div style="color: red">[% "PLUGIN_SPOTTY_HELPER_MISSING_HELP" | string %]<br/>
+		[% helperMissing %]</div>
 	[% END; END %]

@@ -22,7 +22,7 @@ my $prefs = preferences('plugin.spotty');
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.spotty',
-	defaultLevel => 'WARN',
+	defaultLevel => 'INFO',
 	description  => 'PLUGIN_SPOTTY',
 } );
 
@@ -152,10 +152,20 @@ sub getCredentials {
 sub getHelper {
 	my ($class) = @_;
 
+	# first try the "spotty-custom" binary, as we will allow users to test ride new spotty builds
 	if (!$helperPath) {
-		$helperPath = Slim::Utils::Misc::findbin(HELPER);
+		$helperPath = Slim::Utils::Misc::findbin(HELPER . '-custom');
+		
+		if (!$helperPath) {
+			$helperPath = Slim::Utils::Misc::findbin(HELPER);
+		}
+
 		$helperPath &&= Slim::Utils::OSDetect::getOS->decodeExternalHelperPath($helperPath);
+
+		main::INFOLOG && $log->is_info && $helperPath && $log->info("Found Spotty helper application: $helperPath");
+		$log->warn("Didn't find Spotty helper application!") unless $helperPath;	
 	}	
+
 	
 	return $helperPath;
 }

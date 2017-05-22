@@ -10,6 +10,7 @@ use Proc::Background;
 
 use Slim::Utils::Prefs;
 use Slim::Utils::Log;
+use Slim::Utils::Strings qw(string);
 
 use Plugins::Spotty::Plugin;
 
@@ -46,7 +47,7 @@ sub handler {
 	}
 
 	if ( !$class->startHelper() ) {
-		$paramRef->{helperMissing} = 1;
+		$paramRef->{helperMissing} = Plugins::Spotty::Plugin->getHelper();
 	}
 	
 	return $class->SUPER::handler($client, $paramRef);

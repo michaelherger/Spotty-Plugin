@@ -46,8 +46,7 @@ sub handler {
 			$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS');
 		}
 		else {
-			$paramRef->{helperMissing} = string(
-				'PLUGIN_SPOTTY_MISSING_HELPER', 
+			$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER') . 
 				sprintf('<br><br>%s %s / %s<br><br>%s<br>%s<br>%s',
 					string('INFORMATION_OPERATINGSYSTEM') . string('COLON'), 
 					$osDetails->{'osName'},
@@ -55,8 +54,7 @@ sub handler {
 					string('INFORMATION_BINDIRS') . string('COLON'),
 					join("<br>", Slim::Utils::Misc::getBinPaths()),
 					Slim::Utils::OSDetect::isLinux() ? `ldd --version | head -n1` : ''
-				)
-			);
+				);
 		}
 	}
 		
@@ -110,16 +108,20 @@ sub handler {
 # check whether the helper is available and executable
 # it requires MSVC 2015 libraries
 sub getHelper {
-	my $helper = sprintf('%s -n "%s (%s)" --check', 
+	my $helper = Plugins::Spotty::Plugin->getHelper();
+	
+	return unless -f $helper && -x $helper;
+	
+	my $checkCmd = sprintf('%s -n "%s (%s)" --check', 
 		Plugins::Spotty::Plugin->getHelper(),
 		string('PLUGIN_SPOTTY_AUTH_NAME'),
 		Slim::Utils::Misc::getLibraryName()
 	);
 	
-	my $check = `$helper`;
+	my $check = `$checkCmd`;
 	
 	if ( $check && $check =~ /ok/i ) {
-		return Plugins::Spotty::Plugin->getHelper();
+		return $helper;
 	}
 }
 
