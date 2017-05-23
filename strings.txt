@@ -140,3 +140,34 @@ PLUGIN_SPOTTY_TOP_TRACKS
 PLUGIN_SPOTTY_ADD_STUFF
 	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen. 
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.
+
+PLUGIN_SPOTTY_USERS
+	CS	Uživatelé
+	DA	Brugere
+	DE	Benutzer
+	EN	Users
+	ES	Usuarios
+	FI	Käyttäjät
+	FR	Utilisateurs
+	IT	Utenti
+	NL	Gebruikers
+	NO	Brukere
+	PL	Użytkownicy
+	RU	пользователи
+	SV	Användare
+
+PLUGIN_SPOTTY_NEW_SEARCH
+	CS	Nové hledání
+	DA	Ny søgning
+	DE	Neue Suche
+	EN	New Search
+	ES	Nueva búsqueda
+	FI	Uusi haku
+	FR	Nouvelle recherche
+	IT	Nuova ricerca
+	NL	Nieuwe zoekopdracht
+	NO	Nytt søk
+	PL	Nowe wyszukiwanie
+	RU	Новый поиск
+	SV	Ny sökning
+	

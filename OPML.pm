@@ -6,8 +6,9 @@ use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::API;
 
-use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
+use Slim::Utils::Prefs;
+use Slim::Utils::Strings qw(string cstring);
 
 use constant IMG_TRACK => '/html/images/cover.png';
 use constant IMG_ALBUM => 'plugins/Spotty/html/images/album.png';
@@ -16,6 +17,10 @@ use constant IMG_COLLABORATIVE => 'plugins/Spotty/html/images/playlist-collab.pn
 use constant IMG_SEARCH => 'plugins/Spotty/html/images/search.png';
 use constant IMG_WHATSNEW => 'plugins/Spotty/html/images/whatsnew.png';
 use constant IMG_ACCOUNT => 'plugins/Spotty/html/images/account.png';
+
+use constant MAX_RECENT => 50;
+
+my $prefs = preferences('plugin.spotty');
 
 Plugins::Spotty::API->init();
 
@@ -48,26 +53,22 @@ sub handleFeed {
 		# Build main menu structure
 		my $items = [];
 	
-=pod	
-		my $player = $c->forward( '/api/current_player', [] );
-		
-		if ( $player && $s->show_recent && $s->has_recent_searches($player->mac) ) {
+		if ( hasRecentSearches() ) {
 			push @{$items}, {
 				name  => cstring($client, 'SEARCH'),
 				type  => 'link',
-				image => 'plugins/Spotty/html/images/search.png',
-				#url   => $c->forward( 'url', [ 'recent_searches' ] ),
+				image => IMG_SEARCH,
+				url   => \&recentSearches,
 			};
 		}
 		else {
-=cut	
 			push @{$items}, {
 				name  => cstring($client, 'SEARCH'),
 				type  => 'search',
 				image => IMG_SEARCH,
 				url   => \&search,
 			};
-#		}
+		}
 		
 		push @{$items}, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_WHATS_NEW'),
@@ -113,7 +114,7 @@ sub handleFeed {
 			name  => cstring($client, 'PLAYLISTS'),
 			type  => 'link',
 			image => IMG_PLAYLIST,
-			url   => \&myPlaylists
+			url   => \&playlists
 		};
 		
 		$cb->({
@@ -129,6 +130,35 @@ sub search {
 	$params->{type}   ||= $args->{type};
 
 	my $type = $params->{type};
+	
+	# search for users is different...
+	if ($type eq 'user') {
+		Plugins::Spotty::API->user(sub {
+			my ($result) = @_;
+			
+			my $items = [];
+			if ($result && $result->{id}) {
+				my $title = $result->{id};
+
+				push @$items, {
+					type => 'text',
+					name => $result->{display_name} ? ($result->{display_name} . " ($title)") : $title,
+					image => $result->{image} || IMG_ACCOUNT,
+				},{
+					type  => 'link',
+					name  => cstring($client, 'PLAYLISTS'),
+					image => IMG_PLAYLIST,
+					url   => \&playlists,
+					passthrough => [{
+						user => $result->{id}
+					}],
+				};
+			}
+			
+			$cb->({ items => $items });
+		}, $params->{search});
+		return;
+	}
 
 	Plugins::Spotty::API->search(sub {
 		my ($results) = @_;
@@ -160,13 +190,18 @@ sub search {
 					query => $params->{search},
 					type  => 'playlist'
 				}]
-#			},
-#			{
-#				text  => $c->string('USERS'),
-#				URL   => $c->forward( 'url', [ 'search?type=user&q=' . $equery ] ),
-#				image => $c->uri_for('/static/images/icons/spotify/account.png')->as_string,
+			},{
+				name  => cstring($client, 'PLUGIN_SPOTTY_USERS'),
+				url   => \&search,
+				image => IMG_ACCOUNT,
+				passthrough => [{
+					query => $params->{search},
+					type  => 'user'
+				}]
 			};
 			push @items, @{trackList($client, $results)};
+			
+			addRecentSearch($params->{search}) unless $args->{recent};
 
 			splice(@items, $params->{quantity}) if defined $params->{index} && !$params->{index} && $params->{quantity} < scalar @items;
 		}
@@ -275,8 +310,8 @@ sub myArtists {
 	});
 }
 
-sub myPlaylists {
-	my ($client, $cb, $params) = @_;
+sub playlists {
+	my ($client, $cb, $params, $args) = @_;
 
 	Plugins::Spotty::API->playlists(sub {
 		my ($result) = @_;
@@ -289,6 +324,8 @@ sub myPlaylists {
 		} unless scalar @$items;
 		
 		$cb->({ items => $items });
+	},{
+		user => $params->{user} || $args->{user}
 	});
 }
 
@@ -567,6 +604,53 @@ sub playlistList {
 	}
 
 	return $items;
+}
+
+
+sub hasRecentSearches {
+	return scalar @{ $prefs->get('spotify_recent_search') || [] };
+}
+
+sub addRecentSearch {
+	my ( $search ) = @_;
+	
+	my $list = $prefs->get('spotify_recent_search') || [];
+	
+	# remove potential duplicates
+	$list = [ grep { $_ ne $search } @$list ];
+	
+	push @$list, $search;
+	
+	# we only want MAX_RECENT items
+	$list = [ @$list[(-1 * MAX_RECENT)..-1] ] if scalar @$list > MAX_RECENT;
+	
+	$prefs->set( 'spotify_recent_search', $list );
+}
+
+sub recentSearches {
+	my ($client, $cb, $params) = @_;
+	
+	my $items = [];
+	
+	push @{$items}, {
+		name  => cstring($client, 'PLUGIN_SPOTTY_NEW_SEARCH'),
+		type  => 'search',
+		url   => \&search,
+	};
+	
+	for my $recent ( reverse @{ $prefs->get('spotify_recent_search') || [] } ) {
+		push @{$items}, {
+			name  => $recent,
+			type  => 'link',
+			url   => \&search,
+			passthrough => [{ 
+				query => $recent,
+				recent => 1
+			}],
+		};
+	}
+	
+	$cb->({ items => $items });
 }
 
 1;

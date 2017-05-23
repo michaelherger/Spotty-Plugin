@@ -116,6 +116,31 @@ sub locale {
 	cstring($_[1], 'LOCALE');
 }
 
+sub user {
+	my ( $self, $cb, $username ) = @_;
+	
+	if (!$username) {
+		$cb->([]);
+		return;
+	}
+	
+	# usernames must be lower case, and space not URI encoded
+	$username = lc($username);
+	$username =~ s/ /\+/g;
+	
+	$self->_call('users/' . uri_escape_utf8($username),
+		sub {
+			my ($result) = @_;
+			
+			if ( $result && ref $result ) {
+				$result->{image} = _getLargestArtwork(delete $result->{images});
+			}
+			
+			$cb->($result || {});
+		}
+	);
+}
+
 sub search {
 	my ( $class, $cb, $args ) = @_;
 	
