@@ -136,4 +136,7 @@ PLUGIN_SPOTTY_TOP_TRACKS
 	PL	Najpopularniejsze utwory
 	RU	Лучшие дорожки
 	SV	Toppspår
-	
+
+PLUGIN_SPOTTY_ADD_STUFF
+	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen. 
+	EN	Add albums to your music, or follow an artist or playlist to populate your music library.

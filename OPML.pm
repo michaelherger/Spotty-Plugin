@@ -11,90 +11,115 @@ use Slim::Utils::Log;
 
 use constant IMG_TRACK => '/html/images/cover.png';
 use constant IMG_ALBUM => 'plugins/Spotty/html/images/album.png';
+use constant IMG_PLAYLIST => 'plugins/Spotty/html/images/playlist.png';
+use constant IMG_COLLABORATIVE => 'plugins/Spotty/html/images/playlist-collab.png';
 use constant IMG_SEARCH => 'plugins/Spotty/html/images/search.png';
 use constant IMG_WHATSNEW => 'plugins/Spotty/html/images/whatsnew.png';
 use constant IMG_ACCOUNT => 'plugins/Spotty/html/images/account.png';
 
 Plugins::Spotty::API->init();
 
+my %topuri = (
+	AT => 'spotify:user:spotify:playlist:1f9qd5qJzIpYWoQm7Ue2uV',
+	AU => 'spotify:user:spotify:playlist:6lQMloCb0llJywSRoj3jAO',
+	BE => 'spotify:user:spotify:playlist:13eazhZmMdf628WMqru34A',
+	CH => 'spotify:user:spotify:playlist:1pDTi8rVKDQKGMb2NlJmDl',
+	DE => 'spotify:user:spotify:playlist:4XEnSf75NmJPBX1lTmMiv0',
+	DK => 'spotify:user:spotify:playlist:2nQqWLiGEXLybDLu15ZmVx',
+	ES => 'spotify:user:spotify:playlist:4z0aU3aX74LH6uWHTygTfV',
+	FI => 'spotify:user:spotify:playlist:6FZEbmeeb9aGiqSLAmLFJW',
+	FR => 'spotify:user:spotify:playlist:6FNC5Kuzhyt35pXtyqF6xq',
+	GB => 'spotify:user:spotify:playlist:7s8NU4MWP9GOSEXVwjcum4',
+	NL => 'spotify:user:spotify:playlist:7Jus9jsdpexXTXh2RVv8bZ',
+	NO => 'spotify:user:spotify:playlist:1BnqqOPMu8w08F1XpOzlwR',
+	NZ => 'spotify:user:spotify:playlist:1TRzxr8LVu3OxdoMlabuNG',
+	SE => 'spotify:user:spotify:playlist:0Ks7MCeAZeYlBOmSLHmZ2o',
+	US => 'spotify:user:spotify:playlist:5nPXGgfCxfRpJHGRY4sovK',
+	
+	XX => 'spotify:user:spotify:playlist:4hOKQuZbraPDIfaGbM3lKI',	# fallback "Top 100 on Spotify"
+);
+
 sub handleFeed {
 	my ($client, $cb, $args) = @_;
 
-	# Build main menu structure
-	my $items = [];
-
+	Plugins::Spotty::API->featuredPlaylists( sub {
+		my ($lists, $message) = @_;
+		
+		# Build main menu structure
+		my $items = [];
+	
 =pod	
-	my $player = $c->forward( '/api/current_player', [] );
-	
-	if ( $player && $s->show_recent && $s->has_recent_searches($player->mac) ) {
-		push @{$items}, {
-			name  => cstring($client, 'SEARCH'),
-			type  => 'link',
-			image => 'plugins/Spotty/html/images/search.png',
-			#url   => $c->forward( 'url', [ 'recent_searches' ] ),
-		};
-	}
-	else {
+		my $player = $c->forward( '/api/current_player', [] );
+		
+		if ( $player && $s->show_recent && $s->has_recent_searches($player->mac) ) {
+			push @{$items}, {
+				name  => cstring($client, 'SEARCH'),
+				type  => 'link',
+				image => 'plugins/Spotty/html/images/search.png',
+				#url   => $c->forward( 'url', [ 'recent_searches' ] ),
+			};
+		}
+		else {
 =cut	
+			push @{$items}, {
+				name  => cstring($client, 'SEARCH'),
+				type  => 'search',
+				image => IMG_SEARCH,
+				url   => \&search,
+			};
+#		}
+		
 		push @{$items}, {
-			name  => cstring($client, 'SEARCH'),
-			type  => 'search',
-			image => IMG_SEARCH,
-			url   => \&search,
+			name  => cstring($client, 'PLUGIN_SPOTTY_WHATS_NEW'),
+			type  => 'link',
+			image => IMG_WHATSNEW,
+			url   => \&whatsNew
+		},
+		{
+			name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
+			type  => 'playlist',
+			image => 'plugins/Spotty/html/images/toptracks.png',
+			url   => \&playlist,
+			passthrough => [{
+				uri => $topuri{Plugins::Spotty::API->country()} || $topuri{XX}
+			}]
+		},
+		{
+			name  => cstring($client, 'PLUGIN_SPOTTY_GENRES_MOODS'),
+			type  => 'link',
+			image => 'plugins/Spotty/html/images/inbox.png',
+			url   => \&categories
 		};
-#	}
-	
-	push @{$items}, {
-		name  => cstring($client, 'PLUGIN_SPOTTY_WHATS_NEW'),
-		type  => 'link',
-		image => IMG_WHATSNEW,
-		#url   => $c->forward( 'url', [ 'whatsnew' ] ),
-	},
-	{
-		name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
-		type  => 'playlist',
-		image => 'plugins/Spotty/html/images/toptracks.png',
-		#url   => $c->forward( 'url', [ 'playlist?uri=' . ($topuri{ $s->country } || $topuri{XX}) ] ),
-	},
-	{
-		name  => cstring($client, 'PLUGIN_SPOTTY_GENRES_MOODS'),
-		type  => 'link',
-		image => 'plugins/Spotty/html/images/inbox.png',
-		#url   => $c->forward( 'url', [ 'categories' ] ),
-	};
-	
-=pod
-	if ( my ($message, $lists) = $s->featuredPlaylists($c->stash->{user}->timezone) ) {
-		my $playlists = $c->forward( 'playlist_list', [ $lists ] );
+		
+		if ( $message && $lists && ref $lists && scalar @$lists ) {
+			push @$items, {
+				name  => $message,
+				image => 'plugins/Spotty/html/images/inbox.png',
+				items => playlistList($client, $lists)
+			};
+		}
 		
 		push @$items, {
-			name    => $message,
-			image   => 'plugins/Spotty/html/images/inbox.png',
-			outline => $playlists
+			name  => cstring($client, 'ALBUMS'),
+			type  => 'link',
+			image => IMG_ALBUM,
+			url   => \&myAlbums,
+		},{
+			name  => cstring($client, 'ARTISTS'),
+			type  => 'link',
+			image => IMG_ACCOUNT,
+			url   => \&myArtists
+		},{
+			name  => cstring($client, 'PLAYLISTS'),
+			type  => 'link',
+			image => IMG_PLAYLIST,
+			url   => \&myPlaylists
 		};
-	}
-=cut
-	
-	push @$items, {
-		name  => cstring($client, 'ALBUMS'),
-		type  => 'link',
-		image => IMG_ALBUM,
-		#url   => $c->forward( 'url', [ 'myAlbums' ] ),
-	},{
-		name  => cstring($client, 'ARTISTS'),
-		type  => 'link',
-		image => IMG_ACCOUNT,
-		#url   => $c->forward( 'url', [ 'myArtists' ] ),
-	},{
-		name  => cstring($client, 'PLAYLISTS'),
-		type  => 'link',
-		image => 'plugins/Spotty/html/images/playlist.png',
-		#url   => $c->forward( 'url', [ 'playlists' ]),
-	};
-	
-	$cb->({
-		items => $items,
-	});
+		
+		$cb->({
+			items => $items,
+		});
+	} );
 }
 
 sub search {
@@ -127,6 +152,19 @@ sub search {
 					query => $params->{search},
 					type  => 'album'
 				}]
+			},{
+				name  => cstring($client, 'PLAYLISTS'),
+				image => IMG_PLAYLIST,
+				url   => \&search,
+				passthrough => [{
+					query => $params->{search},
+					type  => 'playlist'
+				}]
+#			},
+#			{
+#				text  => $c->string('USERS'),
+#				URL   => $c->forward( 'url', [ 'search?type=user&q=' . $equery ] ),
+#				image => $c->uri_for('/static/images/icons/spotify/account.png')->as_string,
 			};
 			push @items, @{trackList($client, $results)};
 
@@ -141,6 +179,9 @@ sub search {
 		elsif ($type eq 'track') {
 			push @items, @{trackList($client, $results)};
 		}
+		elsif ($type eq 'playlist') {
+			push @items, @{playlistList($client, $results)};
+		}
 		else {
 			warn Data::Dump::dump($results);
 		}
@@ -149,6 +190,105 @@ sub search {
 	}, {
 		query => $params->{search},
 		type  => $type || 'track',
+	});
+}
+
+sub whatsNew {
+	my ($client, $cb, $params) = @_;
+	
+	Plugins::Spotty::API->newReleases(sub {
+		my ($albums) = @_;
+	
+		my $items = albumList($client, $albums);
+		
+		$cb->({ items => $items });
+	});
+}
+
+sub topTracks {
+	my ($client, $cb, $params) = @_;
+	
+	Plugins::Spotty::API->topTracks(sub {
+		my ($tracks) = @_;
+	
+		my $items = tracksList($client, $tracks);
+		
+		$cb->({ items => $items });
+	});
+}
+
+sub categories {
+	my ($client, $cb, $params) = @_;
+
+	Plugins::Spotty::API->categories(sub {
+		my ($result) = @_;
+		
+		my $items = [];
+		for my $item ( @{$result} ) {
+			push @{$items}, {
+				type  => 'link',
+				name  => $item->{name},
+				url   => \&category,
+				passthrough => [{ 
+					id => $item->{id},
+					title => $item->{name},
+				}],
+				image => $item->{image},
+			};
+		}
+
+		$cb->({ items => $items })
+	});
+}
+
+sub myAlbums {
+	my ($client, $cb, $params) = @_;
+
+	Plugins::Spotty::API->myAlbums(sub {
+		my ($result) = @_;
+
+		my $items = albumList($client, $result);
+		
+		push @$items, {
+			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
+			type => 'text',
+		} unless scalar @$items;
+		
+		$cb->({ items => $items });
+	});
+}
+
+sub myArtists {
+	my ($client, $cb, $params) = @_;
+
+	Plugins::Spotty::API->myArtists(sub {
+		my ($result) = @_;
+
+		my $items = artistList($client, $result);
+		
+		push @$items, {
+			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
+			type => 'text',
+		} unless scalar @$items;
+		
+		$cb->({ items => $items });
+	});
+}
+
+sub myPlaylists {
+	my ($client, $cb, $params) = @_;
+
+	Plugins::Spotty::API->playlists(sub {
+		my ($result) = @_;
+
+		my $items = playlistList($client, $result);
+		
+		push @$items, {
+			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
+			type => 'text',
+		} unless scalar @$items;
+		
+		$cb->({ items => $items });
 	});
 }
 
@@ -241,6 +381,30 @@ sub _gotArtistData {
 	$cb->({ items => $items });
 }
 
+sub playlist {
+	my ($client, $cb, $params, $args) = @_;
+	
+	Plugins::Spotty::API->playlist(sub {
+		my ($playlist) = @_;
+
+		my $items = trackList($client, $playlist);
+		$cb->({ items => $items });
+	},{
+		uri => $params->{uri} || $args->{uri}
+	});
+}
+
+sub category {
+	my ($client, $cb, $params, $args) = @_;
+	
+	Plugins::Spotty::API->categoryPlaylists(sub {
+		my ($playlists) = @_;
+
+		my $items = playlistList($client, $playlists);
+		$cb->({ items => $items });
+	}, $params->{id} || $args->{id} );
+}
+
 sub trackList {
 	my ( $client, $tracks, $args ) = @_;
 	
@@ -278,15 +442,17 @@ sub trackList {
 				line1     => $title,
 				line2     => "${artist} \x{2022} ${album}",
 				play      => 'spotify://' . $track_uri,
-#				URL       => $c->forward( 'url', [ 'track', { uri => $track->{uri} } ] ),
 				image     => $image || IMG_TRACK,
 				on_select => 'play',
-#				items => [],
+				duration  => $track->{duration_ms} / 1000,
 				playall   => 1,
 				passthrough => [{
 					uri => $track->{uri}
 				}]
 			};
+		}
+		else {
+			logError("unsupported track data structure?\n" . Data::Dump::dump($track));
 		}
 =pod
 		else {
@@ -370,6 +536,37 @@ sub artistList {
 	return $items;
 }
 
+sub playlistList {
+	my ( $client, $lists ) = @_;
+	
+	$lists ||= [];
 
+	my $items = [];
+	my $username = Plugins::Spotty::API->username;
+	
+	for my $list ( @{$lists} ) {
+		my $item = {
+			name  => $list->{name} || $list->{title},
+			type  => 'playlist',
+			image => $list->{image} || ($list->{collaborative} ? IMG_COLLABORATIVE : IMG_PLAYLIST),
+			url   => \&playlist,
+			passthrough => [{
+				uri => $list->{uri}
+			}]
+#			URL   => $c->forward( 'url', [ 'playlist', { uri => $list->{uri} } ] ),
+		};
+		
+		my $creator = $list->{creator};
+		$creator ||= $list->{owner}->{id} if $list->{owner};
+		
+		if ( $creator && $creator ne $username ) {
+			$item->{line2} = cstring($client, 'BY') . ' ' . $creator;
+		}
+		
+		push @{$items}, $item;
+	}
+
+	return $items;
+}
 
 1;
