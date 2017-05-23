@@ -2,18 +2,21 @@ package Plugins::Spotty::API;
 
 use strict;
 
-#use Encode;
+use base qw(Slim::Utils::Accessor);
+
 use JSON::XS::VersionOneAndTwo;
 use Digest::MD5 qw(md5_hex);
 use List::Util qw(min);
 use POSIX qw(strftime);
 use URI::Escape qw(uri_escape_utf8);
 
+use Plugins::Spotty::Plugin;
 use Plugins::Spotty::API::Pipeline;
 
 use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
+use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(cstring);
 
 use constant API_URL    => 'https://api.spotify.com/v1/%s';
@@ -25,17 +28,34 @@ use constant SPOTIFY_LIMIT => 50;
 
 my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
-my ($username, $country, $locale);
 
-sub init {
-	my ($class) = @_;
-	$class->me();
+{
+	__PACKAGE__->mk_accessor( 'rw', 'client');
+	__PACKAGE__->mk_accessor( 'rw', '_username' );
+	__PACKAGE__->mk_accessor( 'rw', '_country' );
+}
+
+sub new {
+	my ($class, $args) = @_;
+	
+	my $self = $class->SUPER::new();
+
+	$self->client($args->{client});
+	$self->_username($args->{username});
+	$self->_country('US');
+	
+	# update our profile ASAP
+	$self->me();
+	
+	return $self;
 }
 
 sub getToken {
-	my ( $class, $force ) = @_;
+	my ( $self, $force ) = @_;
 	
-	my $token = $cache->get('spotty_access_token') unless $force;
+	my $cacheKey = 'spotty_access_token' . ($self->username || '');
+
+	my $token = $cache->get($cacheKey) unless $force;
 	
 	if (main::DEBUGLOG && $log->is_debug) {
 		if ($token) {
@@ -47,30 +67,34 @@ sub getToken {
 	}
 	
 	if ( $force || !$token ) {
-		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i 169b15c360bd4d8bae89b0d0499a9bfe --get-token', 
-			Plugins::Spotty::Plugin->getHelper(), 
-			Plugins::Spotty::Plugin->cacheFolder(),
-		);
-
-		my $response;
-
-		eval {
-			$response = `$cmd`;
-			main::INFOLOG && $log->is_info && $log->info("Got response: $response");
-			$response = decode_json($response);
-		};
-		
-		$log->error("Failed to get Spotify access token: $@") if $@;
-		
-		if ( $response && ref $response ) {
-			if ( $token = $response->{accessToken} ) {
-				if ( main::INFOLOG && $log->is_info ) {
-					$log->info("Received access token: " . Data::Dump::dump($response));
-					$log->info("Caching for " . ($response->{expiresIn} || 3600) . " seconds.");
+		# try to use client specific credentials
+		foreach ($self->client, undef) {
+			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i 169b15c360bd4d8bae89b0d0499a9bfe --get-token', 
+				Plugins::Spotty::Plugin->getHelper(), 
+				Plugins::Spotty::Plugin->cacheFolder($_),
+			);
+	
+			my $response;
+	
+			eval {
+				$response = `$cmd`;
+				main::INFOLOG && $log->is_info && $log->info("Got response: $response");
+				$response = decode_json($response);
+			};
+			
+			$log->error("Failed to get Spotify access token: $@") if $@;
+			
+			if ( $response && ref $response ) {
+				if ( $token = $response->{accessToken} ) {
+					if ( main::INFOLOG && $log->is_info ) {
+						$log->info("Received access token: " . Data::Dump::dump($response));
+						$log->info("Caching for " . ($response->{expiresIn} || 3600) . " seconds.");
+					}
+					
+					# Cache for the given expiry time (less some to be sure...)
+					$cache->set($cacheKey, $token, ($response->{expiresIn} || 3600) - 300);
+					last;
 				}
-				
-				# Cache for the given expiry time (less some to be sure...)
-				$cache->set('spotty_access_token', $token, ($response->{expiresIn} || 3600) - 600)
 			}
 		}
 	}
@@ -81,15 +105,16 @@ sub getToken {
 }
 
 sub me {
-	my ( $class ) = @_;
+	my ( $self, $cb ) = @_;
 	
-	$class->_call('me',
+	$self->_call('me',
 		sub {
 			my $result = shift;
 			if ( $result && ref $result ) {
-				$country = $result->{country} if $result->{country};
-				$username => $result->{username} if $result->{username};
-				return $result;
+				$self->_country($result->{country}) if $result->{country};
+				$self->_username($result->{username}) if $result->{username};
+				
+				$cb->($result) if $cb;
 			}
 		}
 	);
@@ -97,23 +122,31 @@ sub me {
 
 # get the username - keep it simple. Shouldn't change, don't want nested async calls...
 sub username {
-	return $username if $username;
+	my ($self, $username) = @_;
+
+	$self->_username($username) if $username;
+	return $self->_username if $self->_username;
 	
+	# fall back to default account if no username was given
 	my $credentials = Plugins::Spotty::Plugin->getCredentials();
-	return $username ||= $credentials->{username};
+	if ( $credentials && $credentials->{username} ) {
+		$self->_username($credentials->{username})
+	}
+	
+	return $self->_username;
 }
 
 # get the user's country - keep it simple. Shouldn't change, don't want nested async calls...
 sub country {
-	my $class = $_[0];
+	my $self = $_[0];
 
-	$class->me() if (!$country);
+	$self->me() if (!$self->_country);
 
-	return $country || 'US';
+	return $self->_country || 'US';
 }
 
 sub locale {
-	cstring($_[1], 'LOCALE');
+	cstring($_[0]->client, 'LOCALE');
 }
 
 sub user {
@@ -142,7 +175,7 @@ sub user {
 }
 
 sub search {
-	my ( $class, $cb, $args ) = @_;
+	my ( $self, $cb, $args ) = @_;
 	
 	return $cb->([]) unless $args->{query};
 	
@@ -156,12 +189,12 @@ sub search {
 	};
 	
 	if ( $type =~ /album|artist|track|playlist/ ) {
-		Plugins::Spotty::API::Pipeline->new('search', sub {
+		Plugins::Spotty::API::Pipeline->new($self, 'search', sub {
 			my $type = $type . 's';
 			my $items = [];
 			
 			for my $item ( @{ $_[0]->{$type}->{items} } ) {
-				$item = $class->_normalize($item);
+				$item = $self->_normalize($item);
 	
 				push @$items, $item;
 			}
@@ -175,13 +208,13 @@ sub search {
 }
 
 sub album {
-	my ( $class, $cb, $args ) = @_;
+	my ( $self, $cb, $args ) = @_;
 	
 	my ($id) = $args->{uri} =~ /album:(.*)/;
 	
-	$class->_call('albums/' . $id,
+	$self->_call('albums/' . $id,
 		sub {
-			my $album = $class->_normalize($_[0]);
+			my $album = $self->_normalize($_[0]);
 
 			for my $track ( @{ $album->{tracks} || [] } ) {
 				# Add missing album data to track
@@ -189,7 +222,7 @@ sub album {
 					name => $album->{name},
 					image => $album->{image}, 
 				};
-				$track = $class->_normalize($track);
+				$track = $self->_normalize($track);
 			}
 			
 			$cb->($album);
@@ -203,13 +236,13 @@ sub album {
 }
 
 sub artist {
-	my ( $class, $cb, $args ) = @_;
+	my ( $self, $cb, $args ) = @_;
 	
 	my ($id) = $args->{uri} =~ /artist:(.*)/;
 	
-	$class->_call('artists/' . $id,
+	$self->_call('artists/' . $id,
 		sub {
-			my $artist = $class->_normalize($_[0]);
+			my $artist = $self->_normalize($_[0]);
 			$cb->($artist);
 		},
 		GET => {
@@ -221,49 +254,49 @@ sub artist {
 }
 
 sub artistTracks {
-	my ( $class, $cb, $args ) = @_;
+	my ( $self, $cb, $args ) = @_;
 	
 	my ($id) = $args->{uri} =~ /artist:(.*)/;
 	
-	$class->_call('artists/' . $id . '/top-tracks',
+	$self->_call('artists/' . $id . '/top-tracks',
 		sub {
 			my $tracks = $_[0] || {};
-			$cb->([ map { $class->_normalize($_) } @{$tracks->{tracks} || []} ]);
+			$cb->([ map { $self->_normalize($_) } @{$tracks->{tracks} || []} ]);
 		},
 		GET => {
 			# Why the heck would this call need country rather than market?!? And no "from_token"?!?
-			country => $class->country(),
+			country => $self->country(),
 		}
 	);
 }
 
 sub artistAlbums {
-	my ( $class, $cb, $args ) = @_;
+	my ( $self, $cb, $args ) = @_;
 	
 	my ($id) = $args->{uri} =~ /artist:(.*)/;
 
-	Plugins::Spotty::API::Pipeline->new('artists/' . $id . '/albums', sub {
+	Plugins::Spotty::API::Pipeline->new($self, 'artists/' . $id . '/albums', sub {
 		my $albums = $_[0] || {};
-		my $items = [ map { $class->_normalize($_)} @{$albums->{items} || []} ];
+		my $items = [ map { $self->_normalize($_)} @{$albums->{items} || []} ];
 
 		return $items, $albums->{total}, $albums->{'next'};
 	}, $cb, {
 		# "from_token" not allowed here?!?!
-		market => $class->country,
+		market => $self->country,
 		limit  => min($args->{limit} || DEFAULT_LIMIT, DEFAULT_LIMIT),
 		offset => $args->{offset} || 0,
 	})->get();
 }
 
 sub playlist {
-	my ( $class, $cb, $args ) = @_;
+	my ( $self, $cb, $args ) = @_;
 	
 	my ($user, $id) = $args->{uri} =~ /^spotify:user:([^:]+):playlist:(.+)/;
 	
-	Plugins::Spotty::API::Pipeline->new('users/' . $user . '/playlists/' . $id . '/tracks', sub {
+	Plugins::Spotty::API::Pipeline->new($self, 'users/' . $user . '/playlists/' . $id . '/tracks', sub {
 		my $items = [];
 		
-		my $cc = $class->country;
+		my $cc = $self->country;
 		for my $item ( @{ $_[0]->{items} } ) {
 			my $track = $item->{track} || next;
 					
@@ -272,7 +305,7 @@ sub playlist {
 					
 			next if $track->{available_markets} && !(scalar grep /$cc/i, @{$track->{available_markets}});
 
-			push @$items, $class->_normalize($track);
+			push @$items, $self->_normalize($track);
 		}
 	
 		return $items, $_[0]->{total}, $_[0]->{'next'};
@@ -283,11 +316,11 @@ sub playlist {
 }
 
 sub myAlbums {
-	my ( $class, $cb ) = @_;
+	my ( $self, $cb ) = @_;
 	
-	Plugins::Spotty::API::Pipeline->new('/me/albums', sub {
+	Plugins::Spotty::API::Pipeline->new($self, '/me/albums', sub {
 		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
-			return [ map { $class->_normalize($_->{album}) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+			return [ map { $self->_normalize($_->{album}) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, sub {
 		my $results = shift;
@@ -300,11 +333,11 @@ sub myAlbums {
 }
 
 sub myArtists {
-	my ( $class, $cb ) = @_;
+	my ( $self, $cb ) = @_;
 	
-	Plugins::Spotty::API::Pipeline->new('/me/following', sub {
+	Plugins::Spotty::API::Pipeline->new($self, '/me/following', sub {
 		if ( $_[0] && $_[0]->{artists} && $_[0]->{artists} && (my $artists = $_[0]->{artists}) ) {
-			return [ map { $class->_normalize($_) } @{ $artists->{items} } ], $artists->{total}, $artists->{'next'};
+			return [ map { $self->_normalize($_) } @{ $artists->{items} } ], $artists->{total}, $artists->{'next'};
 		}
 	}, sub {
 		my $results = shift;
@@ -319,7 +352,7 @@ sub myArtists {
 		
 		# Spotify does include artists from saved albums in their apps, but doesn't provide an API call to do this.
 		# Let's do it the hard way: get the list of artists for which we have a stored album.
-		$class->myAlbums(sub {
+		$self->myAlbums(sub {
 			my $albums = shift || [];
 			
 			foreach ( @$albums ) {
@@ -327,7 +360,7 @@ sub myArtists {
 				
 				if ( my $artist = $_->{artists}->[0] ) {
 					if ( !$knownArtists{$artist->{id}}++ ) {
-						push @$items, $class->_normalize($artist);
+						push @$items, $self->_normalize($artist);
 					}
 				}
 			}
@@ -341,17 +374,17 @@ sub myArtists {
 }
 
 sub playlists {
-	my ( $class, $cb, $args ) = @_;
+	my ( $self, $cb, $args ) = @_;
 	
-	my $user = $args->{user} || $class->username || 'me';
+	my $user = $args->{user} || $self->username || 'me';
 
 	# usernames must be lower case, and space not URI encoded
 	$user = lc($user);
 	$user =~ s/ /\+/g;
 	
-	Plugins::Spotty::API::Pipeline->new('users/' . uri_escape_utf8($user) . '/playlists', sub {
+	Plugins::Spotty::API::Pipeline->new($self, 'users/' . uri_escape_utf8($user) . '/playlists', sub {
 		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
-			return [ map { $class->_normalize($_) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+			return [ map { $self->_normalize($_) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, $cb, {
 		limit  => $args->{limit} || DEFAULT_LIMIT
@@ -359,25 +392,25 @@ sub playlists {
 }
 
 sub browse {
-	my ( $class, $cb, $what, $key, $params ) = @_;
+	my ( $self, $cb, $what, $key, $params ) = @_;
 	
 	return [] unless $what;
 	
 	$params ||= {};
-	$params->{country} ||= $class->country;
+	$params->{country} ||= $self->country;
 
  	my $message;
 
-	Plugins::Spotty::API::Pipeline->new("browse/$what", sub {
+	Plugins::Spotty::API::Pipeline->new($self, "browse/$what", sub {
 		my $result = shift;
 		
  		$message ||= $result->{message};
  		
  		if ($result && $result->{$key}) {
-			my $cc = $class->country();
+			my $cc = $self->country();
 	
 			my $items = [ map { 
-				$class->_normalize($_)
+				$self->_normalize($_)
 			} grep {
 				(!$_->{available_markets} || scalar grep /$cc/i, @{$_->{available_markets}}) ? 1 : 0;
 			} @{$result->{$key}->{items} || []} ];
@@ -390,14 +423,14 @@ sub browse {
 }
 
 sub newReleases {
-	my ( $class, $cb ) = @_;
-	$class->browse($cb, 'new-releases', 'albums');
+	my ( $self, $cb ) = @_;
+	$self->browse($cb, 'new-releases', 'albums');
 }
 
 sub categories {
-	my ( $class, $cb ) = @_;
+	my ( $self, $cb ) = @_;
 	
-	$class->browse(sub {
+	$self->browse(sub {
 		my ($result) = @_;
 		
 		my $items = [ map {
@@ -410,33 +443,33 @@ sub categories {
 		
 		$cb->($items);	
 	}, 'categories', 'categories', { 
-		locale => $class->locale,
+		locale => $self->locale,
 	});
 }
 
 sub categoryPlaylists {
-	my ( $class, $cb, $category ) = @_;
+	my ( $self, $cb, $category ) = @_;
 	
-	$class->browse($cb, 'categories/' . $category . '/playlists', 'playlists');
+	$self->browse($cb, 'categories/' . $category . '/playlists', 'playlists');
 }
 
 sub featuredPlaylists {
-	my ( $class, $cb ) = @_;
+	my ( $self, $cb ) = @_;
 
 	# let's manipulate the timestamp so we only pull updated every few minutes
 	my $timestamp = strftime("%Y-%m-%dT%H:%M:00", localtime(time()));
 	$timestamp =~ s/\d(:00)$/0$1/;
 	
 	my $params = { 
-		locale => $class->locale,
+		locale => $self->locale,
 		timestamp => $timestamp
 	};
 	
-	$class->browse($cb, 'featured-playlists', 'playlists', $params);
+	$self->browse($cb, 'featured-playlists', 'playlists', $params);
 }
 
 sub _normalize {
-	my ( $class, $item ) = @_;
+	my ( $self, $item ) = @_;
 	
 	my $type = $item->{type} || '';
 	
@@ -444,7 +477,7 @@ sub _normalize {
 		$item->{image}   = _getLargestArtwork(delete $item->{images});
 		$item->{artist}  ||= $item->{artists}->[0]->{name} if $item->{artists} && ref $item->{artists}; 
 		
-		$item->{tracks}  = [ map { $class->_normalize($_) } @{ $item->{tracks}->{items} } ] if $item->{tracks};
+		$item->{tracks}  = [ map { $self->_normalize($_) } @{ $item->{tracks}->{items} } ] if $item->{tracks};
 	}
 	elsif ($type eq 'playlist') {
 		$item->{creator} = $item->{owner}->{id} if $item->{owner} && ref $item->{owner};
@@ -489,7 +522,7 @@ sub _getLargestArtwork {
 }
 
 sub _call {
-	my ( $class, $method, $cb, $type, $params ) = @_;
+	my ( $self, $method, $cb, $type, $params ) = @_;
 	
 	$type ||= 'GET';
 	
@@ -501,15 +534,15 @@ sub _call {
 	
 	# only use from_token if we've got a token
 #	if ( $params->{market} && $params->{market} eq 'from_token' ) {
-#		if ( !(my $token = $class->getToken()) ) {
-#			$params->{market} = $class->country;
+#		if ( !(my $token = $self->getToken()) ) {
+#			$params->{market} = $self->country;
 #			$params->{_no_auth_header} = 1;
 #		}
 #	}
 
 	my @headers = ( 'Accept' => 'application/json', 'Accept-Encoding' => 'gzip' );
 
-	if ( !$params->{_no_auth_header} && (my $token = $class->getToken()) ) {
+	if ( !$params->{_no_auth_header} && (my $token = $self->getToken()) ) {
 		push @headers, 'Authorization' => 'Bearer ' . $token;
 	}
 	

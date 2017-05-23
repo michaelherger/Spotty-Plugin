@@ -14,6 +14,7 @@ use constant DEFAULT_LIMIT => 200;
 use constant SPOTIFY_LIMIT => 50;
 
 __PACKAGE__->mk_accessor( rw => qw(
+	spottyAPI
 	method limit params
 	extractorCb	cb
 	_data _chunks
@@ -26,6 +27,7 @@ sub new {
 	
 	my $self = $class->SUPER::new();
 
+	$self->spottyAPI(shift);
 	$self->method(shift);
 	$self->extractorCb(shift);
 	$self->cb(shift);
@@ -46,7 +48,7 @@ sub get {
 
 	$method ||= $self->method;
 
-	Plugins::Spotty::API->_call($method, sub {
+	$self->spottyAPI->_call($method, sub {
 		my ($count, $next) = $self->_extract(0, shift);
 		
 #		warn Data::Dump::dump($count, $self->limit, SPOTIFY_LIMIT, $next);
@@ -69,7 +71,7 @@ sub get {
 sub _followAfter {
 	my ($self, $method, $count, $id) = @_;
 	
-	Plugins::Spotty::API->_call($method, sub {
+	$self->spottyAPI->_call($method, sub {
 		my ($count, $next) = $self->_extract($id, shift);
 		
 		if ( $next && $next !~ /\boffset=/ && $next =~ /\bafter=([a-zA-Z0-9]{22})\b/ ) {
@@ -98,7 +100,7 @@ sub _followOffset {
 			
 	# run requests in parallel
 	while (my ($offset, $params) = each %{$self->_chunks}) {
-		Plugins::Spotty::API->_call($method, sub {
+		$self->spottyAPI->_call($method, sub {
 			$self->_extract($offset, shift);
 			delete $self->_chunks->{$offset};
 

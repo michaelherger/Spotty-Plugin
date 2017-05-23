@@ -128,7 +128,14 @@ sub _pluginDataFor {
 }
 
 sub cacheFolder {
+	my ($class, $client) = @_;
+	
 	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty');
+	
+	if ( $client && (my $username = $prefs->client($client)->get('username')) ) {
+		$cacheDir = catdir($cacheDir, $username);
+	}
+
 	mkdir $cacheDir unless -d $cacheDir;
 
 	return $cacheDir;
