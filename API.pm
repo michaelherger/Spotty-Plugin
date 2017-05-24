@@ -99,9 +99,20 @@ sub getToken {
 		}
 	}
 	
-	$log->error("Failed to get Spotify access token") unless $token;
+	if (!$token) {
+		$log->error("Failed to get Spotify access token");
+		# store special value to prevent hammering the backend
+		$cache->set($cacheKey, $token = -1, 60);
+	}
 	
 	return $token;
+}
+
+sub ready {
+	my ($self) = @_;
+	my $token = $self->getToken();
+	
+	return $token && $token ne '-1' ? 1 : 0;
 }
 
 sub me {
@@ -341,6 +352,19 @@ sub tracks {
 
 	my @tracks;
 	my $chunks = {};
+	
+	if ( !$self->ready ) {
+		$cb->([ map {
+			my $t = {
+				title => 'Failed to get access token',
+				duration => 1,
+				uri => $_,
+			};
+			$cache->set($_, $t, 60);
+			$t;
+		} @$ids ]);
+		return;
+	}
 
 	# build list of chunks we can query in one go
 	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
@@ -647,8 +671,17 @@ sub _call {
 #	}
 
 	my @headers = ( 'Accept' => 'application/json', 'Accept-Encoding' => 'gzip' );
+	
+	my $token = $self->getToken();
+	
+	if ( !$token || $token eq '-1' ) {
+		$cb->({ 
+			name => 'Failed to get access token',
+			type => 'text' 
+		});
+	}
 
-	if ( !$params->{_no_auth_header} && (my $token = $self->getToken()) ) {
+	if ( !$params->{_no_auth_header} ) {
 		push @headers, 'Authorization' => 'Bearer ' . $token;
 	}
 	
