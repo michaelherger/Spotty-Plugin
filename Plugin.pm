@@ -5,6 +5,7 @@ use strict;
 #use base qw(Slim::Plugin::OPMLBased);
 
 use vars qw($VERSION);
+use File::Basename;
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
 use JSON::XS::VersionOneAndTwo;
@@ -106,15 +107,21 @@ sub postinitPlugin {
 	my $cacheDir = $class->cacheFolder();
 	my $flushBuffer = Slim::Utils::Misc::findbin('flushbuffers') || '';
 	my $serverPort = preferences('server')->get('httpport');
+	
+	my $helper = $class->getHelper();
+	$helper = basename($helper) if $helper;
+	$helper = '' if $helper eq 'spotty';
 
 	foreach ( keys %Slim::Player::TranscodingHelper::commandTable ) {
 		if ( $_ =~ /^spt-/ && $Slim::Player::TranscodingHelper::commandTable{$_} =~ /single-track/ ) {
 			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$CACHE\$/$cacheDir/g;
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
 		}
 
 		if ( $flushBuffer && $_ =~ /^sptc-/ ) {
 			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$FLUSHBUFFERS\$/$flushBuffer/g;
 			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$SERVERPORT\$/$serverPort/g;
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
 		}
 	}
 }
