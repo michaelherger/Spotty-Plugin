@@ -324,6 +324,8 @@ sub track {
 sub trackCached {
 	my ( $self, $uri, $args ) = @_;
 	
+	return unless $uri =~ /^spotify:track/;
+	
 	my $cached = $cache->get($uri);
 	
 	# look up track information unless told not to do so
@@ -342,7 +344,7 @@ sub tracks {
 
 	# build list of chunks we can query in one go
 	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
-		my $idList = join(',', map { s/(?:spotify|track)://g; $_ } grep { $_ } @ids) || next;
+		my $idList = join(',', map { s/(?:spotify|track)://g; $_ } grep { $_ && /^(?:spotify|track):/ } @ids) || next;
 		$chunks->{md5_hex($idList)} = $idList;
 	}
 

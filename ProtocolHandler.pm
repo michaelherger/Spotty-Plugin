@@ -150,6 +150,8 @@ sub getBulkMetadata {
 		for my $track ( @{ Slim::Player::Playlist::playList($client) } ) {
 			my $uri = blessed($track) ? $track->url : $track;
 			$uri =~ s/\///g;
+			
+			next unless $uri =~ /^spotify:track/;
 
 			if ( !$spotty->trackCached($uri, { noLookup => 1 }) ) {
 				push @need, $uri;
