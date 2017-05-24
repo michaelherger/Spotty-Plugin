@@ -157,7 +157,7 @@ sub getBulkMetadata {
 		}
 		
 		if ( main::INFOLOG && $log->is_info ) {
-			$log->info( "Need to fetch metadata for: " . join( ', ', @need ) );
+			$log->info( "Need to fetch metadata for: " . Data::Dump::dump(@need) );
 		}
 		
 		$spotty->tracks(sub {
@@ -165,6 +165,8 @@ sub getBulkMetadata {
 			$client->currentPlaylistUpdateTime( Time::HiRes::time() );
 			
 			Slim::Control::Request::notifyFromArray( $client, [ 'newmetadata' ] );
+
+			$client->master->pluginData( fetchingMeta => 0 );
 		}, \@need);
 	}
 }

@@ -334,19 +334,26 @@ sub trackCached {
 	return $cached;
 }
 
-# XXX - currently doesn't return anything. Needs to re-arrange results.
 sub tracks {
 	my ( $self, $cb, $ids ) = @_;
 
 	my @tracks;
+	my $chunks = {};
 
+	# build list of chunks we can query in one go
 	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
 		my $idList = join(',', map { s/(?:spotify|track)://g; $_ } grep { $_ } @ids) || next;
+		$chunks->{md5_hex($idList)} = $idList;
+	}
 
+	# query all chunks in parallel, waiting for them all to return before we call the callback
+	foreach my $idList (values %$chunks) {
+		my $idHash = md5_hex($idList);
+		
 		$self->_call("tracks", 
 			sub {
 				my ($tracks) = @_;
-	
+
 				# only handle tracks which are playable
 				my $cc = $self->country;
 			
@@ -359,7 +366,15 @@ sub tracks {
 							
 					next if $_->{available_markets} && !(scalar grep /$cc/i, @{$_->{available_markets}});
 			
-					$self->_normalize($_);
+					push @tracks, $self->_normalize($_);
+				}
+				
+				# delete the chunk information
+				delete $chunks->{$idHash};
+				
+				# once we have no more chunks to process, call callback with the track list
+				if ($cb && !scalar keys %$chunks) {
+					$cb->(\@tracks);
 				}
 			}, 
 			GET => {
@@ -368,9 +383,6 @@ sub tracks {
 			}
 		);
 	}
-	
-	# XXX - doesn't really do anything useful here...
-	$cb->() if $cb;
 }
 
 # try to get a list of track URI
