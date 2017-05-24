@@ -35,7 +35,7 @@ sub prefs {
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
 	
-	my $helperPath = $class->getHelper();
+	my $helperPath = Plugins::Spotty::Plugin->getHelper();
 	
 	# don't even continue if we're missing the helper application
 	if ( !$helperPath ) {
@@ -103,26 +103,6 @@ sub handler {
 	$paramRef->{credentials} = Plugins::Spotty::Plugin->getCredentials();
 	
 	return $class->SUPER::handler($client, $paramRef);
-}
-
-# check whether the helper is available and executable
-# it requires MSVC 2015 libraries
-sub getHelper {
-	my $helper = Plugins::Spotty::Plugin->getHelper();
-	
-	return unless -f $helper && -x $helper;
-	
-	my $checkCmd = sprintf('%s -n "%s (%s)" --check', 
-		Plugins::Spotty::Plugin->getHelper(),
-		string('PLUGIN_SPOTTY_AUTH_NAME'),
-		Slim::Utils::Misc::getLibraryName()
-	);
-	
-	my $check = `$checkCmd`;
-	
-	if ( $check && $check =~ /ok/i ) {
-		return $helper;
-	}
 }
 
 

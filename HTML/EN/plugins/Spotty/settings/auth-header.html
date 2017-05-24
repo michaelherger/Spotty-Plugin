@@ -36,5 +36,5 @@
 
 	[% IF helperMissing; WRAPPER setting title="PLUGIN_SPOTTY_HELPER_MISSING" desc="" %]
 		<div style="color: red">[% "PLUGIN_SPOTTY_HELPER_MISSING_HELP" | string %]<br/>
-		[% helperMissing %]</div>
+		[% IF helperMissing == 1; ""; ELSE; helperMissing; END  %]</div>
 	[% END; END %]

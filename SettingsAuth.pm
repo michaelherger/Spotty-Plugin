@@ -47,7 +47,7 @@ sub handler {
 	}
 
 	if ( !$class->startHelper() ) {
-		$paramRef->{helperMissing} = Plugins::Spotty::Plugin->getHelper();
+		$paramRef->{helperMissing} = Plugins::Spotty::Plugin->getHelper() || 1;
 	}
 	
 	return $class->SUPER::handler($client, $paramRef);

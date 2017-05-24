@@ -27,7 +27,7 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	description  => 'PLUGIN_SPOTTY',
 } );
 
-my $helperPath;
+my $helper;
 
 sub initPlugin {
 	my $class = shift;
@@ -179,22 +179,54 @@ sub getCredentials {
 sub getHelper {
 	my ($class) = @_;
 
-	# first try the "spotty-custom" binary, as we will allow users to test ride new spotty builds
-	if (!$helperPath) {
-		$helperPath = Slim::Utils::Misc::findbin(HELPER . '-custom');
+	if (!$helper) {
+		my @candidates = (HELPER);
 		
-		if (!$helperPath) {
-			$helperPath = Slim::Utils::Misc::findbin(HELPER);
+		# trying to find the correct binary can be tricky... some ARM platforms behave oddly.
+		# do some trial-and-error testing to see what we can use
+		if (Slim::Utils::OSDetect::OS() eq 'unix') {
+			# on 64 bit try 64 bit builds first
+			if ( $Config::Config{'archname'} =~ /x86_64/ ) {
+				unshift @candidates, HELPER . '-x86_64';
+			}
+
+			# on armhf use hf binaries instead of default arm5te binaries
+			elsif ( $Config::Config{'archname'} =~ /arm.*linux/ ) {
+				unshift @candidates, HELPER . '-hf';
+			}
 		}
 
-		$helperPath &&= Slim::Utils::OSDetect::getOS->decodeExternalHelperPath($helperPath);
+		# try spotty-custom first, allowing users to drop their own build anywhere
+		unshift @candidates, HELPER . '-custom';
+		
+		foreach my $binary (@candidates) {
+			my $candidate = Slim::Utils::Misc::findbin($binary) || next;
+			
+			$candidate = Slim::Utils::OSDetect::getOS->decodeExternalHelperPath($candidate);
 
-		main::INFOLOG && $log->is_info && $helperPath && $log->info("Found Spotty helper application: $helperPath");
-		$log->warn("Didn't find Spotty helper application!") unless $helperPath;	
+			next unless -f $candidate && -x $candidate;
+
+			main::INFOLOG && $log->is_info && $log->info("Trying helper applicaton: $candidate");
+			
+			my $checkCmd = sprintf('%s -n "%s (%s)" --check', 
+				$candidate,
+				string('PLUGIN_SPOTTY_AUTH_NAME'),
+				Slim::Utils::Misc::getLibraryName()
+			);
+			
+			my $check = `$checkCmd`;
+			
+			if ( $check && $check =~ /ok/i ) {
+				$helper = $candidate;
+				last;
+			}
+		}
+
+		main::INFOLOG && $log->is_info && $helper && $log->info("Found Spotty helper application: $helper");
+		$log->warn("Didn't find Spotty helper application!") unless $helper;	
 	}	
 
-	
-	return $helperPath;
+	return $helper;
 }
 
 
