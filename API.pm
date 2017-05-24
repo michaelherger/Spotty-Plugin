@@ -69,7 +69,7 @@ sub getToken {
 	if ( $force || !$token ) {
 		# try to use client specific credentials
 		foreach ($self->client, undef) {
-			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i 169b15c360bd4d8bae89b0d0499a9bfe --get-token', 
+			my $cmd = sprintf('%s -n Squeezebox -c "%s" --client-id 169b15c360bd4d8bae89b0d0499a9bfe --get-token', 
 				Plugins::Spotty::Plugin->getHelper(), 
 				Plugins::Spotty::Plugin->cacheFolder($_),
 			);
