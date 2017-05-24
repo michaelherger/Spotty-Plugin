@@ -315,6 +315,98 @@ sub playlist {
 	})->get();
 }
 
+sub track {
+	my ( $self, $cb, $uri ) = @_;
+	# XXX - todo
+	$log->error("track() not implemented yet!");
+}
+
+sub trackCached {
+	my ( $self, $uri, $args ) = @_;
+	
+	my $cached = $cache->get($uri);
+	
+	# look up track information unless told not to do so
+	if ( !$cached && !$args->{noLookup} ) {
+#		$self->track(undef, $uri);
+	}
+	
+	return $cached;
+}
+
+# XXX - currently doesn't return anything. Needs to re-arrange results.
+sub tracks {
+	my ( $self, $cb, $ids ) = @_;
+
+	my @tracks;
+
+	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
+		my $idList = join(',', map { s/(?:spotify|track)://g; $_ } grep { $_ } @ids) || next;
+
+		$self->_call("tracks", 
+			sub {
+				my ($tracks) = @_;
+	
+				# only handle tracks which are playable
+				my $cc = $self->country;
+			
+				foreach (@{$tracks->{tracks}}) {
+					# track info for invalid IDs is returned
+					next unless $_ && ref $_;
+					
+					# if we set market => 'from_token', then we don't get available_markets back, but only a is_playable flag
+					next if defined $_->{is_playable} && !$_->{is_playable};
+							
+					next if $_->{available_markets} && !(scalar grep /$cc/i, @{$_->{available_markets}});
+			
+					$self->_normalize($_);
+				}
+			}, 
+			GET => {
+				ids => $idList,
+				market => 'from_token'
+			}
+		);
+	}
+	
+	# XXX - doesn't really do anything useful here...
+	$cb->() if $cb;
+}
+
+# try to get a list of track URI
+sub trackURIsFromURI {
+	my ( $self, $cb, $uri ) = @_;
+	
+	my $cb2 = sub {
+		$cb->([ map {
+			$_->{uri}
+		} @{$_[0]} ])
+	};
+	
+	my $params = {
+		uri => $uri
+	};
+
+	if ($uri =~ /:playlist:/) {
+		$self->playlist($cb2, $params);
+	}
+	elsif ( $uri =~ /:artist:/ ) {
+		$self->artistTracks($cb2, $params);
+	}
+	elsif ( $uri =~ /:album:/ ) {
+		$self->album(sub {
+			$cb2->(($_[0] || {})->{tracks});
+		}, $params);
+	}
+	elsif ( $uri =~ /:track:/ ) {
+		$cb->([ $uri ]);
+	}
+	else {
+		$log->warn("No tracks found for URI $uri");
+		$cb->([]);
+	}
+}
+
 sub myAlbums {
 	my ( $self, $cb ) = @_;
 	

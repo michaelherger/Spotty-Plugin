@@ -45,14 +45,18 @@ my %topuri = (
 sub handleFeed {
 	my ($client, $cb, $args) = @_;
 
-	my $spotty = $client->pluginData('spotty');
+	if (!$client) {
+		$cb->({
+			items => [{
+				name => string('PLUGIN_SPOTTY_NO_PLAYER_CONNECTED'),
+				type => 'text'
+			}]
+		});
 		
-	if ( !$spotty ) {
-		$spotty = $client->pluginData( spotty => Plugins::Spotty::API->new({
-			client => $client,
-			username => $prefs->client($client)->get('username'),
-		}) );
+		return;
 	}
+
+	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
 	$spotty->featuredPlaylists( sub {
 		my ($lists, $message) = @_;
@@ -138,7 +142,7 @@ sub search {
 
 	my $type = $params->{type};
 	
-	my $spotty = $client->pluginData('spotty');
+	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 	
 	# search for users is different...
 	if ($type eq 'user') {
@@ -240,7 +244,7 @@ sub search {
 sub whatsNew {
 	my ($client, $cb, $params) = @_;
 	
-	$client->pluginData('spotty')->newReleases(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->newReleases(sub {
 		my ($albums) = @_;
 	
 		my $items = albumList($client, $albums);
@@ -252,7 +256,7 @@ sub whatsNew {
 sub topTracks {
 	my ($client, $cb, $params) = @_;
 	
-	$client->pluginData('spotty')->topTracks(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->topTracks(sub {
 		my ($tracks) = @_;
 	
 		my $items = tracksList($client, $tracks);
@@ -264,7 +268,7 @@ sub topTracks {
 sub categories {
 	my ($client, $cb, $params) = @_;
 
-	$client->pluginData('spotty')->categories(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->categories(sub {
 		my ($result) = @_;
 		
 		my $items = [];
@@ -288,7 +292,7 @@ sub categories {
 sub myAlbums {
 	my ($client, $cb, $params) = @_;
 
-	$client->pluginData('spotty')->myAlbums(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->myAlbums(sub {
 		my ($result) = @_;
 
 		my $items = albumList($client, $result);
@@ -305,7 +309,7 @@ sub myAlbums {
 sub myArtists {
 	my ($client, $cb, $params) = @_;
 
-	$client->pluginData('spotty')->myArtists(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->myArtists(sub {
 		my ($result) = @_;
 
 		my $items = artistList($client, $result);
@@ -322,7 +326,7 @@ sub myArtists {
 sub playlists {
 	my ($client, $cb, $params, $args) = @_;
 
-	$client->pluginData('spotty')->playlists(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->playlists(sub {
 		my ($result) = @_;
 
 		my $items = playlistList($client, $result);
@@ -341,7 +345,7 @@ sub playlists {
 sub album {
 	my ($client, $cb, $params, $args) = @_;
 	
-	$client->pluginData('spotty')->album(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->album(sub {
 		my ($album) = @_;
 
 		my $items = trackList($client, $album->{tracks}, { show_numbers => 1 });
@@ -355,7 +359,7 @@ sub artist {
 	my ($client, $cb, $params, $args) = @_;
 	
 	my $uri = $params->{uri} || $args->{uri};
-	my $spotty = $client->pluginData('spotty');
+	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 	
 	# get artist, tracks and albums asynchronously, only process once we have it all
 	$client->pluginData(artistInfo => {});
@@ -431,7 +435,7 @@ sub _gotArtistData {
 sub playlist {
 	my ($client, $cb, $params, $args) = @_;
 	
-	$client->pluginData('spotty')->playlist(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->playlist(sub {
 		my ($playlist) = @_;
 
 		my $items = trackList($client, $playlist);
@@ -444,7 +448,7 @@ sub playlist {
 sub category {
 	my ($client, $cb, $params, $args) = @_;
 	
-	$client->pluginData('spotty')->categoryPlaylists(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->categoryPlaylists(sub {
 		my ($playlists) = @_;
 
 		my $items = playlistList($client, $playlists);
@@ -589,7 +593,7 @@ sub playlistList {
 	$lists ||= [];
 
 	my $items = [];
-	my $username = $client->pluginData('spotty')->username;
+	my $username = Plugins::Spotty::Plugin->getAPIHandler($client)->username;
 	
 	for my $list ( @{$lists} ) {
 		my $item = {

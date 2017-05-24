@@ -14,6 +14,7 @@ use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string cstring);
 
 use Plugins::Spotty::ProtocolHandler;
+use Plugins::Spotty::API;
 
 use constant HELPER => 'spotty';
 
@@ -72,6 +73,10 @@ sub initPlugin {
 			weight => 1,
 		);
 	}
+
+	if ( Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') < 0 ) {
+		$log->error('Please update to Logitech Media Server 7.9.1 if you want to use seeking in Spotify tracks.');
+	}
 }
 
 sub getDisplayName { 'PLUGIN_SPOTTY_NAME' }
@@ -125,6 +130,21 @@ sub _pluginDataFor {
 	}
 
 	return undef;
+}
+
+sub getAPIHandler {
+	my ($class, $client) = @_;
+	
+	my $api = $client->pluginData('api');
+		
+	if ( !$api ) {
+		$api = $client->pluginData( api => Plugins::Spotty::API->new({
+			client => $client,
+			username => $prefs->client($client)->get('username'),
+		}) );
+	}
+	
+	return $api;
 }
 
 sub cacheFolder {

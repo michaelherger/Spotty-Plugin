@@ -170,4 +170,19 @@ PLUGIN_SPOTTY_NEW_SEARCH
 	PL	Nowe wyszukiwanie
 	RU	Новый поиск
 	SV	Ny sökning
+
+PLUGIN_SPOTTY_NO_PLAYER_CONNECTED
+	CS	Nelze získat přístup ke službám Spotify bez připojeného přehrávače.
+	DA	Du kan ikke få adgang til tjenesterne på Spotify medmindre der er tilsluttet en afspiller.
+	DE	Sie können sich ohne Player nicht mit Spotify verbinden.
+	EN	Cannot access Spotify services without a player connected.
+	ES	No es posible acceder a servicios Spotify sin un reproductor conectado.
+	FI	Jos soitinta ei ole yhdistetty, Spotify-palveluja ei voida käyttää.
+	FR	Impossible d'accéder aux services Spotify sans une platine connectée.
+	IT	Impossibile accedere ai servizi Spotify se non è collegato un lettore.
+	NL	Zonder een verbonden muzieksysteem kunnen services van Spotify niet worden opgeroepen.
+	NO	Kan ikke bruke Spotify-tjenester når det ikke er koplet til en spiller.
+	PL	Bez podłączenia odtwarzacza nie można uzyskać dostępu do usługi Spotify.
+	RU	Службы Spotify доступны только при подключенном плеере.
+	SV	Det går inte att få tillgång till Spotify-tjänsterna eftersom ingen spelare är ansluten.
 	
