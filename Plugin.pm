@@ -199,7 +199,7 @@ sub getHelper {
 
 			# on armhf use hf binaries instead of default arm5te binaries
 			elsif ( $Config::Config{'archname'} =~ /arm.*linux/ ) {
-				unshift @candidates, HELPER . '-hf';
+				unshift @candidates, HELPER . '-muslhf', HELPER . '-hf';
 			}
 		}
 
