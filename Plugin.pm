@@ -24,7 +24,7 @@ my $prefs = preferences('plugin.spotty');
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.spotty',
-	defaultLevel => 'INFO',
+	defaultLevel => 'WARN',
 	description  => 'PLUGIN_SPOTTY',
 } );
 
@@ -34,6 +34,7 @@ sub initPlugin {
 	my $class = shift;
 	
 	$prefs->init({
+		country => 'US',
 		ohmy => '93aac68fb06348598c1e67734dfaceee'
 	});
 

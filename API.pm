@@ -44,8 +44,7 @@ sub new {
 	$self->client($args->{client});
 	$self->_username($args->{username});
 	
-	# XXX - read from prefs
-	$self->_country('US');
+	$self->_country($prefs->get('country'));
 	
 	# update our profile ASAP
 	$self->me();
@@ -128,7 +127,7 @@ sub me {
 		sub {
 			my $result = shift;
 			if ( $result && ref $result ) {
-				$self->_country($result->{country}) if $result->{country};
+				$self->country($result->{country});
 				$self->_username($result->{username}) if $result->{username};
 				
 				$cb->($result) if $cb;
@@ -155,9 +154,12 @@ sub username {
 
 # get the user's country - keep it simple. Shouldn't change, don't want nested async calls...
 sub country {
-	my $self = $_[0];
+	my ($self, $country) = @_;
 
-	$self->me() if (!$self->_country);
+	if ($country) {
+		$self->_country($country);
+		$prefs->set('country', $country);
+	}
 
 	return $self->_country || 'US';
 }
