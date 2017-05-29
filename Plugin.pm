@@ -32,6 +32,10 @@ my $helper;
 
 sub initPlugin {
 	my $class = shift;
+	
+	$prefs->init({
+		ohmy => '93aac68fb06348598c1e67734dfaceee'
+	});
 
 	$VERSION = $class->_pluginDataFor('version');
 	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');

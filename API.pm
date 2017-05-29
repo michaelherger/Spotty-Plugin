@@ -12,12 +12,12 @@ use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::API::Pipeline;
+use Plugins::Spotty::API::AsyncRequest;
 
-use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
-use Slim::Utils::Strings qw(cstring);
+use Slim::Utils::Strings qw(cstring string);
 
 use constant API_URL    => 'https://api.spotify.com/v1/%s';
 use constant CACHE_TTL  => 86400 * 7;
@@ -28,6 +28,7 @@ use constant SPOTIFY_LIMIT => 50;
 
 my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
+my $prefs = preferences('plugin.spotty');
 
 {
 	__PACKAGE__->mk_accessor( 'rw', 'client');
@@ -42,6 +43,8 @@ sub new {
 
 	$self->client($args->{client});
 	$self->_username($args->{username});
+	
+	# XXX - read from prefs
 	$self->_country('US');
 	
 	# update our profile ASAP
@@ -52,6 +55,8 @@ sub new {
 
 sub getToken {
 	my ( $self, $force ) = @_;
+	
+	return '-429' if $cache->get('spotty_rate_limit_exceeded');
 	
 	my $cacheKey = 'spotty_access_token' . ($self->username || '');
 
@@ -69,9 +74,10 @@ sub getToken {
 	if ( $force || !$token ) {
 		# try to use client specific credentials
 		foreach ($self->client, undef) {
-			my $cmd = sprintf('%s -n Squeezebox -c "%s" --client-id 169b15c360bd4d8bae89b0d0499a9bfe --get-token', 
+			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token', 
 				Plugins::Spotty::Plugin->getHelper(), 
 				Plugins::Spotty::Plugin->cacheFolder($_),
+				$prefs->get('ohmy')
 			);
 	
 			my $response;
@@ -112,7 +118,7 @@ sub ready {
 	my ($self) = @_;
 	my $token = $self->getToken();
 	
-	return $token && $token ne '-1' ? 1 : 0;
+	return $token && $token !~ /^-\d+$/ ? 1 : 0;
 }
 
 sub me {
@@ -326,10 +332,18 @@ sub playlist {
 	})->get();
 }
 
+# USE CAREFULLY! Calling this too often might get us banned
 sub track {
 	my ( $self, $cb, $uri ) = @_;
-	# XXX - todo
-	$log->error("track() not implemented yet!");
+
+	my $id = $uri;
+	$id =~ s/(?:spotify|track)://g;
+
+	$self->_call('tracks/' . $id, sub {
+		$cb->(@_) if $cb;
+	}, {
+		market => 'from_token'
+	})
 }
 
 sub trackCached {
@@ -341,7 +355,7 @@ sub trackCached {
 	
 	# look up track information unless told not to do so
 	if ( !$cached && !$args->{noLookup} ) {
-#		$self->track(undef, $uri);
+		$self->track(undef, $uri);
 	}
 	
 	return $cached;
@@ -674,11 +688,14 @@ sub _call {
 	
 	my $token = $self->getToken();
 	
-	if ( !$token || $token eq '-1' ) {
-		$cb->({ 
-			name => 'Failed to get access token',
+	if ( !$token || $token =~ /^-(\d+)$/ ) {
+		my $error = $1 || 1;
+		$cb->({
+			name => string('PLUGIN_SPOTTY_ERROR_' . $error),
 			type => 'text' 
 		});
+
+		return;
 	}
 
 	if ( !$params->{_no_auth_header} ) {
@@ -717,10 +734,14 @@ sub _call {
 		main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
 	}
 	
-	my $http = Slim::Networking::SimpleAsyncHTTP->new(
+	my $http = Plugins::Spotty::API::AsyncRequest->new(
 		sub {
 			my $response = shift;
 			my $params   = $response->params('params');
+			
+			if ($response->code =~ /429/) {
+				$self->error429($response);
+			}
 			
 			my $result;
 			
@@ -743,7 +764,7 @@ sub _call {
 						$ttl ||= 60;		# XXX - we're going to always cache for a minute, as we often do follow up calls while navigating
 						
 						if ($ttl) {
-							main::INFOLOG && $log->is_info && $log->info("Caching result for $ttl using max-age");
+							main::INFOLOG && $log->is_info && $log->info("Caching result for $ttl using max-age (" . $response->url . ")");
 							$cache->set($cache_key, $result, $ttl);
 						}
 					}
@@ -759,15 +780,28 @@ sub _call {
 			$cb->($result);
 		},
 		sub {
-			warn Data::Dump::dump(@_);
-			$log->warn("error: $_[1]");
-			$cb->({ 
-				name => 'Unknown error: ' . $_[1],
-				type => 'text' 
-			});
+			my ($http, $error, $response) = @_;
+
+			$log->warn("error: $error");
+
+			if ($error =~ /429/ || $response->code == 429) {
+				$self->error429($response);
+
+				$cb->({ 
+					name => string('PLUGIN_SPOTTY_ERROR_429'),
+					type => 'text' 
+				});
+			}
+			else {
+				$cb->({ 
+					name => 'Unknown error: ' . $error,
+					type => 'text' 
+				});
+			}
 		},
 		{
 #			params  => $params,
+			cache => 1,
 			timeout => 30,
 		},
 	);
@@ -778,12 +812,28 @@ sub _call {
 	}
 	# XXXX
 	elsif ( $type eq 'PUT' ) {
-		$http->_createHTTPRequest( POST => $url );
+		$http->put($url, @headers);
 	}
 	else {
 		$http->get($url, @headers);
 	}
 }
 
+# if we get a "rate limit exceeded" error, pause for the given delay
+sub error429 {
+	my ($self, $response) = @_;
+	
+	my $headers = $response->headers || {};
+
+	# set special token to tell _call not to proceed
+	$cache->set('spotty_rate_limit_exceeded', 1, $headers->{'retry-after'} || 5);
+	
+	if ( main::DEBUGLOG && $log->is_debug ) {
+		$log->debug("Access rate exceeded: " . Data::Dump::dump($response));
+	}
+	else {
+		$log->warn("Access rate exceeded for: " . $response->url);
+	}
+}
 
 1;

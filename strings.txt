@@ -186,3 +186,10 @@ PLUGIN_SPOTTY_NO_PLAYER_CONNECTED
 	RU	Службы Spotify доступны только при подключенном плеере.
 	SV	Det går inte att få tillgång till Spotify-tjänsterna eftersom ingen spelare är ansluten.
 	
+PLUGIN_SPOTTY_ERROR_NO_ACCESS_TOKEN
+	DE	Konnte keinen Access Token erhalten
+	EN	Failed to get access token
+	
+PLUGIN_SPOTTY_ERROR_429
+	DE	Zugriffsrate überschritten
+	EN	Rate limit exceeded
