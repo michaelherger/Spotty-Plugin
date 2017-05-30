@@ -73,7 +73,7 @@ sub getToken {
 	if ( $force || !$token ) {
 		# try to use client specific credentials
 		foreach ($self->client, undef) {
-			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token', 
+			my $cmd = sprintf('%s -n Squeezebox -c "%s" --client-id %s --get-token', 
 				Plugins::Spotty::Plugin->getHelper(), 
 				Plugins::Spotty::Plugin->cacheFolder($_),
 				$prefs->get('ohmy')
@@ -452,7 +452,7 @@ sub trackURIsFromURI {
 			$cb2->(($_[0] || {})->{tracks});
 		}, $params);
 	}
-	elsif ( $uri =~ /:track:/ ) {
+	elsif ( $uri =~ m|:/*track:| ) {
 		$cb->([ $uri ]);
 	}
 	else {
