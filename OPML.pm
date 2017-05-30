@@ -505,39 +505,6 @@ sub trackList {
 		else {
 			logError("unsupported track data structure?\n" . Data::Dump::dump($track));
 		}
-=pod
-		else {
-			my $title  = $show_numbers ? $track->{'track-number'} . '. ' . $track->{name} : $track->{name};
-			my $artist = join( ', ', map { $_->{name} } @{ $track->{artists} } );
-			my $album  = $track->{album}->{name};
-		
-			my ($track_uri) = $track->{href} =~ /^spotify:(track:.+)/;
-			
-			my $text = $title . ' ' . $c->string('BY') . ' ' . $artist;
-			my $line2 = $artist;
-			if ( $album ) {
-				$text .= ' ' . $c->string('FROM') . ' ' . $album;
-				$line2 .= " \x{2022} ${album}";
-			}
-			
-			if ( my $i = $track->{image} ) {
-				$image = $i;
-			}
-			
-			push @{$items}, {
-				type      => 'link',
-				text      => $text,
-				line1     => $title,
-				line2     => $line2,
-				play      => 'spotify://' . $track_uri,
-				URL       => $c->forward( 'url', [ 'track', { uri => $track->{href} } ] ),
-				image     => $image || $track_placeholder,
-				on_select => 'play',
-				duration  => int( $track->{length} + 0.5 ),
-				playall   => 1,
-			};
-		}
-=cut
 	}
 	
 	return $items;
@@ -604,7 +571,6 @@ sub playlistList {
 			passthrough => [{
 				uri => $list->{uri}
 			}]
-#			URL   => $c->forward( 'url', [ 'playlist', { uri => $list->{uri} } ] ),
 		};
 		
 		my $creator = $list->{creator};
@@ -620,6 +586,127 @@ sub playlistList {
 	return $items;
 }
 
+
+sub trackInfoMenu {
+	my ( $client, $url, $track, $remoteMeta ) = @_;
+	
+	return unless $client && $url =~ /^spotify:/;
+	
+	my $uri = $url;
+	$uri =~ s/\///g;
+
+	# Hmm... can't do an async lookup, as trackInfoMenu is run synchronously
+	my $track = Plugins::Spotty::Plugin->getAPIHandler($client)->trackCached(undef, $uri) || {};
+	
+	my $items = [];
+	
+	push @$items, {
+		type => 'playlist',
+		on_select => 'play',
+		name => cstring($client, 'PLUGIN_SPOTTY_TITLE_RADIO'),
+		url  => \&trackRadio,
+		passthrough => [{ uri => $uri }],
+	},{
+		name => cstring($client, 'PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST'),
+		type => 'link',
+		url  => \&addTrackToPlaylist,
+		passthrough => [{ uri => $uri }],
+	};
+	
+	my $prefix = cstring($client, 'PLUGIN_SPOTTY_ON_SPOTIFY') . cstring($client, 'COLON') . ' ';
+
+	for my $artist ( @{ $track->{artists} || [] } ) {
+		push @$items, {
+			name => $prefix . $artist->{name},
+			type => $artist->{uri} ? 'link' : 'text',
+			url  => \&artist,
+			passthrough => [{
+				uri => $artist->{uri},
+			}]
+		};
+	}
+	
+	push @$items, {
+		name => $prefix . $track->{album}->{name},
+		type => 'link',
+		url   => \&album,
+		passthrough => [{
+			uri => $track->{album}->{uri}
+		}]
+	} if $track->{album} && ref $track->{album} && $track->{album}->{uri};
+
+	return $items;
+}
+
+sub addTrackToPlaylist {
+	my ($client, $cb, $params, $args) = @_;
+	
+	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
+	my $username = $spotty->username;
+	
+	$spotty->playlists(sub {
+		my ($playlists) = @_;
+		
+		my $items = [];
+
+		for my $list ( @{$playlists} ) {
+			my $creator = $list->{creator};
+			$creator ||= $list->{owner}->{id} if $list->{owner};
+			
+			# ignore other user's playlists we're following
+			if ( $creator && $creator ne $username ) {
+				next;
+			}
+
+			push @{$items}, {
+				name  => $list->{name} || $list->{title},
+				type  => 'link',
+				image => $list->{image} || ($list->{collaborative} ? IMG_COLLABORATIVE : IMG_PLAYLIST),
+				url   => \&_addTrackToPlaylist,
+				nextWindow => 'parent',
+				passthrough => [{
+					track => $params->{uri} || $args->{uri},
+					playlist => $list->{uri}
+				}]
+			};
+		}
+
+		$cb->({ 
+			items => $items,
+			isContextMenu => 1,
+		});
+	},{
+		user => $username
+	});
+}
+
+sub _addTrackToPlaylist {
+	my ($client, $cb, $params, $args) = @_;
+	
+	$args ||= {};
+	$args->{track} ||= $params->{track};
+	$args->{playlist} ||= $params->{playlist};
+	
+	Plugins::Spotty::Plugin->getAPIHandler($client)->addTracksToPlaylist(sub {
+		$cb->({ items => [{
+			name => cstring($client, 'PLUGIN_SPOTTY_MUSIC_ADDED'),
+			showBriefly => 1
+		}] });
+	}, $args->{playlist}, $args->{track});
+}
+
+sub trackRadio {
+	my ($client, $cb, $params, $args) = @_;
+	
+	my $id = $params->{uri} || $args->{uri};
+	$id =~ s/.*://;
+	
+	Plugins::Spotty::Plugin->getAPIHandler($client)->recommendations(sub {
+		$cb->({ items => trackList($client, shift) });
+	},{
+		seed_tracks => $id
+	});
+}
 
 sub hasRecentSearches {
 	return scalar @{ $prefs->get('spotify_recent_search') || [] };

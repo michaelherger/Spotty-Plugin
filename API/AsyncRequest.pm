@@ -18,6 +18,8 @@ use Slim::Utils::Prefs;
 use HTTP::Date ();
 use HTTP::Request;
 
+use constant API_URL => 'https://api.spotify.com/v1/%s';
+
 my $prefs = preferences('server');
 
 my $log = logger('network.asynchttp');
@@ -33,7 +35,7 @@ sub put { shift->_createHTTPRequest( PUT => @_ ) }
 sub _createHTTPRequest {
 	my $self = shift;
 	my $type = shift;
-	my $url  = shift;
+	my $url  = sprintf(API_URL, shift);
 
 	$self->type( $type );
 	$self->url( $url );

@@ -103,7 +103,7 @@ sub getMetadataFor {
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 	my $meta;
 	
-	if ( my $cached = $spotty->trackCached($uri, { noLookup => 1 }) ) {
+	if ( my $cached = $spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
 		$meta = {
 			artist    => join( ', ', map { $_->{name} } @{ $cached->{artists} } ),
 			album     => $cached->{album}->{name},
@@ -153,7 +153,7 @@ sub getBulkMetadata {
 			
 			next unless $uri =~ /^spotify:track/;
 
-			if ( !$spotty->trackCached($uri, { noLookup => 1 }) ) {
+			if ( !$spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
 				push @need, $uri;
 			}
 		}

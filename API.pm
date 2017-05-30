@@ -19,7 +19,6 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(cstring string);
 
-use constant API_URL    => 'https://api.spotify.com/v1/%s';
 use constant CACHE_TTL  => 86400 * 7;
 use constant MAX_RECENT => 25;
 use constant LIBRARY_LIMIT => 500;
@@ -349,18 +348,21 @@ sub track {
 }
 
 sub trackCached {
-	my ( $self, $uri, $args ) = @_;
+	my ( $self, $cb, $uri, $args ) = @_;
 	
-	return unless $uri =~ /^spotify:track/;
-	
-	my $cached = $cache->get($uri);
-	
-	# look up track information unless told not to do so
-	if ( !$cached && !$args->{noLookup} ) {
-		$self->track(undef, $uri);
+	if ( $uri !~ /^spotify:track/ ) {
+		$cb->() if $cb;
+		return;
 	}
 	
-	return $cached;
+	if ( my $cached = $cache->get($uri) ) {
+		$cb->($cached) if $cb;
+		return $cached;
+	}
+	
+	# look up track information unless told not to do so
+	$self->track($cb, $uri) if !$args->{noLookup};
+	return;
 }
 
 sub tracks {
@@ -537,6 +539,35 @@ sub playlists {
 	})->get();
 }
 
+sub addTracksToPlaylist {
+	my ( $self, $cb, $playlist, $trackIds ) = @_;
+
+	if ( $playlist && $trackIds ) {
+		$trackIds = join(',', @$trackIds) if ref $trackIds;
+
+		my ($owner, $playlist) = $playlist =~ /^spotify:user:([^:]+):playlist:(.+)/;
+
+		# usernames must be lower case, and space not URI encoded
+		$owner = lc($owner);
+		$owner =~ s/ /\+/g;
+		
+		$self->_call("users/$owner/playlists/$playlist/tracks?uris=$trackIds",
+			sub {
+				$cb->(@_);
+			},
+			POST => {
+				ids => $trackIds,
+				_nocache => 1,
+			}
+		);
+	}
+	else {
+		$cb->({
+			error => 'Error: missing parameters'
+		});
+	}
+}
+
 sub browse {
 	my ( $self, $cb, $what, $key, $params ) = @_;
 	
@@ -595,7 +626,6 @@ sub categories {
 
 sub categoryPlaylists {
 	my ( $self, $cb, $category ) = @_;
-	
 	$self->browse($cb, 'categories/' . $category . '/playlists', 'playlists');
 }
 
@@ -612,6 +642,47 @@ sub featuredPlaylists {
 	};
 	
 	$self->browse($cb, 'featured-playlists', 'playlists', $params);
+}
+
+sub recommendations {
+	my ( $self, $cb, $args ) = @_;
+	
+	if ( !$args || (!$args->{seed_artists} && !$args->{seed_tracks} && !$args->{seed_genres}) ) {
+		$cb->({ error => 'missing parameters' });
+		return;
+	}
+	
+	my $params = {};
+	
+	# copy seed information to params hash
+	while ( my ($k, $v) = each %$args) {
+		next if $k eq 'offset';
+		
+		if ( $k =~ /seed_(?:artists|tracks|genres)/ || $k =~ /^(?:min|max)_/ ) {
+			$params->{$k} = ref $v ? join(',', @$v) : $v;
+		}
+	}
+
+	Plugins::Spotty::API::Pipeline->new($self, "recommendations", sub {
+		my $result = shift;
+		
+ 		if ($result && $result->{tracks}) {
+			my $items = [ map { $self->_normalize($_) } @{$result->{tracks}} ];
+			
+			my $total = scalar @$items;
+
+			if ( my $seeds = $result->{seeds} ) {
+				# see what the smallest pool size is - stop if we've reached it
+				$total = min(map {
+					min($_->{initialPoolSize}, $_->{afterFilteringSize}, $_->{afterRelinkingSize})
+				} @$seeds) || 0;
+			}
+			
+ 			return $items, $total;
+ 		}
+	}, sub {
+		$cb->(@_)
+	}, $params)->get();
 }
 
 sub _normalize {
@@ -668,13 +739,12 @@ sub _getLargestArtwork {
 }
 
 sub _call {
-	my ( $self, $method, $cb, $type, $params ) = @_;
+	my ( $self, $url, $cb, $type, $params ) = @_;
 	
 	$type ||= 'GET';
 	
-	# $method must not have a leading slash
-	$method =~ s/^\///;
-	my $url  = sprintf(API_URL, $method);
+	# $uri must not have a leading slash
+	$url =~ s/^\///;
 
 	my $content;
 	
@@ -808,7 +878,6 @@ sub _call {
 		},
 	);
 	
-	# XXXX
 	if ( $type eq 'POST' ) {
 		$http->post($url, @headers, $content);
 	}

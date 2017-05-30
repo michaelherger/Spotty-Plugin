@@ -14,8 +14,9 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string cstring);
 
-use Plugins::Spotty::ProtocolHandler;
 use Plugins::Spotty::API;
+use Plugins::Spotty::OPML;
+use Plugins::Spotty::ProtocolHandler;
 
 use constant HELPER => 'spotty';
 
@@ -68,9 +69,14 @@ sub initPlugin {
 		require Plugins::Spotty::SettingsAuth;
 		Plugins::Spotty::Settings->new();
 	}
+
+	# Track Info item
+	Slim::Menu::TrackInfo->registerInfoProvider( spotty => (
+		after => 'top',
+		func  => \&Plugins::Spotty::OPML::trackInfoMenu,
+	) );
 	
 	if ( $class->isa('Slim::Plugin::OPMLBased') ) {
-		require Plugins::Spotty::OPML;
 		$class->SUPER::initPlugin(
 			feed   => \&Plugins::Spotty::OPML::handleFeed,
 			tag    => 'spotty',

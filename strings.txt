@@ -137,9 +137,43 @@ PLUGIN_SPOTTY_TOP_TRACKS
 	RU	Лучшие дорожки
 	SV	Toppspår
 
+PLUGIN_SPOTTY_TITLE_RADIO
+	DE	Titel-Radio
+	EN	Title Radio
+
+PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST
+	CS	Přidat skladbu do seznamu skladeb
+	DA	Føj nummer til afspilningslisten
+	DE	Titel zu Wiedergabeliste hinzufügen
+	EN	Add Track to Playlist
+	ES	Agregar pista a lista de reproducción
+	FI	Lisää kappale soittoluetteloon
+	FR	Ajouter la piste à la liste de lecture
+	IT	Aggiungi brano alla playlist
+	NL	Nummer aan playlist toevoegen
+	NO	Legg til spor på spilleliste
+	PL	Dodaj utwór do listy odtwarzania
+	RU	Добавить дорожку к плей-листу
+	SV	Lägg till spår i spellistan
+
 PLUGIN_SPOTTY_ADD_STUFF
 	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen. 
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.
+
+PLUGIN_SPOTTY_MUSIC_ADDED
+	CS	Byla přidána hudba
+	DA	Der er tilføjet musik
+	DE	Musik wurde hinzugefügt
+	EN	Music has been added
+	ES	Se ha agregado música
+	FI	Lisättiin musiikkia
+	FR	La musique a été ajoutée
+	IT	Musica aggiunta
+	NL	Muziek is toegevoegd
+	NO	Musikk har blitt lagt til
+	PL	Dodano muzykę
+	RU	Музыка добавлена
+	SV	Musiken har lagts till
 
 PLUGIN_SPOTTY_USERS
 	CS	Uživatelé
@@ -170,6 +204,21 @@ PLUGIN_SPOTTY_NEW_SEARCH
 	PL	Nowe wyszukiwanie
 	RU	Новый поиск
 	SV	Ny sökning
+
+PLUGIN_SPOTTY_ON_SPOTIFY
+	CS	Na službě Spotify
+	DA	På Spotify
+	DE	In Spotify
+	EN	On Spotify
+	ES	En Spotify
+	FI	Spotifyssä
+	FR	Sur Spotify
+	IT	Su Spotify
+	NL	Over Spotify
+	NO	På Spotify
+	PL	W Spotify
+	RU	На Spotify
+	SV	På Spotify
 
 PLUGIN_SPOTTY_NO_PLAYER_CONNECTED
 	CS	Nelze získat přístup ke službám Spotify bez připojeného přehrávače.
