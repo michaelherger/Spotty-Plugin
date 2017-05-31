@@ -403,9 +403,6 @@ sub trackCached {
 
 sub tracks {
 	my ( $self, $cb, $ids ) = @_;
-
-	my @tracks;
-	my $chunks = {};
 	
 	if ( !$self->ready ) {
 		$cb->([ map {
@@ -420,49 +417,35 @@ sub tracks {
 		return;
 	}
 
+	my $chunks = {};
+
 	# build list of chunks we can query in one go
 	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
 		my $idList = join(',', map { s/(?:spotify|track)://g; $_ } grep { $_ && /^(?:spotify|track):/ } @ids) || next;
-		$chunks->{md5_hex($idList)} = $idList;
+		$chunks->{md5_hex($idList)} = {
+			market => 'from_token',
+			ids => $idList
+		};
 	}
 
-	# query all chunks in parallel, waiting for them all to return before we call the callback
-	foreach my $idList (values %$chunks) {
-		my $idHash = md5_hex($idList);
+	Plugins::Spotty::API::Pipeline->new($self, 'tracks', sub {
+		my ($tracks) = @_;
 		
-		$self->_call("tracks", 
-			sub {
-				my ($tracks) = @_;
+		my @tracks;
+	
+		foreach (@{$tracks->{tracks}}) {
+			# track info for invalid IDs is returned
+			next unless $_ && ref $_;
 
-				# only handle tracks which are playable
-				my $cc = $self->country;
+			my $track = $self->_normalize($_);
 			
-				foreach (@{$tracks->{tracks}}) {
-					# track info for invalid IDs is returned
-					next unless $_ && ref $_;
-					
-					# if we set market => 'from_token', then we don't get available_markets back, but only a is_playable flag
-					next if defined $_->{is_playable} && !$_->{is_playable};
-							
-					next if $_->{available_markets} && !(scalar grep /$cc/i, @{$_->{available_markets}});
-			
-					push @tracks, $self->_normalize($_);
-				}
-				
-				# delete the chunk information
-				delete $chunks->{$idHash};
-				
-				# once we have no more chunks to process, call callback with the track list
-				if ($cb && !scalar keys %$chunks) {
-					$cb->(\@tracks);
-				}
-			}, 
-			GET => {
-				ids => $idList,
-				market => 'from_token'
-			}
-		);
-	}
+			push @tracks, $track if $self->_isPlayable($_);
+		}
+		
+		return \@tracks;
+	}, $cb, {
+		chunks => $chunks,
+	})->get();
 }
 
 # try to get a list of track URI
@@ -513,6 +496,49 @@ sub myAlbums {
 		$cb->($items);
 	}, {
 		limit => LIBRARY_LIMIT,
+	})->get();
+}
+
+sub isInMyAlbums {
+	my ( $self, $cb, $ids ) = @_;
+	
+	if (!$ids) {
+		$cb->([]);
+		return;
+	}
+	
+	$ids = [split /,/, $ids] unless ref $ids;
+	
+	my $chunks = {};
+	
+	# build list of chunks we can query in one go
+	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
+		my $idList = join(',', map { s/.*://g; $_ } @ids) || next;
+		$chunks->{$idList} = { ids => $idList };
+	}
+
+	Plugins::Spotty::API::Pipeline->new($self, 'me/albums/contains', sub {
+		my ($tracks, $idList) = @_;
+
+		my @ids = split(',', $idList);
+		my @results;
+		
+		for ( my $x = 0; $x < min((scalar @ids), (scalar @$tracks)) ; $x++ ) {
+			push @results, {
+				$ids[$x] => 1
+			} if $tracks->[$x];
+		}
+		
+		return \@results;
+	}, sub {
+		my ($tracks) = @_;
+		
+		$cb->({ map {
+			my ($k, $v) = each %$_;
+			$k => $v; 
+		} @$tracks });
+	}, {
+		chunks => $chunks,
 	})->get();
 }
 
@@ -588,9 +614,7 @@ sub addTracksToPlaylist {
 		$owner =~ s/ /\+/g;
 		
 		$self->_call("users/$owner/playlists/$playlist/tracks?uris=$trackIds",
-			sub {
-				$cb->(@_);
-			},
+			$cb,
 			POST => {
 				ids => $trackIds,
 				_nocache => 1,
@@ -705,7 +729,7 @@ sub recommendations {
 		my $result = shift;
 		
  		if ($result && $result->{tracks}) {
-			my $items = [ map { $self->_normalize($_) } @{$result->{tracks}} ];
+			my $items = [ map { $self->_normalize($_) } grep { $self->_isPlayable($_) } @{$result->{tracks}} ];
 			
 			my $total = scalar @$items;
 
@@ -718,9 +742,7 @@ sub recommendations {
 			
  			return $items, $total;
  		}
-	}, sub {
-		$cb->(@_)
-	}, $params)->get();
+	}, $cb, $params)->get();
 }
 
 sub _normalize {
@@ -757,6 +779,11 @@ sub _normalize {
 					
 		# Cache all tracks for use in track_metadata
 		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri};
+		
+		# sometimes we'd get metadata for an alternative track ID
+		if ( $item->{linked_from} && $item->{linked_from}->{uri} ) {
+			$cache->set( $item->{linked_from}->{uri}, $item, CACHE_TTL );
+		}
 	}
 
 	delete $item->{available_markets};		# this is rather lengthy, repetitive and never used
@@ -774,6 +801,19 @@ sub _getLargestArtwork {
 	}
 	
 	return '';
+}
+
+sub _isPlayable {
+	my ($self, $item, $cc) = @_;
+	
+	$cc ||= $self->country;
+
+	# if we set market => 'from_token', then we don't get available_markets back, but only a is_playable flag
+	return if defined $item->{is_playable} && !$item->{is_playable};
+			
+	return if $item->{available_markets} && !(scalar grep /$cc/i, @{$item->{available_markets}});
+	
+	return 1;
 }
 
 sub _call {
@@ -861,8 +901,8 @@ sub _call {
 				);
 				
 				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
-				
-				if ( !$result || $result->{error} ) {
+
+				if ( !$result || (ref $result && ref $result eq 'HASH' && $result->{error}) ) {
 					$result = {
 						error => 'Error: ' . ($result->{error_message} || 'Unknown error')
 					};

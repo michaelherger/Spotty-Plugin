@@ -29,7 +29,7 @@ sub page {
 }
 
 sub prefs {
-	return ($prefs);
+	return ($prefs, qw(myAlbumsOnly));
 }
 
 sub handler {
@@ -101,6 +101,9 @@ sub handler {
 	Plugins::Spotty::SettingsAuth->shutdown();
 	
 	$paramRef->{credentials} = Plugins::Spotty::Plugin->getCredentials();
+	
+	# XXX - some features are not enabled yet
+	$paramRef->{browseEnabled} = Plugins::Spotty::Plugin->isa('Slim::Plugin::OPMLBased') ? 1 : 0;
 	
 	return $class->SUPER::handler($client, $paramRef);
 }

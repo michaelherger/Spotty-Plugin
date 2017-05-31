@@ -21,6 +21,11 @@
 		[% WRAPPER setting title="" desc="" %]
 			<input name="resetAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_RESET" | string %]" class="stdclick" />
 		[% END %]
+		
+		[% IF browseEnabled; WRAPPER setting title="" %]
+			<input name="pref_myAlbumsOnly" id="pref_myAlbumsOnly" type="checkbox" [% IF prefs.pref_myAlbumsOnly %] checked [% END %]>
+			<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
+		[% END; END %]
 	[% END %]
 
 [% PROCESS settings/footer.html %]

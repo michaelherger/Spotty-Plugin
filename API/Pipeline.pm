@@ -10,6 +10,8 @@ use List::Util qw(min);
 use Plugins::Spotty::API qw( SPOTIFY_LIMIT DEFAULT_LIMIT );
 use Slim::Utils::Log;
 
+use constant MAX_ITERATIONS => 10;
+
 __PACKAGE__->mk_accessor( rw => qw(
 	spottyAPI
 	method limit params
@@ -34,45 +36,75 @@ sub new {
 	$self->params->{limit} = delete $self->params->{_chunkSize} || SPOTIFY_LIMIT;
 	
 	$self->_data({});
-	$self->_chunks({});
+	$self->_chunks(delete $self->params->{chunks} || {});
 	
 	return $self;
 }
 
 # get the first chunk of data, then run async calls if more results are available
 sub get {
-	my ($self, $method) = @_;
+	my ($self) = @_;
+	
+	# if we already have a list of chunks we can run in parallel right away
+	if ( scalar keys %{$self->_chunks} ) {
+		$self->_iterateChunks();
+	}
+	# otherwise grabe the first chunk and decide whether to continue or not
+	else {
+		$self->spottyAPI->_call($self->method, sub {
+			my ($count, $next) = $self->_extract(0, shift);
+			
+	#		warn Data::Dump::dump($count, $self->limit, SPOTIFY_LIMIT, $next);
+			# no need to run more requests if there's no more than the received results
+			if ( $count <= $self->params->{limit} || $self->limit <= $self->params->{limit} ) {
+				$self->_getDone();
+				return;
+			}
+			# some calls are paging by ID ("after=abc123") - we have to run them serially
+			elsif ( $next && $next !~ /\boffset=/ && $next =~ /\bafter=([a-zA-Z0-9]{22})\b/ ) {
+				$self->_followAfter($count, $1);
+			}
+			# most calls fortunately can page by using an offset - we can run them in parallel
+			else {
+				$self->_followOffset($count);
+			}
+		}, GET => $self->params);
+	}
+}
 
-	$method ||= $self->method;
+sub _iterateChunks {
+	my ($self) = @_;
+	
+	my $i = 0;
+	
+	# query all chunks in parallel, waiting for them all to return before we call the callback
+	while (my ($id, $params) = each %{$self->_chunks}) {
+		$self->_call($self->method, sub {
+			$self->_extract($id, shift);
+			
+			delete $self->_chunks->{$id};
 
-	$self->spottyAPI->_call($method, sub {
-		my ($count, $next) = $self->_extract(0, shift);
+			if (!scalar keys %{$self->_chunks}) {
+				$self->_getDone();
+			}
+		}, GET => $params);
 		
-#		warn Data::Dump::dump($count, $self->limit, SPOTIFY_LIMIT, $next);
-		# no need to run more requests if there's no more than the received results
-		if ( $count <= $self->params->{limit} || $self->limit <= $self->params->{limit} ) {
+		# just make sure we never loop infinitely...
+		if ( ++$i > MAX_ITERATIONS ) {
 			$self->_getDone();
-			return;
+			last;
 		}
-		# some calls are paging by ID ("after=abc123") - we have to run them serially
-		elsif ( $next && $next !~ /\boffset=/ && $next =~ /\bafter=([a-zA-Z0-9]{22})\b/ ) {
-			$self->_followAfter($method, $count, $1);
-		}
-		# most calls fortunately can page by using an offset - we can run them in parallel
-		else {
-			$self->_followOffset($method, $count);
-		}
-	}, GET => $self->params);
+	}
 }
 
 sub _followAfter {
-	my ($self, $method, $count, $id) = @_;
+	my ($self, $count, $id) = @_;
 	
-	$self->spottyAPI->_call($method, sub {
+	$self->spottyAPI->_call($self->method, sub {
 		my ($count, $next) = $self->_extract($id, shift);
 		
 		if ( $next && $next !~ /\boffset=/ && $next =~ /\bafter=([a-zA-Z0-9]{22})\b/ ) {
-			$self->_followAfter($method, $count, $1);
+			$self->_followAfter($count, $1);
 		}
 		else {
 			$self->_getDone();
@@ -84,7 +116,7 @@ sub _followAfter {
 }
 
 sub _followOffset {
-	my ($self, $method, $count) = @_;
+	my ($self, $count) = @_;
 
 	for (my $offset = $self->params->{limit}; $offset < min($count, $self->limit); $offset += $self->params->{limit}) {
 		my $params = Storable::dclone($self->params);
@@ -96,17 +128,14 @@ sub _followOffset {
 	main::INFOLOG && $log->is_info && $log->info("There's more data to grab, queue them up: " . Data::Dump::dump($self->_chunks));
 			
 	# run requests in parallel
-	while (my ($offset, $params) = each %{$self->_chunks}) {
-		$self->spottyAPI->_call($method, sub {
-			$self->_extract($offset, shift);
-			delete $self->_chunks->{$offset};
-
-			if (!scalar keys %{$self->_chunks}) {
-				$self->_getDone();
-			}
-		}, GET => $params) 
-	}
+	$self->_iterateChunks();
 }
+
+sub _call {
+	my $self = shift;
+	$self->spottyAPI->_call(@_);
+}
+
 # sort data by offset number to get the original sort order back
 sub _getDone {
 	my ($self) = @_;
@@ -123,7 +152,7 @@ sub _getDone {
 sub _extract {
 	my ($self, $offset, $results) = @_;
 
-	my ($chunk, $count, $next) = $self->extractorCb->($results);
+	my ($chunk, $count, $next) = $self->extractorCb->($results, $offset);
 
 	if ($chunk && ref $chunk) {
 		$self->_data->{$offset} = $chunk;

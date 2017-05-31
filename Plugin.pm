@@ -2,7 +2,7 @@ package Plugins::Spotty::Plugin;
 
 use strict;
 
-#use base qw(Slim::Plugin::OPMLBased);
+use base qw(Slim::Plugin::OPMLBased);
 
 use vars qw($VERSION);
 use File::Basename;

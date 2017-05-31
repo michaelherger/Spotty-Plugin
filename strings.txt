@@ -58,6 +58,10 @@ PLUGIN_SPOTTY_HELPER_MISSING
 PLUGIN_SPOTTY_HELPER_MISSING_HELP
 	DE	Konnte die Spotify Connect Helferanwendung nicht finden oder nicht ausführen. Ist ihr Betriebssystem unterstützt?
 	EN	Couldn't start the helper application. Maybe your platform isn't supported?
+
+PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
+	DE	Zeige nur meine Alben unter meinen Interpreten.
+	EN	Only show my library's albums for my library's artists.
 	
 PLUGIN_SPOTTY_TRANSCODING_NAME
 	DE	🔇 Nicht verwenden! - Squeezebox $CLIENTID$

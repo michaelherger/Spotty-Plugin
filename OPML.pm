@@ -312,7 +312,7 @@ sub myArtists {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->myArtists(sub {
 		my ($result) = @_;
 
-		my $items = artistList($client, $result);
+		my $items = artistList($client, $result, $prefs->get('myAlbumsOnly'));
 		
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
@@ -377,7 +377,21 @@ sub artist {
 	});
 	
 	$spotty->artistAlbums(sub {
-		_gotArtistData($client, $cb, albums => $_[0]);
+		my $albums = shift;
+		
+		# Sort albums by release date
+		$albums = [ sort { $b->{released} <=> $a->{released} } @$albums ];
+
+		# some users only want to see the albums they have added to their library when browsing library artists
+		if ( $args->{myAlbumsOnly} ) {
+			$spotty->isInMyAlbums(sub {
+				my $inMyAlbums = shift || {};
+				_gotArtistData($client, $cb, albums => [ grep { $inMyAlbums->{$_->{id}} } @$albums ]);
+			}, [ map { $_->{id} } @$albums ]);
+		}
+		else {
+			_gotArtistData($client, $cb, albums => $albums);
+		}
 	}, {
 		uri => $uri
 	});
@@ -451,6 +465,9 @@ sub _gotArtistData {
 	};
 
 	$cb->({ items => $items });
+
+	# free some memory
+	$client->pluginData(artistInfo => {});
 }
 
 sub relatedArtists {
