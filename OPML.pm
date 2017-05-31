@@ -393,7 +393,8 @@ sub _gotArtistData {
 	
 	return unless $artistInfo->{tracks} && $artistInfo->{albums} && $artistInfo->{artist};
 
-	my $artist = $artistInfo->{artist};
+	my $artist = $artistInfo->{artist} || {};
+	my $artistURI = $artist->{uri};
 	my $items = [];
 	
 	# Split albums into compilations (albums with a different primary artist name) and regular albums
@@ -429,7 +430,50 @@ sub _gotArtistData {
 		}]
 	} if @{$artistInfo->{tracks}};
 
+	push @$items, {
+		type => 'playlist',
+		on_select => 'play',
+		name => cstring($client, 'PLUGIN_SPOTTY_ARTIST_RADIO'),
+		url  => \&artistRadio,
+		passthrough => [{ uri => $artistURI }],
+	},{
+		name => cstring($client, 'PLUGIN_SPOTTY_RELATED_ARTISTS'),
+		url  => \&relatedArtists,
+		passthrough => [{ uri => $artistURI }],
+	},{
+		name => cstring($client, 'PLUGIN_SPOTTY_FOLLOW_ARTIST'),
+		url  => \&followArtist,
+		passthrough => [{
+			name => $artist->{name}, 
+			uri => $artistURI
+		}],
+		nextWindow => 'refresh'
+	};
+
 	$cb->({ items => $items });
+}
+
+sub relatedArtists {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::Spotty::Plugin->getAPIHandler($client)->relatedArtists(sub {
+		$cb->({ items => artistList($client, shift) });
+	}, $params->{uri} || $args->{uri});
+}
+
+sub followArtist {
+	my ($client, $cb, $params, $args) = @_;
+
+	my $id = $params->{uri} || $args->{uri};
+	$id =~ s/.*artist://;
+
+	Plugins::Spotty::Plugin->getAPIHandler($client)->followArtist(sub {
+		# response is empty on success, otherwise error object we can show
+		$cb->({ items => [ shift || {
+			name => cstring($client, 'PLUGIN_SPOTTY_FOLLOWING_ARTIST') . ' ' . ($params->{name} || $args->{name}),
+			showBriefly => 1
+		} ] });
+	}, $id);
 }
 
 sub playlist {
@@ -697,6 +741,20 @@ sub _addTrackToPlaylist {
 
 sub trackRadio {
 	my ($client, $cb, $params, $args) = @_;
+	$args->{type} = 'seed_tracks';
+	_radio($client, $cb, $params, $args);
+}
+
+sub artistRadio {
+	my ($client, $cb, $params, $args) = @_;
+	$args->{type} = 'seed_artists';
+	_radio($client, $cb, $params, $args);
+}
+
+sub _radio {
+	my ($client, $cb, $params, $args) = @_;
+	
+	my $type = delete $args->{type};
 	
 	my $id = $params->{uri} || $args->{uri};
 	$id =~ s/.*://;
@@ -704,7 +762,7 @@ sub trackRadio {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->recommendations(sub {
 		$cb->({ items => trackList($client, shift) });
 	},{
-		seed_tracks => $id
+		$type => $id
 	});
 }
 

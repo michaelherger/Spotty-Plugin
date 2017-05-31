@@ -7,11 +7,8 @@ use strict;
 use base qw(Slim::Utils::Accessor);
 use List::Util qw(min);
 
-use Plugins::Spotty::API;
+use Plugins::Spotty::API qw( SPOTIFY_LIMIT DEFAULT_LIMIT );
 use Slim::Utils::Log;
-
-use constant DEFAULT_LIMIT => 200;
-use constant SPOTIFY_LIMIT => 50;
 
 __PACKAGE__->mk_accessor( rw => qw(
 	spottyAPI
@@ -31,10 +28,10 @@ sub new {
 	$self->method(shift);
 	$self->extractorCb(shift);
 	$self->cb(shift);
-	$self->params(Storable::dclone(shift));
+	$self->params(Storable::dclone(shift || {}));
 	
 	$self->limit($self->params->{limit} || DEFAULT_LIMIT);
-	$self->params->{limit} = SPOTIFY_LIMIT;
+	$self->params->{limit} = delete $self->params->{_chunkSize} || SPOTIFY_LIMIT;
 	
 	$self->_data({});
 	$self->_chunks({});
@@ -53,7 +50,7 @@ sub get {
 		
 #		warn Data::Dump::dump($count, $self->limit, SPOTIFY_LIMIT, $next);
 		# no need to run more requests if there's no more than the received results
-		if ( $count <= SPOTIFY_LIMIT || $self->limit <= SPOTIFY_LIMIT ) {
+		if ( $count <= $self->params->{limit} || $self->limit <= $self->params->{limit} ) {
 			$self->_getDone();
 			return;
 		}
@@ -89,7 +86,7 @@ sub _followAfter {
 sub _followOffset {
 	my ($self, $method, $count) = @_;
 
-	for (my $offset = SPOTIFY_LIMIT; $offset < min($count, $self->limit); $offset += SPOTIFY_LIMIT) {
+	for (my $offset = $self->params->{limit}; $offset < min($count, $self->limit); $offset += $self->params->{limit}) {
 		my $params = Storable::dclone($self->params);
  		$params->{offset} = $offset;
  		
@@ -132,7 +129,7 @@ sub _extract {
 		$self->_data->{$offset} = $chunk;
 	}
 	
-	return ($count, $next);
+	return ($count || 0, $next);
 }
 
 1;

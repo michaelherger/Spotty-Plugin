@@ -12,7 +12,7 @@ use JSON::XS::VersionOneAndTwo;
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
-use Slim::Utils::Strings qw(string cstring);
+use Slim::Utils::Strings qw(string);
 
 use Plugins::Spotty::API;
 use Plugins::Spotty::OPML;
@@ -42,6 +42,7 @@ sub initPlugin {
 	$VERSION = $class->_pluginDataFor('version');
 	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
 
+=pod
 # TODO - needs to be renamed, as "spotty" is being used by OPMLBased
 #                                                                |requires Client
 #                                                                |  |is a Query
@@ -63,6 +64,7 @@ sub initPlugin {
 
 																	$request->setStatusDone();
 	                                                            }]);
+=cut
 
 	if (main::WEBUI) {
 		require Plugins::Spotty::Settings;
@@ -96,6 +98,7 @@ sub getDisplayName { 'PLUGIN_SPOTTY_NAME' }
 # don't add this plugin to the Extras menu
 sub playerMenu {}
 
+=pod
 sub _skipAhead {
 	my ($client, $usage) = @_;
 	$client->execute(["mixer", "muting", 1]);
@@ -107,6 +110,7 @@ sub _skipAhead {
 	$client->skipAhead($delta);
 	$client->execute(["mixer", "muting", 0]);
 }
+=cut
 
 sub postinitPlugin {
 	my $class = shift;
@@ -116,7 +120,7 @@ sub postinitPlugin {
 
 	# modify the transcoding helper table to inject our cache folder
 	my $cacheDir = $class->cacheFolder();
-	my $flushBuffer = Slim::Utils::Misc::findbin('flushbuffers') || '';
+#	my $flushBuffer = Slim::Utils::Misc::findbin('flushbuffers') || '';
 	my $serverPort = preferences('server')->get('httpport');
 	
 	my $helper = $class->getHelper();
@@ -129,11 +133,11 @@ sub postinitPlugin {
 			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
 		}
 
-		if ( $flushBuffer && $_ =~ /^sptc-/ ) {
-			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$FLUSHBUFFERS\$/$flushBuffer/g;
-			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$SERVERPORT\$/$serverPort/g;
-			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
-		}
+#		if ( $flushBuffer && $_ =~ /^sptc-/ ) {
+#			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$FLUSHBUFFERS\$/$flushBuffer/g;
+#			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$SERVERPORT\$/$serverPort/g;
+#			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
+#		}
 	}
 }
 

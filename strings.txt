@@ -101,6 +101,36 @@ PLUGIN_SPOTTY_TOP_TRACKS
 	RU	Лучшие дорожки
 	SV	Toppspår
 
+PLUGIN_SPOTTY_RELATED_ARTISTS
+	CS	Související interpreti
+	DA	Relaterede kunstnere
+	DE	Ähnliche Künstler
+	EN	Related Artists
+	ES	Artistas relacionados
+	FI	Liittyvät artistit
+	FR	Artistes connexes
+	IT	Artisti correlati
+	NL	Verwante artiesten
+	NO	Liknende artister
+	PL	Pokrewni wykonawcy
+	RU	Подобные исполнители
+	SV	Närliggande artister
+
+PLUGIN_SPOTTY_ARTIST_RADIO
+	CS	Rádio interpreta
+	DA	Kunstnerradio
+	DE	Interpreten-Radio
+	EN	Artist Radio
+	ES	Radio de artista
+	FI	Artistiradio
+	FR	Radio d'artiste
+	IT	Radio artista
+	NL	Radio op basis van artiest
+	NO	Artistradio
+	PL	Stacja radiowa danego wykonawcy
+	RU	Artist Radio
+	SV	Artistradio
+
 PLUGIN_SPOTTY_GENRES_MOODS
 	DE	Genres und Stimmungen
 	EN	Genres and Moods
@@ -155,6 +185,14 @@ PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST
 	PL	Dodaj utwór do listy odtwarzania
 	RU	Добавить дорожку к плей-листу
 	SV	Lägg till spår i spellistan
+
+PLUGIN_SPOTTY_FOLLOW_ARTIST
+	DE	Künstler folgen
+	EN	Follow artist
+	
+PLUGIN_SPOTTY_FOLLOWING_ARTIST
+	DE	Folge nun dem Künstler:
+	EN	Following this artist:
 
 PLUGIN_SPOTTY_ADD_STUFF
 	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen. 

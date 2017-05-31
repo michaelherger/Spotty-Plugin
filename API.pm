@@ -2,6 +2,18 @@ package Plugins::Spotty::API;
 
 use strict;
 
+BEGIN {
+	use constant CACHE_TTL  => 86400 * 7;
+	use constant MAX_RECENT => 25;
+	use constant LIBRARY_LIMIT => 500;
+	use constant RECOMMENDATION_LIMIT => 100;		# for whatever reason this call does support a maximum chunk size of 100
+	use constant DEFAULT_LIMIT => 200;
+	use constant SPOTIFY_LIMIT => 50;
+
+	use Exporter::Lite;
+	our @EXPORT_OK = qw( SPOTIFY_LIMIT DEFAULT_LIMIT );
+}
+
 use base qw(Slim::Utils::Accessor);
 
 use JSON::XS::VersionOneAndTwo;
@@ -18,12 +30,6 @@ use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(cstring string);
-
-use constant CACHE_TTL  => 86400 * 7;
-use constant MAX_RECENT => 25;
-use constant LIBRARY_LIMIT => 500;
-use constant DEFAULT_LIMIT => 200;
-use constant SPOTIFY_LIMIT => 50;
 
 my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
@@ -271,6 +277,23 @@ sub artist {
 	);
 }
 
+sub relatedArtists {
+	my ( $self, $cb, $uri ) = @_;
+
+	my ($id) = $uri =~ /artist:(.*)/;
+		
+	Plugins::Spotty::API::Pipeline->new($self, 'artists/' . $id . '/related-artists', sub {
+		my $artists = $_[0] || {};
+		my $items = [ sort {
+			lc($a->{sortname} || $a->{name}) cmp lc($b->{sortname} || $b->{name})
+		} map { 
+			$self->_normalize($_)
+		} @{$artists->{artists} || []} ];
+
+		return $items, $artists->{total}, $artists->{'next'};
+	}, $cb)->get();
+}
+
 sub artistTracks {
 	my ( $self, $cb, $args ) = @_;
 	
@@ -304,6 +327,19 @@ sub artistAlbums {
 		limit  => min($args->{limit} || DEFAULT_LIMIT, DEFAULT_LIMIT),
 		offset => $args->{offset} || 0,
 	})->get();
+}
+
+sub followArtist {
+	my ( $self, $cb, $artistIds ) = @_;
+	
+	$artistIds = join(',', @$artistIds) if ref $artistIds;
+
+	$self->_call("me/following", $cb,
+		PUT => {
+			ids => $artistIds,
+			type => 'artist'
+		}
+	);
 }
 
 sub playlist {
@@ -652,7 +688,9 @@ sub recommendations {
 		return;
 	}
 	
-	my $params = {};
+	my $params = {
+		_chunkSize => RECOMMENDATION_LIMIT
+	};
 	
 	# copy seed information to params hash
 	while ( my ($k, $v) = each %$args) {
@@ -842,6 +880,9 @@ sub _call {
 					}
 				}
 			}
+			elsif ( $url =~ m|me/following| && $response->code == 204 ) {
+				# ignore - v1/me/following doesn't return anything but 204 on success
+			}
 			else {
 				$log->error("Invalid data");
 				$result = { 
@@ -872,7 +913,6 @@ sub _call {
 			}
 		},
 		{
-#			params  => $params,
 			cache => 1,
 			timeout => 30,
 		},
@@ -881,7 +921,6 @@ sub _call {
 	if ( $type eq 'POST' ) {
 		$http->post($url, @headers, $content);
 	}
-	# XXXX
 	elsif ( $type eq 'PUT' ) {
 		$http->put($url, @headers);
 	}
