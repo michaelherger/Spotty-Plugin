@@ -349,10 +349,56 @@ sub album {
 		my ($album) = @_;
 
 		my $items = trackList($client, $album->{tracks}, { show_numbers => 1 });
+		
+		push @$items, {
+			name => cstring($client, 'PLUGIN_SPOTTY_ADD_ALBUM_TO_LIBRARY'),
+			url  => \&addAlbumToLibrary,
+			passthrough => [{ id => $album->{id}, name => $album->{name} }],
+			nextWindow => 'refresh'
+		};
+		
+		my %artists;
+		for my $track ( @{ $album->{tracks} } ) {
+			for my $artist ( @{ $track->{artists} } ) {
+				next unless $artist->{uri};
+				$artists{ $artist->{name} } = $artist->{uri};
+			}
+		}
+	
+		my $prefix = cstring($client, 'ARTIST') . cstring($client, 'COLON') . ' ';
+		for my $artist ( sort keys %artists ) {
+			push @$items, {
+				name  => $prefix . $artist,
+				url   => \&artist,
+				passthrough => [{ uri => $artists{$artist} }],
+				image => IMG_ACCOUNT,
+			};
+		}
+	
+		if ( $album->{release_date} && $album->{release_date} =~ /\b(\d{4})\b/ ) {
+			push @{$items}, {
+				name  => cstring($client, 'YEAR') . cstring($client, 'COLON') . " $1",
+				type  => 'text',
+			};
+		}
+		
 		$cb->({ items => $items });
 	},{
 		uri => $params->{uri} || $args->{uri}
 	});
+}
+
+sub addAlbumToLibrary {
+	my ($client, $cb, $params, $args) = @_;
+	
+	$args ||= {};
+
+	Plugins::Spotty::Plugin->getAPIHandler($client)->addAlbumToLibrary(sub {
+		$cb->({ items => [{
+			name => cstring($client, 'PLUGIN_SPOTTY_MUSIC_ADDED'),
+			showBriefly => 1
+		}] });
+	}, $params->{ids} || $args->{ids} || $params->{id} || $args->{id});
 }
 
 sub artist {

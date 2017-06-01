@@ -202,6 +202,21 @@ PLUGIN_SPOTTY_ADD_STUFF
 	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen. 
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.
 
+PLUGIN_SPOTTY_ADD_ALBUM_TO_LIBRARY
+	CS	Přidat album do knihovny
+	DA	Føj album til bibliotek
+	DE	Album zu Bibliothek hinzufügen
+	EN	Add album to library
+	ES	Agregar álbum a biblioteca
+	FI	Lisää levy kirjastoon
+	FR	Ajouter l'album à la bibliothèque en ligne
+	IT	Aggiungi album a libreria
+	NL	Album aan collectie toevoegen
+	NO	Legg album til i biblioteket
+	PL	Dodaj album do biblioteki
+	RU	Добавить альбом в медиатеку
+	SV	Lägg till album i biblioteket.
+
 PLUGIN_SPOTTY_MUSIC_ADDED
 	CS	Byla přidána hudba
 	DA	Der er tilføjet musik

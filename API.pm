@@ -259,6 +259,19 @@ sub album {
 	);
 }
 
+sub addAlbumToLibrary {
+	my ( $self, $cb, $albumIds ) = @_;
+	
+	$albumIds = join(',', @$albumIds) if ref $albumIds;
+		
+	$self->_call("me/albums",
+		$cb,
+		PUT => {
+			ids => $albumIds,
+		}
+	);
+}
+
 sub artist {
 	my ( $self, $cb, $args ) = @_;
 	
@@ -920,11 +933,13 @@ sub _call {
 					}
 				}
 			}
-			elsif ( $url =~ m|me/following| && $response->code == 204 ) {
+			elsif ( $type eq 'PUT' && $response->code =~ /^20\d/ ) {
 				# ignore - v1/me/following doesn't return anything but 204 on success
+				# ignore me/albums?ids=...
 			}
 			else {
 				$log->error("Invalid data");
+				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
 				$result = { 
 					error => 'Error: Invalid data',
 				};
@@ -946,6 +961,7 @@ sub _call {
 				});
 			}
 			else {
+				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
 				$cb->({ 
 					name => 'Unknown error: ' . $error,
 					type => 'text' 
