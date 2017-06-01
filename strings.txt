@@ -1,6 +1,6 @@
 PLUGIN_SPOTTY
-	DE	Spotty Spotify Connect für Squeezebox
-	EN	Spotty Spotify Connect for Squeezebox
+	DE	Spotty Spotify Implementation für Squeezebox
+	EN	Spotty Spotify Implementation for Squeezebox
 
 PLUGIN_SPOTTY_NAME
 	EN	Spotty
@@ -16,16 +16,16 @@ PLUGIN_SPOTTY_NOT_AUTHORIZED
 	EN	Spotify Credentials missing
 
 PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT
-	DE	Bitte überprüfen Sie Einstellungen/Erweitert/Spotty Spotify Connect im Web Interface
-	EN	Please check Settings/Advanced/Spotty Spotify Connect in the web interface
+	DE	Bitte überprüfen Sie Einstellungen/Erweitert/Spotty Spotify Implementation für Squeezebox im Web Interface
+	EN	Please check Settings/Advanced/Spotty Spotify Implementation for Squeezebox in the web interface
 
 PLUGIN_SPOTTY_AUTH
-	DE	Spotify Connect Anmeldung
-	EN	Spotify Connect Authorization
+	DE	Spotify Anmeldung
+	EN	Spotify Authorization
 	
 PLUGIN_SPOTTY_AUTH_NAME
-	DE	Spotty Anmeldung
-	EN	Spotty Authorization
+	DE	Spotify Anmeldung
+	EN	Spotify Authorization
 
 PLUGIN_SPOTTY_AUTH_RESET
 	DE	Anmeldung zurücksetzen
@@ -53,15 +53,23 @@ PLUGIN_SPOTTY_AUTH_FAILED
 	
 PLUGIN_SPOTTY_HELPER_MISSING
 	DE	Die Spotify Connect Helferanwendung fehlt
-	EN	Spotify Connect Helper missing 
+	EN	Spotify Connect Helper application is missing 
 
 PLUGIN_SPOTTY_HELPER_MISSING_HELP
 	DE	Konnte die Spotify Connect Helferanwendung nicht finden oder nicht ausführen. Ist ihr Betriebssystem unterstützt?
-	EN	Couldn't start the helper application. Maybe your platform isn't supported?
+	EN	Couldn't start the Spotify Connect Helper application. Maybe your platform isn't supported?
 
 PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
 	DE	Zeige nur meine Alben unter meinen Interpreten.
 	EN	Only show my library's albums for my library's artists.
+
+PLUGIN_SPOTTY_ENABLE_BROWSING
+	DE	Spotty Menü aktivieren
+	EN	Enable Spotty menu
+
+PLUGIN_SPOTTY_ENABLE_BROWSING_DESC
+	DE	EXPERIMENTELL: Aktiviere die Spotty Menüs zur Auswahl von Spotify Inhalten. Dieses Menü kann dereinst Logitechs Spotify App ersetzen. Falls du es schon gut genug findest, dann kannst du das Spotify Plugin zur Integration mit mysqueezebox.com deaktivieren. Diese Einstellung braucht einen Logitech Media Server Neustart.
+	EN	EXPERIMENTAL: Enable Spotty menus to navigate Spotify content. This menu ultimately can replace the official Spotify app. If you're happy using it you could disable the Spotify plugin to get rid of the menu provided by mysqueezebox.com. Changing this preference requires a Logitech Media Server restart to take effect.
 	
 PLUGIN_SPOTTY_TRANSCODING_NAME
 	DE	🔇 Nicht verwenden! - Squeezebox $CLIENTID$
@@ -263,8 +271,8 @@ PLUGIN_SPOTTY_NEW_SEARCH
 	SV	Ny sökning
 	
 PLUGIN_SPOTTY_RECOMMENDATIONS
-	DE	Spotify Empfehlungen (basierend auf aktueller Wiedergabeliste)
-	EN	Spotify Recommendations (based on the current playlist)
+	DE	Spotty Empfehlungen (basierend auf aktueller Wiedergabeliste)
+	EN	Spotty Recommendations (based on the current playlist)
 
 PLUGIN_SPOTTY_ON_SPOTIFY
 	CS	Na službě Spotify

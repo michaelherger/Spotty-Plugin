@@ -12,6 +12,8 @@ use Plugins::Spotty::SettingsAuth;
 
 my $prefs = preferences('plugin.spotty');
 
+my $needsRestart;
+
 sub new {
 	my $class = shift;
 
@@ -29,7 +31,7 @@ sub page {
 }
 
 sub prefs {
-	return ($prefs, qw(myAlbumsOnly));
+	return ($prefs, qw(enableBrowseMode myAlbumsOnly));
 }
 
 sub handler {
@@ -81,6 +83,10 @@ sub handler {
 				$paramRef->{'warning'} = string('PLUGIN_SPOTTY_AUTH_FAILED');
 			}
 		}
+		
+		if ( !$needsRestart && $paramRef->{pref_enableBrowseMode} . '' ne $prefs->get('enableBrowseMode') . '' ) {
+			$needsRestart = 1;
+		}
 	}
 	
 	if ( !$paramRef->{helperMissing} && !Plugins::Spotty::Plugin->hasCredentials() ) {
@@ -101,9 +107,11 @@ sub handler {
 	Plugins::Spotty::SettingsAuth->shutdown();
 	
 	$paramRef->{credentials} = Plugins::Spotty::Plugin->getCredentials();
-	
-	# XXX - some features are not enabled yet
-	$paramRef->{browseEnabled} = Plugins::Spotty::Plugin->isa('Slim::Plugin::OPMLBased') ? 1 : 0;
+
+	if ($needsRestart) {
+		$paramRef = Slim::Web::Settings::Server::Plugins->getRestartMessage($paramRef, Slim::Utils::Strings::string("PLUGIN_EXTENSIONS_RESTART_MSG"));
+		$paramRef = Slim::Web::Settings::Server::Plugins->restartServer($paramRef, $needsRestart);
+	}
 	
 	return $class->SUPER::handler($client, $paramRef);
 }

@@ -55,7 +55,7 @@ sub initPlugin {
 		func  => \&Plugins::Spotty::OPML::trackInfoMenu,
 	) );
 	
-	if ( $class->isa('Slim::Plugin::OPMLBased') ) {
+	if ( $prefs->get('enableBrowseMode') ) {
 		$class->SUPER::initPlugin(
 			feed   => \&Plugins::Spotty::OPML::handleFeed,
 			tag    => 'spotty',

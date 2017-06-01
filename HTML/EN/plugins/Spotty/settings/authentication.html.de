@@ -1,7 +1,7 @@
 [% PROCESS "plugins/Spotty/settings/auth-header.html" %]
 
 	[% WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
-		<div>Um die Squeezebox mit Spotify Connect verwenden zu k&ouml;nnen muss Logitech Media Server mit Hilfe
+		<div>Um die Squeezebox mit Spotify verwenden zu k&ouml;nnen muss Logitech Media Server mit Hilfe
 		einer Spotify Anwendung zugelassen werden. Dies kann die Desktop-Anwendung sein, oder auch eine Mobil-App.
 		Befolgen Sie einfach die folgenden, einfachen Schritte:</div>
 
