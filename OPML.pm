@@ -6,6 +6,7 @@ use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::API;
 
+use Slim::Menu::GlobalSearch;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string cstring);
@@ -41,6 +42,19 @@ my %topuri = (
 	
 	XX => 'spotify:user:spotify:playlist:4hOKQuZbraPDIfaGbM3lKI',	# fallback "Top 100 on Spotify"
 );
+
+sub init {
+	Slim::Menu::GlobalSearch->registerInfoProvider( spotty => (
+		func => sub {
+			my ( $client, $tags ) = @_;
+			
+			return {
+				name  => cstring($client, Plugins::Spotty::Plugin::getDisplayName()),
+				items => [ map { delete $_->{image}; $_ } @{_searchItems($client, $tags->{search})} ],
+			};
+		},
+	) );
+}
 
 sub handleFeed {
 	my ($client, $cb, $args) = @_;
@@ -179,39 +193,12 @@ sub search {
 		my @items;
 		
 		if ( !$type ) {
-			push @items, {
-				name  => cstring($client, 'ARTISTS'),
-				image => IMG_ACCOUNT,
-				url   => \&search,
-				passthrough => [{
-					query => $params->{search},
-					type  => 'artist'
-				}]
-			},{
-				name  => cstring($client, 'ALBUMS'),
-				image => IMG_ALBUM,
-				url   => \&search,
-				passthrough => [{
-					query => $params->{search},
-					type  => 'album'
-				}]
-			},{
-				name  => cstring($client, 'PLAYLISTS'),
-				image => IMG_PLAYLIST,
-				url   => \&search,
-				passthrough => [{
-					query => $params->{search},
-					type  => 'playlist'
-				}]
-			},{
-				name  => cstring($client, 'PLUGIN_SPOTTY_USERS'),
-				url   => \&search,
-				image => IMG_ACCOUNT,
-				passthrough => [{
-					query => $params->{search},
-					type  => 'user'
-				}]
+			push @items, grep { 
+				$_->{passthrough}->[0]->{type} ne 'track'
+			} @{
+				_searchItems($client, $params->{search})
 			};
+			
 			push @items, @{trackList($client, $results)};
 			
 			addRecentSearch($params->{search}) unless $args->{recent};
@@ -239,6 +226,30 @@ sub search {
 		query => $params->{search},
 		type  => $type || 'track',
 	});
+}
+
+sub _searchItems {
+	my ($client, $query) = @_;
+	
+	my @items = map {
+		{
+			name  => cstring($client, $_->[0]),
+			image => $_->[2],
+			url   => \&search,
+			passthrough => [{
+				query => $query,
+				type  => $_->[1]
+			}]
+		}
+	} (
+		[ 'ARTISTS', 'artist', IMG_ACCOUNT ],
+		[ 'ALBUMS', 'album', IMG_ALBUM ],
+		[ 'PLAYLISTS', 'playlist', IMG_PLAYLIST ],
+		[ 'SONGS', 'track', IMG_TRACK ],
+		[ 'PLUGIN_SPOTTY_USERS', 'user', IMG_ACCOUNT ]
+	);
+
+	return \@items	
 }
 
 sub whatsNew {

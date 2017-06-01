@@ -86,6 +86,8 @@ sub initPlugin {
 			is_app => 1,
 			weight => 1,
 		);
+		
+		Plugins::Spotty::OPML->init();
 	}
 
 	if ( Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') < 0 ) {
