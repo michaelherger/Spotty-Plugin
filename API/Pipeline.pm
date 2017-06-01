@@ -34,6 +34,7 @@ sub new {
 	
 	$self->limit($self->params->{limit} || DEFAULT_LIMIT);
 	$self->params->{limit} = delete $self->params->{_chunkSize} || SPOTIFY_LIMIT;
+	$self->params->{limit} = min($self->limit, $self->params->{limit});
 	
 	$self->_data({});
 	$self->_chunks(delete $self->params->{chunks} || {});
@@ -78,10 +79,11 @@ sub _iterateChunks {
 	my $i = 0;
 	
 	# query all chunks in parallel, waiting for them all to return before we call the callback
-	while (my ($id, $params) = each %{$self->_chunks}) {
+	# clone data, as it might get altered in the called methods
+	my $chunks = Storable::dclone($self->_chunks);
+	while (my ($id, $params) = each %$chunks) {
 		$self->_call($self->method, sub {
 			$self->_extract($id, shift);
-			
 			delete $self->_chunks->{$id};
 
 			if (!scalar keys %{$self->_chunks}) {
@@ -91,7 +93,6 @@ sub _iterateChunks {
 		
 		# just make sure we never loop infinitely...
 		if ( ++$i > MAX_ITERATIONS ) {
-			$self->_getDone();
 			last;
 		}
 	}

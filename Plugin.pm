@@ -19,6 +19,7 @@ use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
 use constant HELPER => 'spotty';
+use constant CONNECT_ENABLED => 0;
 
 # TODO - add init call to disable spt-flc transcoding by default (see S::W::S::S::FileTypes)
 my $prefs = preferences('plugin.spotty');
@@ -36,35 +37,11 @@ sub initPlugin {
 	
 	$prefs->init({
 		country => 'US',
-		ohmy => '93aac68fb06348598c1e67734dfaceee'
+		iconCode => \&_initIcon,
 	});
 
 	$VERSION = $class->_pluginDataFor('version');
 	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
-
-=pod
-# TODO - needs to be renamed, as "spotty" is being used by OPMLBased
-#                                                                |requires Client
-#                                                                |  |is a Query
-#                                                                |  |  |has Tags
-#                                                                |  |  |  |Function to call
-#                                                                C  Q  T  F
-	Slim::Control::Request::addDispatch(['spotty'],
-	                                                            [1, 0, 0, sub {
-																	my $request = shift;
-																	my $client = $request->client();
-																	
-																	# check buffer usage - no need to skip if buffer is empty
-																	my $usage = $client->usage;
-													
-																	if ( $usage && $client->can('skipAhead') ) {
-																		Slim::Utils::Timers::killTimers($client, \&_skipAhead);
-																		Slim::Utils::Timers::setHighTimer($client, Time::HiRes::time() + 1, \&_skipAhead, $usage);
-																	}
-
-																	$request->setStatusDone();
-	                                                            }]);
-=cut
 
 	if (main::WEBUI) {
 		require Plugins::Spotty::Settings;
@@ -95,25 +72,6 @@ sub initPlugin {
 	}
 }
 
-sub getDisplayName { 'PLUGIN_SPOTTY_NAME' }
-
-# don't add this plugin to the Extras menu
-sub playerMenu {}
-
-=pod
-sub _skipAhead {
-	my ($client, $usage) = @_;
-	$client->execute(["mixer", "muting", 1]);
-	my $bitrate = $client->streamingSong()->streambitrate();
-	#my $bufferSize = $client->bufferSize;		# bytes?
-	my $delta = $client->bufferSize * 8 / $bitrate * $usage * 2;
-																		
-#	warn Data::Dump::dump($bitrate, $client->bufferSize, $usage, $delta);
-	$client->skipAhead($delta);
-	$client->execute(["mixer", "muting", 0]);
-}
-=cut
-
 sub postinitPlugin {
 	my $class = shift;
 
@@ -122,8 +80,6 @@ sub postinitPlugin {
 
 	# modify the transcoding helper table to inject our cache folder
 	my $cacheDir = $class->cacheFolder();
-#	my $flushBuffer = Slim::Utils::Misc::findbin('flushbuffers') || '';
-	my $serverPort = preferences('server')->get('httpport');
 	
 	my $helper = $class->getHelper();
 	$helper = basename($helper) if $helper;
@@ -134,14 +90,26 @@ sub postinitPlugin {
 			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$CACHE\$/$cacheDir/g;
 			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
 		}
+	}
+	
+	if (CONNECT_ENABLED) {
+		require Plugins::Spotty::Connect;
+		Plugins::Spotty::Connect->init($helper);
+	}
 
-#		if ( $flushBuffer && $_ =~ /^sptc-/ ) {
-#			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$FLUSHBUFFERS\$/$flushBuffer/g;
-#			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$SERVERPORT\$/$serverPort/g;
-#			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
-#		}
+	# if user has the Don't Stop The Music plugin enabled, register ourselves
+	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::DontStopTheMusic::Plugin')
+		&& Slim::Utils::Versions->compareVersions($::VERSION, '7.9.0') >= 0 ) 
+	{
+		require Plugins::Spotty::DontStopTheMusic;
+		Plugins::Spotty::DontStopTheMusic->init();
 	}
 }
+
+sub getDisplayName { 'PLUGIN_SPOTTY_NAME' }
+
+# don't add this plugin to the Extras menu
+sub playerMenu {}
 
 sub _pluginDataFor {
 	my $class = shift;
@@ -154,6 +122,10 @@ sub _pluginDataFor {
 	}
 
 	return undef;
+}
+
+sub _initIcon {
+	__PACKAGE__->_pluginDataFor('icon') =~ m|.*/(.*?)\.| && return $1;
 }
 
 sub getAPIHandler {

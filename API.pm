@@ -78,10 +78,10 @@ sub getToken {
 	if ( $force || !$token ) {
 		# try to use client specific credentials
 		foreach ($self->client, undef) {
-			my $cmd = sprintf('%s -n Squeezebox -c "%s" --client-id %s --get-token', 
+			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token', 
 				Plugins::Spotty::Plugin->getHelper(), 
 				Plugins::Spotty::Plugin->cacheFolder($_),
-				$prefs->get('ohmy')
+				$prefs->get('iconCode')
 			);
 	
 			my $response;
@@ -201,11 +201,13 @@ sub user {
 sub search {
 	my ( $self, $cb, $args ) = @_;
 	
-	return $cb->([]) unless $args->{query};
+	return $cb->([]) unless $args->{query} || $args->{series};
 	
 	my $type = $args->{type} || 'track';
 
-	my $params = {
+	my $params = $args->{series} 
+	? { chunks => $args->{series} }
+	: {
 		q      => $args->{query},
 		type   => $type,
 		market => 'from_token',
@@ -498,7 +500,7 @@ sub trackURIsFromURI {
 sub myAlbums {
 	my ( $self, $cb ) = @_;
 	
-	Plugins::Spotty::API::Pipeline->new($self, '/me/albums', sub {
+	Plugins::Spotty::API::Pipeline->new($self, 'me/albums', sub {
 		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
 			return [ map { $self->_normalize($_->{album}) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
@@ -558,7 +560,7 @@ sub isInMyAlbums {
 sub myArtists {
 	my ( $self, $cb ) = @_;
 	
-	Plugins::Spotty::API::Pipeline->new($self, '/me/following', sub {
+	Plugins::Spotty::API::Pipeline->new($self, 'me/following', sub {
 		if ( $_[0] && $_[0]->{artists} && $_[0]->{artists} && (my $artists = $_[0]->{artists}) ) {
 			return [ map { $self->_normalize($_) } @{ $artists->{items} } ], $artists->{total}, $artists->{'next'};
 		}
@@ -733,10 +735,12 @@ sub recommendations {
 	while ( my ($k, $v) = each %$args) {
 		next if $k eq 'offset';
 		
-		if ( $k =~ /seed_(?:artists|tracks|genres)/ || $k =~ /^(?:min|max)_/ ) {
+		if ( $k =~ /seed_(?:artists|tracks|genres)/ || $k =~ /^(?:min|max)_/ || $k =~ /^(?:limit)$/ ) {
 			$params->{$k} = ref $v ? join(',', @$v) : $v;
 		}
 	}
+	
+	$params->{market} ||= $self->country;
 
 	Plugins::Spotty::API::Pipeline->new($self, "recommendations", sub {
 		my $result = shift;

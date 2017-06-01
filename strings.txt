@@ -261,6 +261,10 @@ PLUGIN_SPOTTY_NEW_SEARCH
 	PL	Nowe wyszukiwanie
 	RU	Новый поиск
 	SV	Ny sökning
+	
+PLUGIN_SPOTTY_RECOMMENDATIONS
+	DE	Spotify Empfehlungen (basierend auf aktueller Wiedergabeliste)
+	EN	Spotify Recommendations (based on the current playlist)
 
 PLUGIN_SPOTTY_ON_SPOTIFY
 	CS	Na službě Spotify

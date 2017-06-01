@@ -7,7 +7,7 @@
 	<email>slim@herger.net</email>
 	<id>21cbb80e-67b8-44a8-a662-21c6c7ae5260</id>
 	<module>Plugins::Spotty::Plugin</module>
-	<icon>plugins/Spotty/html/images/icon.png</icon>
+	<icon>plugins/Spotty/html/images/93aac68fb06348598c1e67734dfaceee.png</icon>
 	<targetApplication>
 		<id>SqueezeCenter</id>
 		<maxVersion>*</maxVersion>
