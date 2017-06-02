@@ -186,6 +186,18 @@ sub cacheFolders {
 	my ($class, $purge) = @_;
 	
 	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty');
+	
+	# if we're coming from an old installation, migrate the credentials to the new path
+	if ( -f catfile($cacheDir, 'credentials.json') && -e catdir($cacheDir, 'files') && !-e (my $defaultDir = catdir($cacheDir, 'default')) ) {
+		$log->warn("Trying to migrate old credentials data.");
+		# we don't use the file cache
+		rmtree catdir($cacheDir, 'files');
+		mkpath catdir($defaultDir, 'files');
+		
+		require File::Copy;
+		File::Copy::move(catfile($cacheDir, 'credentials.json'), $defaultDir);
+	}
+	
 	my @folders;
 
 	if (opendir(DIR, $cacheDir)) {
@@ -308,7 +320,7 @@ sub getSortedCredentialTupels {
 }
 
 sub hasMultipleAccounts {
-	return scalar keys %{$_[0]->getAllCredentials()} ? 1 : 0;
+	return scalar keys %{$_[0]->getAllCredentials()} > 1 ? 1 : 0;
 }
 
 sub getHelper {

@@ -842,14 +842,6 @@ sub _call {
 	$url =~ s/^\///;
 
 	my $content;
-	
-	# only use from_token if we've got a token
-#	if ( $params->{market} && $params->{market} eq 'from_token' ) {
-#		if ( !(my $token = $self->getToken()) ) {
-#			$params->{market} = $self->country;
-#			$params->{_no_auth_header} = 1;
-#		}
-#	}
 
 	my @headers = ( 'Accept' => 'application/json', 'Accept-Encoding' => 'gzip' );
 	
