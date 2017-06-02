@@ -5,35 +5,34 @@
 		<div style="color: red">[% helperMissing %]</div>
 	[% END; END %]
 
-	[% IF credentials && credentials.username; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
-		[% credentials.username %]
+	[% IF credentials; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
+		<table>
+		[% FOREACH creds = credentials %]
+			<tr>
+				<td style="vertical-align: middle; padding-right: 10px">[% creds.keys.0 %]</td>
+				<td>
+					<input name="delete_[% creds.values.0 %]" type="submit" value="[% "DELETE" | string %]" class="stdclick" />
+					[% IF creds.values.0 != "default" %]
+						<input name="default_[% creds.values.0 %]" type="submit" value="[% "DEFAULT_SKIN" | string %]" class="stdclick" />
+					[% END %]
+				</td>
+			</tr>
+		[% END %]
+		</table>
 	[% END; END %]
 
-	[% IF basicAuth %]
-		[% WRAPPER setting title="PLUGIN_SPOTTY_USERNAME" desc="PLUGIN_SPOTTY_USERNAME_DESC" %]
-			<input type="text" class="stdedit" name="username" id="username" value="[% username %]" size="40">
-		[% END %]
-	
-		[% WRAPPER setting title="PLUGIN_SPOTTY_PASSWORD" desc="PLUGIN_SPOTTY_PASSWORD_DESC" %]
-			<input type="password" class="stdedit" name="password" id="password" value="[% password %]" size="40">
-			<input type="hidden" name="basicAuth" value="1">
-			<input type="hidden" name="pref_enableBrowseMode" value="[% prefs.pref_enableBrowseMode %]">
-			<input type="hidden" name="pref_myAlbumsOnly" value="[% prefs.pref_myAlbumsOnly %]">
-		[% END %]
-	[% ELSE %]
-		[% WRAPPER setting title="" desc="" %]
-			<input name="resetAuthorization" type=submit value="[% "PLUGIN_SPOTTY_AUTH_RESET" | string %]" class="stdclick" />
-		[% END %]
-		
-		[% WRAPPER setting title="PLUGIN_SPOTTY_ENABLE_BROWSING" desc="" %]
-			<input name="pref_enableBrowseMode" id="pref_enableBrowseMode" type="checkbox" [% IF prefs.pref_enableBrowseMode %] checked [% END %]>
-			<label for="pref_enableBrowseMode">[% "PLUGIN_SPOTTY_ENABLE_BROWSING_DESC" | string %]</label>
-		[% END %]
-		
-		[% IF Prefs.preferences('plugin.spotty').get('enableBrowseMode'); WRAPPER setting title="" %]
-			<input name="pref_myAlbumsOnly" id="pref_myAlbumsOnly" type="checkbox" [% IF prefs.pref_myAlbumsOnly %] checked [% END %]>
-			<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
-		[% END; END %]
+	[% WRAPPER setting title="" desc="" %]
+		<input name="addAccount" type=submit value="[% "PLUGIN_SPOTTY_ADD_ACCOUNT" | string %]" class="stdclick" />
 	[% END %]
+	
+	[% WRAPPER setting title="PLUGIN_SPOTTY_ENABLE_BROWSING" desc="" %]
+		<input name="pref_enableBrowseMode" id="pref_enableBrowseMode" type="checkbox" [% IF prefs.pref_enableBrowseMode %] checked [% END %]>
+		<label for="pref_enableBrowseMode">[% "PLUGIN_SPOTTY_ENABLE_BROWSING_DESC" | string %]</label>
+	[% END %]
+	
+	[% IF Prefs.preferences('plugin.spotty').get('enableBrowseMode'); WRAPPER setting title="" %]
+		<input name="pref_myAlbumsOnly" id="pref_myAlbumsOnly" type="checkbox" [% IF prefs.pref_myAlbumsOnly %] checked [% END %]>
+		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
+	[% END; END %]
 
 [% PROCESS settings/footer.html %]

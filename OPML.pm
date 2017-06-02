@@ -22,6 +22,7 @@ use constant IMG_ACCOUNT => 'plugins/Spotty/html/images/account.png';
 use constant MAX_RECENT => 50;
 
 my $prefs = preferences('plugin.spotty');
+my $log = logger('network.asynchttp');
 
 my %topuri = (
 	AT => 'spotify:user:spotify:playlist:1f9qd5qJzIpYWoQm7Ue2uV',
@@ -142,6 +143,20 @@ sub handleFeed {
 			url   => \&playlists
 		};
 		
+		if ( Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
+			push @$items, {
+				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
+				items => [{
+					name => Plugins::Spotty::Plugin->getAPIHandler($client)->username,
+					type => 'text'
+				},{
+					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
+					url   => \&selectAccount,
+				}],
+				image => IMG_ACCOUNT,
+			};
+		}
+		
 		$cb->({
 			items => $items,
 		});
@@ -218,7 +233,7 @@ sub search {
 			push @items, @{playlistList($client, $results)};
 		}
 		else {
-			warn Data::Dump::dump($results);
+			$log->error("Unkonwn search type: ") . Data::Dump::dump($results);
 		}
 
 		$cb->({ items => \@items });
@@ -621,7 +636,7 @@ sub trackList {
 			};
 		}
 		else {
-			logError("unsupported track data structure?\n" . Data::Dump::dump($track));
+			$log->error("unsupported track data structure?\n" . Data::Dump::dump($track));
 		}
 	}
 	
@@ -884,6 +899,43 @@ sub recentSearches {
 	}
 	
 	$cb->({ items => $items });
+}
+
+sub selectAccount {
+	my ($client, $cb, $params) = @_;
+
+	my $items = [];
+	my $username = Plugins::Spotty::Plugin->getAPIHandler($client)->username;
+	
+	foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
+		my ($name, $id) = each %{$_};
+		
+		next if $name eq $username;
+		
+		push @$items, {
+			name => $name,
+			url  => \&_selectAccount,
+			passthrough => [{
+				id => $id
+			}],
+			nextWindow => 'parent'
+		}
+	}
+	
+	$cb->({ items => $items });
+}
+
+sub _selectAccount {
+	my ($client, $cb, $params, $args) = @_;
+
+	$prefs->client($client)->set('account', $args->{id});
+	$client->pluginData( api => '' );
+	
+	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
+		$cb->({ items => [{
+			nextWindow => 'grandparent',
+		}] });
+	});
 }
 
 1;

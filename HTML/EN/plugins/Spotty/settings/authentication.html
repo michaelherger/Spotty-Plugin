@@ -1,6 +1,6 @@
 [% PROCESS "plugins/Spotty/settings/auth-header.html" %]
 
-	[% WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
+	[% IF canDiscover; WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
 		<div>In order to use your Squeezebox with Spotify, you'll need to authorize 
 		Logitech Media Server using one of Spotify's applications. This can be their desktop 
 		client, or one of their mobile apps. Just follow these simple steps:</div>
@@ -17,10 +17,7 @@
 		</div>
 
 		<div>That's it! This screen should disappear.</div>
-	[% END %]
+		<div><br/>Sometimes the smart authorization fails. In this case authenticate using your username and password in below form.</div>
+	[% END; END %]
 
-	[% WRAPPER setting title="PLUGIN_SPOTTY_USERNAME" desc="" %]
-		<div>Sometimes the smart authorization fails. In this case follow <a href="basic.html?basicAuth=1">this link</a> to authenticate using your username and password.</div>
-	[% END %]
-
-[% PROCESS settings/footer.html %]
+[% PROCESS "plugins/Spotty/settings/auth-footer.html" %]

@@ -1,6 +1,6 @@
 [% PROCESS "plugins/Spotty/settings/auth-header.html" %]
 
-	[% WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
+	[% IF canDiscover; WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
 		<div>Um die Squeezebox mit Spotify verwenden zu k&ouml;nnen muss Logitech Media Server mit Hilfe
 		einer Spotify Anwendung zugelassen werden. Dies kann die Desktop-Anwendung sein, oder auch eine Mobil-App.
 		Befolgen Sie einfach die folgenden, einfachen Schritte:</div>
@@ -16,12 +16,9 @@
 			</ol>
 		</div>
 
-		<div>Fertig. Nun sollte dieser Bildschirm verschwinden..</div>
-	[% END %]
+		<div>Fertig. Nun sollte dieser Bildschirm verschwinden.</div>
+		<div><br/>Unter Umst&auml;nden schl&auml;gt die Anmeldung &uuml;ber die Spotify App fehl. In diesem Fall benutzen Sie 
+		die folgenden Eingabefelder, um sich mit Benutzernamen und Passwort anzumelden.</div>
+	[% END; END %]
 
-	[% WRAPPER setting title="PLUGIN_SPOTTY_USERNAME" desc="" %]
-		<div>Unter Umst&auml;nden schl&auml;gt die Anmeldung &uuml;ber die Spotify App fehl. In diesem Fall folgen Sie 
-		<a href="basic.html?basicAuth=1">diesem Link</a>, um sich mit Benutzernamen und Passwort anzumelden.</div>
-	[% END %]
-
-[% PROCESS settings/footer.html %]
+[% PROCESS "plugins/Spotty/settings/auth-footer.html" %]

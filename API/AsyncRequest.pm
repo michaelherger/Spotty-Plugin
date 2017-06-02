@@ -151,8 +151,6 @@ sub onError {
 	
 	# return the response object in addition to the standard values from SimpleAsyncHTTP
 	$self->ecb->( $self, $error, $http->response );
-	
-	$log->warn('yo!');
 
 	main::PERFMON && $now && Slim::Utils::PerfMon->check('async', AnyEvent->time - $now, undef, $self->ecb);
 	

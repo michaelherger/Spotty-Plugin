@@ -77,7 +77,7 @@ sub getToken {
 	
 	if ( $force || !$token ) {
 		# try to use client specific credentials
-		foreach ($self->client, undef) {
+		foreach ($prefs->client($self->client)->get('account'), undef) {
 			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token', 
 				Plugins::Spotty::Plugin->getHelper(), 
 				Plugins::Spotty::Plugin->cacheFolder($_),
@@ -149,7 +149,7 @@ sub username {
 	return $self->_username if $self->_username;
 	
 	# fall back to default account if no username was given
-	my $credentials = Plugins::Spotty::Plugin->getCredentials();
+	my $credentials = Plugins::Spotty::Plugin->getCredentials($prefs->client($self->client)->get('account'));
 	if ( $credentials && $credentials->{username} ) {
 		$self->_username($credentials->{username})
 	}
@@ -884,6 +884,7 @@ sub _call {
 		}
 	}
 	
+	# TODO - queries with "me" need to add the owner to the cache key
 	my $cached;
 	my $cache_key;
 	if (!$params->{_nocache} && $type eq 'GET') {

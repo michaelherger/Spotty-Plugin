@@ -1,6 +1,6 @@
 PLUGIN_SPOTTY
-	DE	Spotty Spotify Implementation für Squeezebox
-	EN	Spotty Spotify Implementation for Squeezebox
+	DE	Spotty Spotify für Squeezebox
+	EN	Spotty Spotify for Squeezebox
 
 PLUGIN_SPOTTY_NAME
 	EN	Spotty
@@ -16,8 +16,8 @@ PLUGIN_SPOTTY_NOT_AUTHORIZED
 	EN	Spotify Credentials missing
 
 PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT
-	DE	Bitte überprüfen Sie Einstellungen/Erweitert/Spotty Spotify Implementation für Squeezebox im Web Interface
-	EN	Please check Settings/Advanced/Spotty Spotify Implementation for Squeezebox in the web interface
+	DE	Bitte überprüfen Sie Einstellungen/Erweitert/Spotty Spotify für Squeezebox im Web Interface
+	EN	Please check Settings/Advanced/Spotty Spotify for Squeezebox in the web interface
 
 PLUGIN_SPOTTY_AUTH
 	DE	Spotify Anmeldung
@@ -30,6 +30,10 @@ PLUGIN_SPOTTY_AUTH_NAME
 PLUGIN_SPOTTY_AUTH_RESET
 	DE	Anmeldung zurücksetzen
 	EN	Reset Authorization
+
+PLUGIN_SPOTTY_ADD_ACCOUNT
+	DE	Konto hinzufügen
+	EN	Add Account
 
 PLUGIN_SPOTTY_USERNAME
 	DE	Spotify Benutzername
@@ -50,7 +54,35 @@ PLUGIN_SPOTTY_PASSWORD_DESC
 PLUGIN_SPOTTY_AUTH_FAILED
 	DE	Anmeldung fehlgeschlagen
 	EN	Authorization failed
+
+PLUGIN_SPOTTY_ACCOUNT
+	CS	Účet
+	DA	Konto
+	DE	Konto
+	EN	Account
+	ES	Cuenta
+	FI	Tili
+	FR	Compte
+	NO	Konto
+	PL	Konto
+	RU	Учетная запись
+	SV	Konto
 	
+PLUGIN_SPOTTY_SELECT_ACCOUNT
+	CS	Vyberte účet
+	DA	Vælg konto
+	DE	Konto auswählen
+	EN	Select Account
+	ES	Seleccionar cuenta
+	FI	Valitse tili
+	FR	Sélectionner le compte
+	IT	Seleziona account
+	NL	Account selecteren
+	NO	Velg konto
+	PL	Wybierz konto w usłudze
+	RU	Выберите учетную запись
+	SV	Välj konto
+
 PLUGIN_SPOTTY_HELPER_MISSING
 	DE	Die Spotify Connect Helferanwendung fehlt
 	EN	Spotify Connect Helper application is missing 

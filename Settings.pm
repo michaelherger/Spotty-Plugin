@@ -3,12 +3,15 @@ package Plugins::Spotty::Settings;
 use strict;
 use base qw(Slim::Web::Settings);
 
+use File::Spec::Functions qw(catdir);
 use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::SettingsAuth;
+
+use constant AUTHENTICATE => '__AUTHENTICATE__';
 
 my $prefs = preferences('plugin.spotty');
 
@@ -38,6 +41,10 @@ sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
 	
 	my $helperPath = Plugins::Spotty::Plugin->getHelper();
+
+	# rename temporary authentication cache folder (if existing)
+	Plugins::Spotty::Plugin->renameCacheFolder(AUTHENTICATE);
+	Plugins::Spotty::Plugin->deleteCacheFolder(AUTHENTICATE);
 	
 	# don't even continue if we're missing the helper application
 	if ( !$helperPath ) {
@@ -59,54 +66,36 @@ sub handler {
 				);
 		}
 	}
-		
-	if ($paramRef->{'resetAuthorization'}) {
-		my $credentialsFile = Plugins::Spotty::Plugin->hasCredentials();
-		unlink $credentialsFile;
+
+	if ( my ($deleteAccount) = map { /delete_(.*)/; $1 } grep /^delete_/, keys %$paramRef ) {
+		Plugins::Spotty::Plugin->deleteCacheFolder($deleteAccount);
+	}
+	elsif ( my ($makeDefault) = map { /default_(.*)/; $1 } grep /^default_/, keys %$paramRef ) {
+		Plugins::Spotty::Plugin->renameCacheFolder('default');
+		Plugins::Spotty::Plugin->renameCacheFolder($makeDefault, 'default');
 	}
 
-	if ($paramRef->{'saveSettings'}) {
-		if ( $paramRef->{'username'} && $paramRef->{'password'} && $helperPath ) {
-			my $command = sprintf(
-				'%s -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery', 
-				$helperPath, 
-				Plugins::Spotty::Plugin->cacheFolder(), 
-				string('PLUGIN_SPOTTY_AUTH_NAME'),
-				Slim::Utils::Misc::getLibraryName(),
-				$paramRef->{'username'},
-				$paramRef->{'password'},
-			);
-			
-			my $response = `$command`;
-			
-			if ( !($response && $response =~ /authorized/) ) {
-				$paramRef->{'warning'} = string('PLUGIN_SPOTTY_AUTH_FAILED');
-			}
-		}
-		
+	if ($paramRef->{saveSettings}) {
 		if ( !$needsRestart && $paramRef->{pref_enableBrowseMode} . '' ne $prefs->get('enableBrowseMode') . '' ) {
 			$needsRestart = 1;
 		}
 	}
 	
-	if ( !$paramRef->{helperMissing} && !Plugins::Spotty::Plugin->hasCredentials() ) {
-		if ( !main::ISWINDOWS && !$paramRef->{basicAuth} ) {
-			$response->code(RC_MOVED_TEMPORARILY);
-			$response->header('Location' => 'authentication.html');
-			return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
+	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::Plugin->hasCredentials()) ) {
+		my $addAccount = '';
+		if ($paramRef->{addAccount}) {
+			$addAccount = '?accountId=' . AUTHENTICATE;
 		}
-		else {
-			$paramRef->{basicAuth} = 1;
-		}
-	}
-	else {
-		delete $paramRef->{basicAuth};
+		
+		$response->code(RC_MOVED_TEMPORARILY);
+		$response->header('Location' => 'authentication.html' . $addAccount);
+		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 	}
 
 	# make sure our authentication helper isn't running
-	Plugins::Spotty::SettingsAuth->shutdown();
+	Plugins::Spotty::SettingsAuth->shutdownHelper();
 	
-	$paramRef->{credentials} = Plugins::Spotty::Plugin->getCredentials();
+	$paramRef->{credentials} = Plugins::Spotty::Plugin->getSortedCredentialTupels();
 
 	if ($needsRestart) {
 		$paramRef = Slim::Web::Settings::Server::Plugins->getRestartMessage($paramRef, Slim::Utils::Strings::string("PLUGIN_EXTENSIONS_RESTART_MSG"));

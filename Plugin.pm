@@ -5,7 +5,10 @@ use strict;
 use base qw(Slim::Plugin::OPMLBased);
 
 use vars qw($VERSION);
+
+use Digest::MD5 qw(md5_hex);
 use File::Basename;
+use File::Path qw(mkpath rmtree);
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
 use JSON::XS::VersionOneAndTwo;
@@ -23,6 +26,7 @@ use constant CONNECT_ENABLED => 0;
 
 # TODO - add init call to disable spt-flc transcoding by default (see S::W::S::S::FileTypes)
 my $prefs = preferences('plugin.spotty');
+my $credsCache;
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.spotty',
@@ -70,6 +74,8 @@ sub initPlugin {
 	if ( Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') < 0 ) {
 		$log->error('Please update to Logitech Media Server 7.9.1 if you want to use seeking in Spotify tracks.');
 	}
+
+	$class->purgeCache();
 }
 
 sub postinitPlugin {
@@ -144,32 +150,165 @@ sub getAPIHandler {
 }
 
 sub cacheFolder {
-	my ($class, $client) = @_;
+	my ($class, $id, $noFallback) = @_;
 	
-	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty');
+	$id ||= 'default';
 	
-	if ( $client && (my $username = $prefs->client($client)->get('username')) ) {
-		$cacheDir = catdir($cacheDir, $username);
-	}
+	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty', $id);
 
-	mkdir $cacheDir unless -d $cacheDir;
+	# if we don't hava a default, but alternatives, promote one of them
+	if (!-e $cacheDir && $id eq 'default') {
+		foreach ( @{$class->cacheFolders} ) {
+			next if $_ eq $id;
+			
+			if ( $class->hasCredentials($_) ) {
+				# don't call renameCacheFolder, as it's looping back here...
+				require File::Copy;
+				File::Copy::move($class->cacheFolder($_), $cacheDir);
+				last;
+			}
+		}
+		
+		# otherwise just create the folder
+		mkpath($cacheDir) unless -e $cacheDir;
+
+		$credsCache = undef;
+	}
+	# if we wanted specific account, but it's not available - fall back to default
+	elsif (!$noFallback && !-e _) {
+		$cacheDir = $class->cacheFolder();
+	}
 
 	return $cacheDir;
 }
 
+sub cacheFolders {
+	my ($class, $purge) = @_;
+	
+	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty');
+	my @folders;
+
+	if (opendir(DIR, $cacheDir)) {
+		while ( defined( my $subDir = readdir(DIR) ) ) {
+			my $subCacheDir = catdir($cacheDir, $subDir);
+			
+			# we only bother about sub-folders with a 8 character hash name
+			next if !-d $subCacheDir || $subDir !~ /^(?:default|[0-9a-f]{8}|__AUTHENTICATE__)$/i;
+			
+			if (-e catfile($subCacheDir, 'credentials.json')) {
+				push @folders, $subDir;
+			}
+			# remove cache folders without credentials
+			elsif ($purge && -e catdir($subCacheDir, 'files')) {
+				rmtree($subCacheDir);
+				$credsCache = undef;
+			}
+		}
+	}
+	
+	return \@folders;
+}
+
+sub renameCacheFolder {
+	my ($class, $oldId, $newId) = @_;
+
+	if ( !$newId && (my $credentials = $class->getCredentials($oldId)) ) {
+		$newId = substr( md5_hex($credentials->{username}), 0, 8 );
+	}
+
+	if ($oldId && $newId) {
+		my $from = Plugins::Spotty::Plugin->cacheFolder($oldId, 'no-fallback');
+		
+		return if !-e $from;
+		
+		my ($baseFolder) = $from =~ /(.*)$oldId/;
+		my $to = catdir($baseFolder, $newId); 
+		
+		return if -e $to;
+	
+		if ($from && $to) {
+			require File::Copy;
+			File::Copy::move($from, $to);
+			$credsCache = undef;
+		}
+	}
+}
+
+# delete the cache forlder for the given ID, make sure we still have a "default"
+sub deleteCacheFolder {
+	my ($class, $id) = @_;
+
+	if ( my $credentialsFile = $class->hasCredentials($id, 'no-fallback') ) {
+		unlink $credentialsFile;
+		$credsCache = undef;
+	}
+	
+	$class->purgeCache();
+	$class->cacheFolder();
+}
+
+sub purgeCache {
+	$_[0]->cacheFolders('purge');
+}
+
 sub hasCredentials {
-	my $credentialsFile = catfile($_[0]->cacheFolder(), 'credentials.json');
+	my ($class, $id, $noFallback) = @_;
+	my $credentialsFile = catfile($class->cacheFolder($id, $noFallback), 'credentials.json');
 	return -f $credentialsFile ? $credentialsFile : '';
 }
 
 sub getCredentials {
-	if ( my $credentialsFile = $_[0]->hasCredentials() ) {
+	my ($class, $id, $noFallback) = @_;
+	
+	if ( my $credentialsFile = $class->hasCredentials($id, $noFallback) ) {
 		my $credentials = eval {
 			from_json(read_file($credentialsFile));
 		};
 		
 		return $credentials || {};
 	}
+}
+
+sub getAllCredentials {
+	my ($class) = @_;
+
+	return $credsCache if $credsCache && ref $credsCache;
+	
+	my $credentials = {};
+	foreach ( @{$class->cacheFolders() || []} ) {
+		my $creds = $class->getCredentials($_);
+
+		# ignore credentials without username
+		if ( $creds && ref $creds && (my $username = $creds->{username}) ) {
+			# but don't override the default account
+			if ( ($credentials->{$username} || '') ne 'default') {
+				$credentials->{$username} = $_;
+			}
+		}
+	}
+	
+	$credsCache = $credentials if scalar keys %$credentials;
+	return $credentials;
+}
+
+sub getSortedCredentialTupels {
+	my ($class) = @_;
+
+	my $credentials = Plugins::Spotty::Plugin->getAllCredentials();
+	
+	return [ sort {
+		my ($va) = values %$a;
+		my ($vb) = values %$b;
+		if    ($va eq 'default') { -1 }
+		elsif ($vb eq 'default') { 1 }
+		else                     { $va cmp $vb }
+	} map {
+		{ $_ => $credentials->{$_} }
+	} keys %$credentials ];
+}
+
+sub hasMultipleAccounts {
+	return scalar keys %{$_[0]->getAllCredentials()} ? 1 : 0;
 }
 
 sub getHelper {
@@ -235,7 +374,7 @@ sub getHelper {
 sub shutdownPlugin {
 	# make sure we don't leave our helper app running
 	if (main::WEBUI) {
-		Plugins::Spotty::SettingsAuth->shutdown();
+		Plugins::Spotty::SettingsAuth->shutdownHelper();
 	}
 }
 

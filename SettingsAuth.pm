@@ -39,16 +39,43 @@ sub prefs {
 
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
+	
+	if ($paramRef->{'saveSettings'}) {
+		if ( $paramRef->{'username'} && $paramRef->{'password'} && (my $helperPath = Plugins::Spotty::Plugin->getHelper()) ) {
+			my $command = sprintf(
+				'%s -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery', 
+				$helperPath, 
+				Plugins::Spotty::Plugin->cacheFolder($paramRef->{accountId}),
+				string('PLUGIN_SPOTTY_AUTH_NAME'),
+				Slim::Utils::Misc::getLibraryName(),
+				$paramRef->{'username'},
+				$paramRef->{'password'},
+			);
+			
+			my $response = `$command`;
+			
+			if ( !($response && $response =~ /authorized/) ) {
+				$paramRef->{'warning'} = string('PLUGIN_SPOTTY_AUTH_FAILED');
+			}
+		}
+	}
 
-	if ( Plugins::Spotty::Plugin->hasCredentials() ) {
+	if ( Plugins::Spotty::Plugin->hasCredentials($paramRef->{accountId}, 'no-fallback') ) {
+		$class->shutdownHelper;
+
+		Plugins::Spotty::Plugin->renameCacheFolder($paramRef->{accountId});
+		
 		$response->code(RC_MOVED_TEMPORARILY);
 		$response->header('Location' => 'basic.html');
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 	}
 
-	if ( !$class->startHelper() ) {
+	if ( !$class->startHelper($paramRef->{accountId}) ) {
 		$paramRef->{helperMissing} = Plugins::Spotty::Plugin->getHelper() || 1;
 	}
+	
+	# discovery doesn't work on Windows
+	$paramRef->{canDiscover} = main::ISWINDOWS ? 0 : 1;
 	
 	return $class->SUPER::handler($client, $paramRef);
 }
@@ -58,12 +85,15 @@ sub handler {
 sub checkCredentials {
 	my ($httpClient, $response, $func) = @_;
 
+	my $request = $response->request;
+	my $accountId = $request->uri->query_param('accountId');
+	
 	my $result = {
-		hasCredentials => Plugins::Spotty::Plugin->hasCredentials()
+		hasCredentials => Plugins::Spotty::Plugin->hasCredentials($accountId, 'no-fallback')
 	};
 	
 	# make sure our authentication helper is running
-	__PACKAGE__->startHelper();
+	__PACKAGE__->startHelper($accountId);
 	
 	my $content = to_json($result);
 	$response->header( 'Content-Length' => length($content) );
@@ -75,11 +105,19 @@ sub checkCredentials {
 }
 
 sub startHelper {
+	my ($class, $accountId) = @_;
+	
+	# no need to restart if it's already there
+	return $helper->alive if $helper && $helper->alive;
+
 	if ( my $helperPath = Plugins::Spotty::Plugin->getHelper() ) {
+		my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder();
+		$cacheFolder =~ s/default$/$accountId/; 
+		
 		if ( !($helper && $helper->alive) ) {
 			my $command = sprintf('%s -c "%s" -n "%s (%s)" -a', 
 				$helperPath, 
-				Plugins::Spotty::Plugin->cacheFolder(), 
+				$cacheFolder, 
 				Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'),
 				Slim::Utils::Misc::getLibraryName(),
 			);
@@ -93,7 +131,7 @@ sub startHelper {
 			};
 	
 			if ($@) {
-				$log->warn($@);
+				$log->warn("Failed to launch the authentication deamon: $@");
 			}
 		}
 	}
@@ -101,11 +139,11 @@ sub startHelper {
 	return $helper && $helper->alive;
 }
 
-sub shutdown {
+sub shutdownHelper {
 	my $class = shift;
 
 	if ($helper && $helper->alive) {
-		main::INFOLOG && $log->is_info && $log->info("killing helper application");
+		main::INFOLOG && $log->is_info && $log->info("Quitting authentication daemon");
 		$helper->die;
 	}
 }
