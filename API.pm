@@ -87,12 +87,12 @@ sub getToken {
 			my $response;
 	
 			eval {
-				$response = `$cmd`;
+				$response = `$cmd 2>&1`;
 				main::INFOLOG && $log->is_info && $log->info("Got response: $response");
 				$response = decode_json($response);
 			};
 			
-			$log->error("Failed to get Spotify access token: $@") if $@;
+			$log->error("Failed to get Spotify access token: $@ \n$response") if $@;
 			
 			if ( $response && ref $response ) {
 				if ( $token = $response->{accessToken} ) {

@@ -55,7 +55,7 @@ sub handler {
 					($osDetails->{'osArch'} ? $osDetails->{'osArch'} : 'unknown'),
 					string('INFORMATION_BINDIRS') . string('COLON'),
 					join("<br>", Slim::Utils::Misc::getBinPaths()),
-					Slim::Utils::OSDetect::isLinux() ? `ldd --version | head -n1` : ''
+					Slim::Utils::OSDetect::isLinux() ? `ldd --version 2>&1 | head -n1` : ''
 				);
 		}
 	}

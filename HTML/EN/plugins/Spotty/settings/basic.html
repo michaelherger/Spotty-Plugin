@@ -17,6 +17,8 @@
 		[% WRAPPER setting title="PLUGIN_SPOTTY_PASSWORD" desc="PLUGIN_SPOTTY_PASSWORD_DESC" %]
 			<input type="password" class="stdedit" name="password" id="password" value="[% password %]" size="40">
 			<input type="hidden" name="basicAuth" value="1">
+			<input type="hidden" name="pref_enableBrowseMode" value="[% prefs.pref_enableBrowseMode %]">
+			<input type="hidden" name="pref_myAlbumsOnly" value="[% prefs.pref_myAlbumsOnly %]">
 		[% END %]
 	[% ELSE %]
 		[% WRAPPER setting title="" desc="" %]

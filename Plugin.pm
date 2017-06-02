@@ -194,6 +194,7 @@ sub getHelper {
 
 		# try spotty-custom first, allowing users to drop their own build anywhere
 		unshift @candidates, HELPER . '-custom';
+		my $check;
 		
 		foreach my $binary (@candidates) {
 			my $candidate = Slim::Utils::Misc::findbin($binary) || next;
@@ -210,16 +211,21 @@ sub getHelper {
 				Slim::Utils::Misc::getLibraryName()
 			);
 			
-			my $check = `$checkCmd`;
-			
-			if ( $check && $check =~ /ok/i ) {
+			$check = `$checkCmd 2>&1`;
+
+			if ( $check && $check =~ /^ok spotty v\d+/i ) {
 				$helper = $candidate;
 				last;
 			}
 		}
-
-		main::INFOLOG && $log->is_info && $helper && $log->info("Found Spotty helper application: $helper");
-		$log->warn("Didn't find Spotty helper application!") unless $helper;	
+		
+		if (!$helper) {
+			$log->warn("Didn't find Spotty helper application!");
+			$log->warn("Last error: \n" . $check) if $check;	
+		}
+		elsif (main::INFOLOG && $log->is_info && $helper) {
+			$log->info("Found Spotty helper application: $helper");
+		}
 	}	
 
 	return $helper;
