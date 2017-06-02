@@ -884,11 +884,10 @@ sub _call {
 		}
 	}
 	
-	# TODO - queries with "me" need to add the owner to the cache key
 	my $cached;
 	my $cache_key;
 	if (!$params->{_nocache} && $type eq 'GET') {
-		$cache_key = md5_hex($url);
+		$cache_key = md5_hex($url . ($url =~ /^me\b/ ? $token : ''));
 	}
 		
 	if ( $cache_key && ($cached = $cache->get($cache_key)) ) {
