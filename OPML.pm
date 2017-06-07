@@ -70,6 +70,16 @@ sub handleFeed {
 		
 		return;
 	}
+	elsif (!Slim::Networking::Async::HTTP->hasSSL()) {
+		$cb->({
+			items => [{
+				name => string('PLUGIN_SPOTTY_MISSING_SSL'),
+				type => 'textarea'
+			}]
+		});
+		
+		return;
+	}
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 

@@ -39,6 +39,10 @@ my $helper;
 sub initPlugin {
 	my $class = shift;
 	
+	if ( !Slim::Networking::Async::HTTP->hasSSL() ) {
+		$log->error(string('PLUGIN_SPOTTY_MISSING_SSL'));
+	}
+	
 	$prefs->init({
 		country => 'US',
 		iconCode => \&_initIcon,

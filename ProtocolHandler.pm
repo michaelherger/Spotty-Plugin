@@ -50,30 +50,33 @@ sub explodePlaylist {
 sub getMetadataFor {
 	my ( $class, $client, $url, undef, $song ) = @_;
 	
+	my $meta = {
+		artist    => '',
+		album     => '',
+		title     => '',
+		duration  => 0,
+		cover     => IMG_TRACK,
+		icon      => IMG_TRACK,
+		bitrate   => 0,
+		type      => 'Ogg Vorbis (Spotify)',
+	};
+	
 	if ( !Plugins::Spotty::Plugin->hasCredentials() ) {
-		return {
-			artist    => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
-			album     => '',
-			title     => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED'),
-			duration  => 0,
-			cover     => IMG_TRACK,
-			icon      => IMG_TRACK,
-			bitrate   => 0,
-			type      => 'Ogg Vorbis (Spotify)',
-		}
+		$meta->{artist} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
+		$meta->{title} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
+		return $meta;
+	}
+	elsif ( !Slim::Networking::Async::HTTP->hasSSL() ) {
+		$meta->{artist} = cstring($client, 'PLUGIN_SPOTTY_MISSING_SSL');
+		$meta->{title} = cstring($client, 'PLUGIN_SPOTTY_MISSING_SSL');
+		return $meta;
 	}
 	elsif ($url =~ m|/connect\.|) {
-		return {
-			artist    => '',
-			album     => '',
-			title     => 'Spotify Connect',
-			duration  => 0,
-			cover     => IMG_TRACK,
-			icon      => IMG_TRACK,
-			bitrate   => 0,
-			type      => 'Ogg Vorbis (Spotify)',
-		}
+		$meta->{title} = 'Spotify Connect';
+		return $meta;
 	}
+	
+	$meta = undef;
 
 	if ( $song ||= $client->currentSongForUrl($url) ) {
 		# we store a copy of the metadata in the song object - no need to read from the disk cache
@@ -101,7 +104,6 @@ sub getMetadataFor {
 	$uri =~ s/\///g;
 	
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
-	my $meta;
 	
 	if ( my $cached = $spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
 		$meta = {
