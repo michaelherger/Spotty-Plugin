@@ -112,7 +112,7 @@ sub startHelper {
 
 	if ( my $helperPath = Plugins::Spotty::Plugin->getHelper() ) {
 		my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder();
-		$cacheFolder =~ s/default$/$accountId/; 
+		$cacheFolder =~ s/default$/$accountId/ if $accountId; 
 		
 		if ( !($helper && $helper->alive) ) {
 			my $command = sprintf('%s -c "%s" -n "%s (%s)" -a', 
