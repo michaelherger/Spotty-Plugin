@@ -34,7 +34,7 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	description  => 'PLUGIN_SPOTTY',
 } );
 
-my $helper;
+my ($helper, $helperVersion);
 
 sub initPlugin {
 	my $class = shift;
@@ -47,7 +47,7 @@ sub initPlugin {
 		country => 'US',
 		iconCode => \&_initIcon,
 	});
-
+	
 	$VERSION = $class->_pluginDataFor('version');
 	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
 
@@ -368,8 +368,9 @@ sub getHelper {
 			
 			$check = `$checkCmd 2>&1`;
 
-			if ( $check && $check =~ /^ok spotty v\d+/i ) {
+			if ( $check && $check =~ /^ok spotty (v[\d\.]+)/i ) {
 				$helper = $candidate;
+				$helperVersion = $1;
 				last;
 			}
 		}
@@ -383,7 +384,7 @@ sub getHelper {
 		}
 	}	
 
-	return $helper;
+	return wantarray ? ($helper, $helperVersion) : $helper;
 }
 
 

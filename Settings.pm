@@ -34,13 +34,13 @@ sub page {
 }
 
 sub prefs {
-	return ($prefs, qw(enableBrowseMode myAlbumsOnly));
+	return ($prefs, qw(enableBrowseMode myAlbumsOnly, iconCode));
 }
 
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
 	
-	my $helperPath = Plugins::Spotty::Plugin->getHelper();
+	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
 
 	# rename temporary authentication cache folder (if existing)
 	Plugins::Spotty::Plugin->renameCacheFolder(AUTHENTICATE);
@@ -79,6 +79,8 @@ sub handler {
 		if ( !$needsRestart && $paramRef->{pref_enableBrowseMode} . '' ne $prefs->get('enableBrowseMode') . '' ) {
 			$needsRestart = 1;
 		}
+		
+		$paramRef->{pref_iconCode} ||= Plugins::Spotty::Plugin->_initIcon();
 	}
 	
 	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::Plugin->hasCredentials()) ) {
@@ -102,6 +104,10 @@ sub handler {
 		$paramRef = Slim::Web::Settings::Server::Plugins->restartServer($paramRef, $needsRestart);
 	}
 	
+	$paramRef->{helperPath} = $helperPath;
+	$paramRef->{helperVersion} = $helperVersion || string('PLUGIN_SPOTTY_HELPER_ERROR');
+	$paramRef->{defaultIcon} = Plugins::Spotty::Plugin->_initIcon();
+
 	return $class->SUPER::handler($client, $paramRef);
 }
 

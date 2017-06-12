@@ -83,6 +83,10 @@ PLUGIN_SPOTTY_SELECT_ACCOUNT
 	RU	Выберите учетную запись
 	SV	Välj konto
 
+PLUGIN_SPOTTY_HELPER
+	DE	Spotty Helferanwendung
+	EN	Spotty Helper Application
+
 PLUGIN_SPOTTY_HELPER_MISSING
 	DE	Die Spotify Connect Helferanwendung fehlt
 	EN	Spotify Connect Helper application is missing 
@@ -100,13 +104,17 @@ PLUGIN_SPOTTY_ENABLE_BROWSING
 	EN	Enable Spotty menu
 
 PLUGIN_SPOTTY_ENABLE_BROWSING_DESC
-	DE	EXPERIMENTELL: Aktiviere die Spotty Menüs zur Auswahl von Spotify Inhalten. Dieses Menü kann dereinst Logitechs Spotify App ersetzen. Falls du es schon gut genug findest, dann kannst du das Spotify Plugin zur Integration mit mysqueezebox.com deaktivieren. Diese Einstellung braucht einen Logitech Media Server Neustart.
-	EN	EXPERIMENTAL: Enable Spotty menus to navigate Spotify content. This menu ultimately can replace the official Spotify app. If you're happy using it you could disable the Spotify plugin to get rid of the menu provided by mysqueezebox.com. Changing this preference requires a Logitech Media Server restart to take effect.
+	DE	Aktiviere die Spotty Menüs zur Auswahl von Spotify Inhalten. Dann kannst du das Spotify Plugin zur Integration mit mysqueezebox.com deaktivieren. Diese Einstellung braucht einen Logitech Media Server Neustart.
+	EN	Enable Spotty menus to navigate Spotify content. You could disable the Spotify plugin to get rid of the menu provided by mysqueezebox.com. Changing this preference requires a Logitech Media Server restart to take effect.
 	
-PLUGIN_SPOTTY_TRANSCODING_NAME
-	DE	🔇 Nicht verwenden! - Squeezebox $CLIENTID$
-	EN	🔇 Don't Touch! - Squeezebox $CLIENTID$ 
+#PLUGIN_SPOTTY_TRANSCODING_NAME
+#	DE	🔇 Nicht verwenden! - Squeezebox $CLIENTID$
+#	EN	🔇 Don't Touch! - Squeezebox $CLIENTID$ 
 	
+PLUGIN_SPOTTY_HELPER_ERROR
+	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten!
+	EN	There has been a problem running the Spotty helper application.	
+
 PLUGIN_SPOTTY_MISSING_HELPER
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Vermutlich wird diese auf ihrem System nicht unterstützt. Bitte wenden Sie sich an mich, unter Angabe der folgenden Plattform-Informationen:
 	EN	There has been a problem running the Spotty helper application. Most likely your operating system and/or platform is not supported. Please report the following details to me:
@@ -347,3 +355,9 @@ PLUGIN_SPOTTY_ERROR_429
 PLUGIN_SPOTTY_MISSING_SSL
 	DE	Spotty benötigt das Perl Modul IO::Socket::SSL! Ohne dieses Modul ist die Nutzung von Spotty NICHT möglich. Bitte benutze den Paket-Manager deines Betriebssystems um es zu installieren.
 	EN	Spotty requires the Perl module IO::Socket::SSL. You can NOT use Spotty without this module. Please use your operating system's package manager to install it.
+	
+PLUGIN_SPOTTY_CLIENT_ID
+	EN	Spotify Client ID
+
+PLUGIN_SPOTTY_CLIENT_ID_DESC
+	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀

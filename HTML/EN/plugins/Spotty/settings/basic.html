@@ -34,5 +34,13 @@
 		<input name="pref_myAlbumsOnly" id="pref_myAlbumsOnly" type="checkbox" [% IF prefs.pref_myAlbumsOnly %] checked [% END %]>
 		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
 	[% END; END %]
+	
+	[% WRAPPER setting title="PLUGIN_SPOTTY_HELPER" desc="" %]
+		[% helperPath %] ([% helperVersion %])
+	[% END %]
+	
+	[% WRAPPER setting title="PLUGIN_SPOTTY_CLIENT_ID" desc="PLUGIN_SPOTTY_CLIENT_ID_DESC" %]
+		<input name="pref_iconCode" id="pref_iconCode" type="text" value="[% IF prefs.pref_iconCode != defaultIcon; prefs.pref_iconCode; END %]" class="stdedit" size="40">
+	[% END %]
 
 [% PROCESS settings/footer.html %]

@@ -79,7 +79,7 @@ sub getToken {
 		# try to use client specific credentials
 		foreach ($prefs->client($self->client)->get('account'), undef) {
 			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token', 
-				Plugins::Spotty::Plugin->getHelper(), 
+				scalar Plugins::Spotty::Plugin->getHelper(), 
 				Plugins::Spotty::Plugin->cacheFolder($_),
 				$prefs->get('iconCode')
 			);
@@ -87,6 +87,7 @@ sub getToken {
 			my $response;
 	
 			eval {
+				main::DEBUGLOG && $log->is_debug && $log->debug("Trying to get access token: $cmd");
 				$response = `$cmd 2>&1`;
 				main::INFOLOG && $log->is_info && $log->info("Got response: $response");
 				$response = decode_json($response);
