@@ -921,6 +921,17 @@ sub _call {
 				elsif ( $cache_key ) {
 					if ( my $cache_control = $response->headers->header('Cache-Control') ) {
 						my ($ttl) = $cache_control =~ /max-age=(\d+)/;
+						
+						# cache some items even if max-age is zero. We're navigating them often
+						if ( !$ttl && $response->url =~ m|v1/users/([^\/]+?)/playlists/[A-Za-z0-9]{22}/tracks| ) {
+							if ( $1 eq 'spotify' ) {
+								$ttl = 3600;
+							}
+							elsif ( $1 ne $self->username ) {
+								$ttl = 300;
+							}
+						}
+						
 						$ttl ||= 60;		# XXX - we're going to always cache for a minute, as we often do follow up calls while navigating
 						
 						if ($ttl) {
