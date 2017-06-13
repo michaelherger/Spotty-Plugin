@@ -2,6 +2,7 @@ package Plugins::Spotty::OPML;
 
 use strict;
 
+use Scalar::Util qw(blessed);
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::API;
@@ -176,6 +177,7 @@ sub handleFeed {
 sub search {
 	my ($client, $cb, $params, $args) = @_;
 
+warn Data::Dump::dump($params, $args);
 	$params->{search} ||= $args->{query};
 	$params->{type}   ||= $args->{type};
 
@@ -732,51 +734,83 @@ sub playlistList {
 
 sub trackInfoMenu {
 	my ( $client, $url, $track, $remoteMeta ) = @_;
-	
-	return unless $client && $url =~ /^spotify:/;
-	
-	my $uri = $url;
-	$uri =~ s/\///g;
 
-	# Hmm... can't do an async lookup, as trackInfoMenu is run synchronously
-	my $track = Plugins::Spotty::Plugin->getAPIHandler($client)->trackCached(undef, $uri) || {};
+	return unless $client;
 	
 	my $items = [];
-	
-	push @$items, {
-		type => 'playlist',
-		on_select => 'play',
-		name => cstring($client, 'PLUGIN_SPOTTY_TITLE_RADIO'),
-		url  => \&trackRadio,
-		passthrough => [{ uri => $uri }],
-	},{
-		name => cstring($client, 'PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST'),
-		type => 'link',
-		url  => \&addTrackToPlaylist,
-		passthrough => [{ uri => $uri }],
-	};
-	
 	my $prefix = cstring($client, 'PLUGIN_SPOTTY_ON_SPOTIFY') . cstring($client, 'COLON') . ' ';
 
-	for my $artist ( @{ $track->{artists} || [] } ) {
-		push @$items, {
-			name => $prefix . $artist->{name},
-			type => $artist->{uri} ? 'link' : 'text',
-			url  => \&artist,
-			passthrough => [{
-				uri => $artist->{uri},
-			}]
-		};
-	}
+	# if we're dealing with a Spotify track we can use the URI to get more direct results
+	if ( $url =~ /^spotify:/ ) {
+		my $uri = $url;
+		$uri =~ s/\///g;
 	
-	push @$items, {
-		name => $prefix . $track->{album}->{name},
-		type => 'link',
-		url   => \&album,
-		passthrough => [{
-			uri => $track->{album}->{uri}
-		}]
-	} if $track->{album} && ref $track->{album} && $track->{album}->{uri};
+		# Hmm... can't do an async lookup, as trackInfoMenu is run synchronously
+		my $track = Plugins::Spotty::Plugin->getAPIHandler($client)->trackCached(undef, $uri) || {};
+		
+		push @$items, {
+			type => 'playlist',
+			on_select => 'play',
+			name => cstring($client, 'PLUGIN_SPOTTY_TITLE_RADIO'),
+			url  => \&trackRadio,
+			passthrough => [{ uri => $uri }],
+		},{
+			name => cstring($client, 'PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST'),
+			type => 'link',
+			url  => \&addTrackToPlaylist,
+			passthrough => [{ uri => $uri }],
+		};
+	
+		for my $artist ( @{ $track->{artists} || [] } ) {
+			push @$items, {
+				name => $prefix . $artist->{name},
+				type => $artist->{uri} ? 'link' : 'text',
+				url  => \&artist,
+				passthrough => [{
+					uri => $artist->{uri},
+				}]
+			};
+		}
+		
+		push @$items, {
+			name => $prefix . $track->{album}->{name},
+			type => 'link',
+			url   => \&album,
+			passthrough => [{
+				uri => $track->{album}->{uri}
+			}]
+		} if $track->{album} && ref $track->{album} && $track->{album}->{uri};
+	}
+	# if we're playing content from other than Spotify, provide a search
+	elsif (blessed $track) {
+		my $artist = $track->remote ? $remoteMeta->{artist} : $track->artistName;
+		my $album  = $track->remote ? $remoteMeta->{album}  : ( $track->album ? $track->album->name : undef );
+		my $title  = $track->remote ? $remoteMeta->{title}  : $track->title;
+
+		push @$items, {
+			name  => $prefix . $artist,
+			url   => \&search,
+			passthrough => [{
+				query => 'artist:"' . $artist . '"',
+			}]
+		} if $artist;
+
+		push @$items, {
+			name  => $prefix . $album,
+			url   => \&search,
+			passthrough => [{
+				query => 'album:"' . $album . '"',
+			}]
+		} if $album;
+
+		push @$items, {
+			name  => $prefix . $title,
+			url   => \&search,
+			passthrough => [{
+				query => 'track:"' . $title . '"',
+			}]
+		} if $title;
+	}
 
 	return $items;
 }
