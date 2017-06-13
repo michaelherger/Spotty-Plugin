@@ -24,7 +24,6 @@ use Plugins::Spotty::ProtocolHandler;
 use constant HELPER => 'spotty';
 use constant CONNECT_ENABLED => 0;
 
-# TODO - add init call to disable spt-flc transcoding by default (see S::W::S::S::FileTypes)
 my $prefs = preferences('plugin.spotty');
 my $credsCache;
 
@@ -47,6 +46,23 @@ sub initPlugin {
 		country => 'US',
 		iconCode => \&_initIcon,
 	});
+	
+	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
+	# this might be premature optimization, as ARM CPUs are getting more and more powerful...
+	if ( !main::ISWINDOWS && !main::ISMAC 
+		&& $class->{osDetails}->{osArch} !~ /(?:i[3-6]|x)86/i 
+	) {
+		$prefs->migrate(1, sub {
+			my $serverPrefs = preferences('server');
+			my $disabledFormats = $serverPrefs->get('disabledformats');
+	
+			if (!grep /^spt/, @$disabledFormats) {
+				# XXX - ugly... but there's no API to disable formats
+				push @$disabledFormats, "spt-flc-*-*";
+				$serverPrefs->set('disabledformats', $disabledFormats);
+			}	
+		});
+	}
 	
 	$VERSION = $class->_pluginDataFor('version');
 	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
