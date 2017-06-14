@@ -26,23 +26,25 @@ my $prefs = preferences('plugin.spotty');
 my $log = logger('network.asynchttp');
 
 my %topuri = (
-	AT => 'spotify:user:spotify:playlist:1f9qd5qJzIpYWoQm7Ue2uV',
-	AU => 'spotify:user:spotify:playlist:6lQMloCb0llJywSRoj3jAO',
-	BE => 'spotify:user:spotify:playlist:13eazhZmMdf628WMqru34A',
-	CH => 'spotify:user:spotify:playlist:1pDTi8rVKDQKGMb2NlJmDl',
-	DE => 'spotify:user:spotify:playlist:4XEnSf75NmJPBX1lTmMiv0',
-	DK => 'spotify:user:spotify:playlist:2nQqWLiGEXLybDLu15ZmVx',
-	ES => 'spotify:user:spotify:playlist:4z0aU3aX74LH6uWHTygTfV',
-	FI => 'spotify:user:spotify:playlist:6FZEbmeeb9aGiqSLAmLFJW',
-	FR => 'spotify:user:spotify:playlist:6FNC5Kuzhyt35pXtyqF6xq',
-	GB => 'spotify:user:spotify:playlist:7s8NU4MWP9GOSEXVwjcum4',
-	NL => 'spotify:user:spotify:playlist:7Jus9jsdpexXTXh2RVv8bZ',
-	NO => 'spotify:user:spotify:playlist:1BnqqOPMu8w08F1XpOzlwR',
-	NZ => 'spotify:user:spotify:playlist:1TRzxr8LVu3OxdoMlabuNG',
-	SE => 'spotify:user:spotify:playlist:0Ks7MCeAZeYlBOmSLHmZ2o',
-	US => 'spotify:user:spotify:playlist:5nPXGgfCxfRpJHGRY4sovK',
+	AT => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbKNHh6NIXu36',
+	AU => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbJPcfkRz0wJ0',
+	BE => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbJNSeeHswcKB',
+	CA => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbKj23U1GF4IR',
+	CH => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbJiyhoAPEfMK',
+	DE => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbJiZcmkrIHGU',
+	DK => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbL3J0k32lWnN',
+	ES => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbNFJfN1Vw8d9',
+	FI => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbMxcczTSoGwZ',
+	FR => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbIPWwFssbupI',
+	GB => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbLnolsZ8PSNw',
+	IT => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbIQnj7RRhdSX',
+	NL => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbKCF6dqVpDkS',
+	NO => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbJvfa0Yxg7E7',
+	NZ => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbM8SIrkERIYl',
+	SE => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbLoATJ81JYXz',
+	US => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbLRQDuF5jeBp',
 	
-	XX => 'spotify:user:spotify:playlist:4hOKQuZbraPDIfaGbM3lKI',	# fallback "Top 100 on Spotify"
+	XX => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbMDoHDwVN2tF',	# fallback "Top 100 on Spotify"
 );
 
 sub init {

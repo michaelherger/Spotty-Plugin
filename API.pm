@@ -924,7 +924,7 @@ sub _call {
 						
 						# cache some items even if max-age is zero. We're navigating them often
 						if ( !$ttl && $response->url =~ m|v1/users/([^\/]+?)/playlists/[A-Za-z0-9]{22}/tracks| ) {
-							if ( $1 eq 'spotify' ) {
+							if ( $1 eq 'spotify' || $1 eq 'spotifycharts' ) {
 								$ttl = 3600;
 							}
 							elsif ( $1 ne $self->username ) {
