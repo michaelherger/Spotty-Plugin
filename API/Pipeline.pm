@@ -55,7 +55,7 @@ sub get {
 		$self->spottyAPI->_call($self->method, sub {
 			my ($count, $next) = $self->_extract(0, shift);
 			
-	#		warn Data::Dump::dump($count, $self->limit, SPOTIFY_LIMIT, $next);
+#			warn Data::Dump::dump($count, $self->params->{limit}, $self->limit, SPOTIFY_LIMIT, $next);
 			# no need to run more requests if there's no more than the received results
 			if ( $count <= $self->params->{limit} || $self->limit <= $self->params->{limit} ) {
 				$self->_getDone();
@@ -63,8 +63,13 @@ sub get {
 			}
 			# some calls are paging by ID ("after=abc123") - we have to run them serially
 			elsif ( $next && $next !~ /\boffset=/ && $next =~ /\bafter=([a-zA-Z0-9]{22})\b/ ) {
-				$self->_followAfter($count, $1);
+				$self->_followAfter($1);
 			}
+			# some calls are paging by timestamp ("before=1234567890123") - we have to run them serially
+# XXX - used by recentlyPlayed only
+#			elsif ( $next && $next !~ /\boffset=/ && $next =~ /\bbefore=([0-9]{13,})\b/ ) {
+#				$self->_followBefore($1);
+#			}
 			# most calls fortunately can page by using an offset - we can run them in parallel
 			else {
 				$self->_followOffset($count);
@@ -99,13 +104,13 @@ sub _iterateChunks {
 }
 
 sub _followAfter {
-	my ($self, $count, $id) = @_;
+	my ($self, $id) = @_;
 	
 	$self->spottyAPI->_call($self->method, sub {
 		my ($count, $next) = $self->_extract($id, shift);
 		
 		if ( $next && $next !~ /\boffset=/ && $next =~ /\bafter=([a-zA-Z0-9]{22})\b/ ) {
-			$self->_followAfter($count, $1);
+			$self->_followAfter($1);
 		}
 		else {
 			$self->_getDone();
@@ -115,6 +120,27 @@ sub _followAfter {
 		after => $id,
 	})
 }
+
+=pod
+# used by recentlyPlayed only
+sub _followBefore {
+	my ($self, $id) = @_;
+	
+	$self->spottyAPI->_call($self->method, sub {
+		my ($count, $next) = $self->_extract($id, shift);
+		
+		if ( $next && $next !~ /\boffset=/ && $next =~ /\bbefore=([0-9]{13,})\b/ ) {
+			$self->_followBefore($1);
+		}
+		else {
+			$self->_getDone();
+		}
+	}, GET => {
+		%{$self->params},
+		before => $id,
+	});
+}
+=cut
 
 sub _followOffset {
 	my ($self, $count) = @_;

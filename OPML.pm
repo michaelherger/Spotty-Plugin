@@ -617,6 +617,31 @@ sub category {
 	}, $params->{id} || $args->{id} );
 }
 
+=pod
+sub recentlyPlayed {
+	my ($client, $cb, $params, $args) = @_;
+	
+	Plugins::Spotty::Plugin->getAPIHandler($client)->recentlyPlayed(sub {
+		my ($items) = @_;
+		
+		foreach ( @{ $items, [] }) {
+			if ($_->{type} eq 'playlist') {
+				$_ = playlistList($client, [$_])->[0];
+			}
+			elsif ($_->{type} eq 'track') {
+				$_ = trackList($client, [$_])->[0];
+			}
+			elsif ($_->{type} eq 'album') {
+				$_ = albumList($client, [$_])->[0];
+				warn Data::Dump::dump($_);
+			}
+		}
+
+		$cb->({ items => $items });
+	});
+}
+=cut
+
 sub trackList {
 	my ( $client, $tracks, $args ) = @_;
 	
