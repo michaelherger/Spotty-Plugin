@@ -50,7 +50,7 @@ sub initPlugin {
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
 	# this might be premature optimization, as ARM CPUs are getting more and more powerful...
 	if ( !main::ISWINDOWS && !main::ISMAC 
-		&& $class->{osDetails}->{osArch} !~ /(?:i[3-6]|x)86/i 
+		&& Slim::Utils::OSDetect::details()->{osArch} !~ /(?:i[3-6]|x)86/i 
 	) {
 		$prefs->migrate(1, sub {
 			my $serverPrefs = preferences('server');

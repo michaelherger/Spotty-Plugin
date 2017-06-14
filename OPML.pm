@@ -177,7 +177,6 @@ sub handleFeed {
 sub search {
 	my ($client, $cb, $params, $args) = @_;
 
-warn Data::Dump::dump($params, $args);
 	$params->{search} ||= $args->{query};
 	$params->{type}   ||= $args->{type};
 
