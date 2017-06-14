@@ -72,12 +72,6 @@ sub initPlugin {
 		require Plugins::Spotty::SettingsAuth;
 		Plugins::Spotty::Settings->new();
 	}
-
-	# Track Info item
-	Slim::Menu::TrackInfo->registerInfoProvider( spotty => (
-		after => 'top',
-		func  => \&Plugins::Spotty::OPML::trackInfoMenu,
-	) );
 	
 	if ( $prefs->get('enableBrowseMode') ) {
 		$class->SUPER::initPlugin(

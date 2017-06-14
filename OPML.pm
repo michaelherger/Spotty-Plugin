@@ -46,6 +46,21 @@ my %topuri = (
 );
 
 sub init {
+	Slim::Menu::TrackInfo->registerInfoProvider( spotty => (
+		after => 'top',
+		func  => \&trackInfoMenu,
+	) );
+
+	Slim::Menu::ArtistInfo->registerInfoProvider( spotty => (
+		after => 'top',
+		func  => \&artistInfoMenu,
+	) );
+
+	Slim::Menu::AlbumInfo->registerInfoProvider( spotty => (
+		after => 'top',
+		func  => \&albumInfoMenu,
+	) );
+
 	Slim::Menu::GlobalSearch->registerInfoProvider( spotty => (
 		func => sub {
 			my ( $client, $tags ) = @_;
@@ -730,23 +745,67 @@ sub playlistList {
 	return $items;
 }
 
-
 sub trackInfoMenu {
 	my ( $client, $url, $track, $remoteMeta ) = @_;
-
-	return unless $client;
 	
-	my $items = [];
-	my $prefix = cstring($client, 'PLUGIN_SPOTTY_ON_SPOTIFY') . cstring($client, 'COLON') . ' ';
+	my $args;
 
 	# if we're dealing with a Spotify track we can use the URI to get more direct results
 	if ( $url =~ /^spotify:/ ) {
 		my $uri = $url;
 		$uri =~ s/\///g;
-	
+
 		# Hmm... can't do an async lookup, as trackInfoMenu is run synchronously
 		my $track = Plugins::Spotty::Plugin->getAPIHandler($client)->trackCached(undef, $uri) || {};
 		
+		$args = {
+			artists => $track->{artists},
+			album   => $track->{album},
+			uri     => $uri,
+		};
+	}
+	else {
+		$args = {
+			artist => $track->remote ? $remoteMeta->{artist} : $track->artistName,
+			album  => $track->remote ? $remoteMeta->{album}  : ( $track->album ? $track->album->name : undef ),
+			title  => $track->remote ? $remoteMeta->{title}  : $track->title,
+		};
+	}
+
+	return _objInfoMenu($client, $args);
+}
+
+sub artistInfoMenu {
+	my ($client, $url, $artist, $remoteMeta) = @_;
+	
+	$remoteMeta ||= {};
+	
+	return _objInfoMenu($client, {
+		artist => $artist->name || $remoteMeta->{artist},
+	});
+}
+
+sub albumInfoMenu {
+	my ($client, $url, $album, $remoteMeta) = @_;
+
+	$remoteMeta ||= {};
+	
+	return _objInfoMenu($client, {
+		album => $album->title || $remoteMeta->{album},
+		artists => [ map { $_->name } $album->artistsForRoles('ARTIST'), $album->artistsForRoles('ALBUMARTIST') ],
+	});
+}
+
+sub _objInfoMenu {
+	my ( $client, $args ) = @_;
+
+	return unless $client && ref $args;
+	
+	my $items = [];
+	my $prefix = cstring($client, 'PLUGIN_SPOTTY_ON_SPOTIFY') . cstring($client, 'COLON') . ' ';
+
+	# if we're dealing with a Spotify item we can use the URI to get more direct results
+	if ( my $uri = $args->{uri} ) {
 		push @$items, {
 			type => 'playlist',
 			on_select => 'play',
@@ -758,9 +817,9 @@ sub trackInfoMenu {
 			type => 'link',
 			url  => \&addTrackToPlaylist,
 			passthrough => [{ uri => $uri }],
-		};
+		} if $uri =~ /spotify:track/;
 	
-		for my $artist ( @{ $track->{artists} || [] } ) {
+		for my $artist ( @{ $args->{artists} || [] } ) {
 			push @$items, {
 				name => $prefix . $artist->{name},
 				type => $artist->{uri} ? 'link' : 'text',
@@ -772,27 +831,32 @@ sub trackInfoMenu {
 		}
 		
 		push @$items, {
-			name => $prefix . $track->{album}->{name},
+			name => $prefix . $args->{album}->{name},
 			type => 'link',
 			url   => \&album,
 			passthrough => [{
-				uri => $track->{album}->{uri}
+				uri => $args->{album}->{uri}
 			}]
-		} if $track->{album} && ref $track->{album} && $track->{album}->{uri};
+		} if $args->{album} && ref $args->{album} && $args->{album}->{uri};
 	}
 	# if we're playing content from other than Spotify, provide a search
-	elsif (blessed $track) {
-		my $artist = $track->remote ? $remoteMeta->{artist} : $track->artistName;
-		my $album  = $track->remote ? $remoteMeta->{album}  : ( $track->album ? $track->album->name : undef );
-		my $title  = $track->remote ? $remoteMeta->{title}  : $track->title;
+	else {
+		my $artist = $args->{artist};
+		my $artists = $args->{artists} || [];
+		my $album  = $args->{album};
+		my $title  = $args->{title};
+		
+		push @$artists, $artist if defined $artist && !grep $artist, @$artists;
 
-		push @$items, {
-			name  => $prefix . $artist,
-			url   => \&search,
-			passthrough => [{
-				query => 'artist:"' . $artist . '"',
-			}]
-		} if $artist;
+		foreach my $artist (@$artists) {
+			push @$items, {
+				name  => $prefix . $artist,
+				url   => \&search,
+				passthrough => [{
+					query => 'artist:"' . $artist . '"',
+				}]
+			};
+		}
 
 		push @$items, {
 			name  => $prefix . $album,
