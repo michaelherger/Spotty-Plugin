@@ -7,6 +7,7 @@ use Scalar::Util qw(blessed);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
+#use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(cstring);
 
 use Plugins::Spotty::Plugin;
@@ -22,6 +23,12 @@ sub contentType { 'spt' }
 sub canSeek { Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 }
 sub canTranscodeSeek { Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 }
 
+#sub bufferThreshold {
+#	my ($class, $client, $url) = @_;
+#	warn Data::Dump::dump($url); 
+#	40 * ( preferences('server')->get('bufferSecs') || 3 ) 
+#}
+
 sub getSeekData {
 	my ($class, $client, $song, $newtime) = @_;
 	return { timeOffset => $newtime };
@@ -36,6 +43,11 @@ sub canDirectStream { 0 }
 
 sub explodePlaylist {
 	my ( $class, $client, $uri, $cb ) = @_;
+	
+#	if ( $uri eq 'spotify://connect.spt' ) {
+#		$cb->([$uri]);
+#		return;
+#	}
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->trackURIsFromURI(sub {
 		$cb->([ 

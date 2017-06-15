@@ -2,7 +2,7 @@ package Plugins::Spotty::Connect;
 
 use strict;
 
-#use Slim::Utils::Prefs;
+use Slim::Utils::Prefs;
 use Slim::Utils::Timers;
 
 sub init {
@@ -22,8 +22,9 @@ sub init {
 																	my $usage = $client->usage;
 													
 																	if ( $usage && $client->can('skipAhead') ) {
-																		Slim::Utils::Timers::killTimers($client, \&_skipAhead);
-																		Slim::Utils::Timers::setHighTimer($client, Time::HiRes::time() + 1, \&_skipAhead, $usage);
+														#				Slim::Utils::Timers::killTimers($client, \&_skipAhead);
+														#				Slim::Utils::Timers::setHighTimer($client, Time::HiRes::time() + 1, \&_skipAhead, $usage);
+																		$client->flush();
 																	}
 
 																	$request->setStatusDone();
