@@ -107,6 +107,18 @@ PLUGIN_SPOTTY_ENABLE_BROWSING_DESC
 	DE	Aktiviere die Spotty Menüs zur Auswahl von Spotify Inhalten. Dann kannst du das Spotify Plugin zur Integration mit mysqueezebox.com deaktivieren. Diese Einstellung braucht einen Logitech Media Server Neustart.
 	EN	Enable Spotty menus to navigate Spotify content. You could disable the Spotify plugin to get rid of the menu provided by mysqueezebox.com. Changing this preference requires a Logitech Media Server restart to take effect.
 	
+PLUGIN_SPOTTY_CACHE
+	DE	Audio Zwischenspeicher
+	EN	Audio Cache Size
+
+PLUGIN_SPOTTY_CACHE_DESC
+	DE	Aktiviere den Zwischenspeicher für Tracks. Dies kann den Netzwerkverkehr auf Kosten der Festplattennutzung reduzieren, falls ein Lied wiederholt abgespielt wird. 100MB reichen für ca. 10-15 Lieder. Ich empfehle den Zwischenspeicher nur auf Computern zu verwenden, welche eine Harddisk oder SSD verwenden, nicht aber auf Speicherkarte oder USB Stick.
+	EN	Enable audio data caching. This can help to reduce network traffic at the cost of disk usage, if you repeatedly play the same tracks. 100MB can cover 10-15 tracks. I recommend not to use caching except on PC class hardware, where the cache is stored on a disk, rather than a memory card or USB stick.
+
+PLUGIN_SPOTTY_MB
+	EN	Megabytes
+	FR	Mégaoctets
+
 #PLUGIN_SPOTTY_TRANSCODING_NAME
 #	DE	🔇 Nicht verwenden! - Squeezebox $CLIENTID$
 #	EN	🔇 Don't Touch! - Squeezebox $CLIENTID$ 

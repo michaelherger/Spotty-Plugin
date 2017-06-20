@@ -8,6 +8,7 @@ use vars qw($VERSION);
 
 use Digest::MD5 qw(md5_hex);
 use File::Basename;
+use File::Next;
 use File::Path qw(mkpath rmtree);
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
@@ -45,7 +46,13 @@ sub initPlugin {
 	$prefs->init({
 		country => 'US',
 		iconCode => \&_initIcon,
+		audioCacheSize => 0,		# number of MB to cache
 	});
+	
+	$prefs->setChange( sub {
+		__PACKAGE__->purgeAudioCache();
+		__PACKAGE__->updateTranscodingTable();
+	}, 'audioCacheSize');
 	
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
 	# this might be premature optimization, as ARM CPUs are getting more and more powerful...
@@ -90,6 +97,7 @@ sub initPlugin {
 	}
 
 	$class->purgeCache();
+	$class->purgeAudioCache();
 }
 
 sub postinitPlugin {
@@ -98,19 +106,7 @@ sub postinitPlugin {
 	# we're going to hijack the Spotify URI schema
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
 
-	# modify the transcoding helper table to inject our cache folder
-	my $cacheDir = $class->cacheFolder();
-	
-	my $helper = $class->getHelper();
-	$helper = basename($helper) if $helper;
-	$helper = '' if $helper eq 'spotty';
-
-	foreach ( keys %Slim::Player::TranscodingHelper::commandTable ) {
-		if ( $_ =~ /^spt-/ && $Slim::Player::TranscodingHelper::commandTable{$_} =~ /single-track/ ) {
-			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$CACHE\$/$cacheDir/g;
-			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
-		}
-	}
+	$class->updateTranscodingTable();
 	
 	if (CONNECT_ENABLED) {
 		require Plugins::Spotty::Connect;
@@ -123,6 +119,26 @@ sub postinitPlugin {
 	{
 		require Plugins::Spotty::DontStopTheMusic;
 		Plugins::Spotty::DontStopTheMusic->init();
+	}
+}
+
+sub updateTranscodingTable {
+	my $class = shift || __PACKAGE__;
+	
+	# modify the transcoding helper table to inject our cache folder
+	my $cacheDir = $class->cacheFolder();
+	
+	my $helper = $class->getHelper();
+	$helper = basename($helper) if $helper;
+	$helper = '' if $helper eq 'spotty';
+
+	foreach ( keys %Slim::Player::TranscodingHelper::commandTable ) {
+		if ( $_ =~ /^spt-/ && $Slim::Player::TranscodingHelper::commandTable{$_} =~ /single-track/ ) {
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$CACHE\$/$cacheDir/g;
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/disable-audio-cache/enable-audio-cache/g if $prefs->get('audioCacheSize');
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !$prefs->get('audioCacheSize');
+		}
 	}
 }
 
@@ -204,7 +220,7 @@ sub cacheFolders {
 	# if we're coming from an old installation, migrate the credentials to the new path
 	if ( -f catfile($cacheDir, 'credentials.json') && -e catdir($cacheDir, 'files') && !-e (my $defaultDir = catdir($cacheDir, 'default')) ) {
 		$log->warn("Trying to migrate old credentials data.");
-		# we don't use the file cache
+		# we don't migrate the file cache
 		rmtree catdir($cacheDir, 'files');
 		mkpath catdir($defaultDir, 'files');
 		
@@ -275,6 +291,64 @@ sub deleteCacheFolder {
 
 sub purgeCache {
 	$_[0]->cacheFolders('purge');
+}
+
+sub purgeAudioCache {
+	Slim::Utils::Timers::killTimers(0, \&purgeAudioCache);
+
+	main::INFOLOG && $log->is_info && $log->info("Starting audio cache cleanup...");
+	
+	my $files = File::Next::files( catdir(__PACKAGE__->cacheFolder(), 'files') );
+	my @files;
+	my $totalSize = 0;
+	
+	while ( defined ( my $file = $files->() ) ) {
+		# give the server some room to breath...
+		if (scalar @files % 10 == 0) {
+			main::idleStreams();
+		}
+
+		my @stat = stat($file);
+		
+		# keep track of file path, size and last access/modification date
+		push @files, [$file, $stat[7], $stat[8] || $stat[9]];
+		$totalSize += $stat[7];
+	}
+
+	@files = sort { $a->[2] <=> $b->[2] } @files;
+
+	my $maxCacheSize = $prefs->get('audioCacheSize') * 1024 * 1024;
+	
+	main::INFOLOG && $log->is_info && $log->info(sprintf("Max. cache size is: %iMB, current cache size is %iMB", $prefs->get('audioCacheSize'), $totalSize / (1024*1024)));
+	
+	foreach my $file ( @files ) {
+		main::idleStreams();
+
+		last if $totalSize < $maxCacheSize;
+		
+		unlink $file->[0];
+		$totalSize -= $file->[1];
+		
+		my $dir = dirname($file->[0]);
+		
+		opendir DIR, $dir or next;
+		
+		if ( !scalar File::Spec->no_upwards(readdir DIR) ) {
+			close DIR;
+			rmdir $dir;
+		}
+		else {
+			close DIR;
+		}
+	}
+
+	if ($maxCacheSize) {
+		# clean up every 15 minutes with small caches, slower with larger caches
+#		my $delay = 
+		Slim::Utils::Timers::setTimer(0, time() + 3600, \&purgeAudioCache);
+	}
+
+	main::INFOLOG && $log->is_info && $log->info("Audio cache cleanup done!");
 }
 
 sub hasCredentials {

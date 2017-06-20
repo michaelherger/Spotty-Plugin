@@ -35,6 +35,10 @@
 		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
 	[% END; END %]
 	
+	[% WRAPPER setting title="PLUGIN_SPOTTY_CACHE" desc="PLUGIN_SPOTTY_CACHE_DESC" %]
+		<input name="pref_audioCacheSize" id="pref_audioCacheSize" type="text" value="[% prefs.pref_audioCacheSize %]" class="stdedit sliderInput_0_10000_100" size="5"> [% "PLUGIN_SPOTTY_MB" | string %]
+	[% END %]
+	
 	[% WRAPPER setting title="PLUGIN_SPOTTY_HELPER" desc="" %]
 		[% helperPath %] ([% helperVersion %])
 	[% END %]
