@@ -197,7 +197,8 @@ sub search {
 	$params->{search} ||= $args->{query};
 	$params->{type}   ||= $args->{type};
 
-	my $type = $params->{type};
+	my $type = $params->{type} || '';
+	$type = '' if $type eq 'context';
 	
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 	
@@ -244,7 +245,7 @@ sub search {
 			
 			push @items, @{trackList($client, $results)};
 			
-			addRecentSearch($params->{search}) unless $args->{recent};
+			addRecentSearch($params->{search}) unless $args->{recent} || $params->{type} eq 'context';
 
 			splice(@items, $params->{quantity}) if defined $params->{index} && !$params->{index} && $params->{quantity} < scalar @items;
 		}
@@ -881,6 +882,7 @@ sub _objInfoMenu {
 				url   => \&search,
 				passthrough => [{
 					query => 'artist:"' . $artist . '"',
+					type  => 'context',
 				}]
 			};
 		}
@@ -890,6 +892,7 @@ sub _objInfoMenu {
 			url   => \&search,
 			passthrough => [{
 				query => 'album:"' . $album . '"',
+				type  => 'context',
 			}]
 		} if $album;
 
@@ -898,6 +901,7 @@ sub _objInfoMenu {
 			url   => \&search,
 			passthrough => [{
 				query => 'track:"' . $title . '"',
+				type  => 'context',
 			}]
 		} if $title;
 	}
