@@ -36,6 +36,11 @@ sub getSeekData {
 
 sub formatOverride { 
 	my ($class, $song) = @_;
+	
+	# check if we want/need to purge the audio cache
+	# this needs to be done from whatever code being run once per track
+	Plugins::Spotty::Plugin->purgeAudioCacheAfterXTracks();
+	
 	return ($song->streamUrl =~ m|/connect\.| || $song->track->url =~ m|/connect\.|) ? 'sptc' : 'spt';
 }
 

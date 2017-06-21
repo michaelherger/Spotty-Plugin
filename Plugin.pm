@@ -24,6 +24,8 @@ use Plugins::Spotty::ProtocolHandler;
 
 use constant HELPER => 'spotty';
 use constant CONNECT_ENABLED => 0;
+use constant CACHE_PURGE_INTERVAL => 86400;
+use constant CACHE_PURGE_INTERVAL_COUNT => 20;
 
 my $prefs = preferences('plugin.spotty');
 my $credsCache;
@@ -47,6 +49,7 @@ sub initPlugin {
 		country => 'US',
 		iconCode => \&_initIcon,
 		audioCacheSize => 0,		# number of MB to cache
+		tracksSincePurge => 0,
 	});
 	
 	$prefs->setChange( sub {
@@ -293,6 +296,21 @@ sub purgeCache {
 	$_[0]->cacheFolders('purge');
 }
 
+sub purgeAudioCacheAfterXTracks {
+	my ($class) = @_;
+	
+	my $tracksSincePurge = $prefs->get('tracksSincePurge');
+	$prefs->set('tracksSincePurge', ++$tracksSincePurge);
+
+	main::INFOLOG && $log->is_info && $log->info("Played $tracksSincePurge song(s) since last audio cache purge.");
+
+	if ( $tracksSincePurge >= CACHE_PURGE_INTERVAL_COUNT ) {
+		# delay the purging until the track has buffered etc.
+		Slim::Utils::Timers::killTimers(0, \&purgeAudioCache);
+		Slim::Utils::Timers::setTimer(0, time() + 15, \&purgeAudioCache);
+	}		
+}
+
 sub purgeAudioCache {
 	Slim::Utils::Timers::killTimers(0, \&purgeAudioCache);
 
@@ -304,9 +322,7 @@ sub purgeAudioCache {
 	
 	while ( defined ( my $file = $files->() ) ) {
 		# give the server some room to breath...
-		if (scalar @files % 10 == 0) {
-			main::idleStreams();
-		}
+		main::idleStreams();
 
 		my @stat = stat($file);
 		
@@ -320,6 +336,9 @@ sub purgeAudioCache {
 	my $maxCacheSize = $prefs->get('audioCacheSize') * 1024 * 1024;
 	
 	main::INFOLOG && $log->is_info && $log->info(sprintf("Max. cache size is: %iMB, current cache size is %iMB", $prefs->get('audioCacheSize'), $totalSize / (1024*1024)));
+	
+	# we're going to reduce the cache size to get some slack before exceeding the cache size
+	$maxCacheSize *= 0.8;
 	
 	foreach my $file ( @files ) {
 		main::idleStreams();
@@ -342,11 +361,12 @@ sub purgeAudioCache {
 		}
 	}
 
+	# only purge the audio cache if it's enabled
 	if ($maxCacheSize) {
-		# clean up every 15 minutes with small caches, slower with larger caches
-#		my $delay = 
-		Slim::Utils::Timers::setTimer(0, time() + 3600, \&purgeAudioCache);
+		Slim::Utils::Timers::setTimer(0, time() + CACHE_PURGE_INTERVAL, \&purgeAudioCache);
 	}
+
+	$prefs->set('tracksSincePurge', 0);
 
 	main::INFOLOG && $log->is_info && $log->info("Audio cache cleanup done!");
 }
