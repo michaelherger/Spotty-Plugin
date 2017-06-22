@@ -46,6 +46,9 @@ sub formatOverride {
 
 sub canDirectStream { 0 }
 
+# P = Chosen by the user
+sub audioScrobblerSource { 'P' }
+
 sub explodePlaylist {
 	my ( $class, $client, $uri, $cb ) = @_;
 	

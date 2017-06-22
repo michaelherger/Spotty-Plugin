@@ -654,9 +654,6 @@ sub trackList {
 	
 	my $count = 0;
 	for my $track ( @{$tracks} ) {
-		# 2 different formats of track data, grr
-		# First form is used for starred, album track lists
-		# Second form is used for track search results
 		if ( $track->{uri} ) {
 			my $title  = $show_numbers ? $track->{track_number} . '. ' . $track->{name} : $track->{name};
 			my $artist = join( ', ', map { $_->{name} } @{ $track->{artists} } );
