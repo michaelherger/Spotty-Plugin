@@ -513,15 +513,23 @@ sub _gotArtistData {
 	my $artistURI = $artist->{uri};
 	my $items = [];
 	
-	# Split albums into compilations (albums with a different primary artist name) and regular albums
+	# Split albums into compilations (albums with a different primary artist name), singles, and regular albums
 	# XXX Need a better way to determine album type. Unfortunately album->{album_type} doesn't work
-	my $albums = albumList($client, [ grep { $_->{artist} eq $artist->{name} } @{ $artistInfo->{albums} } ]);
-	my $comps  = albumList($client, [ grep { $_->{artist} ne $artist->{name} } @{ $artistInfo->{albums} } ]);
+	my $albums = albumList($client, [ grep { $_->{album_type} ne 'single' && $_->{artist} eq $artist->{name} } @{ $artistInfo->{albums} } ]);
+	my $singles = albumList($client, [ grep { $_->{album_type} eq 'single' } @{ $artistInfo->{albums} } ]);
+	my $comps  = albumList($client, [ grep { $_->{album_type} ne 'single' && $_->{artist} ne $artist->{name} } @{ $artistInfo->{albums} } ]);
 	
 	if ( scalar @$albums ) {		
 		push @$items, {
 			name  => cstring($client, 'ALBUMS'),
 			items => $albums,
+		};
+	}
+	
+	if ( scalar @$singles ) {		
+		push @$items, {
+			name  => cstring($client, 'PLUGIN_SPOTTY_SINGLES'),
+			items => $singles,
 		};
 	}
 	

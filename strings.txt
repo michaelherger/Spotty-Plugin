@@ -216,6 +216,21 @@ PLUGIN_SPOTTY_COMPILATIONS
 	SV	Samlingar
 	ZH_CN	合辑
 
+PLUGIN_SPOTTY_SINGLES
+	CS	Singly a EP
+	DA	Singler & EP'er
+	DE	Singles & EPs
+	EN	Singles & EPs
+	ES	Singles y EPs
+	FI	Singlet ja EP-levyt
+	FR	Single et EP
+	IT	Single/EP
+	NL	Singles & EP's
+	NO	Singler og EP-er
+	PL	Single i EP
+	RU	Синглы и EP
+	SV	Singlar och EP-skivor
+
 PLUGIN_SPOTTY_TOP_TRACKS
 	CS	Nejlepší stopy
 	DA	Mest populære numre
