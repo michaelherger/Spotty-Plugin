@@ -269,6 +269,7 @@ sub search {
 	}, {
 		query => $params->{search},
 		type  => $type || 'track',
+		limit => 50,
 	});
 }
 
