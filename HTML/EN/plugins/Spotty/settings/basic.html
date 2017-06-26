@@ -25,12 +25,12 @@
 		<input name="addAccount" type=submit value="[% "PLUGIN_SPOTTY_ADD_ACCOUNT" | string %]" class="stdclick" />
 	[% END %]
 	
-	[% WRAPPER setting title="PLUGIN_SPOTTY_ENABLE_BROWSING" desc="" %]
+<!-- 	[% WRAPPER setting title="PLUGIN_SPOTTY_ENABLE_BROWSING" desc="" %]
 		<input name="pref_enableBrowseMode" id="pref_enableBrowseMode" type="checkbox" [% IF prefs.pref_enableBrowseMode %] checked [% END %]>
 		<label for="pref_enableBrowseMode">[% "PLUGIN_SPOTTY_ENABLE_BROWSING_DESC" | string %]</label>
-	[% END %]
-	
-	[% IF Prefs.preferences('plugin.spotty').get('enableBrowseMode'); WRAPPER setting title="" %]
+	[% END %] -->
+
+	[% IF 1 || Prefs.preferences('plugin.spotty').get('enableBrowseMode'); WRAPPER setting title="" %]
 		<input name="pref_myAlbumsOnly" id="pref_myAlbumsOnly" type="checkbox" [% IF prefs.pref_myAlbumsOnly %] checked [% END %]>
 		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
 	[% END; END %]

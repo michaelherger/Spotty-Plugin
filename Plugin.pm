@@ -83,7 +83,7 @@ sub initPlugin {
 		Plugins::Spotty::Settings->new();
 	}
 	
-	if ( $prefs->get('enableBrowseMode') ) {
+#	if ( $prefs->get('enableBrowseMode') ) {
 		$class->SUPER::initPlugin(
 			feed   => \&Plugins::Spotty::OPML::handleFeed,
 			tag    => 'spotty',
@@ -93,7 +93,7 @@ sub initPlugin {
 		);
 		
 		Plugins::Spotty::OPML->init();
-	}
+#	}
 
 	if ( Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') < 0 ) {
 		$log->error('Please update to Logitech Media Server 7.9.1 if you want to use seeking in Spotify tracks.');

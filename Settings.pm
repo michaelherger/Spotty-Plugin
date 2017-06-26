@@ -34,7 +34,7 @@ sub page {
 }
 
 sub prefs {
-	return ($prefs, qw(enableBrowseMode myAlbumsOnly audioCacheSize iconCode));
+	return ($prefs, qw(myAlbumsOnly audioCacheSize iconCode));
 }
 
 sub handler {
