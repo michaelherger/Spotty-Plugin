@@ -91,7 +91,17 @@ sub handleFeed {
 	elsif (!Slim::Networking::Async::HTTP->hasSSL()) {
 		$cb->({
 			items => [{
-				name => string('PLUGIN_SPOTTY_MISSING_SSL'),
+				name => cstring($client, 'PLUGIN_SPOTTY_MISSING_SSL'),
+				type => 'textarea'
+			}]
+		});
+		
+		return;
+	}
+	elsif ( !Plugins::Spotty::Plugin->getCredentials($prefs->client($client)->get('account')) ) {
+		$cb->({
+			items => [{
+				name => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED') . "\n" . cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
 				type => 'textarea'
 			}]
 		});
