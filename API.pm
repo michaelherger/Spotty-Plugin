@@ -150,7 +150,7 @@ sub username {
 	return $self->_username if $self->_username;
 	
 	# fall back to default account if no username was given
-	my $credentials = Plugins::Spotty::Plugin->getCredentials($prefs->client($self->client)->get('account'));
+	my $credentials = Plugins::Spotty::Plugin->getCredentials($self->client);
 	if ( $credentials && $credentials->{username} ) {
 		$self->_username($credentials->{username})
 	}

@@ -13,6 +13,7 @@ use File::Path qw(mkpath rmtree);
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
 use JSON::XS::VersionOneAndTwo;
+use Scalar::Util qw(blessed);
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
@@ -122,6 +123,19 @@ sub postinitPlugin {
 	{
 		require Plugins::Spotty::DontStopTheMusic;
 		Plugins::Spotty::DontStopTheMusic->init();
+	}
+
+	# add support for LastMix - if it's installed
+	if ( Slim::Utils::PluginManager->isEnabled('Plugins::LastMix::Plugin') ) {
+		eval {
+			require Plugins::LastMix::Services;
+		};
+		
+		if (!$@) {
+			main::INFOLOG && $log->info("LastMix plugin is available - let's use it!");
+			require Plugins::Spotty::LastMix;
+			Plugins::LastMix::Services->registerHandler('Plugins::Spotty::LastMix');
+		}
 	}
 }
 
@@ -379,6 +393,10 @@ sub hasCredentials {
 
 sub getCredentials {
 	my ($class, $id, $noFallback) = @_;
+	
+	if ( blessed $id && (my $account = $prefs->client($id)->get('account')) ) {
+		$id = $account;
+	}
 	
 	if ( my $credentialsFile = $class->hasCredentials($id, $noFallback) ) {
 		my $credentials = eval {

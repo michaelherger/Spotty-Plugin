@@ -98,7 +98,7 @@ sub handleFeed {
 		
 		return;
 	}
-	elsif ( !Plugins::Spotty::Plugin->getCredentials($prefs->client($client)->get('account')) ) {
+	elsif ( !Plugins::Spotty::Plugin->getCredentials($client) ) {
 		$cb->({
 			items => [{
 				name => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED') . "\n" . cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
