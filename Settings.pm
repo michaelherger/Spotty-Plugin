@@ -107,6 +107,7 @@ sub handler {
 	$paramRef->{helperPath} = $helperPath;
 	$paramRef->{helperVersion} = $helperVersion || string('PLUGIN_SPOTTY_HELPER_ERROR');
 	$paramRef->{defaultIcon} = Plugins::Spotty::Plugin->_initIcon();
+	$paramRef->{error429} = Plugins::Spotty::API->hasError429();
 
 	return $class->SUPER::handler($client, $paramRef);
 }

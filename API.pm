@@ -33,6 +33,7 @@ use Slim::Utils::Strings qw(cstring string);
 my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
+my $error429;
 
 {
 	__PACKAGE__->mk_accessor( 'rw', 'client');
@@ -1042,13 +1043,20 @@ sub error429 {
 
 	# set special token to tell _call not to proceed
 	$cache->set('spotty_rate_limit_exceeded', 1, $headers->{'retry-after'} || 5);
+
+	$error429 = sprintf(string('PLUGIN_SPOTTY_ERROR_429_DESC'), $response->url, $headers->{'retry-after'} || 5);
 	
 	if ( main::DEBUGLOG && $log->is_debug ) {
 		$log->debug("Access rate exceeded: " . Data::Dump::dump($response));
 	}
 	else {
-		$log->warn("Access rate exceeded for: " . $response->url);
+		$log->error($error429);
 	}
+	
+}
+
+sub hasError429 {
+	return $error429;
 }
 
 1;

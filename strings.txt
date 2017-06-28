@@ -378,6 +378,10 @@ PLUGIN_SPOTTY_ERROR_NO_ACCESS_TOKEN
 PLUGIN_SPOTTY_ERROR_429
 	DE	Zugriffsrate überschritten
 	EN	Rate limit exceeded
+	
+PLUGIN_SPOTTY_ERROR_429_DESC
+	DE	Zugriffsrate überschritten für: %s; nächster Versuch in %s Sekunden. Bitte setzen Sie sich mit mir in Verbindung. Danke!
+	EN	Access Rate limit exceeded for: %s; retry after %s seconds. Please report this issue to me. Thanks!
 
 PLUGIN_SPOTTY_MISSING_SSL
 	DE	Spotty benötigt das Perl Modul IO::Socket::SSL! Ohne dieses Modul ist die Nutzung von Spotty NICHT möglich. Bitte benutze den Paket-Manager deines Betriebssystems um es zu installieren.

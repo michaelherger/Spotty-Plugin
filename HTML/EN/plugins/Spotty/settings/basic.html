@@ -24,6 +24,10 @@
 	[% WRAPPER setting title="" desc="" %]
 		<input name="addAccount" type=submit value="[% "PLUGIN_SPOTTY_ADD_ACCOUNT" | string %]" class="stdclick" />
 	[% END %]
+
+	[% IF error429; WRAPPER setting title="" desc="" %]
+		<div style="color: red">[% error429 %]</div>
+	[% END; END %]
 	
 <!-- 	[% WRAPPER setting title="PLUGIN_SPOTTY_ENABLE_BROWSING" desc="" %]
 		<input name="pref_enableBrowseMode" id="pref_enableBrowseMode" type="checkbox" [% IF prefs.pref_enableBrowseMode %] checked [% END %]>
