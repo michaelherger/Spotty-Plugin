@@ -15,8 +15,6 @@ use constant AUTHENTICATE => '__AUTHENTICATE__';
 
 my $prefs = preferences('plugin.spotty');
 
-my $needsRestart;
-
 sub new {
 	my $class = shift;
 
@@ -76,10 +74,6 @@ sub handler {
 	}
 
 	if ($paramRef->{saveSettings}) {
-		if ( !$needsRestart && $paramRef->{pref_enableBrowseMode} . '' ne $prefs->get('enableBrowseMode') . '' ) {
-			$needsRestart = 1;
-		}
-		
 		$paramRef->{pref_iconCode} ||= Plugins::Spotty::Plugin->_initIcon();
 	}
 	
@@ -98,12 +92,6 @@ sub handler {
 	Plugins::Spotty::SettingsAuth->shutdownHelper();
 	
 	$paramRef->{credentials} = Plugins::Spotty::Plugin->getSortedCredentialTupels();
-
-	if ($needsRestart) {
-		$paramRef = Slim::Web::Settings::Server::Plugins->getRestartMessage($paramRef, Slim::Utils::Strings::string("PLUGIN_EXTENSIONS_RESTART_MSG"));
-		$paramRef = Slim::Web::Settings::Server::Plugins->restartServer($paramRef, $needsRestart);
-	}
-	
 	$paramRef->{helperPath} = $helperPath;
 	$paramRef->{helperVersion} = $helperVersion || string('PLUGIN_SPOTTY_HELPER_ERROR');
 	$paramRef->{defaultIcon} = Plugins::Spotty::Plugin->_initIcon();

@@ -1002,7 +1002,7 @@ sub _call {
 
 			$log->warn("error: $error");
 
-			if ($error =~ /429/ || $response->code == 429) {
+			if ($error =~ /429/ || ($response && $response->code == 429)) {
 				$self->error429($response);
 
 				$cb->({ 

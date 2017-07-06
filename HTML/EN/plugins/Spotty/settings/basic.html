@@ -28,16 +28,11 @@
 	[% IF error429; WRAPPER setting title="" desc="" %]
 		<div style="color: red">[% error429 %]</div>
 	[% END; END %]
-	
-<!-- 	[% WRAPPER setting title="PLUGIN_SPOTTY_ENABLE_BROWSING" desc="" %]
-		<input name="pref_enableBrowseMode" id="pref_enableBrowseMode" type="checkbox" [% IF prefs.pref_enableBrowseMode %] checked [% END %]>
-		<label for="pref_enableBrowseMode">[% "PLUGIN_SPOTTY_ENABLE_BROWSING_DESC" | string %]</label>
-	[% END %] -->
 
-	[% IF 1 || Prefs.preferences('plugin.spotty').get('enableBrowseMode'); WRAPPER setting title="" %]
+	[% WRAPPER setting title="" desc="" %]
 		<input name="pref_myAlbumsOnly" id="pref_myAlbumsOnly" type="checkbox" [% IF prefs.pref_myAlbumsOnly %] checked [% END %]>
 		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
-	[% END; END %]
+	[% END %]
 	
 	[% WRAPPER setting title="PLUGIN_SPOTTY_CACHE" desc="PLUGIN_SPOTTY_CACHE_DESC" %]
 		<input name="pref_audioCacheSize" id="pref_audioCacheSize" type="text" value="[% prefs.pref_audioCacheSize %]" class="stdedit sliderInput_0_10000_500" size="5"> [% "PLUGIN_SPOTTY_MB" | string %]
