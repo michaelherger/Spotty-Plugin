@@ -322,6 +322,18 @@ PLUGIN_SPOTTY_USERS
 	RU	пользователи
 	SV	Användare
 
+PLUGIN_SPOTTY_TRANSFER
+	DE	Wiedergabe übernehmen
+	EN	Transfer Playback
+
+PLUGIN_SPOTTY_TRANSFER_DESC
+	DE	Sie können die Spotify Wiedergabe vom unten gelisteten Gerät übernehmen. Allerdings ist es nicht immer möglich, die genau Wiedergabeliste zu übernehmen.
+	EN	You can transfer Spotify playback from below listed device to your Squeezebox. Please note that it's not always possible to restore the exact same playlist.
+
+PLUGIN_SPOTTY_NO_PLAYER_FOUND
+	DE	Es wurde kein Gerät oder keine Wiedergabeliste gefunden.
+	EN	No Spotify playing device was found.
+
 PLUGIN_SPOTTY_NEW_SEARCH
 	CS	Nové hledání
 	DA	Ny søgning

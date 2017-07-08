@@ -179,6 +179,11 @@ sub handleFeed {
 			type  => 'link',
 			image => IMG_PLAYLIST,
 			url   => \&playlists
+		},{
+			name  => cstring($client, 'PLUGIN_SPOTTY_TRANSFER'),
+			type  => 'link',
+			image => IMG_PLAYLIST,
+			url   => \&transferPlaylist
 		};
 		
 		if ( Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
@@ -635,6 +640,73 @@ sub category {
 		my $items = playlistList($client, $playlists);
 		$cb->({ items => $items });
 	}, $params->{id} || $args->{id} );
+}
+
+sub transferPlaylist {
+	my ($client, $cb) = @_;
+	
+	Plugins::Spotty::Plugin->getAPIHandler($client)->player(sub {
+		my ($info) = @_;
+		
+		my $items = [];
+		
+		if ( $info && $info->{track} ) {
+			push @$items, {
+				name => cstring($client, 'PLUGIN_SPOTTY_TRANSFER_DESC'),
+				type => 'textarea'
+			},{
+				name => $info->{deviceName},
+				url  => \&_doTransferPlaylist,
+				passthrough => [$info],
+				nextWindow => 'nowPlaying',
+			}
+		}
+		else {
+			push @$items, {
+				name => cstring($client, 'PLUGIN_SPOTTY_NO_PLAYER_FOUND'),
+				type => 'textarea'
+			};
+		}
+
+		$cb->({ items => $items });
+	});
+}
+
+sub _doTransferPlaylist {
+	my ($client, $cb, $params, $args) = @_;
+	
+	if ($args && ref $args && $args->{track}) {
+		Plugins::Spotty::Plugin->getAPIHandler($client)->trackURIsFromURI(sub {
+			my $idx; 
+			my $i = 0;
+			
+			my $tracks = [ map {
+				$idx = $i if !defined $idx && $_ eq $args->{track}->{uri};
+				$i++; 
+				/(track:.*)/; 
+				"spotify://$1";
+			} @{shift || []} ];
+			
+			if ( @$tracks ) {
+				$client->execute(['playlist', 'clear']);
+				$client->execute(['playlist', 'play', $tracks]);
+				$client->execute(['playlist', 'jump', $idx]) if $idx;
+				$client->execute(['time', $args->{progress}]) if $args->{progress};
+			}
+				
+			$cb->({
+				nextWindow => 'nowPlaying'
+			});
+		}, $args->{context} || $args->{track}->{uri});
+
+		return;
+	}
+	
+	$log->warn("Incomplete Spotify playback data received?\n" . (main::INFOLOG ? Data::Dump::dump($args) : ''));
+
+	$cb->({
+		name => cstring($client, 'PLUGIN_SPOTTY_NO_PLAYER_FOUND'),
+	});
 }
 
 =pod

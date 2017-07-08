@@ -35,6 +35,23 @@ my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $error429;
 
+# override the scope list hard-coded in to the spotty helper application
+use constant SPOTIFY_SCOPE => join(',', qw(
+  user-read-private
+  user-follow-modify
+  user-follow-read
+  user-library-read
+  user-library-modify
+  user-top-read
+  user-read-recently-played
+  user-read-playback-state
+  playlist-read-private
+  playlist-read-collaborative
+  playlist-modify-public
+  playlist-modify-private
+));
+
+
 {
 	__PACKAGE__->mk_accessor( 'rw', 'client');
 	__PACKAGE__->mk_accessor( 'rw', '_username' );
@@ -78,10 +95,11 @@ sub getToken {
 	if ( $force || !$token ) {
 		# try to use client specific credentials
 		foreach ($prefs->client($self->client)->get('account'), undef) {
-			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token', 
+			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"', 
 				scalar Plugins::Spotty::Plugin->getHelper(), 
 				Plugins::Spotty::Plugin->cacheFolder($_),
-				$prefs->get('iconCode')
+				$prefs->get('iconCode'),
+				SPOTIFY_SCOPE
 			);
 	
 			my $response;
@@ -197,6 +215,44 @@ sub user {
 			$cb->($result || {});
 		}
 	);
+}
+
+sub player {
+	my ( $self, $cb ) = @_;
+
+	$self->_call('me/player',
+		sub {
+			my ($result) = @_;
+			
+			if ($result && ref $result) {
+				my $info = {
+					deviceName => $result->{device}->{name}
+				};
+
+				if ($result->{item} && $result->{item}->{type} eq 'track') {
+					$info->{track} = $self->_normalize($result->{item});
+				}
+				
+				# unfortunately context only is transfered for playlists - otherwise let's assume the album
+				if ($result->{context} && $result->{context}->{uri}) {
+					$info->{context} = $result->{context}->{uri};
+				}
+				elsif ($info->{track} && $info->{track}->{album}) {
+					$info->{context} = $info->{track}->{album}->{uri};
+				}
+				
+				$info->{no_context} if !$result->{context};
+
+				$info->{progress} = $result->{progress_ms} ? $result->{progress_ms} / 1000 : 0;
+				$info->{shuffle_state} = $result->{shuffle_state};
+
+				$cb->($info);
+				return;
+			}
+			
+			$cb->();
+		}
+	)
 }
 
 sub search {
