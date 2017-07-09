@@ -297,7 +297,11 @@ sub album {
 	
 	$self->_call('albums/' . $id,
 		sub {
-			my $album = $self->_normalize($_[0]);
+			my ($album) = @_;
+			
+			my $total = $album->{tracks}->{total} if $album->{tracks} && ref $album->{tracks};
+
+			$album = $self->_normalize($album);
 
 			for my $track ( @{ $album->{tracks} || [] } ) {
 				# Add missing album data to track
@@ -307,7 +311,33 @@ sub album {
 				};
 				$track = $self->_normalize($track);
 			}
-			
+
+			# we might need to grab more tracks: audio books can have hundreds of "tracks"
+			if ( $total && $total > SPOTIFY_LIMIT ) {
+				Plugins::Spotty::API::Pipeline->new($self, 'albums/' . $id . '/tracks', sub {
+					my $items = [];
+					
+					for my $track ( @{ $_[0]->{items} } ) {
+						# Add missing album data to track
+						$track->{album} = {
+							name => $album->{name},
+							image => $album->{image}, 
+						};
+						push @$items, $self->_normalize($track);
+					}
+				
+					return $items, $_[0]->{total}, $_[0]->{'next'};
+				}, sub {
+					$album->{tracks} = $_[0];
+					$cb->($album);
+				},{
+					market => 'from_token',
+					limit  => $args->{limit} || LIBRARY_LIMIT
+				})->get();
+				
+				return;
+			}
+
 			$cb->($album);
 		},
 		GET => {
