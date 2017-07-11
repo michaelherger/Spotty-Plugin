@@ -1010,7 +1010,9 @@ sub _call {
 	if (!$params->{_nocache} && $type eq 'GET') {
 		$cache_key = md5_hex($url . ($url =~ /^me\b/ ? $token : ''));
 	}
-		
+	
+	main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");
+	
 	if ( $cache_key && ($cached = $cache->get($cache_key)) ) {
 		main::INFOLOG && $log->is_info && $log->info("Returning cached data for $url");
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
@@ -1065,6 +1067,7 @@ sub _call {
 						if ($ttl) {
 							main::INFOLOG && $log->is_info && $log->info("Caching result for $ttl using max-age (" . $response->url . ")");
 							$cache->set($cache_key, $result, $ttl);
+							main::INFOLOG && $log->is_info && $log->info("Data cached (" . $response->url . ")");
 						}
 					}
 				}
@@ -1081,7 +1084,7 @@ sub _call {
 				};
 			}
 
-			$cb->($result);
+			$cb->($result, $response);
 		},
 		sub {
 			my ($http, $error, $response) = @_;
@@ -1094,19 +1097,21 @@ sub _call {
 				$cb->({ 
 					name => string('PLUGIN_SPOTTY_ERROR_429'),
 					type => 'text' 
-				});
+				}, $response);
 			}
 			else {
 				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
 				$cb->({ 
 					name => 'Unknown error: ' . $error,
 					type => 'text' 
-				});
+				}, $response);
 			}
 		},
 		{
 			cache => 1,
+			expires => 3600,
 			timeout => 30,
+			no_revalidate => $params->{_no_revalidate},
 		},
 	);
 	

@@ -53,7 +53,14 @@ sub get {
 	# otherwise grabe the first chunk and decide whether to continue or not
 	else {
 		$self->spottyAPI->_call($self->method, sub {
-			my ($count, $next) = $self->_extract(0, shift);
+			my ($result, $response) = @_;
+			
+			# tell follow-up queries to return cached data without re-validation, if we got a cached result back
+			if ($response && ref $response && $response->headers && ref $response->headers && $response->headers->{'x-spotty-cached-response'}) {
+				$self->params->{_no_revalidate} = 1;
+			}
+			
+			my ($count, $next) = $self->_extract(0, $result);
 			
 #			warn Data::Dump::dump($count, $self->params->{limit}, $self->limit, SPOTIFY_LIMIT, $next);
 			# no need to run more requests if there's no more than the received results

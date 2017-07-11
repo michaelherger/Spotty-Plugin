@@ -52,11 +52,17 @@ sub _createHTTPRequest {
 		
 		if ( my $data = $cache->get( Slim::Networking::SimpleAsyncHTTP::_cacheKey($url, $client) ) ) {			
 			$self->cachedResponse( $data );
-			
-			# If the data was cached within the past 5 minutes,
-			# return it immediately without revalidation, to improve
-			# UI experience
-			if ( $data->{_no_revalidate} || time - $data->{_time} < 300 ) {
+
+# SPOTTY - specific change starts here
+#			# If the data was cached within the past 5 minutes,
+#			# return it immediately without revalidation, to improve
+#			# UI experience
+#			if ( $data->{_no_revalidate} || time - $data->{_time} < 300 ) {
+#
+#			if we got a 304 (data not change) on the first of a series of requests, return
+#			cached follow up requests without re-validation
+			if ( delete $params->{no_revalidate} ) {
+# /SPOTTY
 				
 				main::DEBUGLOG && $log->debug("Using cached response [$url]");
 				
@@ -153,6 +159,17 @@ sub onError {
 	$self->ecb->( $self, $error, $http->response );
 
 	main::PERFMON && $now && Slim::Utils::PerfMon->check('async', AnyEvent->time - $now, undef, $self->ecb);
+	
+	return;
+}
+
+# if we send a cached response, tell the callback about it
+sub sendCachedResponse {
+	my $self = shift;
+	
+	$self->cachedResponse->{headers}->{'x-spotty-cached-response'} = 1;
+	
+	$self->SUPER::sendCachedResponse();
 	
 	return;
 }
