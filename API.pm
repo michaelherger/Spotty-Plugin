@@ -913,8 +913,8 @@ sub _normalize {
 		if (!$item->{image}) {
 			$item->{image} = $cache->get('spotify_artist_image_' . $item->{id});
 		}
-		else {
-			$cache->set('spotify_artist_image_' . $item->{id}, $item->{image});
+		elsif ( !$cache->get('spotify_artist_image_' . $item->{id}) ) {
+			$cache->set('spotify_artist_image_' . $item->{id}, $item->{image}, CACHE_TTL);
 		}
 	}
 	# track
