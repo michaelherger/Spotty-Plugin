@@ -24,6 +24,10 @@ my $prefs = preferences('server');
 
 my $log = logger('network.asynchttp');
 
+# SPOTTY
+my $spottyLog = logger('plugin.spotty');
+# /SPOTTY
+
 
 sub put { shift->_createHTTPRequest( PUT => @_ ) }
 
@@ -62,9 +66,9 @@ sub _createHTTPRequest {
 #			if we got a 304 (data not change) on the first of a series of requests, return
 #			cached follow up requests without re-validation
 			if ( delete $params->{no_revalidate} ) {
-# /SPOTTY
 				
-				main::DEBUGLOG && $log->debug("Using cached response [$url]");
+				main::INFOLOG && $spottyLog->is_info && $spottyLog->info("Using cached response [$url]");
+# /SPOTTY
 				
 				return $self->sendCachedResponse();
 			}
