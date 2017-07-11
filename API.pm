@@ -924,10 +924,10 @@ sub _normalize {
 		delete $item->{album}->{available_markets};
 					
 		# Cache all tracks for use in track_metadata
-		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri};
+		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri} && !$cache->get( $item->{uri} );
 		
 		# sometimes we'd get metadata for an alternative track ID
-		if ( $item->{linked_from} && $item->{linked_from}->{uri} ) {
+		if ( $item->{linked_from} && $item->{linked_from}->{uri} && !$cache->get( $item->{linked_from}->{uri} ) ) {
 			$cache->set( $item->{linked_from}->{uri}, $item, CACHE_TTL );
 		}
 	}
