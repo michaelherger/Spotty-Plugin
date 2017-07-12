@@ -379,6 +379,50 @@ sub artist {
 	);
 }
 
+sub artists {
+	my ( $self, $cb, $ids ) = @_;
+
+	if (!ref $ids) {
+		$ids = [ $ids ];
+	}
+
+	$ids = [ map { /artist:(.*)/ ? $1 : $_ } @$ids ];
+	
+	if (!scalar @$ids) {
+		$cb->([]);
+		return;
+	}
+
+	my $chunks = {};
+
+	# build list of chunks we can query in one go
+	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
+		my $idList = join(',', @ids) || next;
+		$chunks->{md5_hex($idList)} = {
+			ids => $idList
+		};
+	}
+
+	Plugins::Spotty::API::Pipeline->new($self, 'artists', sub {
+		my ($artists) = @_;
+		
+		my @artists;
+	
+		foreach (@{$artists->{artists}}) {
+			# null album info for invalid IDs is returned
+			next unless $_ && ref $_;
+
+			my $artist = $self->_normalize($_);
+			
+			push @artists, $artist;
+		}
+		
+		return \@artists;
+	}, $cb, {
+		chunks => $chunks,
+	})->get();
+}
+
 sub relatedArtists {
 	my ( $self, $cb, $uri ) = @_;
 
@@ -667,17 +711,46 @@ sub myArtists {
 		$self->myAlbums(sub {
 			my $albums = shift || [];
 			
+			# the album object comes without the artist image - let's collect IDs and grab them later
+			my $missingArtwork = [];
+			
 			foreach ( @$albums ) {
 				next unless $_->{artists};
 				
 				if ( my $artist = $_->{artists}->[0] ) {
 					if ( !$knownArtists{$artist->{id}}++ ) {
-						push @$items, $self->_normalize($artist);
+						$artist = $self->_normalize($artist);
+						push @$items, $artist;
+						
+						if (!$artist->{image}) {
+							push $missingArtwork, $artist->{id};
+						}
 					}
 				}
 			}
 
-			$cb->([ sort { $a->{name} cmp $b->{name} } @$items ]);
+			$items = [ sort { $a->{name} cmp $b->{name} } @$items ];
+			
+			# do one more lookup if the albums list returned artists we don't have artwork for, yet...
+			if (scalar @$missingArtwork) {
+				$self->artists(sub {
+					# now let's merge these new results with what we had already...
+					my %artists = map {
+						$_->{id} => $self->_normalize($_)
+					} @{shift || []};
+					
+					map {
+						if (my $artist = $artists{$_->{id}}) {
+							$_->{image} = $artist->{image};
+						}
+					} @$items;
+
+					$cb->($items);
+				}, $missingArtwork);
+			}
+			else {
+				$cb->($items);
+			}
 		})
 	}, {
 		type  => 'artist',
