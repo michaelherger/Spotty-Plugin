@@ -43,7 +43,7 @@
 	[% END %]
 	
 	[% WRAPPER setting title="PLUGIN_SPOTTY_CLIENT_ID" desc="PLUGIN_SPOTTY_CLIENT_ID_DESC" %]
-		<input name="pref_iconCode" id="pref_iconCode" type="text" value="[% IF prefs.pref_iconCode != defaultIcon; prefs.pref_iconCode; END %]" class="stdedit" size="40">
+		<input name="pref_iconCode" id="pref_iconCode" type="text" value="[% IF !hasDefaultIcon; prefs.pref_iconCode; END %]" class="stdedit" size="40">
 	[% END %]
 
 [% PROCESS settings/footer.html %]

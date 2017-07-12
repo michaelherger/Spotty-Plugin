@@ -6,18 +6,19 @@ BEGIN {
 	use constant CACHE_TTL  => 86400 * 7;
 	use constant LIBRARY_LIMIT => 500;
 	use constant RECOMMENDATION_LIMIT => 100;		# for whatever reason this call does support a maximum chunk size of 100
-	use constant DEFAULT_LIMIT => 200;
+	use constant _DEFAULT_LIMIT => 200;
+	use constant MAX_LIMIT => 10_000;
 	use constant SPOTIFY_LIMIT => 50;
 
 	use Exporter::Lite;
-	our @EXPORT_OK = qw( SPOTIFY_LIMIT DEFAULT_LIMIT );
+	our @EXPORT_OK = qw( SPOTIFY_LIMIT );
 }
 
 use base qw(Slim::Utils::Accessor);
 
 use JSON::XS::VersionOneAndTwo;
 use Digest::MD5 qw(md5_hex);
-use List::Util qw(min);
+use List::Util qw(min max);
 use POSIX qw(strftime);
 use URI::Escape qw(uri_escape_utf8);
 
@@ -268,7 +269,7 @@ sub search {
 		q      => $args->{query},
 		type   => $type,
 		market => 'from_token',
-		limit  => $args->{limit} || DEFAULT_LIMIT
+		limit  => $args->{limit} || DEFAULT_LIMIT()
 	};
 	
 	if ( $type =~ /album|artist|track|playlist/ ) {
@@ -332,7 +333,7 @@ sub album {
 					$cb->($album);
 				},{
 					market => 'from_token',
-					limit  => $args->{limit} || LIBRARY_LIMIT
+					limit  => $args->{limit} || max(LIBRARY_LIMIT, DEFAULT_LIMIT())
 				})->get();
 				
 				return;
@@ -430,9 +431,7 @@ sub relatedArtists {
 		
 	Plugins::Spotty::API::Pipeline->new($self, 'artists/' . $id . '/related-artists', sub {
 		my $artists = $_[0] || {};
-		my $items = [ sort {
-			lc($a->{sortname} || $a->{name}) cmp lc($b->{sortname} || $b->{name})
-		} map { 
+		my $items = [ sort _artistSort map { 
 			$self->_normalize($_)
 		} @{$artists->{artists} || []} ];
 
@@ -470,7 +469,7 @@ sub artistAlbums {
 	}, $cb, {
 		# "from_token" not allowed here?!?!
 		market => $self->country,
-		limit  => min($args->{limit} || DEFAULT_LIMIT, DEFAULT_LIMIT),
+		limit  => min($args->{limit} || DEFAULT_LIMIT(), DEFAULT_LIMIT()),
 		offset => $args->{offset} || 0,
 	})->get();
 }
@@ -493,6 +492,10 @@ sub playlist {
 	
 	my ($user, $id) = $args->{uri} =~ /^spotify:user:([^:]+):playlist:(.+)/;
 	
+	my $limit = $args->{limit};
+	# set the limit higher if it's the user's self curated playlist
+	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, DEFAULT_LIMIT()) : DEFAULT_LIMIT();
+	
 	Plugins::Spotty::API::Pipeline->new($self, 'users/' . $user . '/playlists/' . $id . '/tracks', sub {
 		my $items = [];
 		
@@ -511,7 +514,7 @@ sub playlist {
 		return $items, $_[0]->{total}, $_[0]->{'next'};
 	}, $cb, {
 		market => 'from_token',
-		limit  => $args->{limit} || DEFAULT_LIMIT
+		limit  => $limit
 	})->get();
 }
 
@@ -629,19 +632,19 @@ sub trackURIsFromURI {
 }
 
 sub myAlbums {
-	my ( $self, $cb ) = @_;
+	my ( $self, $cb, $fast ) = @_;
 	
 	Plugins::Spotty::API::Pipeline->new($self, 'me/albums', sub {
 		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
-			return [ map { $self->_normalize($_->{album}) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+			return [ map { $self->_normalize($_->{album}, $fast) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, sub {
 		my $results = shift;
 		
-		my $items = [ sort { $a->{name} cmp $b->{name} } @{$results || []} ];
+		my $items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @{$results || []} ];
 		$cb->($items);
 	}, {
-		limit => LIBRARY_LIMIT,
+		limit => max(LIBRARY_LIMIT, DEFAULT_LIMIT()),
 	})->get();
 }
 
@@ -691,9 +694,18 @@ sub isInMyAlbums {
 sub myArtists {
 	my ( $self, $cb ) = @_;
 	
+	# Getting the artists list is such a pain. Even when fetching every single request from cache,
+	# this would be slow on some systems. Let's just cache the full result...
+	my $cacheKey = 'spotify_my_artists' . ($self->username || '');
+	
+	if ( my $cached = $cache->get($cacheKey) ) {
+		$cb->($cached);
+		return;
+	}
+	
 	Plugins::Spotty::API::Pipeline->new($self, 'me/following', sub {
 		if ( $_[0] && $_[0]->{artists} && $_[0]->{artists} && (my $artists = $_[0]->{artists}) ) {
-			return [ map { $self->_normalize($_) } @{ $artists->{items} } ], $artists->{total}, $artists->{'next'};
+			return [ map { $self->_normalize($_, 'fast') } @{ $artists->{items} } ], $artists->{total}, $artists->{'next'};
 		}
 	}, sub {
 		my $results = shift;
@@ -719,7 +731,7 @@ sub myArtists {
 				
 				if ( my $artist = $_->{artists}->[0] ) {
 					if ( !$knownArtists{$artist->{id}}++ ) {
-						$artist = $self->_normalize($artist);
+						$artist = $self->_normalize($artist, 'fast');
 						push @$items, $artist;
 						
 						if (!$artist->{image}) {
@@ -729,14 +741,14 @@ sub myArtists {
 				}
 			}
 
-			$items = [ sort { $a->{name} cmp $b->{name} } @$items ];
+			$items = [ sort _artistSort @$items ];
 			
 			# do one more lookup if the albums list returned artists we don't have artwork for, yet...
 			if (scalar @$missingArtwork) {
 				$self->artists(sub {
 					# now let's merge these new results with what we had already...
 					my %artists = map {
-						$_->{id} => $self->_normalize($_)
+						$_->{id} => $self->_normalize($_, 'fast')
 					} @{shift || []};
 					
 					map {
@@ -745,16 +757,18 @@ sub myArtists {
 						}
 					} @$items;
 
+					$cache->set($cacheKey, $items, 60);
 					$cb->($items);
 				}, $missingArtwork);
 			}
 			else {
+				$cache->set($cacheKey, $items, 60);
 				$cb->($items);
 			}
-		})
+		}, 'fast')
 	}, {
 		type  => 'artist',
-		limit => LIBRARY_LIMIT,
+		limit => max(LIBRARY_LIMIT, DEFAULT_LIMIT()),
 	})->get();
 }
 
@@ -795,7 +809,7 @@ sub recentlyPlayed {
 			}
 		}
 		
-		return $items, $_[0]->{'next'} ? DEFAULT_LIMIT : 0, $_[0]->{'next'};
+		return $items, $_[0]->{'next'} ? DEFAULT_LIMIT() : 0, $_[0]->{'next'};
 	}, $cb)->get();
 } 
 =cut
@@ -804,6 +818,10 @@ sub playlists {
 	my ( $self, $cb, $args ) = @_;
 	
 	my $user = $args->{user} || $self->username || 'me';
+	
+	my $limit = $args->{limit};
+	# set the limit higher if it's the user's self curated playlist
+	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, DEFAULT_LIMIT()) : DEFAULT_LIMIT();
 
 	# usernames must be lower case, and space not URI encoded
 	$user = lc($user);
@@ -814,7 +832,7 @@ sub playlists {
 			return [ map { $self->_normalize($_) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, $cb, {
-		limit  => $args->{limit} || DEFAULT_LIMIT
+		limit  => $limit
 	})->get();
 }
 
@@ -965,7 +983,7 @@ sub recommendations {
 }
 
 sub _normalize {
-	my ( $self, $item ) = @_;
+	my ( $self, $item, $fast ) = @_;
 	
 	my $type = $item->{type} || '';
 	
@@ -973,7 +991,7 @@ sub _normalize {
 		$item->{image}   = _getLargestArtwork(delete $item->{images});
 		$item->{artist}  ||= $item->{artists}->[0]->{name} if $item->{artists} && ref $item->{artists}; 
 		
-		$item->{tracks}  = [ map { $self->_normalize($_) } @{ $item->{tracks}->{items} } ] if $item->{tracks};
+		$item->{tracks}  = [ map { $self->_normalize($_, $fast) } @{ $item->{tracks}->{items} } ] if $item->{tracks};
 	}
 	elsif ($type eq 'playlist') {
 		$item->{creator} = $item->{owner}->{id} if $item->{owner} && ref $item->{owner};
@@ -986,7 +1004,7 @@ sub _normalize {
 		if (!$item->{image}) {
 			$item->{image} = $cache->get('spotify_artist_image_' . $item->{id});
 		}
-		elsif ( !$cache->get('spotify_artist_image_' . $item->{id}) ) {
+		elsif ( !$fast || !$cache->get('spotify_artist_image_' . $item->{id}) ) {
 			$cache->set('spotify_artist_image_' . $item->{id}, $item->{image}, CACHE_TTL);
 		}
 	}
@@ -997,10 +1015,10 @@ sub _normalize {
 		delete $item->{album}->{available_markets};
 					
 		# Cache all tracks for use in track_metadata
-		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri} && !$cache->get( $item->{uri} );
+		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri} && (!$fast || !$cache->get( $item->{uri} ));
 		
 		# sometimes we'd get metadata for an alternative track ID
-		if ( $item->{linked_from} && $item->{linked_from}->{uri} && !$cache->get( $item->{linked_from}->{uri} ) ) {
+		if ( $item->{linked_from} && $item->{linked_from}->{uri} && (!$fast || !$cache->get( $item->{linked_from}->{uri} )) ) {
 			$cache->set( $item->{linked_from}->{uri}, $item, CACHE_TTL );
 		}
 	}
@@ -1008,6 +1026,10 @@ sub _normalize {
 	delete $item->{available_markets};		# this is rather lengthy, repetitive and never used
 	
 	return $item;
+}
+
+sub _artistSort {
+	lc($a->{sortname} || $a->{name}) cmp lc($b->{sortname} || $b->{name});
 }
 
 sub _getLargestArtwork {
@@ -1222,5 +1244,9 @@ sub error429 {
 sub hasError429 {
 	return $error429;
 }
+
+sub DEFAULT_LIMIT {
+	Plugins::Spotty::Plugin->hasDefaultIcon() ? _DEFAULT_LIMIT : MAX_LIMIT;
+};
 
 1;

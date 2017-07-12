@@ -179,6 +179,10 @@ sub _initIcon {
 	__PACKAGE__->_pluginDataFor('icon') =~ m|.*/(.*?)\.| && return $1;
 }
 
+sub hasDefaultIcon {
+	$prefs->get('iconCode') eq _initIcon() ? 1 : 0;
+}
+
 sub getAPIHandler {
 	my ($class, $client) = @_;
 	

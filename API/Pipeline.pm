@@ -7,10 +7,13 @@ use strict;
 use base qw(Slim::Utils::Accessor);
 use List::Util qw(min);
 
-use Plugins::Spotty::API qw( SPOTIFY_LIMIT DEFAULT_LIMIT );
+use Plugins::Spotty::API qw( SPOTIFY_LIMIT );
 use Slim::Utils::Log;
 
-use constant MAX_ITERATIONS => 10;
+# make sure we don't iterate infinitely
+sub MAX_ITERATIONS {
+	5 * (Plugins::Spotty::API::DEFAULT_LIMIT()/SPOTIFY_LIMIT);
+}
 
 __PACKAGE__->mk_accessor( rw => qw(
 	spottyAPI
@@ -32,7 +35,7 @@ sub new {
 	$self->cb(shift);
 	$self->params(Storable::dclone(shift || {}));
 	
-	$self->limit($self->params->{limit} || DEFAULT_LIMIT);
+	$self->limit($self->params->{limit} || Plugins::Spotty::API::DEFAULT_LIMIT());
 	$self->params->{limit} = delete $self->params->{_chunkSize} || SPOTIFY_LIMIT;
 	$self->params->{limit} = min($self->limit, $self->params->{limit});
 	
@@ -104,7 +107,7 @@ sub _iterateChunks {
 		}, GET => $params);
 		
 		# just make sure we never loop infinitely...
-		if ( ++$i > MAX_ITERATIONS ) {
+		if ( ++$i > MAX_ITERATIONS() ) {
 			last;
 		}
 	}
