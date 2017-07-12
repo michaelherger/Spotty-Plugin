@@ -723,7 +723,7 @@ sub myArtists {
 						push @$items, $artist;
 						
 						if (!$artist->{image}) {
-							push $missingArtwork, $artist->{id};
+							push @$missingArtwork, $artist->{id};
 						}
 					}
 				}
