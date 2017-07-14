@@ -125,7 +125,11 @@ PLUGIN_SPOTTY_MB
 	
 PLUGIN_SPOTTY_HELPER_ERROR
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten!
-	EN	There has been a problem running the Spotty helper application.	
+	EN	There has been a problem running the Spotty helper application.
+
+PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE
+	DE	Tut mir Leid, aber sehr wahrscheinlich ist ihre Prozessorarchitektur oder das Betriebssystem nicht mit Spotty kompatibel. Sie können noch immer einen Versuch wagen. Aber vermutlich wird er fehl schlagen.
+	EN	I'm sorry, but your processor architecture or operating system most likely is not compatible with Spotty. You can still give it a try. But don't be surprised if it fails...
 
 PLUGIN_SPOTTY_MISSING_HELPER
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Vermutlich wird diese auf ihrem System nicht unterstützt. Bitte wenden Sie sich an mich, unter Angabe der folgenden Plattform-Informationen:

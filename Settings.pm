@@ -43,10 +43,11 @@ sub handler {
 	# rename temporary authentication cache folder (if existing)
 	Plugins::Spotty::Plugin->renameCacheFolder(AUTHENTICATE);
 	Plugins::Spotty::Plugin->deleteCacheFolder(AUTHENTICATE);
+
+	my $osDetails = Slim::Utils::OSDetect::details();
 	
 	# don't even continue if we're missing the helper application
 	if ( !$helperPath ) {
-		my $osDetails = Slim::Utils::OSDetect::details();
 		
 		# Windows should just work - except if the MSVC 2015 runtime was missing
 		if (main::ISWINDOWS) {
@@ -63,6 +64,17 @@ sub handler {
 					Slim::Utils::OSDetect::isLinux() ? `ldd --version 2>&1 | head -n1` : ''
 				);
 		}
+	}
+	elsif ( 
+		$osDetails->{osName} =~ /Mac.?OS .*10\.(?:1|2|3|4|5|6)\./i
+		|| $osDetails->{osArch} =~ /\b(?:armv5tel|armel)\b.*linux/i
+	) {
+		$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE') . 
+			sprintf('<br><br>%s %s / %s',
+				string('INFORMATION_OPERATINGSYSTEM'), 
+				$osDetails->{'osName'},
+				($osDetails->{'osArch'} ? $osDetails->{'osArch'} : 'unknown')
+			);
 	}
 
 	if ( my ($deleteAccount) = map { /delete_(.*)/; $1 } grep /^delete_/, keys %$paramRef ) {

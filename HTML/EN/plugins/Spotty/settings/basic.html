@@ -1,11 +1,12 @@
 [% USE Prefs %]
 [% PROCESS settings/header.html %]
-
+	[% title = "PLUGIN_SPOTTY" %]
 	[% IF helperMissing; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
 		<div style="color: red">[% helperMissing %]</div>
+		[% title = "" %]
 	[% END; END %]
 
-	[% IF credentials; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
+	[% IF credentials; WRAPPER setting desc="" %]
 		<table>
 		[% FOREACH creds = credentials %]
 			<tr>
