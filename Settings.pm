@@ -58,8 +58,8 @@ sub handler {
 					string('INFORMATION_OPERATINGSYSTEM') . string('COLON'), 
 					$osDetails->{'osName'},
 					($osDetails->{'osArch'} ? $osDetails->{'osArch'} : 'unknown'),
-					string('INFORMATION_BINDIRS') . string('COLON'),
-					join("<br>", Slim::Utils::Misc::getBinPaths()),
+					string('PLUGIN_SPOTTY_INFORMATION_BINDIRS') . string('COLON'),
+					eval{ join("<br>", Slim::Utils::Misc::getBinPaths()) } || string('PLUGIN_SPOTTY_PLEASE_UPDATE'),
 					Slim::Utils::OSDetect::isLinux() ? `ldd --version 2>&1 | head -n1` : ''
 				);
 		}

@@ -404,3 +404,16 @@ PLUGIN_SPOTTY_CLIENT_ID
 
 PLUGIN_SPOTTY_CLIENT_ID_DESC
 	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀
+
+# this is a duplicate of INFORMATION_BINDIRS - which is not available in 7.7.5
+PLUGIN_SPOTTY_INFORMATION_BINDIRS
+	DE	Ordner für Hilfsprogramme
+	EN	Helper Applications Folder
+	FR	Dossier pour les applications utilitaires
+	NL	Map hulptoepassingen
+	NO	Mappe for støtteprogrammer
+	PL	Folder aplikacji pomocniczych
+
+PLUGIN_SPOTTY_PLEASE_UPDATE
+	DE	Information steht nicht zur Verfügung. Bitte Logitech Media Server auf 7.7.6 oder neuer aktualisieren.
+	EN	Information is not avaialable. Please update Logitech Media Server to 7.7.6 or more recent.
