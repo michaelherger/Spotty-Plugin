@@ -768,6 +768,7 @@ sub trackList {
 				line1     => $title,
 				line2     => "${artist} \x{2022} ${album}",
 				play      => 'spotify://' . $track_uri,
+				favorites_url => $track->{uri},
 				image     => $image || IMG_TRACK,
 				on_select => 'play',
 				duration  => $track->{duration_ms} / 1000,
@@ -799,6 +800,7 @@ sub albumList {
 			line1 => $album->{name},
 			line2 => $artists,
 			url   => \&album,
+			favorites_url => $album->{uri},
 			image => $album->{image} || IMG_ALBUM,
 			passthrough => [{
 				uri => $album->{uri}
@@ -819,6 +821,8 @@ sub artistList {
 			name => $artist->{name},
 			image => $artist->{image} || IMG_ACCOUNT,
 			url  => \&artist,
+			playlist => $artist->{uri},
+			favorites_url => $artist->{uri},
 			passthrough => [{
 				uri => $artist->{uri},
 				myAlbumsOnly => $myAlbumsOnly ? 1 : 0,
@@ -843,6 +847,7 @@ sub playlistList {
 			type  => 'playlist',
 			image => $list->{image} || ($list->{collaborative} ? IMG_COLLABORATIVE : IMG_PLAYLIST),
 			url   => \&playlist,
+			favorites_url => $list->{uri},
 			passthrough => [{
 				uri => $list->{uri}
 			}]
