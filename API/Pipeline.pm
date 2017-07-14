@@ -7,12 +7,12 @@ use strict;
 use base qw(Slim::Utils::Accessor);
 use List::Util qw(min);
 
-use Plugins::Spotty::API qw( SPOTIFY_LIMIT );
+use Plugins::Spotty::API qw( SPOTIFY_LIMIT DEFAULT_LIMIT );
 use Slim::Utils::Log;
 
-# make sure we don't iterate infinitely
+# make sure we don't iterate infinitely: maximum theoretical number of chunks plus some slack
 sub MAX_ITERATIONS {
-	5 * (Plugins::Spotty::API::DEFAULT_LIMIT()/SPOTIFY_LIMIT);
+	10 + (Plugins::Spotty::API::_DEFAULT_LIMIT()/SPOTIFY_LIMIT);
 }
 
 __PACKAGE__->mk_accessor( rw => qw(
@@ -35,7 +35,8 @@ sub new {
 	$self->cb(shift);
 	$self->params(Storable::dclone(shift || {}));
 	
-	$self->limit($self->params->{limit} || Plugins::Spotty::API::DEFAULT_LIMIT());
+	# default to conservative number
+	$self->limit($self->params->{limit} || DEFAULT_LIMIT);
 	$self->params->{limit} = delete $self->params->{_chunkSize} || SPOTIFY_LIMIT;
 	$self->params->{limit} = min($self->limit, $self->params->{limit});
 	

@@ -6,12 +6,12 @@ BEGIN {
 	use constant CACHE_TTL  => 86400 * 7;
 	use constant LIBRARY_LIMIT => 500;
 	use constant RECOMMENDATION_LIMIT => 100;		# for whatever reason this call does support a maximum chunk size of 100
-	use constant _DEFAULT_LIMIT => 200;
+	use constant DEFAULT_LIMIT => 200;
 	use constant MAX_LIMIT => 10_000;
 	use constant SPOTIFY_LIMIT => 50;
 
 	use Exporter::Lite;
-	our @EXPORT_OK = qw( SPOTIFY_LIMIT );
+	our @EXPORT_OK = qw( SPOTIFY_LIMIT DEFAULT_LIMIT );
 }
 
 use base qw(Slim::Utils::Accessor);
@@ -269,7 +269,7 @@ sub search {
 		q      => $args->{query},
 		type   => $type,
 		market => 'from_token',
-		limit  => $args->{limit} || DEFAULT_LIMIT()
+		limit  => $args->{limit} || DEFAULT_LIMIT
 	};
 	
 	if ( $type =~ /album|artist|track|playlist/ ) {
@@ -333,7 +333,7 @@ sub album {
 					$cb->($album);
 				},{
 					market => 'from_token',
-					limit  => $args->{limit} || max(LIBRARY_LIMIT, DEFAULT_LIMIT())
+					limit  => $args->{limit} || max(LIBRARY_LIMIT, _DEFAULT_LIMIT())
 				})->get();
 				
 				return;
@@ -469,7 +469,7 @@ sub artistAlbums {
 	}, $cb, {
 		# "from_token" not allowed here?!?!
 		market => $self->country,
-		limit  => min($args->{limit} || DEFAULT_LIMIT(), DEFAULT_LIMIT()),
+		limit  => min($args->{limit} || _DEFAULT_LIMIT(), _DEFAULT_LIMIT()),
 		offset => $args->{offset} || 0,
 	})->get();
 }
@@ -494,7 +494,7 @@ sub playlist {
 	
 	my $limit = $args->{limit};
 	# set the limit higher if it's the user's self curated playlist
-	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, DEFAULT_LIMIT()) : DEFAULT_LIMIT();
+	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();
 	
 	Plugins::Spotty::API::Pipeline->new($self, 'users/' . $user . '/playlists/' . $id . '/tracks', sub {
 		my $items = [];
@@ -644,7 +644,7 @@ sub myAlbums {
 		my $items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @{$results || []} ];
 		$cb->($items);
 	}, {
-		limit => max(LIBRARY_LIMIT, DEFAULT_LIMIT()),
+		limit => max(LIBRARY_LIMIT, _DEFAULT_LIMIT()),
 	})->get();
 }
 
@@ -768,7 +768,7 @@ sub myArtists {
 		}, 'fast')
 	}, {
 		type  => 'artist',
-		limit => max(LIBRARY_LIMIT, DEFAULT_LIMIT()),
+		limit => max(LIBRARY_LIMIT, _DEFAULT_LIMIT()),
 	})->get();
 }
 
@@ -809,7 +809,7 @@ sub recentlyPlayed {
 			}
 		}
 		
-		return $items, $_[0]->{'next'} ? DEFAULT_LIMIT() : 0, $_[0]->{'next'};
+		return $items, $_[0]->{'next'} ? _DEFAULT_LIMIT() : 0, $_[0]->{'next'};
 	}, $cb)->get();
 } 
 =cut
@@ -821,7 +821,7 @@ sub playlists {
 	
 	my $limit = $args->{limit};
 	# set the limit higher if it's the user's self curated playlist
-	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, DEFAULT_LIMIT()) : DEFAULT_LIMIT();
+	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();
 
 	# usernames must be lower case, and space not URI encoded
 	$user = lc($user);
@@ -1245,8 +1245,8 @@ sub hasError429 {
 	return $error429;
 }
 
-sub DEFAULT_LIMIT {
-	Plugins::Spotty::Plugin->hasDefaultIcon() ? _DEFAULT_LIMIT : MAX_LIMIT;
+sub _DEFAULT_LIMIT {
+	Plugins::Spotty::Plugin->hasDefaultIcon() ? DEFAULT_LIMIT : MAX_LIMIT;
 };
 
 1;
