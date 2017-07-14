@@ -672,7 +672,7 @@ sub isInMyAlbums {
 		my @ids = split(',', $idList);
 		my @results;
 		
-		for ( my $x = 0; $x < min((scalar @ids), (scalar @$tracks)) ; $x++ ) {
+		for ( my $x = 0; $x < min((scalar @ids), (scalar @{$tracks || []})) ; $x++ ) {
 			push @results, {
 				$ids[$x] => 1
 			} if $tracks->[$x];
