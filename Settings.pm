@@ -28,7 +28,11 @@ sub name {
 }
 
 sub page {
-	return Slim::Web::HTTP::CSRF->protectURI('plugins/Spotty/settings/basic.html');
+	return Slim::Web::HTTP::CSRF->protectURI(
+		Slim::Networking::Async::HTTP->hasSSL()
+		? 'plugins/Spotty/settings/basic.html'
+		: 'plugins/Spotty/settings/noSSL.html'
+	);
 }
 
 sub prefs {
@@ -67,7 +71,7 @@ sub handler {
 	}
 	elsif ( 
 		$osDetails->{osName} =~ /Mac.?OS .*10\.(?:1|2|3|4|5|6)\./i
-		|| $osDetails->{osArch} =~ /\b(?:armv5tel|armel)\b.*linux/i
+		|| $osDetails->{osArch} =~ /\b(?:armv5tel|armel|armle|powerpc)\b.*linux/i
 	) {
 		$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE') . 
 			sprintf('<br><br>%s %s / %s',

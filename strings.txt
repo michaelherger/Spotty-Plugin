@@ -54,6 +54,10 @@ PLUGIN_SPOTTY_PASSWORD_DESC
 PLUGIN_SPOTTY_AUTH_FAILED
 	DE	Anmeldung fehlgeschlagen
 	EN	Authorization failed
+	
+PLUGIN_USERS_LIBRARY
+	DE	Sammlung von %s
+	EN	%s's Library
 
 PLUGIN_SPOTTY_ACCOUNT
 	CS	Účet
@@ -136,8 +140,8 @@ PLUGIN_SPOTTY_MISSING_HELPER
 	EN	There has been a problem running the Spotty helper application. Most likely your operating system and/or platform is not supported. Please report the following details to me:
 
 PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS
-	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Bitte stellen Sie sicher, dass die <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime</a> installiert ist.
-	EN	There has been a problem running the Spotty helper application. Please make sure you have the <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime</a> installed on your system.
+	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Bitte stellen Sie sicher, dass die <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (32-Bit!)</a> installiert ist.
+	EN	There has been a problem running the Spotty helper application. Please make sure you have the <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (32-bit!)</a> installed on your system.
 
 PLUGIN_SPOTTY_WHATS_NEW
 	CS	Novinky
