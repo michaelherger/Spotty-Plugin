@@ -164,11 +164,11 @@ sub handleFeed {
 			};
 		}
 		
-		push @$items, {
+		my $personalItems = [{
 			name  => cstring($client, 'ALBUMS'),
 			type  => 'link',
 			image => IMG_ALBUM,
-			url   => \&myAlbums,
+			url  => \&myAlbums,
 		},{
 			name  => cstring($client, 'ARTISTS'),
 			type  => 'link',
@@ -179,26 +179,52 @@ sub handleFeed {
 			type  => 'link',
 			image => IMG_PLAYLIST,
 			url   => \&playlists
-		},{
+		}];
+
+		if ( Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
+			foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
+				my ($name, $id) = each %{$_};
+				
+				push @$items, {
+					name => cstring($client, 'PLUGIN_USERS_LIBRARY', $name),
+					items => [ map {{
+						name => $_->{name},
+						type => $_->{type},
+						image => $_->{image},
+						url => \&_withAccount,
+						passthrough => [{ 
+							id => $id,
+							cb => $_->{url} 
+						}]
+					}} @$personalItems ],
+					image => IMG_ACCOUNT,
+				};
+			}
+		}
+		else {
+			push @$items, @$personalItems;
+		}
+		
+		push @$items, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_TRANSFER'),
 			type  => 'link',
 			image => IMG_PLAYLIST,
 			url   => \&transferPlaylist
 		};
 		
-		if ( Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
-			push @$items, {
-				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
-				items => [{
-					name => Plugins::Spotty::Plugin->getAPIHandler($client)->username,
-					type => 'text'
-				},{
-					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
-					url   => \&selectAccount,
-				}],
-				image => IMG_ACCOUNT,
-			};
-		}
+#		if ( Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
+#			push @$items, {
+#				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
+#				items => [{
+#					name => Plugins::Spotty::Plugin->getAPIHandler($client)->username,
+#					type => 'text'
+#				},{
+#					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
+#					url   => \&selectAccount,
+#				}],
+#				image => IMG_ACCOUNT,
+#			};
+#		}
 		
 		$cb->({
 			items => $items,
@@ -361,7 +387,7 @@ sub categories {
 }
 
 sub myAlbums {
-	my ($client, $cb, $params) = @_;
+	my ($client, $cb, $params, $args) = @_;
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->myAlbums(sub {
 		my ($result) = @_;
@@ -1167,6 +1193,22 @@ sub _selectAccount {
 			nextWindow => 'grandparent',
 		}] });
 	});
+}
+
+sub _withAccount {
+	my ($client, $cb, $params, $args) = @_;
+
+	if ( $args->{id} == $prefs->client($client)->get('account') ) {
+		$args->{cb}->($client, $cb, $params);
+	}
+	else {
+		$prefs->client($client)->set('account', $args->{id});
+		$client->pluginData( api => '' );
+		
+		Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
+			$args->{cb}->($client, $cb, $params);
+		});
+	}
 }
 
 1;
