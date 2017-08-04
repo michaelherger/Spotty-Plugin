@@ -51,6 +51,7 @@ sub initPlugin {
 		iconCode => \&_initIcon,
 		audioCacheSize => 0,		# number of MB to cache
 		tracksSincePurge => 0,
+		accountSwitcherMenu => 0,
 	});
 	
 	$prefs->setChange( sub {

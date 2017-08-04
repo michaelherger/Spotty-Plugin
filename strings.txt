@@ -87,6 +87,14 @@ PLUGIN_SPOTTY_SELECT_ACCOUNT
 	RU	Выберите учетную запись
 	SV	Välj konto
 
+PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_OFF
+	DE	Stelle ein Menü zur Verfügung, um zwischen Konten zu wechseln. Dies empfiehlt sich, wenn auf einem Gerät meist dasselbe Konto verwendet wird.
+	EN	Provide a menu to switch between accounts. This option is suitable if you stick with one account per device most of the time.
+
+PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_ON
+	DE	Erstellen pro Konto ein Unter-Menü. Dies erlaubt den schnellen Zugriff auf die Sammlungen mehrerer Benutzer, erstellt aber mehr Menü-Einträge.
+	EN	Provide one browse menu per account. This allows you to quickly access libraries of the various users, but creates more menu entries.	
+
 PLUGIN_SPOTTY_HELPER
 	DE	Spotty Helferanwendung
 	EN	Spotty Helper Application

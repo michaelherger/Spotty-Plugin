@@ -36,7 +36,7 @@ sub page {
 }
 
 sub prefs {
-	return ($prefs, qw(myAlbumsOnly audioCacheSize iconCode));
+	return ($prefs, qw(myAlbumsOnly audioCacheSize iconCode accountSwitcherMenu));
 }
 
 sub handler {

@@ -25,6 +25,15 @@
 	[% WRAPPER setting title="" desc="" %]
 		<input name="addAccount" type=submit value="[% "PLUGIN_SPOTTY_ADD_ACCOUNT" | string %]" class="stdclick" />
 	[% END %]
+	
+	[% IF credentials && credentials.size > 1 %]
+		[% WRAPPER setting title="PLUGIN_SPOTTY_SELECT_ACCOUNT" desc="" %]
+			<input type="radio" name="pref_accountSwitcherMenu" id="pref_accountSwitcherMenu1" value="1" [% IF prefs.pref_accountSwitcherMenu %]checked="checked"[% END %] />
+			<label for="pref_accountSwitcherMenu1" class="stdlabel">[% 'PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_OFF' | getstring %]</label><br/>
+			<input type="radio" name="pref_accountSwitcherMenu" id="pref_accountSwitcherMenu0" value="0" [% IF NOT prefs.pref_accountSwitcherMenu %]checked="checked"[% END %] />
+			<label for="pref_accountSwitcherMenu0" class="stdlabel">[% 'PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_ON' | getstring %]</label><br/>
+		[% END %]
+	[% END %]
 
 	[% IF error429; WRAPPER setting title="" desc="" %]
 		<div style="color: red">[% error429 %]</div>

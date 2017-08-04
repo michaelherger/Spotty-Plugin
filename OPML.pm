@@ -181,7 +181,7 @@ sub handleFeed {
 			url   => \&playlists
 		}];
 
-		if ( Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
+		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
 			foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
 				my ($name, $id) = each %{$_};
 				
@@ -212,19 +212,19 @@ sub handleFeed {
 			url   => \&transferPlaylist
 		};
 		
-#		if ( Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
-#			push @$items, {
-#				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
-#				items => [{
-#					name => Plugins::Spotty::Plugin->getAPIHandler($client)->username,
-#					type => 'text'
-#				},{
-#					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
-#					url   => \&selectAccount,
-#				}],
-#				image => IMG_ACCOUNT,
-#			};
-#		}
+		if ( $prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
+			push @$items, {
+				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
+				items => [{
+					name => Plugins::Spotty::Plugin->getAPIHandler($client)->username,
+					type => 'text'
+				},{
+					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
+					url   => \&selectAccount,
+				}],
+				image => IMG_ACCOUNT,
+			};
+		}
 		
 		$cb->({
 			items => $items,
