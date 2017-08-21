@@ -8,12 +8,12 @@
 	<id>21cbb80e-67b8-44a8-a662-21c6c7ae5260</id>
 	<module>Plugins::Spotty::Plugin</module>
 	<optionsURL>plugins/Spotty/settings/basic.html</optionsURL>
-	<icon>plugins/Spotty/html/images/93aac68fb06348598c1e67734dfaceee.png</icon>
+	<icon>/plugins/Spotty/html/images/93aac68fb06348598c1e67734dfaceee.png</icon>
 	<targetApplication>
 		<id>SqueezeCenter</id>
 		<maxVersion>*</maxVersion>
 		<minVersion>7.7</minVersion>
 	</targetApplication>
 	<type>2</type>
-	<version>1.3.0</version>
+	<version>1.3.1</version>
 </extension>
