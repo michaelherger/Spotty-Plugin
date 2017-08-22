@@ -52,6 +52,7 @@ sub initPlugin {
 		audioCacheSize => 0,		# number of MB to cache
 		tracksSincePurge => 0,
 		accountSwitcherMenu => 0,
+		displayNames => {},
 	});
 	
 	$prefs->setChange( sub {
@@ -450,6 +451,22 @@ sub getSortedCredentialTupels {
 
 sub hasMultipleAccounts {
 	return scalar keys %{$_[0]->getAllCredentials()} > 1 ? 1 : 0;
+}
+
+sub getName {
+	my ($class, $client, $userId) = @_;
+	
+	return unless $client;
+	
+	Plugins::Spotty::Plugin->getAPIHandler($client)->user(sub {
+		my ($result) = @_;
+
+		if ($result && $result->{display_name}) {
+			my $names = $prefs->get('displayNames');
+			$names->{$userId} = $result->{display_name};
+			$prefs->set('displayNames', $names);
+		}
+	}, $userId);
 }
 
 sub getHelper {

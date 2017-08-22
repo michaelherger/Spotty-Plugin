@@ -8,6 +8,7 @@ use URI::Escape qw(uri_escape_utf8);
 use Plugins::Spotty::API;
 
 use Slim::Menu::GlobalSearch;
+use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string cstring);
@@ -24,6 +25,7 @@ use constant MAX_RECENT => 50;
 
 my $prefs = preferences('plugin.spotty');
 my $log = logger('network.asynchttp');
+my $cache = Slim::Utils::Cache->new();
 
 my %topuri = (
 	AT => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbKNHh6NIXu36',
@@ -73,6 +75,9 @@ sub init {
 			};
 		},
 	) );
+	
+	# enforce initial refresh of users' display names
+	$cache->remove('spotty_got_names');
 }
 
 sub handleFeed {
@@ -108,6 +113,17 @@ sub handleFeed {
 		
 		return;
 	}
+
+	# update users' display names every now and then
+	if ( Plugins::Spotty::Plugin->hasMultipleAccounts() && !$cache->get('spotty_got_names') ) {
+		foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
+			my ($name, $id) = each %{$_};
+			Plugins::Spotty::Plugin->getName($client, $name);
+		}
+		
+		$cache->set('spotty_got_names', 1, 3600);
+	}
+	
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
@@ -186,7 +202,7 @@ sub handleFeed {
 				my ($name, $id) = each %{$_};
 				
 				push @$items, {
-					name => cstring($client, 'PLUGIN_USERS_LIBRARY', $name),
+					name => cstring($client, 'PLUGIN_USERS_LIBRARY', _getDisplayName($name)),
 					items => [ map {{
 						name => $_->{name},
 						type => $_->{type},
@@ -216,7 +232,7 @@ sub handleFeed {
 			push @$items, {
 				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
 				items => [{
-					name => Plugins::Spotty::Plugin->getAPIHandler($client)->username,
+					name => _getDisplayName(Plugins::Spotty::Plugin->getAPIHandler($client)->username),
 					type => 'text'
 				},{
 					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
@@ -230,6 +246,11 @@ sub handleFeed {
 			items => $items,
 		});
 	} );
+}
+
+sub _getDisplayName {
+	my ($userId) = @_;
+	return $prefs->get('displayNames')->{$userId} || $userId;
 }
 
 sub search {

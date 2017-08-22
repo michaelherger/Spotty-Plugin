@@ -64,6 +64,7 @@ sub handler {
 		$class->shutdownHelper;
 
 		Plugins::Spotty::Plugin->renameCacheFolder($paramRef->{accountId});
+		Plugins::Spotty::Plugin->getName($client, $paramRef->{username});
 		
 		$response->code(RC_MOVED_TEMPORARILY);
 		$response->header('Location' => 'basic.html');
