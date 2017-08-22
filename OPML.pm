@@ -392,14 +392,17 @@ sub myAlbums {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->myAlbums(sub {
 		my ($result) = @_;
 
-		my $items = albumList($client, $result);
+		my ($items, $indexList) = albumList($client, $result);
 		
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
 			type => 'text',
 		} unless scalar @$items;
 		
-		$cb->({ items => $items });
+		$cb->({
+			items => $items,
+			indexList => $indexList
+		});
 	});
 }
 
@@ -409,14 +412,17 @@ sub myArtists {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->myArtists(sub {
 		my ($result) = @_;
 
-		my $items = artistList($client, $result, $prefs->get('myAlbumsOnly'));
+		my ($items, $indexList) = artistList($client, $result, $prefs->get('myAlbumsOnly'));
 		
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
 			type => 'text',
 		} unless scalar @$items;
 		
-		$cb->({ items => $items });
+		$cb->({
+			items => $items,
+			indexList => $indexList
+		});
 	});
 }
 
@@ -625,7 +631,12 @@ sub relatedArtists {
 	my ($client, $cb, $params, $args) = @_;
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->relatedArtists(sub {
-		$cb->({ items => artistList($client, shift) });
+		my ($items, $indexList) = artistList($client, shift);
+		
+		$cb->({
+			items => $items,
+			indexList => $indexList
+		});
 	}, $params->{uri} || $args->{uri});
 }
 
@@ -816,15 +827,30 @@ sub albumList {
 	my ( $client, $albums ) = @_;
 	
 	my $items = [];
+
+	my $indexList = [];
+	my $indexLetter;
+	my $count = 0;
 	
 	for my $album ( @{$albums} ) {		
 		my $artists = join( ', ', map { $_->{name} } @{ $album->{artists} } );
+
+		my $textkey = uc(substr($album->{name} || '', 0, 1));
+
+		if ( defined $indexLetter && $indexLetter ne ($textkey || '') ) {
+			push @$indexList, [$indexLetter, $count];
+			$count = 0;
+		}
+
+		$count++;
+		$indexLetter = $textkey;
 					
 		push @{$items}, {
 			type  => 'playlist',
 			name  => $album->{name} . ($artists ? (' ' . cstring($client, 'BY') . ' ' . $artists) : ''),
 			line1 => $album->{name},
 			line2 => $artists,
+			textkey => $textkey,
 			url   => \&album,
 			favorites_url => $album->{uri},
 			image => $album->{image} || IMG_ALBUM,
@@ -833,8 +859,10 @@ sub albumList {
 			}]
 		};
 	}
+
+	push @$indexList, [$indexLetter, $count];
 	
-	return $items;
+	return wantarray ? ($items, $indexList) : $items;
 }
 
 sub artistList {
@@ -842,9 +870,24 @@ sub artistList {
 	
 	my $items = [];
 
+	my $indexList = [];
+	my $indexLetter;
+	my $count = 0;
+
 	for my $artist ( @{$artists} ) {
+		my $textkey = substr($artist->{sortname} || '', 0, 1);
+		
+		if ( defined $indexLetter && $indexLetter ne ($textkey || '') ) {
+			push @$indexList, [$indexLetter, $count];
+			$count = 0;
+		}
+		
+		$count++;
+		$indexLetter = $textkey;
+		
 		push @{$items}, {
 			name => $artist->{name},
+			textkey => $textkey,
 			image => $artist->{image} || IMG_ACCOUNT,
 			url  => \&artist,
 			playlist => $artist->{uri},
@@ -855,8 +898,10 @@ sub artistList {
 			}]
 		};
 	}
+
+	push @$indexList, [$indexLetter, $count];
 	
-	return $items;
+	return wantarray ? ($items, $indexList) : $items;
 }
 
 sub playlistList {
