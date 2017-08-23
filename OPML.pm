@@ -198,9 +198,11 @@ sub handleFeed {
 		}];
 
 		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
-			foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
-				my ($name, $id) = each %{$_};
-				
+			my $credentials = Plugins::Spotty::Plugin->getAllCredentials();
+			
+			foreach my $name ( sort {
+				lc($a) cmp lc($b)
+			} keys %$credentials ) {
 				push @$items, {
 					name => cstring($client, 'PLUGIN_USERS_LIBRARY', _getDisplayName($name)),
 					items => [ map {{
@@ -209,7 +211,7 @@ sub handleFeed {
 						image => $_->{image},
 						url => \&_withAccount,
 						passthrough => [{ 
-							id => $id,
+							name => $name,
 							cb => $_->{url} 
 						}]
 					}} @$personalItems ],
@@ -1264,17 +1266,17 @@ sub _selectAccount {
 sub _withAccount {
 	my ($client, $cb, $params, $args) = @_;
 
-	if ( $args->{id} == $prefs->client($client)->get('account') ) {
+	my $credentials = Plugins::Spotty::Plugin->getAllCredentials();
+	my $id = lc($credentials->{$args->{name}});
+
+	main::INFOLOG && $log->is_info && $log->info(sprintf('Running query for %s (%s)', $args->{name}, $id));
+
+	$prefs->client($client)->set('account', $id);
+	$client->pluginData( api => '' );
+	
+	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$args->{cb}->($client, $cb, $params);
-	}
-	else {
-		$prefs->client($client)->set('account', $args->{id});
-		$client->pluginData( api => '' );
-		
-		Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
-			$args->{cb}->($client, $cb, $params);
-		});
-	}
+	});
 }
 
 1;
