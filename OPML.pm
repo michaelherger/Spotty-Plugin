@@ -49,6 +49,8 @@ my %topuri = (
 	XX => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbMDoHDwVN2tF',	# fallback "Top 100 on Spotify"
 );
 
+my $nextNameCheck = 0;
+
 sub init {
 	Slim::Menu::TrackInfo->registerInfoProvider( spotty => (
 		after => 'top',
@@ -103,7 +105,7 @@ sub handleFeed {
 		
 		return;
 	}
-	elsif ( !Plugins::Spotty::Plugin->getCredentials($client) ) {
+	elsif ( !Plugins::Spotty::Plugin->hasCredentials() || !Plugins::Spotty::Plugin->getAccount($client) ) {
 		$cb->({
 			items => [{
 				name => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED') . "\n" . cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
@@ -113,18 +115,22 @@ sub handleFeed {
 		
 		return;
 	}
+	# if there's no account assigned to the player, just pick one - we should never get here...
+	elsif ( !Plugins::Spotty::Plugin->getCredentials($client) ) {
+		selectAccount($client, $cb, $args);
+		return;
+	}
 
 	# update users' display names every now and then
-	if ( Plugins::Spotty::Plugin->hasMultipleAccounts() && !$cache->get('spotty_got_names') ) {
+	if ( Plugins::Spotty::Plugin->hasMultipleAccounts() && $nextNameCheck < time ) {
 		foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
 			my ($name, $id) = each %{$_};
 			Plugins::Spotty::Plugin->getName($client, $name);
 		}
 		
-		$cache->set('spotty_got_names', 1, 3600);
+		$nextNameCheck = time() + 3600;
 	}
 	
-
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
 	$spotty->featuredPlaylists( sub {
@@ -234,7 +240,7 @@ sub handleFeed {
 			push @$items, {
 				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
 				items => [{
-					name => _getDisplayName(Plugins::Spotty::Plugin->getAPIHandler($client)->username),
+					name => _getDisplayName($spotty->username),
 					type => 'text'
 				},{
 					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
@@ -245,6 +251,8 @@ sub handleFeed {
 		}
 		
 		$cb->({
+# XXX - now to refresh the title when the account has changed?
+#			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::Plugin->hasMultipleAccounts() ? sprintf(' (%s)', _getDisplayName($spotty->username)) : ''),
 			items => $items,
 		});
 	} );
@@ -1252,9 +1260,10 @@ sub selectAccount {
 
 sub _selectAccount {
 	my ($client, $cb, $params, $args) = @_;
+	
+	return unless $client;
 
-	$prefs->client($client)->set('account', $args->{id});
-	$client->pluginData( api => '' );
+	Plugins::Spotty::Plugin->setAccount($client, $args->{id});
 	
 	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$cb->({ items => [{
@@ -1271,8 +1280,7 @@ sub _withAccount {
 
 	main::INFOLOG && $log->is_info && $log->info(sprintf('Running query for %s (%s)', $args->{name}, $id));
 
-	$prefs->client($client)->set('account', $id);
-	$client->pluginData( api => '' );
+	Plugins::Spotty::Plugin->setAccount($client, $id);
 	
 	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$args->{cb}->($client, $cb, $params);

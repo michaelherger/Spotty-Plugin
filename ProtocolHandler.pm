@@ -57,14 +57,21 @@ sub explodePlaylist {
 #		return;
 #	}
 
-	Plugins::Spotty::Plugin->getAPIHandler($client)->trackURIsFromURI(sub {
-		$cb->([ 
-			map { 
-				/(track:.*)/; 
-				"spotify://$1";
-			} @{shift || []}
-		]);
-	}, $uri);
+	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
+	
+	if ($spotty) {
+		$spotty->trackURIsFromURI(sub {
+			$cb->([ 
+				map { 
+					/(track:.*)/; 
+					"spotify://$1";
+				} @{shift || []}
+			]);
+		}, $uri);
+	}
+	else {
+		$cb->([]);
+	}
 }
 
 sub getMetadataFor {

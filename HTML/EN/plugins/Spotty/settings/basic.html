@@ -13,9 +13,6 @@
 				<td style="vertical-align: middle; padding-right: 10px">[% creds.keys.0 %]</td>
 				<td>
 					<input name="delete_[% creds.values.0 %]" type="submit" value="[% "DELETE" | string %]" class="stdclick" />
-					[% IF creds.values.0 != "default" %]
-						<input name="default_[% creds.values.0 %]" type="submit" value="[% "DEFAULT_SKIN" | string %]" class="stdclick" />
-					[% END %]
 				</td>
 			</tr>
 		[% END %]

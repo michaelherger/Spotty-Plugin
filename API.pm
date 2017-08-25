@@ -95,10 +95,10 @@ sub getToken {
 	
 	if ( $force || !$token ) {
 		# try to use client specific credentials
-		foreach ($prefs->client($self->client)->get('account'), undef) {
+		if ( my $account = Plugins::Spotty::Plugin->getAccount($self->client) ) {
 			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"', 
 				scalar Plugins::Spotty::Plugin->getHelper(), 
-				Plugins::Spotty::Plugin->cacheFolder($_),
+				Plugins::Spotty::Plugin->cacheFolder($account),
 				$prefs->get('iconCode'),
 				SPOTIFY_SCOPE
 			);
@@ -123,7 +123,6 @@ sub getToken {
 					
 					# Cache for the given expiry time (less some to be sure...)
 					$cache->set($cacheKey, $token, ($response->{expiresIn} || 3600) - 300);
-					last;
 				}
 			}
 		}

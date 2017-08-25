@@ -26,6 +26,11 @@ sub dontStopTheMusic {
 		main::INFOLOG && $log->info("Auto-mixing Spotify tracks from random items in current playlist");
 
 		my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
+		
+		if (!$spotty) {
+			$cb->($client);
+			return;
+		}
 
 		my @searchData;
 		my $seedData = {

@@ -11,8 +11,6 @@ use Slim::Utils::Strings qw(string);
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::SettingsAuth;
 
-use constant AUTHENTICATE => '__AUTHENTICATE__';
-
 my $prefs = preferences('plugin.spotty');
 
 sub new {
@@ -45,8 +43,7 @@ sub handler {
 	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
 
 	# rename temporary authentication cache folder (if existing)
-	Plugins::Spotty::Plugin->renameCacheFolder(AUTHENTICATE);
-	Plugins::Spotty::Plugin->deleteCacheFolder(AUTHENTICATE);
+	Plugins::Spotty::SettingsAuth->cleanup();
 
 	my $osDetails = Slim::Utils::OSDetect::details();
 	
@@ -84,23 +81,14 @@ sub handler {
 	if ( my ($deleteAccount) = map { /delete_(.*)/; $1 } grep /^delete_/, keys %$paramRef ) {
 		Plugins::Spotty::Plugin->deleteCacheFolder($deleteAccount);
 	}
-	elsif ( my ($makeDefault) = map { /default_(.*)/; $1 } grep /^default_/, keys %$paramRef ) {
-		Plugins::Spotty::Plugin->renameCacheFolder('default');
-		Plugins::Spotty::Plugin->renameCacheFolder($makeDefault, 'default');
-	}
 
 	if ($paramRef->{saveSettings}) {
 		$paramRef->{pref_iconCode} ||= Plugins::Spotty::Plugin->_initIcon();
 	}
 	
 	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::Plugin->hasCredentials()) ) {
-		my $addAccount = '';
-		if ($paramRef->{addAccount}) {
-			$addAccount = '?accountId=' . AUTHENTICATE;
-		}
-		
 		$response->code(RC_MOVED_TEMPORARILY);
-		$response->header('Location' => 'authentication.html' . $addAccount);
+		$response->header('Location' => 'authentication.html');
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 	}
 

@@ -3,16 +3,20 @@ package Plugins::Spotty::SettingsAuth;
 use strict;
 use base qw(Slim::Web::Settings);
 
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions qw(catdir);
 use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 use JSON::XS::VersionOneAndTwo;
 use Proc::Background;
 
-use Slim::Utils::Prefs;
 use Slim::Utils::Log;
+use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
+use Slim::Utils::Timers;
 
 use Plugins::Spotty::Plugin;
+
+use constant AUTHENTICATE => '__AUTHENTICATE__';
+use constant HELPER_TIMEOUT => 60*15;		# kill the helper application after 15 minutes
 
 my $prefs = preferences('plugin.spotty');
 my $log   = logger('plugin.spotty');
@@ -45,7 +49,7 @@ sub handler {
 			my $command = sprintf(
 				'%s -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery', 
 				$helperPath, 
-				Plugins::Spotty::Plugin->cacheFolder($paramRef->{accountId}),
+				$class->_cacheFolder(),
 				string('PLUGIN_SPOTTY_AUTH_NAME'),
 				Slim::Utils::Misc::getLibraryName(),
 				$paramRef->{'username'},
@@ -60,10 +64,10 @@ sub handler {
 		}
 	}
 
-	if ( Plugins::Spotty::Plugin->hasCredentials($paramRef->{accountId}, 'no-fallback') ) {
+	if ( Plugins::Spotty::Plugin->hasCredentials(AUTHENTICATE) ) {
 		$class->shutdownHelper;
 
-		Plugins::Spotty::Plugin->renameCacheFolder($paramRef->{accountId});
+		$class->cleanup();
 		Plugins::Spotty::Plugin->getName($client, $paramRef->{username});
 		
 		$response->code(RC_MOVED_TEMPORARILY);
@@ -71,7 +75,7 @@ sub handler {
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 	}
 
-	if ( !$class->startHelper($paramRef->{accountId}) ) {
+	if ( !$class->startHelper() ) {
 		$paramRef->{helperMissing} = Plugins::Spotty::Plugin->getHelper() || 1;
 	}
 	
@@ -83,18 +87,18 @@ sub handler {
 
 # Some custom page handlers for advanced stuff
 
+# check whether we have credentials - called by the web page to decide if it can return
 sub checkCredentials {
 	my ($httpClient, $response, $func) = @_;
 
 	my $request = $response->request;
-	my $accountId = $request->uri->query_param('accountId');
 	
 	my $result = {
-		hasCredentials => Plugins::Spotty::Plugin->hasCredentials($accountId, 'no-fallback')
+		hasCredentials => Plugins::Spotty::Plugin->hasCredentials(AUTHENTICATE)
 	};
 	
 	# make sure our authentication helper is running
-	__PACKAGE__->startHelper($accountId);
+	__PACKAGE__->startHelper();
 	
 	my $content = to_json($result);
 	$response->header( 'Content-Length' => length($content) );
@@ -106,19 +110,16 @@ sub checkCredentials {
 }
 
 sub startHelper {
-	my ($class, $accountId) = @_;
+	my ($class) = @_;
 	
 	# no need to restart if it's already there
 	return $helper->alive if $helper && $helper->alive;
 
 	if ( my $helperPath = Plugins::Spotty::Plugin->getHelper() ) {
-		my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder();
-		$cacheFolder =~ s/default$/$accountId/ if $accountId; 
-		
 		if ( !($helper && $helper->alive) ) {
 			my $command = sprintf('%s -c "%s" -n "%s (%s)" -a', 
 				$helperPath, 
-				$cacheFolder, 
+				$class->_cacheFolder(), 
 				Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'),
 				Slim::Utils::Misc::getLibraryName(),
 			);
@@ -130,6 +131,9 @@ sub startHelper {
 					$command 
 				);
 			};
+
+			Slim::Utils::Timers::killTimers(undef, \&shutdownHelper);
+			Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + HELPER_TIMEOUT, \&shutdownHelper);
 	
 			if ($@) {
 				$log->warn("Failed to launch the authentication deamon: $@");
@@ -140,14 +144,22 @@ sub startHelper {
 	return $helper && $helper->alive;
 }
 
-sub shutdownHelper {
-	my $class = shift;
+sub cleanup {
+	Plugins::Spotty::Plugin->renameCacheFolder(AUTHENTICATE);
+	Plugins::Spotty::Plugin->deleteCacheFolder(AUTHENTICATE);
+}
 
+sub shutdownHelper {
 	if ($helper && $helper->alive) {
 		main::INFOLOG && $log->is_info && $log->info("Quitting authentication daemon");
 		$helper->die;
 	}
+	
+	cleanup();
 }
 
+sub _cacheFolder {
+	catdir(preferences('server')->get('cachedir'), 'spotty', AUTHENTICATE);
+}
 
 1;
