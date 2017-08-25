@@ -25,6 +25,8 @@ use Plugins::Spotty::ProtocolHandler;
 
 use constant HELPER => 'spotty';
 use constant CONNECT_ENABLED => 0;
+
+use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
 use constant CACHE_PURGE_INTERVAL_COUNT => 20;
 
@@ -54,11 +56,17 @@ sub initPlugin {
 		accountSwitcherMenu => 0,
 		displayNames => {},
 	});
+
 	
-	$prefs->setChange( sub {
-		__PACKAGE__->purgeAudioCache();
-		__PACKAGE__->updateTranscodingTable();
-	}, 'audioCacheSize');
+	if (ENABLE_AUDIO_CACHE) {
+		$prefs->setChange( sub {
+			__PACKAGE__->purgeAudioCache();
+			__PACKAGE__->updateTranscodingTable();
+		}, 'audioCacheSize') ;
+	}
+	else {
+		$prefs->set('audioCacheSize', 0);
+	}
 	
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
 	# this might be premature optimization, as ARM CPUs are getting more and more powerful...
@@ -100,8 +108,10 @@ sub initPlugin {
 		$log->error('Please update to Logitech Media Server 7.9.1 if you want to use seeking in Spotify tracks.');
 	}
 
-	$class->purgeCache();
-	$class->purgeAudioCache();
+	if (ENABLE_AUDIO_CACHE) {
+		$class->purgeCache();
+		$class->purgeAudioCache();
+	}
 }
 
 sub postinitPlugin {
@@ -153,8 +163,8 @@ sub updateTranscodingTable {
 		if ( $_ =~ /^spt-/ && $Slim::Player::TranscodingHelper::commandTable{$_} =~ /single-track/ ) {
 			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\$CACHE\$/$cacheDir/g;
 			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
-			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/disable-audio-cache/enable-audio-cache/g if $prefs->get('audioCacheSize');
-			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !$prefs->get('audioCacheSize');
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/disable-audio-cache/enable-audio-cache/g if ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize');
+			$Slim::Player::TranscodingHelper::commandTable{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !(ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize'));
 		}
 	}
 }
@@ -314,7 +324,7 @@ sub purgeCache {
 	$_[0]->cacheFolders('purge');
 }
 
-sub purgeAudioCacheAfterXTracks {
+sub purgeAudioCacheAfterXTracks { if (ENABLE_AUDIO_CACHE) {
 	my ($class) = @_;
 	
 	my $tracksSincePurge = $prefs->get('tracksSincePurge');
@@ -327,9 +337,9 @@ sub purgeAudioCacheAfterXTracks {
 		Slim::Utils::Timers::killTimers(0, \&purgeAudioCache);
 		Slim::Utils::Timers::setTimer(0, time() + 15, \&purgeAudioCache);
 	}		
-}
+} }
 
-sub purgeAudioCache {
+sub purgeAudioCache { if (ENABLE_AUDIO_CACHE) {
 	Slim::Utils::Timers::killTimers(0, \&purgeAudioCache);
 
 	main::INFOLOG && $log->is_info && $log->info("Starting audio cache cleanup...");
@@ -387,7 +397,7 @@ sub purgeAudioCache {
 	$prefs->set('tracksSincePurge', 0);
 
 	main::INFOLOG && $log->is_info && $log->info("Audio cache cleanup done!");
-}
+} }
 
 sub hasCredentials {
 	my ($class, $id, $noFallback) = @_;
