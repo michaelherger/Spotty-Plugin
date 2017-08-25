@@ -236,7 +236,7 @@ sub getAccount {
 	
 	my $id = $prefs->client($client)->get('account');
 	
-	if ( $id && !$class->hasCredentials($id) ) {
+	if ( !$id || !$class->hasCredentials($id) ) {
 		if ( ($id) = values %{$class->getAllCredentials()} ) {
 			$prefs->client($client)->set('account', $id);
 		}
