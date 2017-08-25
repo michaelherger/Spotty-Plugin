@@ -37,6 +37,9 @@ sub getSeekData {
 sub formatOverride { 
 	my ($class, $song) = @_;
 	
+	# Update the transcoding table with the current player's Spotty ID...
+	Plugins::Spotty::Plugin->updateTranscodingTable($song->master);
+
 	# check if we want/need to purge the audio cache
 	# this needs to be done from whatever code being run once per track
 	Plugins::Spotty::Plugin->purgeAudioCacheAfterXTracks();

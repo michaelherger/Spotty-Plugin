@@ -149,9 +149,13 @@ sub postinitPlugin {
 
 sub updateTranscodingTable {
 	my $class = shift || __PACKAGE__;
+	my $client = shift;
+	
+	# see whether we want to have a specific player's account
+	my $id = $class->getAccount($client);
 	
 	# modify the transcoding helper table to inject our cache folder
-	my $cacheDir = $class->cacheFolder();
+	my $cacheDir = $class->cacheFolder($id);
 	
 	my $helper = $class->getHelper();
 	$helper = basename($helper) if $helper;
@@ -160,7 +164,7 @@ sub updateTranscodingTable {
 	my $commandTable = Slim::Player::TranscodingHelper::Conversions();
 	foreach ( keys %$commandTable ) {
 		if ( $_ =~ /^spt-/ && $commandTable->{$_} =~ /single-track/ ) {
-			$commandTable->{$_} =~ s/\$CACHE\$/$cacheDir/g;
+			$commandTable->{$_} =~ s/-c ".*?"/-c "$cacheDir"/g;
 			$commandTable->{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
 			$commandTable->{$_} =~ s/disable-audio-cache/enable-audio-cache/g if ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize');
 			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !(ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize'));
