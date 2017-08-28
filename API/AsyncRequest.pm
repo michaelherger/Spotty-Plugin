@@ -160,7 +160,9 @@ sub onError {
 	main::PERFMON && (my $now = AnyEvent->time);
 	
 	# return the response object in addition to the standard values from SimpleAsyncHTTP
+	# SPOTTY
 	$self->ecb->( $self, $error, $http->response );
+	# /SPOTTY
 
 	main::PERFMON && $now && Slim::Utils::PerfMon->check('async', AnyEvent->time - $now, undef, $self->ecb);
 	
@@ -168,6 +170,7 @@ sub onError {
 }
 
 # if we send a cached response, tell the callback about it
+# SPOTTY
 sub sendCachedResponse {
 	my $self = shift;
 	
@@ -177,6 +180,7 @@ sub sendCachedResponse {
 	
 	return;
 }
+# /SPOTTY
 
 
 1;
