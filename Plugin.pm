@@ -43,6 +43,11 @@ my ($helper, $helperVersion);
 
 sub initPlugin {
 	my $class = shift;
+
+	if ( !main::TRANSCODING ) {
+		$log->error('You need to enable transcoding in order for Spotty to work');
+		return;
+	}
 	
 	if ( !Slim::Networking::Async::HTTP->hasSSL() ) {
 		$log->error(string('PLUGIN_SPOTTY_MISSING_SSL'));
@@ -112,7 +117,7 @@ sub initPlugin {
 	$class->purgeAudioCache() if ENABLE_AUDIO_CACHE;
 }
 
-sub postinitPlugin {
+sub postinitPlugin { if (main::TRANSCODING) {
 	my $class = shift;
 
 	# we're going to hijack the Spotify URI schema
@@ -145,7 +150,7 @@ sub postinitPlugin {
 			Plugins::LastMix::Services->registerHandler('Plugins::Spotty::LastMix');
 		}
 	}
-}
+} }
 
 sub updateTranscodingTable {
 	my $class = shift || __PACKAGE__;
