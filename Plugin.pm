@@ -579,11 +579,11 @@ sub getHelper {
 }
 
 
-sub shutdownPlugin {
+sub shutdownPlugin { if (main::TRANSCODING) {
 	# make sure we don't leave our helper app running
 	if (main::WEBUI) {
 		Plugins::Spotty::SettingsAuth->shutdownHelper();
 	}
-}
+} }
 
 1;
