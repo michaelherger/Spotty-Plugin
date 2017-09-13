@@ -3,6 +3,7 @@ package Plugins::Spotty::SettingsAuth;
 use strict;
 use base qw(Slim::Web::Settings);
 
+use File::Path qw(mkpath);
 use File::Spec::Functions qw(catdir);
 use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 use JSON::XS::VersionOneAndTwo;
@@ -56,10 +57,17 @@ sub handler {
 				$paramRef->{'password'},
 			);
 			
+			if (main::INFOLOG && $log->is_info) {
+				my $logCmd = $command;
+				$logCmd =~ s/$paramRef->{password}/\*\*\*\*\*\*\*\*/g;
+				$log->info("Trying to authenticate using: $logCmd");	
+			}
+			
 			my $response = `$command`;
 			
 			if ( !($response && $response =~ /authorized/) ) {
 				$paramRef->{'warning'} = string('PLUGIN_SPOTTY_AUTH_FAILED');
+				$log->warn($paramRef->{'warning'} . string('COLON') . " $response");
 			}
 		}
 	}
@@ -159,7 +167,9 @@ sub shutdownHelper {
 }
 
 sub _cacheFolder {
-	catdir(preferences('server')->get('cachedir'), 'spotty', AUTHENTICATE);
+	my $cacheFolder = catdir(preferences('server')->get('cachedir'), 'spotty', AUTHENTICATE);
+	mkpath $cacheFolder unless -f $cacheFolder;
+	return $cacheFolder;
 }
 
 1;
