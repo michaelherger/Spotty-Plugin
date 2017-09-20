@@ -24,7 +24,7 @@ use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
 use constant HELPER => 'spotty';
-use constant CONNECT_ENABLED => 0;
+use constant CONNECT_ENABLED => 1;
 
 use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
@@ -218,6 +218,10 @@ sub getAPIHandler {
 	
 	return $api;
 }
+
+sub isSpotifyConnect { if (CONNECT_ENABLED) {
+	Plugins::Spotty::Connect->isSpotifyConnect($_[1]);
+} }
 
 sub setAccount {
 	my ($class, $client, $id) = @_;

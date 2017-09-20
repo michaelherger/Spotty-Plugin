@@ -54,11 +54,6 @@ sub audioScrobblerSource { 'P' }
 
 sub explodePlaylist {
 	my ( $class, $client, $uri, $cb ) = @_;
-	
-#	if ( $uri eq 'spotify://connect.spt' ) {
-#		$cb->([$uri]);
-#		return;
-#	}
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 	
@@ -75,6 +70,25 @@ sub explodePlaylist {
 	else {
 		$cb->([]);
 	}
+}
+
+sub isRepeatingStream {
+	my ( undef, $song ) = @_;
+
+	return Plugins::Spotty::Plugin->isSpotifyConnect($song->master());
+}
+
+sub getNextTrack {
+	my ( $class, $song, $successCb, $errorCb ) = @_;
+
+	my $client = $song->master();
+
+	if (Plugins::Spotty::Plugin->isSpotifyConnect($client)) {
+		Plugins::Spotty::Connect->getNextTrack($song, $successCb, $errorCb);
+		return;
+	}
+	
+	$successCb->();
 }
 
 sub getMetadataFor {
@@ -111,7 +125,7 @@ sub getMetadataFor {
 	if ( $song ||= $client->currentSongForUrl($url) ) {
 		# we store a copy of the metadata in the song object - no need to read from the disk cache
 		my $info = $song->pluginData('info');
-		if ( $info->{title} && $info->{duration} ) {
+		if ( $info->{title} && $info->{duration} && ($info->{url} eq $url) ) {
 			my $bitrate = $song->streambitrate;
 			if ($bitrate) {
 				$info->{bitrate} = Slim::Schema::Track->buildPrettyBitRate( $bitrate );
@@ -126,6 +140,8 @@ sub getMetadataFor {
 				$info->{type} = sprintf('%s (%s %s)', $info->{type}, cstring($client, 'CONVERTED_TO'), $converted);
 			}
 			
+			$song->streamUrl($url);
+			$song->duration($info->{duration});
 			return $info;
 		}
 	}
@@ -161,6 +177,7 @@ sub getMetadataFor {
 		if ( $meta->{duration} && !($song->duration && $song->duration > 0) ) {
 			$song->duration($meta->{duration});
 		}
+		$meta->{url} = $url;
 
 		$song->pluginData( info => $meta );
 	}

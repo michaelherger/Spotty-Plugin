@@ -35,6 +35,7 @@ my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $error429;
+#my $connectDevices;
 
 # override the scope list hard-coded in to the spotty helper application
 use constant SPOTIFY_SCOPE => join(',', qw(
@@ -46,6 +47,7 @@ use constant SPOTIFY_SCOPE => join(',', qw(
   user-top-read
   user-read-recently-played
   user-read-playback-state
+  user-modify-playback-state
   playlist-read-private
   playlist-read-collaborative
   playlist-modify-public
@@ -225,35 +227,101 @@ sub player {
 			my ($result) = @_;
 			
 			if ($result && ref $result) {
-				my $info = {
-					deviceName => $result->{device}->{name}
-				};
+				$result->{progress} = $result->{progress_ms} ? $result->{progress_ms} / 1000 : 0;
+				$result->{no_context} = $result->{context} ? 0 : 1;
 
 				if ($result->{item} && $result->{item}->{type} eq 'track') {
-					$info->{track} = $self->_normalize($result->{item});
+					$result->{track} = $self->_normalize($result->{item});
 				}
 				
 				# unfortunately context only is transfered for playlists - otherwise let's assume the album
-				if ($result->{context} && $result->{context}->{uri}) {
-					$info->{context} = $result->{context}->{uri};
+				$result->{context} ||= {};
+				if (!$result->{context}->{uri} && $result->{track} && $result->{track}->{album}) {
+					$result->{context} = $result->{track}->{album}->{uri};
 				}
-				elsif ($info->{track} && $info->{track}->{album}) {
-					$info->{context} = $info->{track}->{album}->{uri};
-				}
-				
-				$info->{no_context} if !$result->{context};
 
-				$info->{progress} = $result->{progress_ms} ? $result->{progress_ms} / 1000 : 0;
-				$info->{shuffle_state} = $result->{shuffle_state};
-
-				$cb->($info);
+				$cb->($result);
 				return;
 			}
 			
 			$cb->();
+		},{
+			_nocache => 1,
 		}
 	)
 }
+
+sub playerPlay {
+	my ( $self, $cb, $device_id, $args ) = @_;
+	
+	$args ||= {};
+	$args->{device_id} ||= $device_id;
+	
+	$self->_call('me/player/play',
+		sub {
+			$cb->() if $cb;
+		},
+		PUT => $args
+	);
+}
+
+sub playerPause {
+	my ( $self, $cb, $device_id ) = @_;
+	
+	$self->_call('me/player/pause',
+		sub {
+			$cb->() if $cb;
+		},
+		PUT => {
+			device_id => $device_id,
+		}
+	);
+}
+
+sub playerNext {
+	my ( $self, $cb, $device_id ) = @_;
+	
+	$self->_call('me/player/next',
+		sub {
+			$cb->() if $cb;
+		},
+		POST => {
+			device_id => $device_id,
+		}
+	)
+}
+
+=pod
+sub getDeviceId {
+	my ($deviceId) = @_;
+	
+	if ( my ($device) = grep { $_->{name} =~ /\Q$deviceId\E/i } @$connectDevices ) {
+		warn Data::Dump::dump($device);
+		return $device->{$id};
+	}
+	
+	return $deviceId;
+}
+=cut
+=pod
+sub devices {
+	my ( $self, $cb ) = @_;
+	
+	$self->_call('me/player/devices',
+		sub {
+			my ($result) = @_;
+			
+			if ( $result && ref $result && $result->{devices} ) {
+				$connectDevices = $result->{devices};
+			}
+				
+			$cb->() if $cb;
+		},{
+			_nocache => 1,
+		}
+	);
+}
+=cut
 
 sub search {
 	my ( $self, $cb, $args ) = @_;
@@ -551,6 +619,11 @@ sub trackCached {
 
 sub tracks {
 	my ( $self, $cb, $ids ) = @_;
+	
+	if (!scalar @$ids) {
+		$cb->([]);
+		return;
+	}
 	
 	if ( !$self->ready ) {
 		$cb->([ map {
@@ -1166,7 +1239,7 @@ sub _call {
 					}
 				}
 			}
-			elsif ( $type eq 'PUT' && $response->code =~ /^20\d/ ) {
+			elsif ( $type =~ /PUT|POST/ && $response->code =~ /^20\d/ ) {
 				# ignore - v1/me/following doesn't return anything but 204 on success
 				# ignore me/albums?ids=...
 			}

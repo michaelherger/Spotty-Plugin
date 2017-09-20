@@ -723,7 +723,7 @@ sub transferPlaylist {
 				name => cstring($client, 'PLUGIN_SPOTTY_TRANSFER_DESC'),
 				type => 'textarea'
 			},{
-				name => $info->{deviceName},
+				name => $info->{device}->{name},
 				url  => \&_doTransferPlaylist,
 				passthrough => [$info],
 				nextWindow => 'nowPlaying',
@@ -765,7 +765,7 @@ sub _doTransferPlaylist {
 			$cb->({
 				nextWindow => 'nowPlaying'
 			});
-		}, $args->{context} || $args->{track}->{uri});
+		}, $args->{context}->{uri});
 
 		return;
 	}
