@@ -24,7 +24,7 @@ use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
 use constant HELPER => 'spotty';
-use constant CONNECT_ENABLED => 1;
+use constant CONNECT_ENABLED => main::ISWINDOWS ? 0 : 1;
 
 use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
@@ -542,7 +542,7 @@ sub getHelper {
 
 			# on armhf use hf binaries instead of default arm5te binaries
 			elsif ( $Config::Config{'archname'} =~ /arm.*linux/ ) {
-				unshift @candidates, HELPER . '-muslhf', HELPER . '-hf';
+				unshift @candidates, HELPER . '-muslhf'; #, HELPER . '-hf';
 			}
 		}
 
