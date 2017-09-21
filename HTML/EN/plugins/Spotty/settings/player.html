@@ -1,0 +1,8 @@
+[% PROCESS settings/header.html %]
+
+	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="" %]
+		<input type="checkbox" name="pref_enableSpotifyConnect" id="pref_enableSpotifyConnect" value="1" [% prefs.pref_enableSpotifyConnect ? "checked" : "" %]>
+		<label for="pref_enableSpotifyConnect">[% "PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC" | string %]&nbsp;&nbsp;</label>
+	[% END %]
+
+[% PROCESS settings/footer.html %]
