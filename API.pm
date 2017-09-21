@@ -268,26 +268,28 @@ sub playerPlay {
 sub playerPause {
 	my ( $self, $cb, $device_id ) = @_;
 	
+	my $args = {};
+	$args->{device_id} = $device_id if $device_id;
+	
 	$self->_call('me/player/pause',
 		sub {
 			$cb->() if $cb;
 		},
-		PUT => {
-			device_id => $device_id,
-		}
+		PUT => $args
 	);
 }
 
 sub playerNext {
 	my ( $self, $cb, $device_id ) = @_;
 	
+	my $args = {};
+	$args->{device_id} = $device_id if $device_id;
+	
 	$self->_call('me/player/next',
 		sub {
 			$cb->() if $cb;
 		},
-		POST => {
-			device_id => $device_id,
-		}
+		POST => $args
 	)
 }
 

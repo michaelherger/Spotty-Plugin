@@ -583,10 +583,15 @@ sub getHelper {
 }
 
 
+# we only run when transcoding is enabled, but shutdown would be called no matter what
 sub shutdownPlugin { if (main::TRANSCODING) {
 	# make sure we don't leave our helper app running
 	if (main::WEBUI) {
 		Plugins::Spotty::SettingsAuth->shutdownHelper();
+	}
+	
+	if (CONNECT_ENABLED) {
+		Plugins::Spotty::Connect->shutdownHelpers();
 	}
 } }
 
