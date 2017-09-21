@@ -8,6 +8,7 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Timers;
 
+use constant MIN_HELPER_VERSION => '0.7.0';
 use constant SEEK_THRESHOLD => 3;
 use constant NOTIFICATION => '{\\"id\\":0,\\"params\\":[\\"%s\\",[\\"spottyconnect\\",\\"%s\\"]],\\"method\\":\\"slim.request\\"}';
 
@@ -16,10 +17,13 @@ my $log = logger('plugin.spotty');
 
 my %helperInstances;
 my %helperBins;
+my $initialized;
 
 sub init {
-	my ($class, $helper) = @_;
-
+	my ($class) = @_;
+	
+	return unless $class->canSpotifyConnect('dontInit');
+	
 #                                                                |requires Client
 #                                                                |  |is a Query
 #                                                                |  |  |has Tags
@@ -36,7 +40,37 @@ sub init {
 	Slim::Control::Request::subscribe(\&_onPause, [['playlist'], ['pause', 'stop']]);
 	
 	# manage helper application instances
-	Slim::Control::Request::subscribe(\&initHelpers, [['client'], ['new', 'disconnect']])
+	Slim::Control::Request::subscribe(\&initHelpers, [['client'], ['new', 'disconnect']]);
+	
+	# start/stop helpers when the Connect flag changes
+	$prefs->setChange(\&initHelpers, 'enableSpotifyConnect');
+
+	if (main::WEBUI) {
+		require Plugins::Spotty::PlayerSettings;
+		Plugins::Spotty::PlayerSettings->new();
+	}
+	
+	$initialized = 1;
+}
+
+sub canSpotifyConnect {
+	my ($class, $dontInit) = @_;
+	
+	# we need either curl or wget in order to interact with the helper application
+	return unless _getCurlCmd() || _getWgetCmd();
+	
+	# we need a minimum helper application version
+	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
+	$helperVersion =~ s/^v//;
+	
+	if ( !Slim::Utils::Versions->checkVersion($helperVersion, MIN_HELPER_VERSION, 10) ) {
+		$log->error("Cannot support Spotty Connect, need at least helper version " . MIN_HELPER_VERSION);
+		return;
+	}
+	
+	__PACKAGE__->init() unless $initialized || $dontInit;
+	
+	return 1;
 }
 
 sub isSpotifyConnect {
@@ -195,6 +229,8 @@ sub _connectEvent {
 sub initHelpers {
 	my $class = __PACKAGE__;
 
+	main::INFOLOG && $log->is_info && $log->info("Initializing Spotty Connect helper daemons...");
+
 	# shut down orphaned instances
 	$class->shutdownHelpers('inactive-only');
 
@@ -237,7 +273,7 @@ sub startHelper {
 			main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: $command");
 			
 			eval { 
-				$helper = Proc::Background->new(
+				$helper = $helperInstances{$clientId} = Proc::Background->new(
 					{ 'die_upon_destroy' => 1 },
 					$command 
 				);

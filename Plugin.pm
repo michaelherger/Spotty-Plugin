@@ -219,6 +219,10 @@ sub getAPIHandler {
 	return $api;
 }
 
+sub canSpotifyConnect { if (CONNECT_ENABLED) {
+	Plugins::Spotty::Connect->canSpotifyConnect();
+} }
+
 sub isSpotifyConnect { if (CONNECT_ENABLED) {
 	Plugins::Spotty::Connect->isSpotifyConnect($_[1]);
 } }

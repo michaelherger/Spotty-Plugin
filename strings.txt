@@ -8,9 +8,6 @@ PLUGIN_SPOTTY_NAME
 SPT
 	EN	Spotty
 
-SPTC
-	EN	Spotty Connectivity
-
 PLUGIN_SPOTTY_NOT_AUTHORIZED
 	DE	Spotify Anmeldedaten fehlen
 	EN	Spotify Credentials missing
@@ -433,3 +430,11 @@ PLUGIN_SPOTTY_INFORMATION_BINDIRS
 PLUGIN_SPOTTY_PLEASE_UPDATE
 	DE	Information steht nicht zur Verfügung. Bitte Logitech Media Server auf 7.7.6 oder neuer aktualisieren.
 	EN	Information is not avaialable. Please update Logitech Media Server to 7.7.6 or more recent.
+	
+PLUGIN_SPOTTY_SPOTIFY_CONNECT
+	DE	Spotify Connect (EXPERIMENTELL!)
+	EN	Spotify Connect (EXPERIMENTAL!)
+	
+PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
+	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen
+	EN	Enable Spotify Connect endpoint for this player
