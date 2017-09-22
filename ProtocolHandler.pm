@@ -69,7 +69,7 @@ sub explodePlaylist {
 sub isRepeatingStream {
 	my ( undef, $song ) = @_;
 
-	return Plugins::Spotty::Plugin->isSpotifyConnect($song->master());
+	return $song && Plugins::Spotty::Plugin->isSpotifyConnect($song->master());
 }
 
 sub getNextTrack {
@@ -161,8 +161,7 @@ sub getMetadataFor {
 	$meta->{type}    ||= 'Ogg Vorbis (Spotify)';
 	$meta->{cover}   ||= IMG_TRACK;
 	$meta->{icon}    ||= IMG_TRACK;
-#			info_link => 'plugins/spotifylogi/trackinfo.html',
-
+	
 	if ($song) {
 		if ( $meta->{duration} && !($song->duration && $song->duration > 0) ) {
 			$song->duration($meta->{duration});

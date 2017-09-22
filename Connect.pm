@@ -21,6 +21,11 @@ my $initialized;
 
 sub init {
 	my ($class) = @_;
+
+	if (main::WEBUI && !$initialized) {
+		require Plugins::Spotty::PlayerSettings;
+		Plugins::Spotty::PlayerSettings->new();
+	}
 	
 	return unless $class->canSpotifyConnect('dontInit');
 	
@@ -44,11 +49,6 @@ sub init {
 	
 	# start/stop helpers when the Connect flag changes
 	$prefs->setChange(\&initHelpers, 'enableSpotifyConnect');
-
-	if (main::WEBUI) {
-		require Plugins::Spotty::PlayerSettings;
-		Plugins::Spotty::PlayerSettings->new();
-	}
 	
 	$initialized = 1;
 }
@@ -319,14 +319,13 @@ sub _getNotificationCmd {
 }
 
 sub _getCurlCmd {
-	return;
 	return $helperBins{curl} if $helperBins{curl};
 	
 	if ( my $curl = Slim::Utils::Misc::findbin('curl') ) {
 		$helperBins{curl} = $curl;
 	}
 	else {
-		$log->error("Can't initialized Spotty Connect without the 'curl' utility. Please install curl using your package manager.") unless defined $helperBins{curl};
+		$log->error("Didn't find the 'curl' utility. Please install curl using your package manager.") unless defined $helperBins{curl};
 		$helperBins{curl} = '';
 	}
 
@@ -340,7 +339,7 @@ sub _getWgetCmd {
 		$helperBins{wget} = $wget;
 	}
 	else {
-		$log->error("Can't initialized Spotty Connect without the 'wget' utility. Please install curl using your package manager.") unless defined $helperBins{wget};
+		$log->error("Didn't find the 'wget' utility. Please install wget using your package manager.") unless defined $helperBins{wget};
 		$helperBins{wget} = '';
 	}
 
