@@ -56,8 +56,7 @@ sub init {
 sub canSpotifyConnect {
 	my ($class, $dontInit) = @_;
 	
-	# we need either curl or wget in order to interact with the helper application
-	return unless _getCurlCmd() || _getWgetCmd();
+	return unless hasUnixTools();
 	
 	# we need a minimum helper application version
 	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
@@ -81,6 +80,14 @@ sub isSpotifyConnect {
 	my $song = $client->playingSong();
 	
 	return $client->pluginData('newTrack') || ($song ? $song->pluginData('SpotifyConnect') : undef) ? 1 : 0; 
+}
+
+sub hasUnixTools {
+	# we need either curl or wget in order to interact with the helper application
+	return unless _getCurlCmd() || _getWgetCmd();
+	return unless _getPVcmd();
+	
+	return 1;
 }
 
 sub getNextTrack {

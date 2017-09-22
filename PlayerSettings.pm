@@ -31,4 +31,14 @@ sub prefs {
 	return ($prefs->client($client), qw(enableSpotifyConnect));
 }
 
+sub handler {
+	my ($class, $client, $params) = @_;
+	
+	if ( !Plugins::Spotty::Connect->hasUnixTools() ) {
+		$params->{errorString} = $client->string('PLUGIN_SPOTTY_PV_CURL_WGET_MISSING');
+	}
+	
+	return $class->SUPER::handler( $client, $params );
+}
+
 1;
