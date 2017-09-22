@@ -141,6 +141,7 @@ sub _onNewSong {
 	
 	main::INFOLOG && $log->is_info && $log->info("Got a new track event, but this is no longer Spotify Connect");
 	$client->playingSong()->pluginData( SpotifyConnect => 0 );
+	Plugins::Spotty::Plugin->getAPIHandler($client)->playerPause();
 }
 
 sub _onPause {
@@ -183,7 +184,7 @@ sub _connectEvent {
 		#warn Data::Dump::dump($result, $cmd);
 		
 		# in case of a change event we need to figure out what actually changed...
-		if ( $cmd =~ /change|stop/ && $result && ref $result && (($streamUrl ne $result->{track}->{uri} && $result->{is_playing}) || !__PACKAGE__->isSpotifyConnect($client)) ) {
+		if ( $cmd =~ /change/ && $result && ref $result && (($streamUrl ne $result->{track}->{uri} && $result->{is_playing}) || !__PACKAGE__->isSpotifyConnect($client)) ) {
 			main::INFOLOG && $log->is_info && $log->info("Got a $cmd event, but actually this is a play next track event");
 			$cmd = 'start';
 		}
@@ -213,7 +214,7 @@ sub _connectEvent {
 			my $clientId = $client->id;
 			
 			# if we're playing, got a stop event, and current Connect device is us, then pause
-			if ( $client->isPlaying && $result->{device}->{name} =~ /\Q$clientId\E/i ) {
+			if ( $client->isPlaying && $result->{device}->{name} =~ /\Q$clientId\E/i && __PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause");
 				$client->execute(['pause']);
 			} 
