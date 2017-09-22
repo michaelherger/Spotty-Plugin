@@ -23,12 +23,6 @@ sub contentType { 'spt' }
 sub canSeek { Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 }
 sub canTranscodeSeek { Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 }
 
-#sub bufferThreshold {
-#	my ($class, $client, $url) = @_;
-#	warn Data::Dump::dump($url); 
-#	40 * ( preferences('server')->get('bufferSecs') || 3 ) 
-#}
-
 sub getSeekData {
 	my ($class, $client, $song, $newtime) = @_;
 	return { timeOffset => $newtime };
@@ -44,7 +38,7 @@ sub formatOverride {
 	# this needs to be done from whatever code being run once per track
 	Plugins::Spotty::Plugin->purgeAudioCacheAfterXTracks();
 	
-	return ($song->streamUrl =~ m|/connect\.| || $song->track->url =~ m|/connect\.|) ? 'sptc' : 'spt';
+	return 'spt';
 }
 
 sub canDirectStream { 0 }
@@ -113,10 +107,6 @@ sub getMetadataFor {
 	elsif ( !Slim::Networking::Async::HTTP->hasSSL() ) {
 		$meta->{artist} = cstring($client, 'PLUGIN_SPOTTY_MISSING_SSL');
 		$meta->{title} = cstring($client, 'PLUGIN_SPOTTY_MISSING_SSL');
-		return $meta;
-	}
-	elsif ($url =~ m|/connect\.|) {
-		$meta->{title} = 'Spotify Connect';
 		return $meta;
 	}
 	
