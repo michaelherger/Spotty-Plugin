@@ -624,6 +624,12 @@ sub shutdownPlugin { if (main::TRANSCODING) {
 	
 	if (CONNECT_ENABLED) {
 		Plugins::Spotty::Connect->shutdownHelpers();
+	
+		# XXX - ugly attempt at killing all hanging helper applications...
+		if ( !main::ISWINDOWS ) {
+			my $helper = File::Basename::basename($_[0]->getHelper());
+			`killall $helper > /dev/null 2>&1`;
+		}
 	}
 } }
 
