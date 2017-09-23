@@ -48,7 +48,7 @@ sub handler {
 	my $osDetails = Slim::Utils::OSDetect::details();
 	
 	my $knownIncompatible = $osDetails->{osName} =~ /Mac.?OS .*10\.(?:1|2|3|4|5|6)\./i
-		|| ($osDetails->{osArch} && $osDetails->{osArch} =~ /\b(?:armv5tel|armel|armle|powerpc)\b/i);
+		|| ($osDetails->{osArch} && $osDetails->{osArch} =~ /\b(?:powerpc)\b/i);
 		
 	# don't even continue if we're missing the helper application
 	if ( !$helperPath ) {
