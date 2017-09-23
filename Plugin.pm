@@ -530,34 +530,10 @@ sub getHelper {
 	my ($class) = @_;
 
 	if (!$helper) {
-		my @candidates = (HELPER);
-		
-		# trying to find the correct binary can be tricky... some ARM platforms behave oddly.
-		# do some trial-and-error testing to see what we can use
-		if (Slim::Utils::OSDetect::OS() eq 'unix') {
-			# on 64 bit try 64 bit builds first
-			if ( $Config::Config{'archname'} =~ /x86_64/ ) {
-				unshift @candidates, HELPER . '-x86_64';
-			}
-
-			# on armhf use hf binaries instead of default arm5te binaries
-			elsif ( $Config::Config{'archname'} =~ /arm.*linux/ ) {
-				unshift @candidates, HELPER . '-muslhf'; #, HELPER . '-hf';
-			}
-		}
-
-		# try spotty-custom first, allowing users to drop their own build anywhere
-		unshift @candidates, HELPER . '-custom';
 		my $check;
-		
-		foreach my $binary (@candidates) {
-			my $candidate = Slim::Utils::Misc::findbin($binary) || next;
-			
-			$candidate = Slim::Utils::OSDetect::getOS->decodeExternalHelperPath($candidate);
 
-			next unless -f $candidate && -x $candidate;
-
-			main::INFOLOG && $log->is_info && $log->info("Trying helper applicaton: $candidate");
+		$helper = $class->findBin(HELPER, sub {
+			my $candidate = $_[0];
 			
 			my $checkCmd = sprintf('%s -n "%s (%s)" --check', 
 				$candidate,
@@ -570,20 +546,72 @@ sub getHelper {
 			if ( $check && $check =~ /^ok spotty (v[\d\.]+)/i ) {
 				$helper = $candidate;
 				$helperVersion = $1;
-				last;
+				return 1;
 			}
-		}
+		}, 'custom-first');
 		
 		if (!$helper) {
 			$log->warn("Didn't find Spotty helper application!");
 			$log->warn("Last error: \n" . $check) if $check;	
 		}
-		elsif (main::INFOLOG && $log->is_info && $helper) {
-			$log->info("Found Spotty helper application: $helper");
-		}
 	}	
 
 	return wantarray ? ($helper, $helperVersion) : $helper;
+}
+
+# custom file finder around Slim::Utils::Misc::findbin: check for multiple versions per platform etc.
+sub findBin {
+	my ($class, $name, $checkerCb, $customFirst) = @_;
+	
+	my @candidates = ($name);
+	my $binary;
+	
+	# trying to find the correct binary can be tricky... some ARM platforms behave oddly.
+	# do some trial-and-error testing to see what we can use
+	if (Slim::Utils::OSDetect::OS() eq 'unix') {
+		# on 64 bit try 64 bit builds first
+		if ( $Config::Config{'archname'} =~ /x86_64/ ) {
+			if ($customFirst) {
+				unshift @candidates, $name . '-x86_64', $name . '-spotty';
+			}
+			else {
+				push @candidates, $name . '-x86_64', $name . '-spotty';
+			}
+		}
+
+		# on armhf use hf binaries instead of default arm5te binaries
+		# muslhf would not run on Pi1... have another gnueabi-hf for it
+		elsif ( $Config::Config{'archname'} =~ /arm.*linux/ ) {
+			if ($customFirst) {
+				unshift @candidates, $name . '-muslhf', $name . '-hf', $name . '-spotty';
+			}
+			else {
+				push @candidates, $name . '-muslhf', $name . '-hf', $name . '-spotty';
+			}
+		}
+	}
+
+	# try spotty-custom first, allowing users to drop their own build anywhere
+	unshift @candidates, $name . '-custom';
+	my $check;
+	
+	foreach (@candidates) {
+		my $candidate = Slim::Utils::Misc::findbin($_) || next;
+		
+		$candidate = Slim::Utils::OSDetect::getOS->decodeExternalHelperPath($candidate);
+
+		next unless -f $candidate && -x $candidate;
+		
+		main::INFOLOG && $log->is_info && $log->info("Trying helper applicaton: $candidate");
+
+		if ( !$checkerCb || $checkerCb->($candidate) ) {
+			$binary = $candidate;
+			main::INFOLOG && $log->is_info && $log->info("Found helper applicaton: $candidate");
+			last;
+		}
+	}
+	
+	return $binary;
 }
 
 

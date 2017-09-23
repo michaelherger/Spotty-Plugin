@@ -322,7 +322,7 @@ sub _getNotificationCmd {
 sub _getCurlCmd {
 	return $helperBins{curl} if $helperBins{curl};
 	
-	if ( my $curl = Slim::Utils::Misc::findbin('curl') ) {
+	if ( my $curl = Plugins::Spotty::Plugin->findBin('curl') ) {
 		$helperBins{curl} = $curl;
 	}
 	else {
@@ -336,7 +336,7 @@ sub _getCurlCmd {
 sub _getWgetCmd {
 	return $helperBins{wget} if $helperBins{wget};
 	
-	if ( my $wget = Slim::Utils::Misc::findbin('wget') ) {
+	if ( my $wget = Plugins::Spotty::Plugin->findBin('wget') ) {
 		$helperBins{wget} = $wget;
 	}
 	else {
@@ -350,7 +350,7 @@ sub _getWgetCmd {
 sub _getPVcmd {
 	return $helperBins{pv} if $helperBins{pv};
 	
-	if ( my $pv = Slim::Utils::Misc::findbin('pv') ) {
+	if ( my $pv = Plugins::Spotty::Plugin->findBin('pv') ) {
 		$helperBins{pv} = sprintf('| %s -L20k -B10k -q', $pv);
 	}
 	else {
