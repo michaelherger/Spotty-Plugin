@@ -351,7 +351,7 @@ sub _getPVcmd {
 	return $helperBins{pv} if $helperBins{pv};
 	
 	# check whether pv is working
-	if ( my $pv = Plugins::Spotty::Plugin->findBin('pv', sub { `$_[0] --version` =~ /pv/ }) ) {
+	if ( my $pv = Plugins::Spotty::Plugin->findBin('pv', sub { `$_[0] --version` =~ /pv/ }) || Plugins::Spotty::Plugin->findBin('pv-spotty', sub { `$_[0] --version` =~ /pv/ }) ) {
 		$helperBins{pv} = sprintf('| %s -L20k -B10k -q', $pv);
 	}
 	else {

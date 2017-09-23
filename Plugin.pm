@@ -572,10 +572,10 @@ sub findBin {
 		# on 64 bit try 64 bit builds first
 		if ( $Config::Config{'archname'} =~ /x86_64/ ) {
 			if ($customFirst) {
-				unshift @candidates, $name . '-x86_64', $name . '-spotty';
+				unshift @candidates, $name . '-x86_64';
 			}
 			else {
-				push @candidates, $name . '-x86_64', $name . '-spotty';
+				push @candidates, $name . '-x86_64';
 			}
 		}
 
@@ -583,10 +583,10 @@ sub findBin {
 		# muslhf would not run on Pi1... have another gnueabi-hf for it
 		elsif ( $Config::Config{'archname'} =~ /arm.*linux/ ) {
 			if ($customFirst) {
-				unshift @candidates, $name . '-muslhf', $name . '-hf', $name . '-spotty';
+				unshift @candidates, $name . '-muslhf', $name . '-hf';
 			}
 			else {
-				push @candidates, $name . '-muslhf', $name . '-hf', $name . '-spotty';
+				push @candidates, $name . '-muslhf', $name . '-hf';
 			}
 		}
 	}
