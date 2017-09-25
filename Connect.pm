@@ -11,7 +11,7 @@ use Slim::Utils::Timers;
 use constant MIN_HELPER_VERSION => '0.7.0';
 use constant SEEK_THRESHOLD => 3;
 use constant NOTIFICATION => '{\\"id\\":0,\\"params\\":[\\"%s\\",[\\"spottyconnect\\",\\"%s\\"]],\\"method\\":\\"slim.request\\"}';
-use constant DAEMON_WATCHDOG_INTERVAL => 120;
+use constant DAEMON_WATCHDOG_INTERVAL => 3600;
 
 my $prefs = preferences('plugin.spotty');
 my $log = logger('plugin.spotty');
