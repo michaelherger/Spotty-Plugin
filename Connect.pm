@@ -11,6 +11,7 @@ use Slim::Utils::Timers;
 use constant MIN_HELPER_VERSION => '0.7.0';
 use constant SEEK_THRESHOLD => 3;
 use constant NOTIFICATION => '{\\"id\\":0,\\"params\\":[\\"%s\\",[\\"spottyconnect\\",\\"%s\\"]],\\"method\\":\\"slim.request\\"}';
+use constant DAEMON_WATCHDOG_INTERVAL => 120;
 
 my $prefs = preferences('plugin.spotty');
 my $log = logger('plugin.spotty');
@@ -79,7 +80,23 @@ sub isSpotifyConnect {
 	$client = $client->master;
 	my $song = $client->playingSong();
 	
+	return unless $client->pluginData('SpotifyConnect');
+	
 	return $client->pluginData('newTrack') || ($song ? $song->pluginData('SpotifyConnect') : undef) ? 1 : 0; 
+}
+
+sub setSpotifyConnect {
+	my ( $class, $client ) = @_;
+	
+	return unless $client;
+
+	$client = $client->master;
+	my $song = $client->playingSong();
+	
+	# state on song: need to know whether we're currently in Connect mode. Is lost when new track plays.
+	$song->pluginData( SpotifyConnect => time() );
+	# state on client: need to know whether we've been in Connect mode. If this is set, then we've been playing from Connect, but are no more.
+	$client->pluginData( SpotifyConnect => 1 );
 }
 
 sub hasUnixTools {
@@ -99,7 +116,7 @@ sub getNextTrack {
 
 	if ( $client->pluginData('newTrack') ) {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
-		$song->pluginData( SpotifyConnect => time() );
+		$class->setSpotifyConnect($client);
 		$client->pluginData( newTrack => 0 );
 		$successCb->();
 	}
@@ -118,7 +135,7 @@ sub getNextTrack {
 					$uri =~ s/^(spotify:)(track:.*)/$1\/\/$2/;
 
 					$song->track->url($uri);
-					$song->pluginData( SpotifyConnect => time() );
+					$class->setSpotifyConnect($client);
 					
 					$successCb->();
 				}
@@ -136,11 +153,14 @@ sub _onNewSong {
 	$client = $client->master;
 
 	return if $request->source && $request->source eq __PACKAGE__;
-	
+
 	return if __PACKAGE__->isSpotifyConnect($client);
+	
+	return unless $client->pluginData('SpotifyConnect');
 	
 	main::INFOLOG && $log->is_info && $log->info("Got a new track event, but this is no longer Spotify Connect");
 	$client->playingSong()->pluginData( SpotifyConnect => 0 );
+	$client->pluginData( SpotifyConnect => 0 );
 	Plugins::Spotty::Plugin->getAPIHandler($client)->playerPause(undef, $client->id);
 }
 
@@ -199,6 +219,7 @@ sub _connectEvent {
 				main::INFOLOG && $log->is_info && $log->info("Got a new track to be played: " . $result->{track}->{uri});
 
 				# Sometimes we want to know whether we're in Spotify Connect mode or not
+				$client->pluginData( SpotifyConnect => 1 );
 				$client->pluginData( newTrack => 1 );
 
 				my $request = $client->execute( [ 'playlist', 'play', $result->{track}->{uri} ] );
@@ -211,7 +232,7 @@ sub _connectEvent {
 			}
 			elsif ( !$client->isPlaying ) {
 				main::INFOLOG && $log->is_info && $log->info("Got to resume playback");
-				$song->pluginData( SpotifyConnect => time() );
+				__PACKAGE__->setSpotifyConnect($client);
 				my $request = $client->execute(['play']);
 				$request->source(__PACKAGE__);
 			}
@@ -229,6 +250,7 @@ sub _connectEvent {
 			elsif ( $client->isPlaying ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause, but current player is not Connect target");
 				$client->playingSong()->pluginData( SpotifyConnect => 0 );
+				$client->pluginData( SpotifyConnect => 0 );
 			}
 		}
 		elsif ( $cmd eq 'change' ) {
@@ -242,6 +264,8 @@ sub _connectEvent {
 
 sub initHelpers {
 	my $class = __PACKAGE__;
+	
+	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
 
 	main::INFOLOG && $log->is_info && $log->info("Initializing Spotty Connect helper daemons...");
 
@@ -260,6 +284,8 @@ sub initHelpers {
 			$class->stopHelper($clientId);
 		}
 	}
+
+    Slim::Utils::Timers::setTimer( $class, time() + DAEMON_WATCHDOG_INTERVAL, \&initHelpers );
 }
 
 sub startHelper {
@@ -388,6 +414,8 @@ sub shutdownHelpers {
 		next if $clientIds{$clientId};
 		$class->stopHelper($clientId);
 	}
+
+	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
 }
 
 1;
