@@ -99,7 +99,7 @@ sub getNextTrack {
 
 	if ( $client->pluginData('newTrack') ) {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
-		$song->pluginData( SpotifyConnect => 1 );
+		$song->pluginData( SpotifyConnect => time() );
 		$client->pluginData( newTrack => 0 );
 		$successCb->();
 	}
@@ -118,7 +118,7 @@ sub getNextTrack {
 					$uri =~ s/^(spotify:)(track:.*)/$1\/\/$2/;
 
 					$song->track->url($uri);
-					$song->pluginData( SpotifyConnect => 1 );
+					$song->pluginData( SpotifyConnect => time() );
 					
 					$successCb->();
 				}
@@ -141,7 +141,7 @@ sub _onNewSong {
 	
 	main::INFOLOG && $log->is_info && $log->info("Got a new track event, but this is no longer Spotify Connect");
 	$client->playingSong()->pluginData( SpotifyConnect => 0 );
-	Plugins::Spotty::Plugin->getAPIHandler($client)->playerPause();
+	Plugins::Spotty::Plugin->getAPIHandler($client)->playerPause(undef, $client->id);
 }
 
 sub _onPause {
@@ -152,9 +152,14 @@ sub _onPause {
 	$client = $client->master;
 
 	return if !__PACKAGE__->isSpotifyConnect($client);
+
+	if ( $request->isCommand([['playlist'],['stop']]) && $client->playingSong()->pluginData('SpotifyConnect') > time() - 5 ) {
+		main::INFOLOG && $log->is_info && $log->info("Got a stop event within 5s after start of a new track - do NOT tell Spotify Connect controller to pause");
+		return;
+	}
 	
 	main::INFOLOG && $log->is_info && $log->info("Got a pause event - tell Spotify Connect controller to pause, too");
-	Plugins::Spotty::Plugin->getAPIHandler($client)->playerPause();
+	Plugins::Spotty::Plugin->getAPIHandler($client)->playerPause(undef, $client->id);
 }
 
 sub _connectEvent {
@@ -181,7 +186,7 @@ sub _connectEvent {
 		
 		$result ||= {};
 		
-		#warn Data::Dump::dump($result, $cmd);
+		main::DEBUGLOG && $log->is_debug && $log->debug("Current Connect state: \n" . Data::Dump::dump($result, $cmd));
 		
 		# in case of a change event we need to figure out what actually changed...
 		if ( $cmd =~ /change/ && $result && ref $result && (($streamUrl ne $result->{track}->{uri} && $result->{is_playing}) || !__PACKAGE__->isSpotifyConnect($client)) ) {
@@ -206,6 +211,7 @@ sub _connectEvent {
 			}
 			elsif ( !$client->isPlaying ) {
 				main::INFOLOG && $log->is_info && $log->info("Got to resume playback");
+				$song->pluginData( SpotifyConnect => time() );
 				my $request = $client->execute(['play']);
 				$request->source(__PACKAGE__);
 			}

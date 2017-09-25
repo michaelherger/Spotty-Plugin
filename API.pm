@@ -16,10 +16,11 @@ BEGIN {
 
 use base qw(Slim::Utils::Accessor);
 
-use JSON::XS::VersionOneAndTwo;
 use Digest::MD5 qw(md5_hex);
+use JSON::XS::VersionOneAndTwo;
 use List::Util qw(min max);
 use POSIX qw(strftime);
+use Tie::Cache::LRU::Expires;
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::Plugin;
@@ -35,7 +36,9 @@ my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $error429;
-#my $connectDevices;
+
+my %connectDevices;
+tie %connectDevices, 'Tie::Cache::LRU::Expires', EXPIRES => 86400, ENTRIES => 32;
 
 # override the scope list hard-coded in to the spotty helper application
 use constant SPOTIFY_SCOPE => join(',', qw(
@@ -239,6 +242,11 @@ sub player {
 				if (!$result->{context}->{uri} && $result->{track} && $result->{track}->{album}) {
 					$result->{context} = $result->{track}->{album}->{uri};
 				}
+				
+				# keep track of MAC -> ID mappings
+				if ($result->{device}) {
+					_extractIdMapping($result->{device});
+				}
 
 				$cb->($result);
 				return;
@@ -251,61 +259,80 @@ sub player {
 	)
 }
 
-sub playerPlay {
-	my ( $self, $cb, $device_id, $args ) = @_;
+sub _extractIdMapping {
+	my $device = shift;
 	
-	$args ||= {};
-	$args->{device_id} ||= $device_id;
-	
-	$self->_call('me/player/play',
-		sub {
-			$cb->() if $cb;
-		},
-		PUT => $args
-	);
+	if ($device && $device->{name} =~ /((?:[a-f0-9]{2}:){5}[a-f0-9]{2})/i) {
+		$connectDevices{$1} = $device->{id};
+	}
 }
 
+=pod
+sub playerPlay {
+	my ( $self, $cb, $device, $args ) = @_;
+	
+	$self->withIdFromMac(sub {
+		$args ||= {};
+		$args->{device_id} = $_[0] if $_[0];
+
+		$self->_call('me/player/play',
+			sub {
+				$cb->() if $cb;
+			},
+			PUT => $args
+		);
+	}, $device);
+}
+=cut
+
 sub playerPause {
-	my ( $self, $cb, $device_id ) = @_;
+	my ( $self, $cb, $device ) = @_;
 	
-	my $args = {};
-	$args->{device_id} = $device_id if $device_id;
-	
-	$self->_call('me/player/pause',
-		sub {
-			$cb->() if $cb;
-		},
-		PUT => $args
-	);
+	$self->withIdFromMac(sub {
+		my $args = {};
+		$args->{device_id} = $_[0] if $_[0];
+
+		$self->_call('me/player/pause',
+			sub {
+				$cb->() if $cb;
+			},
+			PUT => $args
+		);
+	}, $device);
 }
 
 sub playerNext {
-	my ( $self, $cb, $device_id ) = @_;
-	
-	my $args = {};
-	$args->{device_id} = $device_id if $device_id;
-	
-	$self->_call('me/player/next',
-		sub {
-			$cb->() if $cb;
-		},
-		POST => $args
-	)
+	my ( $self, $cb, $device ) = @_;
+
+	$self->withIdFromMac(sub {
+		my $args = {};
+		$args->{device_id} = $_[0] if $_[0];
+
+		$self->_call('me/player/next',
+			sub {
+				$cb->() if $cb;
+			},
+			POST => $args
+		);
+	}, $device);
 }
 
-=pod
-sub getDeviceId {
-	my ($deviceId) = @_;
+sub withIdFromMac {
+	my ( $self, $cb, $mac ) = @_;
 	
-	if ( my ($device) = grep { $_->{name} =~ /\Q$deviceId\E/i } @$connectDevices ) {
-		warn Data::Dump::dump($device);
-		return $device->{$id};
+	my $id = $connectDevices{$mac};
+	
+	if ( $id || $mac !~ /((?:[a-f0-9]{2}:){5}[a-f0-9]{2})/i ) {
+		$cb->($id || $mac);
 	}
-	
-	return $deviceId;
+	else {
+		# ID wasn't in the cache yet, let's get the playerlist
+		$self->devices(sub {
+			$cb->($connectDevices{$mac});
+		});
+	}
 }
-=cut
-=pod
+
 sub devices {
 	my ( $self, $cb ) = @_;
 	
@@ -314,7 +341,7 @@ sub devices {
 			my ($result) = @_;
 			
 			if ( $result && ref $result && $result->{devices} ) {
-				$connectDevices = $result->{devices};
+				map \&_extractIdMapping, @{$result->{devices} || []};
 			}
 				
 			$cb->() if $cb;
@@ -323,7 +350,6 @@ sub devices {
 		}
 	);
 }
-=cut
 
 sub search {
 	my ( $self, $cb, $args ) = @_;
