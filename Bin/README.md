@@ -123,5 +123,7 @@ Spotty on macOS 10.9 and older
 ------------------------------
 needs to be built using lewton, but doesn't work with --disable-discovery?
 
-
+Spotty on Windows
+-----------------
+Requires MS VC 2015 runtime v14, 32-bit(!)
 
