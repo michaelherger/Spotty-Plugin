@@ -259,6 +259,31 @@ sub player {
 	)
 }
 
+sub playerTransfer {
+	my ( $self, $cb, $device ) = @_;
+
+	$self->withIdFromMac(sub {
+		my $deviceId = shift;
+		
+		if (!$deviceId) {
+			$cb->() if $cb;
+			return;
+		}
+		
+		$self->_call('me/player',
+			sub {
+				$cb->() if $cb;
+			},
+			PUT => {
+				body => encode_json({
+					device_ids => [ $deviceId ],
+					play => 1
+				})
+			}
+		);
+	}, $device);
+}
+
 sub _extractIdMapping {
 	my $device = shift;
 	
@@ -341,7 +366,9 @@ sub devices {
 			my ($result) = @_;
 			
 			if ( $result && ref $result && $result->{devices} ) {
-				map \&_extractIdMapping, @{$result->{devices} || []};
+				map {
+					_extractIdMapping($_)
+				} @{$result->{devices} || []};
 			}
 				
 			$cb->() if $cb;
@@ -1192,8 +1219,13 @@ sub _call {
 			push @params, $key . '=' . uri_escape_utf8( $params->{$key} );
 		}
 
-		if ( $type =~ /GET|PUT/ ) {
+		# PUT requests can come with a body, or query params. In case of body,
+		# the caller should stringify the data already.
+		if ( $type eq 'GET' || ($type eq 'PUT' && !$params->{body}) ) {
 			$url .= '?' . join( '&', sort @params ) if scalar @params;
+		}
+		elsif ($type eq 'PUT' && $params->{body}) {
+			$content .= $params->{body};
 		}
 		else {
 			$content .= join( '&', sort @params );
@@ -1314,7 +1346,7 @@ sub _call {
 		$http->post($url, @headers, $content);
 	}
 	elsif ( $type eq 'PUT' ) {
-		$http->put($url, @headers);
+		$http->put($url, @headers, $content);
 	}
 	else {
 		$http->get($url, @headers);

@@ -343,6 +343,10 @@ PLUGIN_SPOTTY_TRANSFER_DESC
 	DE	Sie können die Spotify Wiedergabe vom unten gelisteten Gerät übernehmen. Allerdings ist es nicht immer möglich, die genau Wiedergabeliste zu übernehmen.
 	EN	You can transfer Spotify playback from below listed device to your Squeezebox. Please note that it's not always possible to restore the exact same playlist.
 
+PLUGIN_SPOTTY_TRANSFER_CONNECT_DESC
+	DE	Sie können die Spotify Wiedergabe vom unten gelisteten Gerät übernehmen. Die Wiedergabe wirde im Spotify Connect Modus weitergeführt. D.h. dass die Wiedergabe auf dem anderen Gerät angehalten wird.
+	EN	You can transfer Spotify playback from below listed device to your Squeezebox. Playback will continue in Spotify Connect mode. This means that playback on the origin device will stop.
+
 PLUGIN_SPOTTY_NO_PLAYER_FOUND
 	DE	Es wurde kein Gerät oder keine Wiedergabeliste gefunden.
 	EN	No Spotify playing device was found.
