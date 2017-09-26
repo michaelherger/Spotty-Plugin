@@ -612,7 +612,7 @@ sub followArtist {
 sub playlist {
 	my ( $self, $cb, $args ) = @_;
 	
-	my ($user, $id) = $args->{uri} =~ /^spotify:user:([^:]+):playlist:(.+)/;
+	my ($user, $id) = $self->getPlaylistUserAndId($args->{uri});
 	
 	my $limit = $args->{limit};
 	# set the limit higher if it's the user's self curated playlist
@@ -638,6 +638,20 @@ sub playlist {
 		market => 'from_token',
 		limit  => $limit
 	})->get();
+}
+
+sub getPlaylistUserAndId {
+	my ($self, $uri) = @_;
+	
+	my ($user, $id) = $uri =~ /^spotify:user:([^:]+):playlist:(.+)/;
+	
+	if ( !($user && $id) ) {
+		($id) = $uri =~ /^spotify:.*?\bplaylist:(.+)/;
+		$id ||= '';
+		$user = $cache->get('playlist_owner_' . $id) || '';
+	}
+	
+	return ($user, $id);
 }
 
 # USE CAREFULLY! Calling this too often might get us banned
@@ -969,7 +983,7 @@ sub addTracksToPlaylist {
 	if ( $playlist && $trackIds ) {
 		$trackIds = join(',', @$trackIds) if ref $trackIds;
 
-		my ($owner, $playlist) = $playlist =~ /^spotify:user:([^:]+):playlist:(.+)/;
+		my ($owner, $playlist) = $self->getPlaylistUserAndId($playlist);
 
 		# usernames must be lower case, and space not URI encoded
 		$owner = lc($owner);
@@ -1121,8 +1135,13 @@ sub _normalize {
 		$item->{tracks}  = [ map { $self->_normalize($_, $fast) } @{ $item->{tracks}->{items} } ] if $item->{tracks};
 	}
 	elsif ($type eq 'playlist') {
-		$item->{creator} = $item->{owner}->{id} if $item->{owner} && ref $item->{owner};
-		$item->{image}   = _getLargestArtwork(delete $item->{images});
+		if ( $item->{owner} && ref $item->{owner} ) {
+			$item->{creator} = $item->{owner}->{id};
+			if ( ($cache->get('playlist_owner_' . $item->{id}) || '') ne $item->{owner}->{id}) {
+				$cache->set('playlist_owner_' . $item->{id}, $item->{owner}->{id}, 86400*30);
+			} 
+		}
+		$item->{image} = _getLargestArtwork(delete $item->{images});
 	}
 	elsif ($type eq 'artist') {
 		$item->{sortname} = Slim::Utils::Text::ignoreArticles($item->{name});
