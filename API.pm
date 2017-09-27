@@ -614,6 +614,7 @@ sub playlist {
 	
 	my ($user, $id) = $self->getPlaylistUserAndId($args->{uri});
 	
+	# XXX - what if we don't find the user's name? Can't access using the users/.../playlists endpoint
 	my $limit = $args->{limit};
 	# set the limit higher if it's the user's self curated playlist
 	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();

@@ -11,7 +11,7 @@ use Slim::Utils::Timers;
 use constant MIN_HELPER_VERSION => '0.7.0';
 use constant SEEK_THRESHOLD => 3;
 use constant NOTIFICATION => '{\\"id\\":0,\\"params\\":[\\"%s\\",[\\"spottyconnect\\",\\"%s\\"]],\\"method\\":\\"slim.request\\"}';
-use constant DAEMON_WATCHDOG_INTERVAL => 3600;
+use constant DAEMON_WATCHDOG_INTERVAL => 60;
 
 my $prefs = preferences('plugin.spotty');
 my $log = logger('plugin.spotty');
@@ -267,7 +267,7 @@ sub initHelpers {
 	
 	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
 
-	main::INFOLOG && $log->is_info && $log->info("Initializing Spotty Connect helper daemons...");
+	main::DEBUGLOG && $log->is_debug && $log->debug("Initializing Spotty Connect helper daemons...");
 
 	# shut down orphaned instances
 	$class->shutdownHelpers('inactive-only');
