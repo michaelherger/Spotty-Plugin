@@ -332,13 +332,16 @@ sub _getNotificationCmd {
 	my ($event, $clientId) = @_;
 	
 	my $cmd = sprintf(NOTIFICATION, $clientId, $event);
+	my $url = Slim::Utils::Versions->compareVersions($::VERSION, '7.9.0') >= 0
+		? Slim::Utils::Network::serverURL() 
+		: 'http://' . Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport');
 	
 	if ( my $curl = _getCurlCmd() ) {
 		return sprintf(
 			'%s -s -X POST -d %s %s/jsonrpc.js',
 			$curl,
 			$cmd,
-			Slim::Utils::Network::serverURL()
+			$url
 		);
 	}
 	elsif ( my $wget = _getWgetCmd() ) {
@@ -346,7 +349,7 @@ sub _getNotificationCmd {
 			'%s -q -O- --post-data %s %s/jsonrpc.js',
 			$wget,
 			$cmd,
-			Slim::Utils::Network::serverURL()
+			$url
 		);
 	}
 }
