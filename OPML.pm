@@ -619,7 +619,7 @@ sub _gotArtistData {
 	}
 	
 	push @$items, {
-		type  => 'playlist',
+		type  => 'outline',
 		name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
 		items => trackList($client, $artistInfo->{tracks}),
 	},{
