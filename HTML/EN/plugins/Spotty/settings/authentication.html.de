@@ -3,7 +3,9 @@
 	[% IF canDiscover; WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
 		<div>Um die Squeezebox mit Spotify verwenden zu k&ouml;nnen muss Logitech Media Server mit Hilfe
 		einer Spotify Anwendung zugelassen werden. Dies kann die Desktop-Anwendung sein, oder auch eine Mobil-App.
-		Befolgen Sie einfach die folgenden, einfachen Schritte:</div>
+		Eine Spotify Premium Subskription ist Voraussetzung!</div>
+		
+		<div>Befolgen Sie einfach die folgenden, einfachen Schritte:</div>
 
 		<div class="spotty-instructions">
 			<ol class="spotty">
