@@ -11,7 +11,7 @@ use File::Basename;
 use File::Next;
 use File::Path qw(mkpath rmtree);
 use File::Slurp;
-use File::Spec::Functions qw(catdir catfile);
+use File::Spec::Functions qw(catdir catfile tmpdir);
 use JSON::XS::VersionOneAndTwo;
 use Scalar::Util qw(blessed);
 
@@ -29,6 +29,7 @@ use constant CONNECT_ENABLED => main::ISWINDOWS ? 0 : 1;
 use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
 use constant CACHE_PURGE_INTERVAL_COUNT => 20;
+use constant CACHE_PURGE_MAX_AGE => 2 * 3600;
 
 my $prefs = preferences('plugin.spotty');
 my $credsCache;
@@ -114,7 +115,7 @@ sub initPlugin {
 	}
 
 	$class->purgeCache();
-	$class->purgeAudioCache() if ENABLE_AUDIO_CACHE;
+	$class->purgeAudioCache();
 }
 
 sub postinitPlugin { if (main::TRANSCODING) {
@@ -369,7 +370,7 @@ sub purgeCache {
 	$_[0]->cacheFolders('purge');
 }
 
-sub purgeAudioCacheAfterXTracks { if (ENABLE_AUDIO_CACHE) {
+sub purgeAudioCacheAfterXTracks {
 	my ($class) = @_;
 	
 	my $tracksSincePurge = $prefs->get('tracksSincePurge');
@@ -382,67 +383,85 @@ sub purgeAudioCacheAfterXTracks { if (ENABLE_AUDIO_CACHE) {
 		Slim::Utils::Timers::killTimers(0, \&purgeAudioCache);
 		Slim::Utils::Timers::setTimer(0, time() + 15, \&purgeAudioCache);
 	}		
-} }
+}
 
-sub purgeAudioCache { if (ENABLE_AUDIO_CACHE) {
+sub purgeAudioCache {
 	Slim::Utils::Timers::killTimers(0, \&purgeAudioCache);
 
 	main::INFOLOG && $log->is_info && $log->info("Starting audio cache cleanup...");
 	
-	my $files = File::Next::files( catdir(__PACKAGE__->cacheFolder(), 'files') );
-	my @files;
-	my $totalSize = 0;
+	# purge our local file cache
+	if (ENABLE_AUDIO_CACHE) {
+		my $files = File::Next::files( catdir(__PACKAGE__->cacheFolder(), 'files') );
+		my @files;
+		my $totalSize = 0;
+		
+		while ( defined ( my $file = $files->() ) ) {
+			# give the server some room to breath...
+			main::idleStreams();
 	
-	while ( defined ( my $file = $files->() ) ) {
-		# give the server some room to breath...
-		main::idleStreams();
-
-		my @stat = stat($file);
-		
-		# keep track of file path, size and last access/modification date
-		push @files, [$file, $stat[7], $stat[8] || $stat[9]];
-		$totalSize += $stat[7];
-	}
-
-	@files = sort { $a->[2] <=> $b->[2] } @files;
-
-	my $maxCacheSize = $prefs->get('audioCacheSize') * 1024 * 1024;
-	
-	main::INFOLOG && $log->is_info && $log->info(sprintf("Max. cache size is: %iMB, current cache size is %iMB", $prefs->get('audioCacheSize'), $totalSize / (1024*1024)));
-	
-	# we're going to reduce the cache size to get some slack before exceeding the cache size
-	$maxCacheSize *= 0.8;
-	
-	foreach my $file ( @files ) {
-		main::idleStreams();
-
-		last if $totalSize < $maxCacheSize;
-		
-		unlink $file->[0];
-		$totalSize -= $file->[1];
-		
-		my $dir = dirname($file->[0]);
-		
-		opendir DIR, $dir or next;
-		
-		if ( !scalar File::Spec->no_upwards(readdir DIR) ) {
-			close DIR;
-			rmdir $dir;
+			my @stat = stat($file);
+			
+			# keep track of file path, size and last access/modification date
+			push @files, [$file, $stat[7], $stat[8] || $stat[9]];
+			$totalSize += $stat[7];
 		}
-		else {
-			close DIR;
+	
+		@files = sort { $a->[2] <=> $b->[2] } @files;
+	
+		my $maxCacheSize = $prefs->get('audioCacheSize') * 1024 * 1024;
+		
+		main::INFOLOG && $log->is_info && $log->info(sprintf("Max. cache size is: %iMB, current cache size is %iMB", $prefs->get('audioCacheSize'), $totalSize / (1024*1024)));
+		
+		# we're going to reduce the cache size to get some slack before exceeding the cache size
+		$maxCacheSize *= 0.8;
+		
+		foreach my $file ( @files ) {
+			main::idleStreams();
+	
+			last if $totalSize < $maxCacheSize;
+			
+			unlink $file->[0];
+			$totalSize -= $file->[1];
+			
+			my $dir = dirname($file->[0]);
+			
+			opendir DIR, $dir or next;
+			
+			if ( !scalar File::Spec->no_upwards(readdir DIR) ) {
+				close DIR;
+				rmdir $dir;
+			}
+			else {
+				close DIR;
+			}
+		}
+	}
+	
+	# clean up temporary files the spotty helper (librespot) is leaving behind on skips
+	my $tmpFolder = tmpdir();
+
+	if ( $tmpFolder && -d $tmpFolder && opendir(DIR, $tmpFolder) ) {
+		foreach my $tmp ( grep { /^\.tmp[a-z0-9]{6}$/i && -f catfile($tmpFolder, $_) } readdir(DIR) ) {
+			my $tmpFile = catfile($tmpFolder, $tmp);
+			my (undef, undef, undef, undef, $uid, $gid, undef, $size, undef, $mtime, $ctime) = stat($tmpFile);
+			
+			# delete file if it matches our name, user ID, and is of a certain age
+			if ( $uid == $> && time() - $mtime > CACHE_PURGE_MAX_AGE ) {
+				unlink $tmpFile;
+			}
+
+			main::idleStreams();
 		}
 	}
 
 	# only purge the audio cache if it's enabled
-	if ($maxCacheSize) {
-		Slim::Utils::Timers::setTimer(0, time() + CACHE_PURGE_INTERVAL, \&purgeAudioCache);
-	}
+	Slim::Utils::Timers::setTimer(0, time() + CACHE_PURGE_INTERVAL, \&purgeAudioCache);
 
 	$prefs->set('tracksSincePurge', 0);
 
 	main::INFOLOG && $log->is_info && $log->info("Audio cache cleanup done!");
-} }
+}
 
 sub hasCredentials {
 	my ($class, $id) = @_;
