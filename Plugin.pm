@@ -597,6 +597,14 @@ sub findBin {
 				push @candidates, $name . '-x86_64';
 			}
 		}
+		elsif ( $Config::Config{'archname'} =~ /[3-6]86/ ) {
+			if ($customFirst) {
+				unshift @candidates, $name . '-i386';
+			}
+			else {
+				push @candidates, $name . '-i386';
+			}
+		}
 
 		# on armhf use hf binaries instead of default arm5te binaries
 		# muslhf would not run on Pi1... have another gnueabi-hf for it
