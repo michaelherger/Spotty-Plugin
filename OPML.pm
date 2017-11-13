@@ -251,7 +251,7 @@ sub handleFeed {
 		}
 		
 		$cb->({
-# XXX - now to refresh the title when the account has changed?
+# XXX - how to refresh the title when the account has changed?
 #			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::Plugin->hasMultipleAccounts() ? sprintf(' (%s)', _getDisplayName($spotty->username)) : ''),
 			items => $items,
 		});

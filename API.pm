@@ -1219,7 +1219,7 @@ sub _call {
 	my $token = $self->getToken();
 	
 	if ( !$token || $token =~ /^-(\d+)$/ ) {
-		my $error = $1 || 1;
+		my $error = $1 || 'NO_ACCESS_TOKEN';
 		$cb->({
 			name => string('PLUGIN_SPOTTY_ERROR_' . $error),
 			type => 'text' 
