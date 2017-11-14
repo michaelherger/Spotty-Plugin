@@ -90,7 +90,7 @@ PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_OFF
 
 PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_ON
 	DE	Erstellen pro Konto ein Unter-Menü. Dies erlaubt den schnellen Zugriff auf die Sammlungen mehrerer Benutzer, erstellt aber mehr Menü-Einträge.
-	EN	Provide one browse menu per account. This allows you to quickly access libraries of the various users, but creates more menu entries.	
+	EN	Provide one browse menu per account. This allows you to quickly access libraries of the various users, but creates more menu entries.
 
 PLUGIN_SPOTTY_HELPER
 	DE	Spotty Helferanwendung

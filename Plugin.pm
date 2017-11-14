@@ -28,8 +28,8 @@ use constant CONNECT_ENABLED => main::ISWINDOWS ? 0 : 1;
 
 use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
-use constant CACHE_PURGE_INTERVAL_COUNT => 20;
-use constant CACHE_PURGE_MAX_AGE => 2 * 3600;
+use constant CACHE_PURGE_INTERVAL_COUNT => 5;
+use constant CACHE_PURGE_MAX_AGE => 5 * 60;
 
 my $prefs = preferences('plugin.spotty');
 my $credsCache;
@@ -115,7 +115,7 @@ sub initPlugin {
 	}
 
 	$class->purgeCache();
-	$class->purgeAudioCache();
+	$class->purgeAudioCache(1);
 }
 
 sub postinitPlugin { if (main::TRANSCODING) {
@@ -166,16 +166,30 @@ sub updateTranscodingTable {
 	my $helper = $class->getHelper();
 	$helper = basename($helper) if $helper;
 	$helper = '' if $helper eq 'spotty';
+	
+	my $tmpDir = $class->getTmpDir();
+	if ($tmpDir) {
+		$tmpDir = "TMPDIR=$tmpDir";
+	}
 
 	my $commandTable = Slim::Player::TranscodingHelper::Conversions();
 	foreach ( keys %$commandTable ) {
 		if ( $_ =~ /^spt-/ && $commandTable->{$_} =~ /single-track/ ) {
 			$commandTable->{$_} =~ s/-c ".*?"/-c "$cacheDir"/g;
+			$commandTable->{$_} =~ s/(\[spotty\])/$tmpDir $1/g if $tmpDir;
+			$commandTable->{$_} =~ s/^[^\[]+// if !$tmpDir;
 			$commandTable->{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
 			$commandTable->{$_} =~ s/disable-audio-cache/enable-audio-cache/g if ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize');
 			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !(ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize'));
 		}
 	}
+}
+
+sub getTmpDir {
+	if ( !main::ISWINDOWS && !main::ISMAC ) {
+		return catdir(preferences('server')->get('cachedir'), 'spotty');
+	}
+	return '';
 }
 
 sub getDisplayName { 'PLUGIN_SPOTTY_NAME' }
@@ -380,13 +394,15 @@ sub purgeAudioCacheAfterXTracks {
 
 	if ( $tracksSincePurge >= CACHE_PURGE_INTERVAL_COUNT ) {
 		# delay the purging until the track has buffered etc.
-		Slim::Utils::Timers::killTimers(0, \&purgeAudioCache);
-		Slim::Utils::Timers::setTimer(0, time() + 15, \&purgeAudioCache);
+		Slim::Utils::Timers::killTimers($class, \&purgeAudioCache);
+		Slim::Utils::Timers::setTimer($class, time() + 15, \&purgeAudioCache);
 	}		
 }
 
 sub purgeAudioCache {
-	Slim::Utils::Timers::killTimers(0, \&purgeAudioCache);
+	my ($class, $ignoreTimeStamp) = @_;
+
+	Slim::Utils::Timers::killTimers($class, \&purgeAudioCache);
 
 	main::INFOLOG && $log->is_info && $log->info("Starting audio cache cleanup...");
 	
@@ -439,7 +455,7 @@ sub purgeAudioCache {
 	}
 	
 	# clean up temporary files the spotty helper (librespot) is leaving behind on skips
-	my $tmpFolder = tmpdir();
+	my $tmpFolder = __PACKAGE__->getTmpDir() || tmpdir();
 
 	if ( $tmpFolder && -d $tmpFolder && opendir(DIR, $tmpFolder) ) {
 		foreach my $tmp ( grep { /^\.tmp[a-z0-9]{6}$/i && -f catfile($tmpFolder, $_) } readdir(DIR) ) {
@@ -447,8 +463,8 @@ sub purgeAudioCache {
 			my (undef, undef, undef, undef, $uid, $gid, undef, $size, undef, $mtime, $ctime) = stat($tmpFile);
 			
 			# delete file if it matches our name, user ID, and is of a certain age
-			if ( $uid == $> && time() - $mtime > CACHE_PURGE_MAX_AGE ) {
-				unlink $tmpFile;
+			if ( $uid == $> ) {
+				unlink $tmpFile if $ignoreTimeStamp || (time() - $mtime > CACHE_PURGE_MAX_AGE);
 			}
 
 			main::idleStreams();
@@ -456,7 +472,7 @@ sub purgeAudioCache {
 	}
 
 	# only purge the audio cache if it's enabled
-	Slim::Utils::Timers::setTimer(0, time() + CACHE_PURGE_INTERVAL, \&purgeAudioCache);
+	Slim::Utils::Timers::setTimer($class, time() + CACHE_PURGE_INTERVAL, \&purgeAudioCache);
 
 	$prefs->set('tracksSincePurge', 0);
 
