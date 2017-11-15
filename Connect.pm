@@ -299,11 +299,11 @@ sub startHelper {
 
 	if ( (_getCurlCmd() || _getWgetCmd()) && (my $helperPath = Plugins::Spotty::Plugin->getHelper()) ) {
 		if ( !($helper && $helper->alive) ) {
-			my $command = sprintf('%s -c "%s" -n "%s (%s)" --disable-discovery --onstart "%s" --onstop "%s" --onchange "%s" %s > %s', 
+			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --onstart "%s" --onstop "%s" --onchange "%s" %s > %s', 
 				$helperPath, 
 				Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ), 
 				$client->name,
-				$clientId,
+#				$clientId,
 				_getNotificationCmd('start', $clientId),
 				_getNotificationCmd('stop', $clientId),
 				_getNotificationCmd('change', $clientId),
