@@ -241,7 +241,7 @@ sub _connectEvent {
 			my $clientId = $client->id;
 			
 			# if we're playing, got a stop event, and current Connect device is us, then pause
-			if ( $client->isPlaying && $result->{device}->{name} =~ /\Q$clientId\E/i && __PACKAGE__->isSpotifyConnect($client) ) {
+			if ( $client->isPlaying && ($result->{device}->{id} == Plugins::Spotty::API->idFromMac($clientId) || $result->{device}->{name} eq $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause");
 				$client->execute(['pause']);
 			} 

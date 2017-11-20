@@ -37,8 +37,7 @@ my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $error429;
 
-my %connectDevices;
-tie %connectDevices, 'Tie::Cache::LRU::Expires', EXPIRES => 86400, ENTRIES => 32;
+tie my %connectDevices, 'Tie::Cache::LRU::Expires', EXPIRES => 3600, ENTRIES => 64;
 
 # override the scope list hard-coded in to the spotty helper application
 use constant SPOTIFY_SCOPE => join(',', qw(
@@ -287,8 +286,8 @@ sub playerTransfer {
 sub _extractIdMapping {
 	my $device = shift;
 	
-	if ($device && $device->{name} =~ /((?:[a-f0-9]{2}:){5}[a-f0-9]{2})/i) {
-		$connectDevices{$1} = $device->{id};
+	if ( $device && $device->{name} && $device->{id} && (my $player = Slim::Player::Client::getClient($device->{name})) ) {
+		$connectDevices{$player->id} = $device->{id};
 	}
 }
 
@@ -340,6 +339,11 @@ sub playerNext {
 			POST => $args
 		);
 	}, $device);
+}
+
+sub idFromMac {
+	my ( $class, $mac ) = @_;
+	return $connectDevices{$mac};
 }
 
 sub withIdFromMac {
