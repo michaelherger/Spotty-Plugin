@@ -360,7 +360,7 @@ sub _getCurlCmd {
 	if ( my $curl = Plugins::Spotty::Plugin->findBin('curl') ) {
 		$helperBins{curl} = $curl;
 	}
-	else {
+	elsif (!_getWgetCmd()) {
 		$log->error("Didn't find the 'curl' utility. Please install curl using your package manager.") unless defined $helperBins{curl};
 		$helperBins{curl} = '';
 	}
