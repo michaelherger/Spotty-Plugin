@@ -90,7 +90,12 @@ sub initPlugin {
 			}	
 		});
 	}
-	
+
+
+	if ( !main::ISWINDOWS && !main::ISMAC && Slim::Utils::OSDetect::details()->{osArch} =~ /aarch64/i ) {
+		Slim::Utils::Misc::addFindBinPaths(catdir($class->_pluginDataFor('basedir'), 'Bin', 'arm-linux'));
+	}
+		
 	$VERSION = $class->_pluginDataFor('version');
 #	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
 
@@ -624,8 +629,8 @@ sub findBin {
 
 		# on armhf use hf binaries instead of default arm5te binaries
 		# muslhf would not run on Pi1... have another gnueabi-hf for it
-		elsif ( $Config::Config{'archname'} =~ /arm.*linux/ ) {
-			if ($customFirst) {
+		elsif ( $Config::Config{'archname'} =~ /(aarch64|arm).*linux/ ) {
+			if ($customFirst && $1 ne 'aarch64') {
 				unshift @candidates, $name . '-muslhf', $name . '-hf';
 			}
 			else {
@@ -669,7 +674,7 @@ sub shutdownPlugin { if (main::TRANSCODING) {
 		Plugins::Spotty::Connect->shutdownHelpers();
 	
 		# XXX - ugly attempt at killing all hanging helper applications...
-		if ( !main::ISWINDOWS ) {
+		if ( !main::ISWINDOWS && $_[0]->getHelper() ) {
 			my $helper = File::Basename::basename($_[0]->getHelper());
 			`killall $helper > /dev/null 2>&1`;
 		}
