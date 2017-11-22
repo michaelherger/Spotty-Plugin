@@ -29,7 +29,7 @@ use constant CONNECT_ENABLED => main::ISWINDOWS ? 0 : 1;
 use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
 use constant CACHE_PURGE_INTERVAL_COUNT => 5;
-use constant CACHE_PURGE_MAX_AGE => 5 * 60;
+use constant CACHE_PURGE_MAX_AGE => 60 * 60;
 
 my $prefs = preferences('plugin.spotty');
 my $credsCache;
@@ -91,8 +91,8 @@ sub initPlugin {
 		});
 	}
 
-
-	if ( !main::ISWINDOWS && !main::ISMAC && Slim::Utils::OSDetect::details()->{osArch} =~ /aarch64/i ) {
+	# aarch64 can potentially use helper binaries from armhf
+	if ( !main::ISWINDOWS && !main::ISMAC && Slim::Utils::OSDetect::details()->{osArch} =~ /^aarch64/i ) {
 		Slim::Utils::Misc::addFindBinPaths(catdir($class->_pluginDataFor('basedir'), 'Bin', 'arm-linux'));
 	}
 		
