@@ -96,8 +96,10 @@ sub getMetadataFor {
 		cover     => IMG_TRACK,
 		icon      => IMG_TRACK,
 		bitrate   => 0,
-		type      => 'Ogg Vorbis (Spotify)',
+		originalType => 'Ogg Vorbis (Spotify)',
 	};
+	
+	$meta->{type} = $meta->{originalType};
 	
 	if ( !Plugins::Spotty::Plugin->hasCredentials() ) {
 		$meta->{artist} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
@@ -123,11 +125,12 @@ sub getMetadataFor {
 			
 			# Append "...converted to [format]" if stream has been transcoded
 			my $converted = $song->streamformat;
-			if ($converted && $info->{type} !~ /mp3|fla?c|pcm/i) {
-				if ($converted =~ /mp3|flc|pcm/i) {
-					$converted = cstring( $client, uc($converted) );
+			if ($converted) {
+				my $convertedString = Slim::Utils::Strings::getString(uc($converted));
+				if ( $converted =~ /.{2,4}/ && $converted ne $convertedString ) {
+					$converted = $convertedString;
 				}
-				$info->{type} = sprintf('%s (%s %s)', $info->{type}, cstring($client, 'CONVERTED_TO'), $converted);
+				$info->{type} = sprintf('%s (%s %s)', $info->{originalType}, cstring($client, 'CONVERTED_TO'), $converted);
 			}
 			
 			$song->streamUrl($url);
@@ -158,7 +161,8 @@ sub getMetadataFor {
 	}
 	
 	$meta->{bitrate} ||= '320k VBR';
-	$meta->{type}    ||= 'Ogg Vorbis (Spotify)';
+	$meta->{originalType} ||= 'Ogg Vorbis (Spotify)';
+	$meta->{type}    = $meta->{originalType};
 	$meta->{cover}   ||= IMG_TRACK;
 	$meta->{icon}    ||= IMG_TRACK;
 	
