@@ -51,6 +51,17 @@ sub init {
 	# start/stop helpers when the Connect flag changes
 	$prefs->setChange(\&initHelpers, 'enableSpotifyConnect');
 	
+	# re-initialize helpers when the active account for a player changes
+	$prefs->setChange(sub {
+		my ($pref, $new, $client, $old) = @_;
+		
+		return unless $client && $client->id;
+		
+		main::INFOLOG && $log->is_info && $log->info("Spotify Account for player " . $client->id . " has changed - re-initialize Connect helper");
+		__PACKAGE__->stopHelper($client->id);
+		initHelpers();
+	}, 'account');
+
 	$initialized = 1;
 }
 
