@@ -341,6 +341,25 @@ sub playerNext {
 	}, $device);
 }
 
+sub playerVolume {
+	my ( $self, $cb, $device, $volume ) = @_;
+
+	$self->withIdFromMac(sub {
+		my $args = {
+			volume_percent => $volume,
+		};
+		
+		$args->{device_id} = $_[0] if $_[0];
+
+		$self->_call('me/player/volume',
+			sub {
+				$cb->() if $cb;
+			},
+			PUT => $args
+		);
+	}, $device);
+}
+
 sub idFromMac {
 	my ( $class, $mac ) = @_;
 	return $connectDevices{$mac};

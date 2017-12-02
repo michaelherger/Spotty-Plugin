@@ -9,6 +9,7 @@ use Slim::Utils::Prefs;
 use Slim::Utils::Timers;
 
 use constant MIN_HELPER_VERSION => '0.7.0';
+use constant CONNECT_V2_HELPER_VERSION => '0.8.0';
 use constant SEEK_THRESHOLD => 3;
 use constant NOTIFICATION => '{\\"id\\":0,\\"params\\":[\\"%s\\",[\\"spottyconnect\\",\\"%s\\"]],\\"method\\":\\"slim.request\\"}';
 use constant DAEMON_WATCHDOG_INTERVAL => 60;
@@ -36,7 +37,7 @@ sub init {
 #                                                                |  |  |  |Function to call
 #                                                                C  Q  T  F
 	Slim::Control::Request::addDispatch(['spottyconnect','_cmd'],
-	                                                            [1, 0, 0, \&_connectEvent]
+	                                                            [1, 0, 1, \&_connectEvent]
 	);
 	
 	# listen to playlist change events so we know when Spotify Connect mode ends
@@ -44,6 +45,9 @@ sub init {
 	
 	# we want to tell the Spotify controller to pause playback when we pause locally
 	Slim::Control::Request::subscribe(\&_onPause, [['playlist'], ['pause', 'stop']]);
+	
+	# we want to tell the Spotify about local volume changes
+	Slim::Control::Request::subscribe(\&_onVolume, [['mixer'], ['volume']]);
 	
 	# manage helper application instances
 	Slim::Control::Request::subscribe(\&initHelpers, [['client'], ['new', 'disconnect']]);
@@ -157,13 +161,12 @@ sub getNextTrack {
 
 sub _onNewSong {
 	my $request = shift;
-	my $client  = $request->client();
-
-	return if !defined $client;
-	
-	$client = $client->master;
 
 	return if $request->source && $request->source eq __PACKAGE__;
+
+	my $client  = $request->client();
+	return if !defined $client;
+	$client = $client->master;
 
 	return if __PACKAGE__->isSpotifyConnect($client);
 	
@@ -177,8 +180,8 @@ sub _onNewSong {
 
 sub _onPause {
 	my $request = shift;
-	my $client  = $request->client();
 
+	my $client  = $request->client();
 	return if !defined $client;
 	$client = $client->master;
 
@@ -193,6 +196,30 @@ sub _onPause {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->playerPause(undef, $client->id);
 }
 
+sub _onVolume {
+	my $request = shift;
+	
+	return if $request->source && $request->source eq __PACKAGE__;
+	
+	my $client  = $request->client();
+	return if !defined $client;
+	$client = $client->master;
+
+	return if !__PACKAGE__->isSpotifyConnect($client);
+	
+	my $volume = $client->volume;
+	
+	# buffer volume change events, as they often come in bursts
+	Slim::Utils::Timers::killTimers($client, \&_bufferedSetVolume);
+	Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + 0.5, \&_bufferedSetVolume, $volume);
+}
+
+sub _bufferedSetVolume {
+	my ($client, $volume) = @_;
+	main::INFOLOG && $log->is_info && $log->info("Got a volume event - tell Spotify Connect controller to adjust volume, too: $volume");
+	Plugins::Spotty::Plugin->getAPIHandler($client)->playerVolume(undef, $client->id, $volume);
+}
+
 sub _connectEvent {
 	my $request = shift;
 	my $client = $request->client()->master;
@@ -205,6 +232,19 @@ sub _connectEvent {
 	my $cmd = $request->getParam('_cmd');
 	
 	main::INFOLOG && $log->is_info && $log->info("Got called from spotty helper: $cmd");
+	
+	if ( $cmd eq 'volume' && !($request->source && $request->source eq __PACKAGE__) ) {
+		my $volume = $request->getParam('_p2');
+		
+		return unless defined $volume;
+		
+		# we don't let spotty handle volume directly to prevent getting caught in a call loop
+		my $request = Slim::Control::Request->new( $client->id, [ 'mixer', 'volume', $volume ] );
+		$request->source(__PACKAGE__);
+		$request->execute();
+		
+		return;
+	}
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);			
 
@@ -270,6 +310,15 @@ sub _connectEvent {
 				$client->execute( ['time', $result->{progress}] );
 			}
 		}
+#		elsif ( $cmd eq 'volume' && $result && $result->{device} && (my $volume = $result->{device}->{volume_percent}) ) {
+#			# we don't let spotty handle volume directly to prevent getting caught in a call loop
+#			my $request = Slim::Control::Request->new( $client->id, [ 'mixer', 'volume', $volume ] );
+#			$request->source(__PACKAGE__);
+#			$request->execute();
+#		}
+		elsif (main::INFOLOG && $log->is_info) {
+			$log->info("Unknown command called? $cmd\n" . Data::Dump::dump($result));
+		}
 	});
 }
 
@@ -308,7 +357,34 @@ sub startHelper {
 	my $helper = $helperInstances{$clientId};
 	return $helper->alive if $helper && $helper->alive;
 
-	if ( (_getCurlCmd() || _getWgetCmd()) && (my $helperPath = Plugins::Spotty::Plugin->getHelper()) ) {
+	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
+	$helperVersion =~ s/^v//;
+	
+	if ( Slim::Utils::Versions->checkVersion($helperVersion, CONNECT_V2_HELPER_VERSION, 10) ) {
+		if ( !($helper && $helper->alive) ) {
+			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --player-mac "%s" --lms "%s" > %s', 
+				$helperPath, 
+				Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ), 
+				$client->name,
+				$clientId,
+				Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
+				main::ISWINDOWS ? 'NULL' : '/dev/null'
+			);
+			main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: $command");
+			
+			eval { 
+				$helper = $helperInstances{$clientId} = Proc::Background->new(
+					{ 'die_upon_destroy' => 1 },
+					$command 
+				);
+			};
+	
+			if ($@) {
+				$log->warn("Failed to launch the Spotty Connect deamon: $@");
+			}
+		}
+	}
+	elsif ( $helperPath && (_getCurlCmd() || _getWgetCmd()) ) {
 		if ( !($helper && $helper->alive) ) {
 			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --onstart "%s" --onstop "%s" --onchange "%s" %s > %s', 
 				$helperPath, 
