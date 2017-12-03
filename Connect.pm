@@ -376,7 +376,7 @@ sub startHelper {
 				$client->name,
 				$clientId,
 				Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
-				main::ISWINDOWS ? 'NULL' : '/dev/null'
+				main::ISWINDOWS ? 'nul' : '/dev/null'
 			);
 			main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: $command");
 			
@@ -403,7 +403,7 @@ sub startHelper {
 				_getNotificationCmd('stop', $clientId),
 				_getNotificationCmd('change', $clientId),
 				_getPVcmd(),
-				main::ISWINDOWS ? 'NULL' : '/dev/null'
+				main::ISWINDOWS ? 'nul' : '/dev/null'
 			);
 			main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: $command");
 			
