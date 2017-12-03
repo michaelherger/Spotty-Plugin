@@ -24,7 +24,7 @@ use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
 use constant HELPER => 'spotty';
-use constant CONNECT_ENABLED => main::ISWINDOWS ? 0 : 1;
+use constant CONNECT_ENABLED => 1;
 
 use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
@@ -583,7 +583,7 @@ sub getHelper {
 			
 			$check = `$checkCmd 2>&1`;
 
-			if ( $check && $check =~ /^ok spotty (v[\d\.]+)/i ) {
+			if ( $check && $check =~ /^ok spotty v([\d\.]+)/i ) {
 				$helper = $candidate;
 				$helperVersion = $1;
 				return 1;
@@ -597,6 +597,16 @@ sub getHelper {
 	}	
 
 	return wantarray ? ($helper, $helperVersion) : $helper;
+}
+
+sub getHelperVersion {
+	my ($class) = @_;
+	
+	if (!$helperVersion) {
+		$class->getHelper();
+	}
+	
+	return $helperVersion;
 }
 
 # custom file finder around Slim::Utils::Misc::findbin: check for multiple versions per platform etc.
@@ -675,7 +685,7 @@ sub shutdownPlugin { if (main::TRANSCODING) {
 	
 		# XXX - ugly attempt at killing all hanging helper applications...
 		if ( !main::ISWINDOWS && $_[0]->getHelper() ) {
-			my $helper = File::Basename::basename($_[0]->getHelper());
+			my $helper = File::Basename::basename(scalar $_[0]->getHelper());
 			`killall $helper > /dev/null 2>&1`;
 		}
 	}

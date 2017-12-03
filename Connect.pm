@@ -72,11 +72,10 @@ sub init {
 sub canSpotifyConnect {
 	my ($class, $dontInit) = @_;
 	
-	return unless hasUnixTools();
+	return unless $class->canSpotifyConnectV2() || hasUnixTools();
 	
 	# we need a minimum helper application version
 	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
-	$helperVersion =~ s/^v//;
 	
 	if ( !Slim::Utils::Versions->checkVersion($helperVersion, MIN_HELPER_VERSION, 10) ) {
 		$log->error("Cannot support Spotty Connect, need at least helper version " . MIN_HELPER_VERSION);
@@ -86,6 +85,11 @@ sub canSpotifyConnect {
 	__PACKAGE__->init() unless $initialized || $dontInit;
 	
 	return 1;
+}
+
+sub canSpotifyConnectV2 {
+	# new Connect doesn't require the Unix tools any more
+	Slim::Utils::Versions->checkVersion(Plugins::Spotty::Plugin->getHelperVersion(), CONNECT_V2_HELPER_VERSION, 10);
 }
 
 sub isSpotifyConnect {
@@ -269,6 +273,11 @@ sub _connectEvent {
 			if ( $streamUrl ne $result->{track}->{uri} || !__PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Got a new track to be played: " . $result->{track}->{uri});
 
+				# sync volume up to spotify if we just got connected
+				if ( !$client->pluginData('SpotifyConnect') ) {
+					Plugins::Spotty::Plugin->getAPIHandler($client)->playerVolume(undef, $client->id, $client->volume);
+				}
+
 				# Sometimes we want to know whether we're in Spotify Connect mode or not
 				$client->pluginData( SpotifyConnect => 1 );
 				$client->pluginData( newTrack => 1 );
@@ -357,10 +366,9 @@ sub startHelper {
 	my $helper = $helperInstances{$clientId};
 	return $helper->alive if $helper && $helper->alive;
 
-	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
-	$helperVersion =~ s/^v//;
+	my $helperPath = Plugins::Spotty::Plugin->getHelper();
 	
-	if ( Slim::Utils::Versions->checkVersion($helperVersion, CONNECT_V2_HELPER_VERSION, 10) ) {
+	if ( $class->canSpotifyConnectV2() ) {
 		if ( !($helper && $helper->alive) ) {
 			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --player-mac "%s" --lms "%s" > %s', 
 				$helperPath, 
@@ -384,13 +392,13 @@ sub startHelper {
 			}
 		}
 	}
+	# XXX - legacy, to be removed at some point. Might still be in use by some users who built their own helper
 	elsif ( $helperPath && (_getCurlCmd() || _getWgetCmd()) ) {
 		if ( !($helper && $helper->alive) ) {
 			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --onstart "%s" --onstop "%s" --onchange "%s" %s > %s', 
 				$helperPath, 
 				Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ), 
 				$client->name,
-#				$clientId,
 				_getNotificationCmd('start', $clientId),
 				_getNotificationCmd('stop', $clientId),
 				_getNotificationCmd('change', $clientId),

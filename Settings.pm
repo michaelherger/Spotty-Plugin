@@ -97,7 +97,7 @@ sub handler {
 	
 	$paramRef->{credentials} = Plugins::Spotty::Plugin->getSortedCredentialTupels();
 	$paramRef->{helperPath} = $helperPath;
-	$paramRef->{helperVersion} = $helperVersion || string('PLUGIN_SPOTTY_HELPER_ERROR');
+	$paramRef->{helperVersion} = "v$helperVersion" || string('PLUGIN_SPOTTY_HELPER_ERROR');
 	$paramRef->{error429} = Plugins::Spotty::API->hasError429();
 
 	return $class->SUPER::handler($client, $paramRef);
