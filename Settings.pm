@@ -34,7 +34,7 @@ sub page {
 }
 
 sub prefs {
-	return ($prefs, qw(myAlbumsOnly iconCode accountSwitcherMenu));
+	return ($prefs, qw(myAlbumsOnly bitrate iconCode accountSwitcherMenu));
 }
 
 sub handler {
@@ -69,14 +69,6 @@ sub handler {
 				);
 		}
 	}
-#	elsif ( $knownIncompatible ) {
-#		$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE') . 
-#			sprintf('<br><br>%s %s / %s',
-#				string('INFORMATION_OPERATINGSYSTEM'), 
-#				$osDetails->{'osName'},
-#				($osDetails->{'osArch'} ? $osDetails->{'osArch'} : 'unknown')
-#			);
-#	}
 
 	if ( my ($deleteAccount) = map { /delete_(.*)/; $1 } grep /^delete_/, keys %$paramRef ) {
 		Plugins::Spotty::Plugin->deleteCacheFolder($deleteAccount);

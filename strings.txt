@@ -107,30 +107,6 @@ PLUGIN_SPOTTY_HELPER_MISSING_HELP
 PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
 	DE	Zeige nur meine Alben unter meinen Interpreten.
 	EN	Only show my library's albums for my library's artists.
-
-PLUGIN_SPOTTY_ENABLE_BROWSING
-	DE	Spotty Menü aktivieren
-	EN	Enable Spotty menu
-
-PLUGIN_SPOTTY_ENABLE_BROWSING_DESC
-	DE	Aktiviere die Spotty Menüs zur Auswahl von Spotify Inhalten. Dann kannst du das Spotify Plugin zur Integration mit mysqueezebox.com deaktivieren. Diese Einstellung braucht einen Logitech Media Server Neustart.
-	EN	Enable Spotty menus to navigate Spotify content. You could disable the Spotify plugin to get rid of the menu provided by mysqueezebox.com. Changing this preference requires a Logitech Media Server restart to take effect.
-	
-PLUGIN_SPOTTY_CACHE
-	DE	Audio Zwischenspeicher
-	EN	Audio Cache Size
-
-PLUGIN_SPOTTY_CACHE_DESC
-	DE	Aktiviere den Zwischenspeicher für Tracks. Dies kann den Netzwerkverkehr auf Kosten der Festplattennutzung reduzieren, falls ein Lied wiederholt abgespielt wird. 100MB reichen für ca. 10-15 Lieder. Ich empfehle den Zwischenspeicher nur auf Computern zu verwenden, welche eine Harddisk oder SSD verwenden, nicht aber auf Speicherkarte oder USB Stick.
-	EN	Enable audio data caching. This can help to reduce network traffic at the cost of disk usage, if you repeatedly play the same tracks. 100MB can cover 10-15 tracks. I recommend not to use caching except on PC class hardware, where the cache is stored on a disk, rather than a memory card or USB stick.
-
-PLUGIN_SPOTTY_MB
-	EN	Megabytes
-	FR	Mégaoctets
-
-#PLUGIN_SPOTTY_TRANSCODING_NAME
-#	DE	🔇 Nicht verwenden! - Squeezebox $CLIENTID$
-#	EN	🔇 Don't Touch! - Squeezebox $CLIENTID$ 
 	
 PLUGIN_SPOTTY_HELPER_ERROR
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten!
@@ -446,3 +422,20 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
 PLUGIN_SPOTTY_PV_CURL_WGET_MISSING
 	DE	Spotify Connect ist nicht verfügbar: bitte verwende den Paketmanager deines Betriebssystems, um "pv" (Pipe Viewer) und "curl" oder "wget" zu installieren.
 	EN	Spotify Connect is not available: please use your system's package manager to install "pv" (Pipe Viewer), and "curl" or "wget".
+
+PLUGIN_SPOTTY_AUDIO_SETTINGS
+	DE	Soundqualität
+	EN	Audio Settings
+
+# leading 0 to allow for sorting....
+PLUGIN_SPOTTY_AUDIO_SETTINGS_096
+	EN	Normal (96kbps)
+	
+PLUGIN_SPOTTY_AUDIO_SETTINGS_160
+	DE	Hoch (160kbps)
+	EN	High (160kbps)
+	
+PLUGIN_SPOTTY_AUDIO_SETTINGS_320
+	DE	Extrem (320kbps)
+	EN	Extreme (320kbps)
+	

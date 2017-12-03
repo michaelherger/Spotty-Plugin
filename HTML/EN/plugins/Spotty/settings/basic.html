@@ -40,10 +40,20 @@
 		<input name="pref_myAlbumsOnly" id="pref_myAlbumsOnly" type="checkbox" [% IF prefs.pref_myAlbumsOnly %] checked [% END %]>
 		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
 	[% END %]
-	
-<!-- 	[% WRAPPER setting title="PLUGIN_SPOTTY_CACHE" desc="PLUGIN_SPOTTY_CACHE_DESC" %]
-		<input name="pref_audioCacheSize" id="pref_audioCacheSize" type="text" value="[% prefs.pref_audioCacheSize %]" class="stdedit sliderInput_0_10000_500" size="5"> [% "PLUGIN_SPOTTY_MB" | string %]
-	[% END %] -->
+
+	[% WRAPPER setting title="PLUGIN_SPOTTY_AUDIO_SETTINGS" desc="" %]
+		<select class="stdedit" name="pref_bitrate" id="pref_bitrate">
+
+		[% FOREACH option = {
+			'PLUGIN_SPOTTY_AUDIO_SETTINGS_096' => 96,
+			'PLUGIN_SPOTTY_AUDIO_SETTINGS_160' => 160,
+			'PLUGIN_SPOTTY_AUDIO_SETTINGS_320' => 320
+		} %]
+			<option [% IF prefs.pref_bitrate == option.value %]selected [% END %]value="[% option.value %]">[% option.key | string %]</option>
+		[%- END -%]
+		
+		</select>
+	[% END %]
 	
 	[% WRAPPER setting title="PLUGIN_SPOTTY_HELPER" desc="" %]
 		[% helperPath %] ([% helperVersion %])
