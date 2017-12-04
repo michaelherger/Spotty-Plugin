@@ -303,7 +303,6 @@ sub _connectEvent {
 			# if we're playing, got a stop event, and current Connect device is us, then pause
 			if ( $client->isPlaying && ($result->{device}->{id} == Plugins::Spotty::API->idFromMac($clientId) || $result->{device}->{name} eq $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause");
-				$client->execute(['pause']);
 			} 
 			# if we're playing, got a stop event, and current Connect device is NOT us, then 
 			# disable Connect and let the track end
@@ -312,6 +311,7 @@ sub _connectEvent {
 				$client->playingSong()->pluginData( SpotifyConnect => 0 );
 				$client->pluginData( SpotifyConnect => 0 );
 			}
+			$client->execute(['pause']);
 		}
 		elsif ( $cmd eq 'change' ) {
 			# seeking event from Spotify - we would only seek if the difference was larger than x seconds, as we'll never be perfectly in sync
@@ -370,7 +370,7 @@ sub startHelper {
 	
 	if ( $class->canSpotifyConnectV2() ) {
 		if ( !($helper && $helper->alive) ) {
-			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --player-mac "%s" --lms "%s" > %s', 
+			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --bitrate 96 --player-mac "%s" --lms "%s" > %s', 
 				$helperPath, 
 				Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ), 
 				$client->name,
