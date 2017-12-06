@@ -419,7 +419,7 @@ sub purgeAudioCache {
 	main::INFOLOG && $log->is_info && $log->info("Starting audio cache cleanup...");
 	
 	# purge our local file cache
-	if (ENABLE_AUDIO_CACHE) {
+	if (ENABLE_AUDIO_CACHE || $ignoreTimeStamp) {
 		my $files = File::Next::files( catdir(__PACKAGE__->cacheFolder(), 'files') );
 		my @files;
 		my $totalSize = 0;

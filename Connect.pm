@@ -370,7 +370,7 @@ sub startHelper {
 	
 	if ( $class->canSpotifyConnectV2() ) {
 		if ( !($helper && $helper->alive) ) {
-			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --bitrate 96 --player-mac "%s" --lms "%s" > %s', 
+			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --disable-audio-cache --bitrate 96 --player-mac "%s" --lms "%s" > %s', 
 				$helperPath, 
 				Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ), 
 				$client->name,
@@ -395,7 +395,7 @@ sub startHelper {
 	# XXX - legacy, to be removed at some point. Might still be in use by some users who built their own helper
 	elsif ( $helperPath && (_getCurlCmd() || _getWgetCmd()) ) {
 		if ( !($helper && $helper->alive) ) {
-			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --onstart "%s" --onstop "%s" --onchange "%s" %s > %s', 
+			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --disable-audio-cache --bitrate 96 --onstart "%s" --onstop "%s" --onchange "%s" %s > %s', 
 				$helperPath, 
 				Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ), 
 				$client->name,
