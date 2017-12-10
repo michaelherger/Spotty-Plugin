@@ -516,6 +516,11 @@ sub getCredentials {
 			from_json(read_file($credentialsFile));
 		};
 		
+		if ( $@ && !$credentials || !ref $credentials ) {
+			$log->warn("Corrupted credentials file discovered. Removing configuration.");
+			unlink $credentialsFile;
+		}
+		
 		return $credentials || {};
 	}
 }
