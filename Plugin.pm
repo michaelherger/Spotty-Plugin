@@ -518,7 +518,7 @@ sub getCredentials {
 		
 		if ( $@ && !$credentials || !ref $credentials ) {
 			$log->warn("Corrupted credentials file discovered. Removing configuration.");
-			unlink $credentialsFile;
+			$class->deleteCacheFolder($id);
 		}
 		
 		return $credentials || {};
