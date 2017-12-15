@@ -172,7 +172,11 @@ sub updateTranscodingTable {
 	
 	# modify the transcoding helper table to inject our cache folder
 	my $cacheDir = $class->cacheFolder($id);
-	my $bitrate = $prefs->get('bitrate') || 320;
+
+	my $bitrate = '';
+	if ( Slim::Utils::Versions->checkVersion($class->getHelperVersion(), '0.8.0', 10) ) {
+		$bitrate = sprintf('--bitrate %s', $prefs->get('bitrate') || 320);
+	}
 	
 	my $helper = $class->getHelper();
 	$helper = basename($helper) if $helper;
@@ -189,7 +193,7 @@ sub updateTranscodingTable {
 			$commandTable->{$_} =~ s/-c ".*?"/-c "$cacheDir"/g;
 			$commandTable->{$_} =~ s/(\[spotty\])/$tmpDir $1/g if $tmpDir;
 			$commandTable->{$_} =~ s/^[^\[]+// if !$tmpDir;
-			$commandTable->{$_} =~ s/(--bitrate) (?:96|160|320)/$1 $bitrate/; 
+			$commandTable->{$_} =~ s/--bitrate \d{2,3}/$bitrate/; 
 			$commandTable->{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
 			$commandTable->{$_} =~ s/disable-audio-cache/enable-audio-cache/g if ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize');
 			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !(ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize'));
