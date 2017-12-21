@@ -20,6 +20,8 @@ use constant IMG_COLLABORATIVE => 'plugins/Spotty/html/images/playlist-collab.pn
 use constant IMG_SEARCH => 'plugins/Spotty/html/images/search.png';
 use constant IMG_WHATSNEW => 'plugins/Spotty/html/images/whatsnew.png';
 use constant IMG_ACCOUNT => 'plugins/Spotty/html/images/account.png';
+use constant IMG_TOPTRACKS => 'plugins/Spotty/html/images/toptracks.png';
+use constant IMG_INBOX => 'plugins/Spotty/html/images/inbox.png';
 
 use constant MAX_RECENT => 50;
 
@@ -165,7 +167,7 @@ sub handleFeed {
 		{
 			name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
 			type  => 'playlist',
-			image => 'plugins/Spotty/html/images/toptracks.png',
+			image => IMG_TOPTRACKS,
 			url   => \&playlist,
 			passthrough => [{
 				uri => $topuri{$spotty->country()} || $topuri{XX}
@@ -174,14 +176,14 @@ sub handleFeed {
 		{
 			name  => cstring($client, 'PLUGIN_SPOTTY_GENRES_MOODS'),
 			type  => 'link',
-			image => 'plugins/Spotty/html/images/inbox.png',
+			image => IMG_INBOX,
 			url   => \&categories
 		};
 		
 		if ( $message && $lists && ref $lists && scalar @$lists ) {
 			push @$items, {
 				name  => $message,
-				image => 'plugins/Spotty/html/images/inbox.png',
+				image => IMG_INBOX,
 				items => playlistList($client, $lists)
 			};
 		}
@@ -202,6 +204,16 @@ sub handleFeed {
 			image => IMG_PLAYLIST,
 			url   => \&playlists
 		}];
+		
+		# only give access to the tracks list if the user is using his own client ID
+		if ( _enableAdvancedFeatures() ) {
+			unshift @$personalItems, {
+				name  => cstring($client, 'PLUGIN_SPOTTY_SONGS_LIST'),
+				type  => 'playlist',
+				image => IMG_PLAYLIST,
+				url  => \&mySongs,
+			}
+		}
 
 		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
 			my $credentials = Plugins::Spotty::Plugin->getAllCredentials();
@@ -414,6 +426,27 @@ sub categories {
 		}
 
 		$cb->({ items => $items })
+	});
+}
+
+sub mySongs {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::Spotty::Plugin->getAPIHandler($client)->mySongs(sub {
+		my ($result) = @_;
+
+
+		my ($items, $indexList) = trackList($client, $result);
+		
+		push @$items, {
+			name => cstring($client, 'PLUGIN_SPOTTY_ADD_SONGS'),
+			type => 'text',
+		} unless scalar @$items;
+		
+		$cb->({
+			items => $items,
+			indexList => $indexList
+		});
 	});
 }
 
@@ -1304,6 +1337,10 @@ sub _withAccount {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$args->{cb}->($client, $cb, $params);
 	});
+}
+
+sub _enableAdvancedFeatures {
+	Plugins::Spotty::Plugin->hasDefaultIcon() ? 0 : 1;
 }
 
 1;

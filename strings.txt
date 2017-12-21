@@ -266,6 +266,13 @@ PLUGIN_SPOTTY_ADD_STUFF
 	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen. 
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.
 
+PLUGIN_SPOTTY_ADD_SONGS
+	DE	Fügen Sie Ihrer Musikbibliothek Lieder hinzu, um diesen Abschnitt zu füllen. 
+	EN	Please add songs to your music library to populate your this section.
+
+PLUGIN_SPOTTY_SONGS_LIST
+	EN	Songs
+
 PLUGIN_SPOTTY_ADD_ALBUM_TO_LIBRARY
 	CS	Přidat album do knihovny
 	DA	Føj album til bibliotek
@@ -343,8 +350,8 @@ PLUGIN_SPOTTY_NEW_SEARCH
 	SV	Ny sökning
 	
 PLUGIN_SPOTTY_RECOMMENDATIONS
-	DE	Spotty Empfehlungen (basierend auf aktueller Wiedergabeliste)
-	EN	Spotty Recommendations (based on the current playlist)
+	DE	Spotify Empfehlungen (basierend auf aktueller Wiedergabeliste)
+	EN	Spotify Recommendations (based on the current playlist)
 
 PLUGIN_SPOTTY_ON_SPOTIFY
 	CS	Na službě Spotify
@@ -396,7 +403,8 @@ PLUGIN_SPOTTY_CLIENT_ID
 	EN	Spotify Client ID
 
 PLUGIN_SPOTTY_CLIENT_ID_DESC
-	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀
+	DE	Sehr wahrscheinlich braucht dich diese Einstellung nicht zu interessieren. Falls doch, dann weisst du hoffentlich was das sein soll. Lass es einfach leer, falls dem nicht so ist. Weitere Informationen braucht es nicht 😀. 
+	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀.
 
 # this is a duplicate of INFORMATION_BINDIRS - which is not available in 7.7.5
 PLUGIN_SPOTTY_INFORMATION_BINDIRS

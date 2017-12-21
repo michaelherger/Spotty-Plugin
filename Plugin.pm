@@ -474,6 +474,8 @@ sub purgeAudioCache {
 	my $tmpFolder = __PACKAGE__->getTmpDir() || tmpdir();
 
 	if ( $tmpFolder && -d $tmpFolder && opendir(DIR, $tmpFolder) ) {
+		main::INFOLOG && $log->is_info && $log->info("Starting temporary file cleanup... ($tmpFolder)");
+		
 		foreach my $tmp ( grep { /^\.tmp[a-z0-9]{6}$/i && -f catfile($tmpFolder, $_) } readdir(DIR) ) {
 			my $tmpFile = catfile($tmpFolder, $tmp);
 			my (undef, undef, undef, undef, $uid, $gid, undef, $size, undef, $mtime, $ctime) = stat($tmpFile);

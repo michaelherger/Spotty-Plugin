@@ -796,6 +796,23 @@ sub trackURIsFromURI {
 	}
 }
 
+sub mySongs {
+	my ( $self, $cb, $fast ) = @_;
+	
+	Plugins::Spotty::API::Pipeline->new($self, 'me/tracks', sub {
+		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
+			return [ map { $self->_normalize($_->{track}, $fast) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+		}
+	}, sub {
+		my $results = shift;
+		
+		my $items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @{$results || []} ];
+		$cb->($items);
+	}, {
+		limit => max(LIBRARY_LIMIT, _DEFAULT_LIMIT()),
+	})->get();
+}
+
 sub myAlbums {
 	my ( $self, $cb, $fast ) = @_;
 	
