@@ -5,6 +5,7 @@ use strict;
 use Proc::Background;
 
 use Slim::Utils::Log;
+use Slim::Utils::Cache;
 use Slim::Utils::Prefs;
 use Slim::Utils::Timers;
 
@@ -13,7 +14,9 @@ use constant CONNECT_V2_HELPER_VERSION => '0.8.0';
 use constant SEEK_THRESHOLD => 3;
 use constant NOTIFICATION => '{\\"id\\":0,\\"params\\":[\\"%s\\",[\\"spottyconnect\\",\\"%s\\"]],\\"method\\":\\"slim.request\\"}';
 use constant DAEMON_WATCHDOG_INTERVAL => 60;
+use constant HISTORY_KEY => 'spotty-connect-history';
 
+my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $log = logger('plugin.spotty');
 
@@ -143,6 +146,11 @@ sub getNextTrack {
 		main::INFOLOG && $log->is_info && $log->info("We're approaching the end of a track - get the next track");
 
 		$client->pluginData( newTrack => 1 );
+		
+		# add current track to the history
+		my $history = $cache->get(HISTORY_KEY) || {};
+		$history->{$song->track->url}++;
+		$cache->set(HISTORY_KEY, $history);
 
 		$spotty->playerNext(sub {
 			$spotty->player(sub {
@@ -153,8 +161,21 @@ sub getNextTrack {
 					
 					$uri =~ s/^(spotify:)(track:.*)/$1\/\/$2/;
 
-					$song->track->url($uri);
-					$class->setSpotifyConnect($client);
+					# stop playback if we've played this track before. It's likely trying to start over.
+					if ( $history->{$uri} && !($result->{repeat_state} && $result->{repeat_state} eq 'on')) {
+						main::INFOLOG && $log->is_info && $log->info('Stopping playback, as we have likely reached the end of our context (playlist, album, ...)');
+						
+						# set a timer to stop playback at the end of the track
+						my $remaining = $client->controller()->playingSongDuration() - Slim::Player::Source::songTime($client);
+						
+						Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining, sub {
+							$spotty->playerPause(undef, $client->id);
+						});
+					}
+					else {
+						$song->track->url($uri);
+						$class->setSpotifyConnect($client);
+					}
 					
 					$successCb->();
 				}
@@ -284,6 +305,10 @@ sub _connectEvent {
 
 				my $request = $client->execute( [ 'playlist', 'play', $result->{track}->{uri} ] );
 				$request->source(__PACKAGE__);
+				
+				# on interactive Spotify Connect use we're going to reset the play history.
+				# this isn't really solving the problem of lack of context. But it's better than nothing...
+				$cache->remove(HISTORY_KEY);
 				
 				# if status is already more than 10s in, then do seek
 				if ( $result->{progress} && $result->{progress} > 10 ) {
