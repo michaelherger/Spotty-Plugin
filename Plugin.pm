@@ -161,6 +161,27 @@ sub postinitPlugin { if (main::TRANSCODING) {
 			Plugins::LastMix::Services->registerHandler('Plugins::Spotty::LastMix');
 		}
 	}
+	
+	if ( main::WEBUI && $class->getTmpDir() ) {
+		# LMS Settings/File Types is expecting the conversion table entry to start with "[..]".
+		# If we've added a TMPDIR=... prefix, we'll need to remove it for the settings to work.
+		my $handler = Slim::Web::Pages->getPageFunction(Slim::Web::Settings::Server::FileTypes->page);
+
+		if ( $handler && !ref $handler && $handler eq 'Slim::Web::Settings::Server::FileTypes' ) {
+
+			# override the default page handler to remove the TMPDIR prefix
+			Slim::Web::Pages->addPageFunction(Slim::Web::Settings::Server::FileTypes->page, sub {
+				my $commandTable = Slim::Player::TranscodingHelper::Conversions();
+				foreach ( keys %$commandTable ) {
+					if ( $_ =~ /^spt-/ && $commandTable->{$_} =~ /single-track/ ) {
+						$commandTable->{$_} =~ s/^[^\[]+//;
+					}
+				}
+	
+				return $handler->handler(@_);
+			});
+		}
+	}
 } }
 
 sub updateTranscodingTable {
