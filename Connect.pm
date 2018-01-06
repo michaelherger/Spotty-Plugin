@@ -370,8 +370,22 @@ sub initHelpers {
 		my $clientId = $client->id;
 
 		if ( $prefs->client($client)->get('enableSpotifyConnect') ) {
-			if (!$helperInstances{$clientId} || !$helperInstances{$clientId}->alive) {
+			# sometimes Connect players disappear without the process crashing - check against the list of Connect players as reported by Spotify
+			my $needConnectPlayer = !Plugins::Spotty::API->idFromMac($clientId);
+			
+			if ( $needConnectPlayer || !$helperInstances{$clientId} || !$helperInstances{$clientId}->alive ) {
+				main::INFOLOG && $log->is_info && $log->info("Need to start Connect daemon for $clientId");
+				
+				my $account;
+				if ($needConnectPlayer) {
+					$account = Plugins::Spotty::Plugin->getAccount($client);
+					Slim::Utils::Timers::killTimers( $account, \&_getConnectPlayers );
+					$class->stopHelper($clientId);
+				}
 				$class->startHelper($client);
+				
+				# update the list of connected players if needed
+				Slim::Utils::Timers::setTimer( $account, time() + 5, \&_getConnectPlayers, $client ) if $account && $needConnectPlayer;
 			}
 		}
 		else {
@@ -380,6 +394,16 @@ sub initHelpers {
 	}
 
     Slim::Utils::Timers::setTimer( $class, time() + DAEMON_WATCHDOG_INTERVAL, \&initHelpers );
+}
+
+sub _getConnectPlayers {
+	my ($account, $client) = @_;
+
+	Slim::Utils::Timers::killTimers( $account, \&_getConnectPlayers );
+	
+	if ( !Plugins::Spotty::API->idFromMac($client->id) ) {
+		Plugins::Spotty::Plugin->getAPIHandler($client)->devices();
+	}
 }
 
 sub startHelper {
