@@ -394,7 +394,7 @@ sub startHelper {
 	
 	# no need to restart if it's already there
 	my $helper = $helperInstances{$clientId};
-	return $helper->alive if $helper;
+	return 1 if $helper && $helper->alive;
 
 	my $helperPath = Plugins::Spotty::Plugin->getHelper();
 
