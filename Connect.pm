@@ -9,10 +9,8 @@ use Slim::Utils::Cache;
 use Slim::Utils::Prefs;
 use Slim::Utils::Timers;
 
-use constant MIN_HELPER_VERSION => '0.7.0';
-use constant CONNECT_V2_HELPER_VERSION => '0.8.0';
+use constant CONNECT_HELPER_VERSION => '0.9.0';
 use constant SEEK_THRESHOLD => 3;
-use constant NOTIFICATION => '{\\"id\\":0,\\"params\\":[\\"%s\\",[\\"spottyconnect\\",\\"%s\\"]],\\"method\\":\\"slim.request\\"}';
 use constant DAEMON_WATCHDOG_INTERVAL => 60;
 use constant HISTORY_KEY => 'spotty-connect-history';
 
@@ -75,24 +73,15 @@ sub init {
 sub canSpotifyConnect {
 	my ($class, $dontInit) = @_;
 	
-	return unless $class->canSpotifyConnectV2() || hasUnixTools();
-	
 	# we need a minimum helper application version
-	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
-	
-	if ( !Slim::Utils::Versions->checkVersion($helperVersion, MIN_HELPER_VERSION, 10) ) {
-		$log->error("Cannot support Spotty Connect, need at least helper version " . MIN_HELPER_VERSION);
+	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Plugin->getHelperVersion(), CONNECT_HELPER_VERSION, 10) ) {
+		$log->error("Cannot support Spotty Connect, need at least helper version " . CONNECT_HELPER_VERSION);
 		return;
 	}
 	
 	__PACKAGE__->init() unless $initialized || $dontInit;
 	
 	return 1;
-}
-
-sub canSpotifyConnectV2 {
-	# new Connect doesn't require the Unix tools any more
-	Slim::Utils::Versions->checkVersion(Plugins::Spotty::Plugin->getHelperVersion(), CONNECT_V2_HELPER_VERSION, 10);
 }
 
 sub isSpotifyConnect {
@@ -119,14 +108,6 @@ sub setSpotifyConnect {
 	$song->pluginData( SpotifyConnect => time() );
 	# state on client: need to know whether we've been in Connect mode. If this is set, then we've been playing from Connect, but are no more.
 	$client->pluginData( SpotifyConnect => 1 );
-}
-
-sub hasUnixTools {
-	# we need either curl or wget in order to interact with the helper application
-	return unless _getCurlCmd() || _getWgetCmd();
-	return unless _getPVcmd();
-	
-	return 1;
 }
 
 sub getNextTrack {
@@ -413,132 +394,37 @@ sub startHelper {
 	
 	# no need to restart if it's already there
 	my $helper = $helperInstances{$clientId};
-	return $helper->alive if $helper && $helper->alive;
+	return $helper->alive if $helper;
 
 	my $helperPath = Plugins::Spotty::Plugin->getHelper();
-	
-	if ( $class->canSpotifyConnectV2() ) {
-		if ( !($helper && $helper->alive) ) {
-			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --disable-audio-cache --bitrate 96 --player-mac "%s" --lms "%s" > %s', 
-				$helperPath, 
-				Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ), 
-				$client->name,
-				$clientId,
-				Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
-				main::ISWINDOWS ? 'nul' : '/dev/null'
+
+	if ( !($helper && $helper->alive) ) {
+		my @helperArgs = (
+			'-c', Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ),
+			'-n', $client->name,
+			'--disable-discovery',
+			'--disable-audio-cache',
+			'--bitrate', 96,
+			'--player-mac', $clientId,
+			'--lms', Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
+		);
+
+		main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
+
+		eval { 
+			$helper = $helperInstances{$clientId} = Proc::Background->new(
+				{ 'die_upon_destroy' => 1 },
+				$helperPath,
+				@helperArgs
 			);
-			main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: $command");
-			
-			eval { 
-				$helper = $helperInstances{$clientId} = Proc::Background->new(
-					{ 'die_upon_destroy' => 1 },
-					$command 
-				);
-			};
-	
-			if ($@) {
-				$log->warn("Failed to launch the Spotty Connect deamon: $@");
-			}
-		}
-	}
-	# XXX - legacy, to be removed at some point. Might still be in use by some users who built their own helper
-	elsif ( $helperPath && (_getCurlCmd() || _getWgetCmd()) ) {
-		if ( !($helper && $helper->alive) ) {
-			my $command = sprintf('%s -c "%s" -n "%s" --disable-discovery --disable-audio-cache --onstart "%s" --onstop "%s" --onchange "%s" %s > %s', 
-				$helperPath, 
-				Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ), 
-				$client->name,
-				_getNotificationCmd('start', $clientId),
-				_getNotificationCmd('stop', $clientId),
-				_getNotificationCmd('change', $clientId),
-				_getPVcmd(),
-				main::ISWINDOWS ? 'nul' : '/dev/null'
-			);
-			main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: $command");
-			
-			eval { 
-				$helper = $helperInstances{$clientId} = Proc::Background->new(
-					{ 'die_upon_destroy' => 1 },
-					$command 
-				);
-			};
-	
-			if ($@) {
-				$log->warn("Failed to launch the Spotty Connect deamon: $@");
-			}
+		};
+
+		if ($@) {
+			$log->warn("Failed to launch the Spotty Connect deamon: $@");
 		}
 	}
 
 	return $helper && $helper->alive;
-}
-
-sub _getNotificationCmd {
-	my ($event, $clientId) = @_;
-	
-	my $cmd = sprintf(NOTIFICATION, $clientId, $event);
-	my $url = Slim::Utils::Versions->compareVersions($::VERSION, '7.9.0') >= 0
-		? Slim::Utils::Network::serverURL() 
-		: 'http://' . Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport');
-	
-	if ( my $curl = _getCurlCmd() ) {
-		return sprintf(
-			'%s -s -X POST -d %s %s/jsonrpc.js',
-			$curl,
-			$cmd,
-			$url
-		);
-	}
-	elsif ( my $wget = _getWgetCmd() ) {
-		return sprintf(
-			'%s -q -O- --post-data %s %s/jsonrpc.js',
-			$wget,
-			$cmd,
-			$url
-		);
-	}
-}
-
-sub _getCurlCmd {
-	return $helperBins{curl} if $helperBins{curl};
-	
-	if ( my $curl = Plugins::Spotty::Plugin->findBin('curl') ) {
-		$helperBins{curl} = $curl;
-	}
-	elsif (!_getWgetCmd()) {
-		$log->error("Didn't find the 'curl' utility. Please install curl using your package manager.") unless defined $helperBins{curl};
-		$helperBins{curl} = '';
-	}
-
-	return $helperBins{curl};
-}
-
-sub _getWgetCmd {
-	return $helperBins{wget} if $helperBins{wget};
-	
-	if ( my $wget = Plugins::Spotty::Plugin->findBin('wget') ) {
-		$helperBins{wget} = $wget;
-	}
-	else {
-		$log->error("Didn't find the 'wget' utility. Please install wget using your package manager.") unless defined $helperBins{wget};
-		$helperBins{wget} = '';
-	}
-
-	return $helperBins{wget};
-}
-
-sub _getPVcmd {
-	return $helperBins{pv} if $helperBins{pv};
-	
-	# check whether pv is working
-	if ( my $pv = Plugins::Spotty::Plugin->findBin('pv', sub { `$_[0] --version` =~ /pv/ }) || Plugins::Spotty::Plugin->findBin('pv-spotty', sub { `$_[0] --version` =~ /pv/ }) ) {
-		$helperBins{pv} = sprintf('| %s -L20k -B10k -q', $pv);
-	}
-	else {
-		$log->error("Didn't find the pv (pipe viewer) utility. Please install pv using your package manager") unless defined $helperBins{pv};
-		$helperBins{pv} = '';
-	}
-
-	return $helperBins{pv};
 }
 
 sub stopHelper {

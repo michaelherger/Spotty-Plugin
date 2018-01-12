@@ -427,9 +427,9 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
 	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen
 	EN	Enable Spotify Connect endpoint for this player
 	
-PLUGIN_SPOTTY_PV_CURL_WGET_MISSING
-	DE	Spotify Connect ist nicht verfügbar: bitte verwende den Paketmanager deines Betriebssystems, um "pv" (Pipe Viewer) und "curl" oder "wget" zu installieren.
-	EN	Spotify Connect is not available: please use your system's package manager to install "pv" (Pipe Viewer), and "curl" or "wget".
+PLUGIN_SPOTTY_NEED_HELPER_UPDATE
+	DE	Spotify Connect ist nicht verfügbar.
+	EN	Spotify Connect is not available.
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS
 	DE	Soundqualität
