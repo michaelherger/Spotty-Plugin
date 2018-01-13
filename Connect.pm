@@ -187,6 +187,8 @@ sub _onNewSong {
 sub _onPause {
 	my $request = shift;
 
+	return if $request->source && $request->source eq __PACKAGE__;
+
 	my $client  = $request->client();
 	return if !defined $client;
 	$client = $client->master;
@@ -317,7 +319,10 @@ sub _connectEvent {
 				$client->playingSong()->pluginData( SpotifyConnect => 0 );
 				$client->pluginData( SpotifyConnect => 0 );
 			}
-			$client->execute(['pause']);
+
+			my $request = Slim::Control::Request->new( $client->id, ['pause', 1] );
+			$request->source(__PACKAGE__);
+			$request->execute();
 		}
 		elsif ( $cmd eq 'change' ) {
 			# seeking event from Spotify - we would only seek if the difference was larger than x seconds, as we'll never be perfectly in sync
