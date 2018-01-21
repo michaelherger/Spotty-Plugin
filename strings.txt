@@ -424,8 +424,7 @@ PLUGIN_SPOTTY_PLEASE_UPDATE
 	EN	Information is not avaialable. Please update Logitech Media Server to 7.7.6 or more recent.
 	
 PLUGIN_SPOTTY_SPOTIFY_CONNECT
-	DE	Spotify Connect (EXPERIMENTELL!)
-	EN	Spotify Connect (EXPERIMENTAL!)
+	EN	Spotify Connect
 	
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
 	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen

@@ -20,11 +20,11 @@ use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 
 use Plugins::Spotty::API;
+use Plugins::Spotty::Connect;
 use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
 use constant HELPER => 'spotty';
-use constant CONNECT_ENABLED => 1;
 
 use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
@@ -103,7 +103,7 @@ sub initPlugin {
 	}
 		
 	$VERSION = $class->_pluginDataFor('version');
-#	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
+	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
 
 	if (main::WEBUI) {
 		require Plugins::Spotty::Settings;
@@ -136,11 +136,7 @@ sub postinitPlugin { if (main::TRANSCODING) {
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
 
 	$class->updateTranscodingTable();
-	
-	if (CONNECT_ENABLED) {
-		require Plugins::Spotty::Connect;
-		Plugins::Spotty::Connect->init($helper);
-	}
+	Plugins::Spotty::Connect->init($helper);
 
 	# if user has the Don't Stop The Music plugin enabled, register ourselves
 	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::DontStopTheMusic::Plugin')
@@ -271,14 +267,6 @@ sub getAPIHandler {
 	
 	return $api;
 }
-
-sub canSpotifyConnect { if (CONNECT_ENABLED) {
-	Plugins::Spotty::Connect->canSpotifyConnect();
-} }
-
-sub isSpotifyConnect { if (CONNECT_ENABLED) {
-	Plugins::Spotty::Connect->isSpotifyConnect($_[1]);
-} }
 
 sub canDiscovery { !main::ISWINDOWS }
 
@@ -729,14 +717,12 @@ sub shutdownPlugin { if (main::TRANSCODING) {
 		Plugins::Spotty::SettingsAuth->shutdownHelper();
 	}
 	
-	if (CONNECT_ENABLED) {
-		Plugins::Spotty::Connect->shutdownHelpers();
-	
-		# XXX - ugly attempt at killing all hanging helper applications...
-		if ( !main::ISWINDOWS && $_[0]->getHelper() ) {
-			my $helper = File::Basename::basename(scalar $_[0]->getHelper());
-			`killall $helper > /dev/null 2>&1`;
-		}
+	Plugins::Spotty::Connect->shutdownHelpers();
+
+	# XXX - ugly attempt at killing all hanging helper applications...
+	if ( !main::ISWINDOWS && $_[0]->getHelper() ) {
+		my $helper = File::Basename::basename(scalar $_[0]->getHelper());
+		`killall $helper > /dev/null 2>&1`;
 	}
 } }
 

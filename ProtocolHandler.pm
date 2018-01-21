@@ -69,7 +69,7 @@ sub explodePlaylist {
 sub isRepeatingStream {
 	my ( undef, $song ) = @_;
 
-	return $song && Plugins::Spotty::Plugin->isSpotifyConnect($song->master());
+	return $song && Plugins::Spotty::Connect->isSpotifyConnect($song->master());
 }
 
 sub getNextTrack {
@@ -77,7 +77,7 @@ sub getNextTrack {
 
 	my $client = $song->master();
 
-	if (Plugins::Spotty::Plugin->isSpotifyConnect($client)) {
+	if (Plugins::Spotty::Connect->isSpotifyConnect($client)) {
 		Plugins::Spotty::Connect->getNextTrack($song, $successCb, $errorCb);
 		return;
 	}
