@@ -6,6 +6,10 @@
 		[% title = "" %]
 	[% END; END %]
 
+	[% IF error429; WRAPPER setting title="" desc="" %]
+		<div style="color: red">[% error429 %]</div>
+	[% END; END %]
+
 	[% IF credentials; WRAPPER setting desc="" %]
 		<table>
 		[% FOREACH creds = credentials %]
@@ -32,8 +36,9 @@
 		[% END %]
 	[% END %]
 
-	[% IF error429; WRAPPER setting title="" desc="" %]
-		<div style="color: red">[% error429 %]</div>
+	[% IF canDiscovery; WRAPPER setting title="" desc="" %]
+		<input name="pref_disableDiscovery" id="pref_disableDiscovery" type="checkbox" [% IF prefs.pref_disableDiscovery %] checked [% END %]>
+		<label for="pref_disableDiscovery">[% "PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC" | string %]</label>
 	[% END; END %]
 
 	[% WRAPPER setting title="" desc="" %]

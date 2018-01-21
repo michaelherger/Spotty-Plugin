@@ -34,7 +34,9 @@ sub page {
 }
 
 sub prefs {
-	return ($prefs, qw(myAlbumsOnly bitrate iconCode accountSwitcherMenu));
+	my @prefs = qw(myAlbumsOnly bitrate iconCode accountSwitcherMenu);
+	push @prefs, 'disableDiscovery' if Plugins::Spotty::Plugin->canDiscovery();
+	return ($prefs, @prefs);
 }
 
 sub handler {
@@ -87,10 +89,11 @@ sub handler {
 	# make sure our authentication helper isn't running
 	Plugins::Spotty::SettingsAuth->shutdownHelper();
 	
-	$paramRef->{credentials} = Plugins::Spotty::Plugin->getSortedCredentialTupels();
-	$paramRef->{helperPath} = $helperPath;
+	$paramRef->{credentials}   = Plugins::Spotty::Plugin->getSortedCredentialTupels();
+	$paramRef->{helperPath}    = $helperPath;
 	$paramRef->{helperVersion} = "v$helperVersion" || string('PLUGIN_SPOTTY_HELPER_ERROR');
-	$paramRef->{error429} = Plugins::Spotty::API->hasError429();
+	$paramRef->{canDiscovery}  = Plugins::Spotty::Plugin->canDiscovery();
+	$paramRef->{error429}      = Plugins::Spotty::API->hasError429();
 
 	return $class->SUPER::handler($client, $paramRef);
 }

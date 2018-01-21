@@ -88,7 +88,7 @@ sub handler {
 	}
 	
 	# discovery doesn't work on Windows
-	$paramRef->{canDiscover} = main::ISWINDOWS ? 0 : 1;
+	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
 	
 	return $class->SUPER::handler($client, $paramRef);
 }

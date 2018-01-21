@@ -61,6 +61,7 @@ sub initPlugin {
 		audioCacheSize => 0,		# number of MB to cache
 		tracksSincePurge => 0,
 		accountSwitcherMenu => 0,
+		disableDiscovery => main::ISWINDOWS ? 1 : 0,
 		displayNames => {},
 	});
 
@@ -124,7 +125,7 @@ sub initPlugin {
 		$log->error('Please update to Logitech Media Server 7.9.1 if you want to use seeking in Spotify tracks.');
 	}
 
-	$class->purgeCache();
+	$class->purgeCache('init');
 	$class->purgeAudioCache(1);
 }
 
@@ -279,6 +280,8 @@ sub isSpotifyConnect { if (CONNECT_ENABLED) {
 	Plugins::Spotty::Connect->isSpotifyConnect($_[1]);
 } }
 
+sub canDiscovery { !main::ISWINDOWS }
+
 sub setAccount {
 	my ($class, $client, $id) = @_;
 	
@@ -337,25 +340,9 @@ sub cacheFolder {
 }
 
 sub cacheFolders {
-	my ($class, $purge) = @_;
+	my ($class) = @_;
 	
 	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty');
-
-	# migrate old "default" folder
-	$class->renameCacheFolder('default') if -e catdir($cacheDir, 'default');
-	
-	# if we're coming from an old installation, migrate the credentials to the new path
-	if ( -f catfile($cacheDir, 'credentials.json') && -e catdir($cacheDir, 'files') && !-e (my $defaultDir = catdir($cacheDir, 'default')) ) {
-		$log->warn("Trying to migrate old credentials data.");
-		# we don't migrate the file cache
-		rmtree catdir($cacheDir, 'files');
-		mkpath catdir($defaultDir, 'files');
-		
-		require File::Copy;
-		File::Copy::move(catfile($cacheDir, 'credentials.json'), $defaultDir);
-
-		$class->renameCacheFolder('default');
-	}
 	
 	my @folders;
 
@@ -368,11 +355,6 @@ sub cacheFolders {
 			
 			if (-e catfile($subCacheDir, 'credentials.json')) {
 				push @folders, $subDir;
-			}
-			# remove cache folders without credentials
-			elsif ($purge && -e catdir($subCacheDir, 'files')) {
-				rmtree($subCacheDir);
-				$credsCache = undef;
 			}
 		}
 	}
@@ -394,8 +376,15 @@ sub renameCacheFolder {
 		
 		my ($baseFolder) = $from =~ /(.*)$oldId/;
 		my $to = catdir($baseFolder, $newId); 
-		
-		return if -e $to;
+
+		if (-e $to) {
+			if ($oldId eq '__AUTHENTICATE__') {
+				rmtree($to);
+			}
+			else {
+				return;
+			}
+		}
 	
 		if ($from && $to) {
 			require File::Copy;
@@ -418,7 +407,28 @@ sub deleteCacheFolder {
 }
 
 sub purgeCache {
-	$_[0]->cacheFolders('purge');
+	my ($class, $init) = @_;
+	
+	my $cacheDir = catdir(preferences('server')->get('cachedir'), 'spotty');
+	
+	if (opendir(DIR, $cacheDir)) {
+		while ( defined( my $subDir = readdir(DIR) ) ) {
+			next if $subDir =~ /^\.\.?$/;
+			
+			my $subCacheDir = catdir($cacheDir, $subDir);
+			
+			next if !-d $subCacheDir;
+			
+			# ignore real account folders with credentials
+			next if $subDir =~ /^[0-9a-f]{8}$/i && -e catfile($subCacheDir, 'credentials.json');
+
+			# ignore player specific folders unless during initialization - name is MAC address less the colons
+			next if !$init && $subDir =~ /^[0-9a-f]{12}$/i;
+			
+			rmtree($subCacheDir);
+			$credsCache = undef;
+		}
+	}
 }
 
 sub purgeAudioCacheAfterXTracks {

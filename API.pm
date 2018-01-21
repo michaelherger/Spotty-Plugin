@@ -58,7 +58,8 @@ use constant SPOTIFY_SCOPE => join(',', qw(
 
 
 {
-	__PACKAGE__->mk_accessor( 'rw', 'client');
+	__PACKAGE__->mk_accessor( 'rw', 'client' );
+	__PACKAGE__->mk_accessor( 'rw', 'account' );
 	__PACKAGE__->mk_accessor( 'rw', '_username' );
 	__PACKAGE__->mk_accessor( 'rw', '_country' );
 }
@@ -69,6 +70,7 @@ sub new {
 	my $self = $class->SUPER::new();
 
 	$self->client($args->{client});
+	$self->account($args->{account});
 	$self->_username($args->{username});
 	
 	$self->_country($prefs->get('country'));
@@ -99,7 +101,7 @@ sub getToken {
 	
 	if ( $force || !$token ) {
 		# try to use client specific credentials
-		if ( my $account = Plugins::Spotty::Plugin->getAccount($self->client) ) {
+		if ( my $account = $self->account || Plugins::Spotty::Plugin->getAccount($self->client) ) {
 			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"', 
 				scalar Plugins::Spotty::Plugin->getHelper(), 
 				Plugins::Spotty::Plugin->cacheFolder($account),

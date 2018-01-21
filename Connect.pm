@@ -2,6 +2,10 @@ package Plugins::Spotty::Connect;
 
 use strict;
 
+use File::Path qw(mkpath rmtree);
+use File::Slurp;
+use File::Spec::Functions qw(catdir catfile);
+use JSON::XS::VersionOneAndTwo;
 use Proc::Background;
 
 use Slim::Utils::Log;
@@ -67,6 +71,12 @@ sub init {
 		initHelpers();
 	}, 'account');
 
+	$prefs->setChange(sub {
+		main::INFOLOG && $log->is_info && $log->info("Discovery mode for Connect has changed - re-initialize Connect helpers");
+		__PACKAGE__->shutdownHelpers();
+		initHelpers();
+	}, 'disableDiscovery') if Plugins::Spotty::Plugin->canDiscovery();
+
 	$initialized = 1;
 }
 
@@ -115,7 +125,7 @@ sub getNextTrack {
 	
 	my $client = $song->master;
 
-	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);			
+	my $spotty = $class->getAPIHandler($client);			
 
 	if ( $client->pluginData('newTrack') ) {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
@@ -181,7 +191,7 @@ sub _onNewSong {
 	main::INFOLOG && $log->is_info && $log->info("Got a new track event, but this is no longer Spotify Connect");
 	$client->playingSong()->pluginData( SpotifyConnect => 0 );
 	$client->pluginData( SpotifyConnect => 0 );
-	Plugins::Spotty::Plugin->getAPIHandler($client)->playerPause(undef, $client->id);
+	__PACKAGE__->getAPIHandler($client)->playerPause(undef, $client->id);
 }
 
 sub _onPause {
@@ -201,7 +211,7 @@ sub _onPause {
 	}
 	
 	main::INFOLOG && $log->is_info && $log->info("Got a pause event - tell Spotify Connect controller to pause, too");
-	Plugins::Spotty::Plugin->getAPIHandler($client)->playerPause(undef, $client->id);
+	__PACKAGE__->getAPIHandler($client)->playerPause(undef, $client->id);
 }
 
 sub _onVolume {
@@ -225,7 +235,7 @@ sub _onVolume {
 sub _bufferedSetVolume {
 	my ($client, $volume) = @_;
 	main::INFOLOG && $log->is_info && $log->info("Got a volume event - tell Spotify Connect controller to adjust volume, too: $volume");
-	Plugins::Spotty::Plugin->getAPIHandler($client)->playerVolume(undef, $client->id, $volume);
+	__PACKAGE__->getAPIHandler($client)->playerVolume(undef, $client->id, $volume);
 }
 
 sub _connectEvent {
@@ -254,7 +264,7 @@ sub _connectEvent {
 		return;
 	}
 
-	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);			
+	my $spotty = __PACKAGE__->getAPIHandler($client);			
 
 	$spotty->player(sub {
 		my ($result) = @_;
@@ -279,7 +289,7 @@ sub _connectEvent {
 
 				# sync volume up to spotify if we just got connected
 				if ( !$client->pluginData('SpotifyConnect') ) {
-					Plugins::Spotty::Plugin->getAPIHandler($client)->playerVolume(undef, $client->id, $client->volume);
+					$spotty->playerVolume(undef, $client->id, $client->volume);
 				}
 
 				# Sometimes we want to know whether we're in Spotify Connect mode or not
@@ -388,7 +398,7 @@ sub _getConnectPlayers {
 	Slim::Utils::Timers::killTimers( $account, \&_getConnectPlayers );
 	
 	if ( !Plugins::Spotty::API->idFromMac($client->id) ) {
-		Plugins::Spotty::Plugin->getAPIHandler($client)->devices();
+		__PACKAGE__->getAPIHandler($client)->devices();
 	}
 }
 
@@ -405,14 +415,17 @@ sub startHelper {
 
 	if ( !($helper && $helper->alive) ) {
 		my @helperArgs = (
-			'-c', Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) ),
+			'-c', $class->cacheFolder($client),
 			'-n', $client->name,
-			'--disable-discovery',
 			'--disable-audio-cache',
 			'--bitrate', 96,
 			'--player-mac', $clientId,
 			'--lms', Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
 		);
+		
+		if ( !Plugins::Spotty::Plugin->canDiscovery() || $prefs->get('disableDiscovery') ) {
+			push @helperArgs, '--disable-discovery';
+		}
 
 		main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
 
@@ -440,6 +453,10 @@ sub stopHelper {
 	if ($helper && $helper->alive) {
 		main::INFOLOG && $log->is_info && $log->info("Quitting Spotty Connect daemon for $clientId");
 		$helper->die;
+		
+		my $id = $clientId;
+		$id =~ s/://g;
+		rmtree catdir(preferences('server')->get('cachedir'), 'spotty', $id);
 	}
 }
 
@@ -454,6 +471,55 @@ sub shutdownHelpers {
 	}
 
 	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
+}
+
+sub getAPIHandler {
+	my ($class, $client) = @_;
+	
+	return unless $client;
+	
+	my $api;
+
+	my $credentialsFile = catfile($class->cacheFolder($client), 'credentials.json');
+
+	my $credentials = eval {
+		from_json(read_file($credentialsFile));
+	};
+	
+	if ( !$@ && $credentials || ref $credentials && $credentials->{auth_data} ) {
+		my $id = $client->id;
+		$id =~ s/://g;
+
+		$api = Plugins::Spotty::API->new({
+			client => $client,
+			account => $id,
+			username => $credentials->{username},
+		});
+	}
+		
+	return $api || Plugins::Spotty::Plugin->getAPIHelper($client);
+}
+
+sub cacheFolder {
+	my ($class, $client) = @_;
+	
+	my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) );
+	
+	if ( Plugins::Spotty::Plugin->canDiscovery() && !$prefs->get('disableDiscovery') ) {
+		my $id = $client->id;
+		$id =~ s/://g;
+		
+		my $playerCacheFolder = catdir(preferences('server')->get('cachedir'), 'spotty', $id);
+		mkpath $playerCacheFolder unless -e $playerCacheFolder;
+
+		if ( !-e catfile($playerCacheFolder, 'credentials.json') ) {
+			require File::Copy;
+			File::Copy::copy(catfile($cacheFolder, 'credentials.json'), catfile($playerCacheFolder, 'credentials.json'));
+		}
+		$cacheFolder = $playerCacheFolder;
+	}
+	
+	return $cacheFolder
 }
 
 1;
