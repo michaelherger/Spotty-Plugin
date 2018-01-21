@@ -425,6 +425,10 @@ PLUGIN_SPOTTY_PLEASE_UPDATE
 	
 PLUGIN_SPOTTY_SPOTIFY_CONNECT
 	EN	Spotify Connect
+
+PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
+	DE	Wählen aus, welche Geräte als Spotify Connect Endpunkte zur Auswahl stehen sollen. Bitte beachte, dass für jedes Gerät ein Hintergrundprozess gestartet wird. Dies kann auf Geräten mit wenig Speicher u.U. zu Problemen führen.
+	EN	Select which players you'd like to use with Spotify Connect. Please keep in mind that every enabled device will launch a background process. This could potentially lead to issues on servers running low on memory.
 	
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
 	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen

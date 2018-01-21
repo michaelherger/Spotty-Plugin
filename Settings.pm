@@ -78,6 +78,10 @@ sub handler {
 
 	if ($paramRef->{saveSettings}) {
 		$paramRef->{pref_iconCode} ||= Plugins::Spotty::Plugin->_initIcon();
+
+		foreach my $client ( Slim::Player::Client::clients() ) {
+			$prefs->client($client)->set('enableSpotifyConnect', $paramRef->{'connect_' . $client->id} ? 1 : 0);
+		}
 	}
 	
 	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::Plugin->hasCredentials()) ) {
@@ -94,6 +98,16 @@ sub handler {
 	$paramRef->{helperVersion} = "v$helperVersion" || string('PLUGIN_SPOTTY_HELPER_ERROR');
 	$paramRef->{canDiscovery}  = Plugins::Spotty::Plugin->canDiscovery();
 	$paramRef->{error429}      = Plugins::Spotty::API->hasError429();
+	
+	$paramRef->{players}       = [ sort {
+		lc($a->{name}) cmp lc($b->{name})
+	} map {
+		{ 
+			name => $_->name, 
+			id => $_->id,
+			enabled => $prefs->client($_)->get('enableSpotifyConnect')
+		}
+	} Slim::Player::Client::clients() ];
 
 	return $class->SUPER::handler($client, $paramRef);
 }

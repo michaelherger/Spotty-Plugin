@@ -103,7 +103,7 @@ sub initPlugin {
 	}
 		
 	$VERSION = $class->_pluginDataFor('version');
-	Slim::Player::ProtocolHandlers->registerHandler('spotty', 'Plugins::Spotty::ProtocolHandler');
+	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
 
 	if (main::WEBUI) {
 		require Plugins::Spotty::Settings;

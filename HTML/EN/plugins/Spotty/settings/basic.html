@@ -59,6 +59,20 @@
 		
 		</select>
 	[% END %]
+
+	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG" %]
+		<table style="border-spacing:0">
+		[% FOREACH player IN players %]
+			[% maxCols = 5 %]
+			[% IF loop.index() % maxCols == 0 %]<tr>[% END %]
+			<td style="padding: 0 10px 2px 0">
+				<input type="checkbox" name="connect_[% player.id %]" id="connect_[% player.id %]" [% IF player.enabled %] checked [% END %] value="1" />
+				<label for="connect_[% player.id %]">[% player.name %]</label>
+			</td>
+			[% IF (loop.index + 1) % maxCols == 0 %]</tr>[% END %]
+		[% END %]
+		</table>
+	[% END %]
 	
 	[% WRAPPER setting title="PLUGIN_SPOTTY_HELPER" desc="" %]
 		[% helperPath %] ([% helperVersion %])
