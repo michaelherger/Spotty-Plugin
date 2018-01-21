@@ -473,6 +473,13 @@ sub shutdownHelpers {
 	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
 }
 
+=pod
+	Here we're overriding some of the default handlers. In Connect mode, when discovery is enabled,
+	we could be streaming from any account, not only those configured in Spotty. Therefore we need
+	to use different cache folders with credentials. Use the currently set in Spotty as default, 
+	but read actual value whenever accessing the API. We won't keep these credentials around, to 
+	prevent using a visitor's account.
+=cut
 sub getAPIHandler {
 	my ($class, $client) = @_;
 	
@@ -505,6 +512,7 @@ sub cacheFolder {
 	
 	my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) );
 	
+	# create a temporary account folder with the player's MAC address
 	if ( Plugins::Spotty::Plugin->canDiscovery() && !$prefs->get('disableDiscovery') ) {
 		my $id = $client->id;
 		$id =~ s/://g;
