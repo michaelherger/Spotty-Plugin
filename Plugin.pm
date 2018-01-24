@@ -290,6 +290,10 @@ sub getAccount {
 	
 	return unless $client;
 	
+	if (!blessed $client) {
+		$client = Slim::Player::Client::getClient($client);
+	}
+	
 	my $id = $prefs->client($client)->get('account');
 	
 	if ( !$id || !$class->hasCredentials($id) ) {
@@ -717,7 +721,7 @@ sub shutdownPlugin { if (main::TRANSCODING) {
 		Plugins::Spotty::SettingsAuth->shutdownHelper();
 	}
 	
-	Plugins::Spotty::Connect->shutdownHelpers();
+	Plugins::Spotty::Connect->shutdown();
 
 	# XXX - ugly attempt at killing all hanging helper applications...
 	if ( !main::ISWINDOWS && $_[0]->getHelper() ) {

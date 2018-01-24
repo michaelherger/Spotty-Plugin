@@ -2,11 +2,10 @@ package Plugins::Spotty::Connect;
 
 use strict;
 
-use File::Path qw(mkpath rmtree);
+use File::Path qw(mkpath);
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
 use JSON::XS::VersionOneAndTwo;
-use Proc::Background;
 
 use Slim::Utils::Log;
 use Slim::Utils::Cache;
@@ -15,15 +14,12 @@ use Slim::Utils::Timers;
 
 use constant CONNECT_HELPER_VERSION => '0.9.0';
 use constant SEEK_THRESHOLD => 3;
-use constant DAEMON_WATCHDOG_INTERVAL => 60;
 use constant HISTORY_KEY => 'spotty-connect-history';
 
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $log = logger('plugin.spotty');
 
-my %helperInstances;
-my %helperBins;
 my $initialized;
 
 sub init {
@@ -53,29 +49,9 @@ sub init {
 	
 	# we want to tell the Spotify about local volume changes
 	Slim::Control::Request::subscribe(\&_onVolume, [['mixer'], ['volume']]);
-	
-	# manage helper application instances
-	Slim::Control::Request::subscribe(\&initHelpers, [['client'], ['new', 'disconnect']]);
-	
-	# start/stop helpers when the Connect flag changes
-	$prefs->setChange(\&initHelpers, 'enableSpotifyConnect');
-	
-	# re-initialize helpers when the active account for a player changes
-	$prefs->setChange(sub {
-		my ($pref, $new, $client, $old) = @_;
-		
-		return unless $client && $client->id;
-		
-		main::INFOLOG && $log->is_info && $log->info("Spotify Account for player " . $client->id . " has changed - re-initialize Connect helper");
-		__PACKAGE__->stopHelper($client->id);
-		initHelpers();
-	}, 'account');
 
-	$prefs->setChange(sub {
-		main::INFOLOG && $log->is_info && $log->info("Discovery mode for Connect has changed - re-initialize Connect helpers");
-		__PACKAGE__->shutdownHelpers();
-		initHelpers();
-	}, 'disableDiscovery') if Plugins::Spotty::Plugin->canDiscovery();
+	require Plugins::Spotty::Connect::DaemonManager;
+	Plugins::Spotty::Connect::DaemonManager->init();
 
 	$initialized = 1;
 }
@@ -340,137 +316,10 @@ sub _connectEvent {
 				$client->execute( ['time', $result->{progress}] );
 			}
 		}
-#		elsif ( $cmd eq 'volume' && $result && $result->{device} && (my $volume = $result->{device}->{volume_percent}) ) {
-#			# we don't let spotty handle volume directly to prevent getting caught in a call loop
-#			my $request = Slim::Control::Request->new( $client->id, [ 'mixer', 'volume', $volume ] );
-#			$request->source(__PACKAGE__);
-#			$request->execute();
-#		}
 		elsif (main::INFOLOG && $log->is_info) {
 			$log->info("Unknown command called? $cmd\n" . Data::Dump::dump($result));
 		}
 	});
-}
-
-sub initHelpers {
-	my $class = __PACKAGE__;
-	
-	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
-
-	main::DEBUGLOG && $log->is_debug && $log->debug("Initializing Spotty Connect helper daemons...");
-
-	# shut down orphaned instances
-	$class->shutdownHelpers('inactive-only');
-
-	for my $client ( Slim::Player::Client::clients() ) {
-		my $clientId = $client->id;
-
-		if ( $prefs->client($client)->get('enableSpotifyConnect') ) {
-			# sometimes Connect players disappear without the process crashing - check against the list of Connect players as reported by Spotify
-			my $needConnectPlayer = !Plugins::Spotty::API->idFromMac($clientId);
-			
-			if ( $needConnectPlayer || !$helperInstances{$clientId} || !$helperInstances{$clientId}->alive ) {
-				main::INFOLOG && $log->is_info && $log->info("Need to start Connect daemon for $clientId");
-				
-				my $account;
-				if ($needConnectPlayer) {
-					$account = Plugins::Spotty::Plugin->getAccount($client);
-					Slim::Utils::Timers::killTimers( $account, \&_getConnectPlayers );
-					$class->stopHelper($clientId);
-				}
-				$class->startHelper($client);
-				
-				# update the list of connected players if needed
-				Slim::Utils::Timers::setTimer( $account, time() + 5, \&_getConnectPlayers, $client ) if $account && $needConnectPlayer;
-			}
-		}
-		else {
-			$class->stopHelper($clientId);
-		}
-	}
-
-    Slim::Utils::Timers::setTimer( $class, time() + DAEMON_WATCHDOG_INTERVAL, \&initHelpers );
-}
-
-sub _getConnectPlayers {
-	my ($account, $client) = @_;
-
-	Slim::Utils::Timers::killTimers( $account, \&_getConnectPlayers );
-	
-	if ( !Plugins::Spotty::API->idFromMac($client->id) ) {
-		__PACKAGE__->getAPIHandler($client)->devices();
-	}
-}
-
-sub startHelper {
-	my ($class, $client) = @_;
-	
-	my $clientId = $client->id;
-	
-	# no need to restart if it's already there
-	my $helper = $helperInstances{$clientId};
-	return 1 if $helper && $helper->alive;
-
-	my $helperPath = Plugins::Spotty::Plugin->getHelper();
-
-	if ( !($helper && $helper->alive) ) {
-		my @helperArgs = (
-			'-c', $class->cacheFolder($client),
-			'-n', $client->name,
-			'--disable-audio-cache',
-			'--bitrate', 96,
-			'--player-mac', $clientId,
-			'--lms', Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
-		);
-		
-		if ( !Plugins::Spotty::Plugin->canDiscovery() || $prefs->get('disableDiscovery') ) {
-			push @helperArgs, '--disable-discovery';
-		}
-
-		main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
-
-		eval { 
-			$helper = $helperInstances{$clientId} = Proc::Background->new(
-				{ 'die_upon_destroy' => 1 },
-				$helperPath,
-				@helperArgs
-			);
-		};
-
-		if ($@) {
-			$log->warn("Failed to launch the Spotty Connect deamon: $@");
-		}
-	}
-
-	return $helper && $helper->alive;
-}
-
-sub stopHelper {
-	my ($class, $clientId) = @_;
-	
-	my $helper = $helperInstances{$clientId};
-	
-	if ($helper && $helper->alive) {
-		main::INFOLOG && $log->is_info && $log->info("Quitting Spotty Connect daemon for $clientId");
-		$helper->die;
-		
-		my $id = $clientId;
-		$id =~ s/://g;
-		rmtree catdir(preferences('server')->get('cachedir'), 'spotty', $id);
-	}
-}
-
-sub shutdownHelpers {
-	my ($class, $inactiveOnly) = @_;
-	
-	my %clientIds = map { $_->id => 1 } Slim::Player::Client::clients() if $inactiveOnly;
-	
-	foreach my $clientId ( keys %helperInstances ) {
-		next if $clientIds{$clientId};
-		$class->stopHelper($clientId);
-	}
-
-	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
 }
 
 =pod
@@ -508,13 +357,15 @@ sub getAPIHandler {
 }
 
 sub cacheFolder {
-	my ($class, $client) = @_;
+	my ($class, $clientId) = @_;
+
+	$clientId = $clientId->id if $clientId && blessed $clientId;
 	
-	my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($client) );
+	my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($clientId) );
 	
 	# create a temporary account folder with the player's MAC address
 	if ( Plugins::Spotty::Plugin->canDiscovery() && !$prefs->get('disableDiscovery') ) {
-		my $id = $client->id;
+		my $id = $clientId;
 		$id =~ s/://g;
 		
 		my $playerCacheFolder = catdir(preferences('server')->get('cachedir'), 'spotty', $id);
@@ -528,6 +379,12 @@ sub cacheFolder {
 	}
 	
 	return $cacheFolder
+}
+
+sub shutdown {
+	if ($initialized) {
+		Plugins::Spotty::Connect::DaemonManager->shutdown();
+	}
 }
 
 1;
