@@ -6,6 +6,8 @@ use File::Path qw(mkpath);
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
 use JSON::XS::VersionOneAndTwo;
+use Scalar::Util qw(blessed);
+
 
 use Slim::Utils::Log;
 use Slim::Utils::Cache;

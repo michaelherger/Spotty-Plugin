@@ -2,6 +2,9 @@ package Plugins::Spotty::Connect::DaemonManager;
 
 use strict;
 
+use Scalar::Util qw(blessed);
+
+
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Timers;

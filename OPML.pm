@@ -2,7 +2,6 @@ package Plugins::Spotty::OPML;
 
 use strict;
 
-use Scalar::Util qw(blessed);
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::API;
