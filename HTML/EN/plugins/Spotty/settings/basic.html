@@ -61,6 +61,9 @@
 	[% END %]
 
 	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG" %]
+		[% IF players.size == 0 %]
+			[% "NO_PLAYER_FOUND" | string %]
+		[% END %]
 		<table style="border-spacing:0">
 		[% FOREACH player IN players %]
 			[% maxCols = 5 %]
