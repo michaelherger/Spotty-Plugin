@@ -59,7 +59,7 @@ use constant SPOTIFY_SCOPE => join(',', qw(
 
 {
 	__PACKAGE__->mk_accessor( 'rw', 'client' );
-	__PACKAGE__->mk_accessor( 'rw', 'account' );
+	__PACKAGE__->mk_accessor( 'rw', 'cache' );
 	__PACKAGE__->mk_accessor( 'rw', '_username' );
 	__PACKAGE__->mk_accessor( 'rw', '_country' );
 }
@@ -70,7 +70,7 @@ sub new {
 	my $self = $class->SUPER::new();
 
 	$self->client($args->{client});
-	$self->account($args->{account});
+	$self->cache($args->{cache});
 	$self->_username($args->{username});
 	
 	$self->_country($prefs->get('country'));
@@ -101,10 +101,10 @@ sub getToken {
 	
 	if ( $force || !$token ) {
 		# try to use client specific credentials
-		if ( my $account = $self->account || Plugins::Spotty::Plugin->getAccount($self->client) ) {
+		if ( $self->cache || (my $account = Plugins::Spotty::Plugin->getAccount($self->client)) ) {
 			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"', 
 				scalar Plugins::Spotty::Plugin->getHelper(), 
-				Plugins::Spotty::Plugin->cacheFolder($account),
+				$self->cache || Plugins::Spotty::Plugin->cacheFolder($account),
 				$prefs->get('iconCode'),
 				SPOTIFY_SCOPE
 			);
@@ -112,7 +112,11 @@ sub getToken {
 			my $response;
 	
 			eval {
-				main::INFOLOG && $log->is_info && $log->info("Trying to get access token: $cmd");
+				if (main::INFOLOG && $log->is_info) {
+					my $cmd2 = $cmd;
+					$cmd2 =~ s/-i [a-f0-9]+/-i abcdef1234567890/;
+					$log->info("Trying to get access token: $cmd2");
+				}
 				$response = `$cmd 2>&1`;
 				main::INFOLOG && $log->is_info && $log->info("Got response: $response");
 				$response = decode_json($response);

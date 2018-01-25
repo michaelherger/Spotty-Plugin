@@ -338,19 +338,17 @@ sub getAPIHandler {
 	
 	my $api;
 
-	my $credentialsFile = catfile($class->cacheFolder($client), 'credentials.json');
+	my $cacheFolder = $class->cacheFolder($client);
+	my $credentialsFile = catfile($cacheFolder, 'credentials.json');
 
 	my $credentials = eval {
 		from_json(read_file($credentialsFile));
 	};
 	
 	if ( !$@ && $credentials || ref $credentials && $credentials->{auth_data} ) {
-		my $id = $client->id;
-		$id =~ s/://g;
-
 		$api = Plugins::Spotty::API->new({
 			client => $client,
-			account => $id,
+			cache => $cacheFolder,
 			username => $credentials->{username},
 		});
 	}
