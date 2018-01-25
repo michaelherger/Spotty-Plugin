@@ -12,7 +12,7 @@ use Slim::Utils::Timers;
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::Connect::Daemon;
 
-use constant DAEMON_WATCHDOG_INTERVAL => 20;
+use constant DAEMON_WATCHDOG_INTERVAL => 60;
 
 my $prefs = preferences('plugin.spotty');
 my $log = logger('plugin.spotty');
