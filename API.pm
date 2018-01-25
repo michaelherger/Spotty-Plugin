@@ -112,7 +112,7 @@ sub getToken {
 			my $response;
 	
 			eval {
-				main::DEBUGLOG && $log->is_debug && $log->debug("Trying to get access token: $cmd");
+				main::INFOLOG && $log->is_info && $log->info("Trying to get access token: $cmd");
 				$response = `$cmd 2>&1`;
 				main::INFOLOG && $log->is_info && $log->info("Got response: $response");
 				$response = decode_json($response);
