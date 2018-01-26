@@ -11,6 +11,10 @@ use Proc::Background;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
+# disable discovery mode if we have to restart more than x times in y minutes
+use constant MAX_FAILURES_BEFORE_DISABLE_DISCOVERY => 5;
+use constant MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY => 10 * 60;
+
 __PACKAGE__->mk_accessor( rw => qw(
 	id
 	mac
@@ -40,6 +44,8 @@ sub start {
 	
 	my $helperPath = Plugins::Spotty::Plugin->getHelper();
 	my $client = Slim::Player::Client::getClient($self->mac);
+	
+	$self->_checkStartTimes();
 
 	my @helperArgs = (
 		'-c', Plugins::Spotty::Connect->cacheFolder($self->mac),
@@ -67,8 +73,28 @@ sub start {
 	if ($@) {
 		$log->warn("Failed to launch the Spotty Connect deamon: $@");
 	}
+}
+
+sub _checkStartTimes {
+	my $self = shift;
 	
-	push @{$self->_startTimes}, time();
+	if ( !$prefs->get('disableDiscovery') ) {
+		if ( scalar @{$self->_startTimes} > MAX_FAILURES_BEFORE_DISABLE_DISCOVERY ) {
+			splice @{$self->_startTimes}, 0, @{$self->_startTimes} - MAX_FAILURES_BEFORE_DISABLE_DISCOVERY;
+			
+			if ( time() - $self->_startTimes->[0] < MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY ) {
+				$log->warn(sprintf(
+					'The spotty helper has crashed %s times within less than %s minutes - disable local announcement of the Connect daemon.', 
+					MAX_FAILURES_BEFORE_DISABLE_DISCOVERY, 
+					MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY / 60
+				));
+
+				$prefs->set('disableDiscovery', 1);
+			}
+		}
+
+		push @{$self->_startTimes}, time();
+	}
 }
 
 sub stop {
