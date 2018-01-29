@@ -48,7 +48,7 @@ sub handler {
 	if ($paramRef->{'saveSettings'}) {
 		if ( $paramRef->{'username'} && $paramRef->{'password'} && (my $helperPath = Plugins::Spotty::Plugin->getHelper()) ) {
 			my $command = sprintf(
-				'%s -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery', 
+				"%s -c '%s' -n '%s (%s)' -u '%s' -p '%s' -a --disable-discovery", 
 				$helperPath, 
 				$class->_cacheFolder(),
 				string('PLUGIN_SPOTTY_AUTH_NAME'),
@@ -125,7 +125,7 @@ sub startHelper {
 
 	if ( my $helperPath = Plugins::Spotty::Plugin->getHelper() ) {
 		if ( !($helper && $helper->alive) ) {
-			my $command = sprintf('%s -c "%s" -n "%s (%s)" -a', 
+			my $command = sprintf(q(%s -c '%s' -n '%s (%s)' -a), 
 				$helperPath, 
 				$class->_cacheFolder(), 
 				Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'),

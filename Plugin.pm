@@ -616,7 +616,7 @@ sub getHelper {
 		$helper = $class->findBin(HELPER, sub {
 			my $candidate = $_[0];
 			
-			my $checkCmd = sprintf('%s -n "%s (%s)" --check', 
+			my $checkCmd = sprintf("%s -n '%s (%s)' --check", 
 				$candidate,
 				string('PLUGIN_SPOTTY_AUTH_NAME'),
 				Slim::Utils::Misc::getLibraryName()
