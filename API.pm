@@ -108,6 +108,9 @@ sub getToken {
 				$prefs->get('iconCode'),
 				SPOTIFY_SCOPE
 			);
+			
+			# Windows can't handle the single quotes Linux needs...
+			$cmd =~ s/'/"/g if main::ISWINDOWS;
 	
 			my $response;
 	

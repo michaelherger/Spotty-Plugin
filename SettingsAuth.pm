@@ -56,6 +56,9 @@ sub handler {
 				$paramRef->{'username'},
 				$paramRef->{'password'},
 			);
+
+			# Windows can't handle the single quotes Linux needs...
+			$command =~ s/'/"/g if main::ISWINDOWS;
 			
 			if (main::INFOLOG && $log->is_info) {
 				my $logCmd = $command;
@@ -133,6 +136,9 @@ sub startHelper {
 			);
 			main::INFOLOG && $log->is_info && $log->info("Starting authentication deamon: $command");
 			
+			# Windows can't handle the single quotes Linux needs...
+			$command =~ s/'/"/g if main::ISWINDOWS;
+
 			eval { 
 				$helper = Proc::Background->new(
 					{ 'die_upon_destroy' => 1 },

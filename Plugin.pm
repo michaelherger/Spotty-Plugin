@@ -622,6 +622,9 @@ sub getHelper {
 				Slim::Utils::Misc::getLibraryName()
 			);
 			
+			# Windows can't handle the single quotes Linux needs...
+			$checkCmd =~ s/'/"/g if main::ISWINDOWS;
+
 			$check = `$checkCmd 2>&1`;
 
 			if ( $check && $check =~ /^ok spotty v([\d\.]+)/i ) {
