@@ -12,8 +12,8 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
 # disable discovery mode if we have to restart more than x times in y minutes
-use constant MAX_FAILURES_BEFORE_DISABLE_DISCOVERY => 5;
-use constant MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY => 10 * 60;
+use constant MAX_FAILURES_BEFORE_DISABLE_DISCOVERY => 3;
+use constant MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY => 5 * 60;
 
 __PACKAGE__->mk_accessor( rw => qw(
 	id
