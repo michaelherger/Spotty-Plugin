@@ -36,11 +36,6 @@
 		[% END %]
 	[% END %]
 
-	[% IF canDiscovery; WRAPPER setting title="" desc="" %]
-		<input name="pref_disableDiscovery" id="pref_disableDiscovery" type="checkbox" [% IF prefs.pref_disableDiscovery %] checked [% END %]>
-		<label for="pref_disableDiscovery">[% "PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC" | string %]</label>
-	[% END; END %]
-
 	[% WRAPPER setting title="" desc="" %]
 		<input name="pref_myAlbumsOnly" id="pref_myAlbumsOnly" type="checkbox" [% IF prefs.pref_myAlbumsOnly %] checked [% END %]>
 		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
@@ -76,6 +71,11 @@
 		[% END %]
 		</table>
 	[% END %]
+
+	[% IF canDiscovery; WRAPPER setting title="" desc="" %]
+		<input name="pref_disableDiscovery" id="pref_disableDiscovery" type="checkbox" [% IF prefs.pref_disableDiscovery %] checked [% END %]>
+		<label for="pref_disableDiscovery">[% "PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC" | string %]</label>
+	[% END; END %]
 	
 	[% WRAPPER setting title="PLUGIN_SPOTTY_HELPER" desc="" %]
 		[% helperPath %] ([% helperVersion %])
