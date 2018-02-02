@@ -102,15 +102,12 @@ sub getToken {
 	if ( $force || !$token ) {
 		# try to use client specific credentials
 		if ( $self->cache || (my $account = Plugins::Spotty::Plugin->getAccount($self->client)) ) {
-			my $cmd = sprintf(q(%s -n Squeezebox -c '%s' -i %s --get-token --scope '%s'), 
+			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"', 
 				scalar Plugins::Spotty::Plugin->getHelper(), 
 				$self->cache || Plugins::Spotty::Plugin->cacheFolder($account),
 				$prefs->get('iconCode'),
 				SPOTIFY_SCOPE
 			);
-			
-			# Windows can't handle the single quotes Linux needs...
-			$cmd =~ s/'/"/g if main::ISWINDOWS;
 	
 			my $response;
 	

@@ -48,7 +48,7 @@ sub handler {
 	if ($paramRef->{'saveSettings'}) {
 		if ( $paramRef->{'username'} && $paramRef->{'password'} && (my $helperPath = Plugins::Spotty::Plugin->getHelper()) ) {
 			my $command = sprintf(
-				"%s -c '%s' -n '%s (%s)' -u '%s' -p '%s' -a --disable-discovery", 
+				'%s -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery', 
 				$helperPath, 
 				$class->_cacheFolder(),
 				string('PLUGIN_SPOTTY_AUTH_NAME'),
@@ -56,9 +56,6 @@ sub handler {
 				$paramRef->{'username'},
 				$paramRef->{'password'},
 			);
-
-			# Windows can't handle the single quotes Linux needs...
-			$command =~ s/'/"/g if main::ISWINDOWS;
 			
 			if (main::INFOLOG && $log->is_info) {
 				my $logCmd = $command;
