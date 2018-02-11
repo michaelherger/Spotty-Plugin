@@ -297,12 +297,23 @@ sub _connectEvent {
 			my $clientId = $client->id;
 			
 			# if we're playing, got a stop event, and current Connect device is us, then pause
-			if ( $client->isPlaying && ($result->{device}->{id} == Plugins::Spotty::API->idFromMac($clientId) || $result->{device}->{name} eq $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
+			if ( $client->isPlaying && ($result->{device}->{id} eq Plugins::Spotty::API->idFromMac($clientId) || $result->{device}->{name} eq $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause");
 
 				my $request = Slim::Control::Request->new( $client->id, ['pause', 1] );
 				$request->source(__PACKAGE__);
 				$request->execute();
+			} 
+			elsif ( $client->isPlaying && ($result->{device}->{id} ne Plugins::Spotty::API->idFromMac($clientId) && $result->{device}->{name} ne $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
+				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause, but current player is no longer the Connect target");
+
+				my $request = Slim::Control::Request->new( $client->id, ['pause', 1] );
+				$request->source(__PACKAGE__);
+				$request->execute();
+
+				# reset Connect status on this device
+				$client->playingSong()->pluginData( SpotifyConnect => 0 );
+				$client->pluginData( SpotifyConnect => 0 );
 			} 
 			# if we're playing, got a stop event, and current Connect device is NOT us, then 
 			# disable Connect and let the track end
