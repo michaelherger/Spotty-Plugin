@@ -1327,8 +1327,17 @@ sub _call {
 			}
 			
 			my $result;
+			my $isJSON;
 			
-			if ( $response->headers->content_type =~ /json/ ) {
+			# sometimes we'd get a 202 instead of 200, but with full body?!?
+			if ( $response->code == 202 && $response->headers->content_type !~ /json/ ) {
+				eval {
+					decode_json($response->content);
+					$isJSON = 1;
+				};
+			}
+			
+			if ( $response->headers->content_type =~ /json/ || $isJSON ) {
 				$result = decode_json(
 					$response->content,
 				);
