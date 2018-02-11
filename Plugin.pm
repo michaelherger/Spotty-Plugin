@@ -268,7 +268,7 @@ sub getAPIHandler {
 	return $api;
 }
 
-sub canDiscovery { !main::ISWINDOWS }
+sub canDiscovery { 1 || !main::ISWINDOWS }
 
 sub setAccount {
 	my ($class, $client, $id) = @_;

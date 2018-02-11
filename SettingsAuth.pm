@@ -125,21 +125,19 @@ sub startHelper {
 
 	if ( my $helperPath = Plugins::Spotty::Plugin->getHelper() ) {
 		if ( !($helper && $helper->alive) ) {
-			my $command = sprintf(q(%s -c '%s' -n '%s (%s)' -a), 
-				$helperPath, 
-				$class->_cacheFolder(), 
-				Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'),
-				Slim::Utils::Misc::getLibraryName(),
+			my @helperArgs = (
+				'-c', $class->_cacheFolder(),
+				'-n', sprintf("%s (%s)", Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'), Slim::Utils::Misc::getLibraryName()),
+				'-a'
 			);
-			main::INFOLOG && $log->is_info && $log->info("Starting authentication deamon: $command");
-			
-			# Windows can't handle the single quotes Linux needs...
-			$command =~ s/'/"/g if main::ISWINDOWS;
+
+			main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
 
 			eval { 
 				$helper = Proc::Background->new(
 					{ 'die_upon_destroy' => 1 },
-					$command 
+					$helperPath,
+					@helperArgs
 				);
 			};
 
