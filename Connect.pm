@@ -265,17 +265,17 @@ sub _connectEvent {
 			if ( $streamUrl ne $result->{track}->{uri} || !__PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Got a new track to be played: " . $result->{track}->{uri});
 
-				# sync volume up to spotify if we just got connected
-				if ( !$client->pluginData('SpotifyConnect') ) {
-					$spotty->playerVolume(undef, $client->id, $client->volume);
-				}
-
 				# Sometimes we want to know whether we're in Spotify Connect mode or not
 				$client->pluginData( SpotifyConnect => 1 );
 				$client->pluginData( newTrack => 1 );
 
 				my $request = $client->execute( [ 'playlist', 'play', $result->{track}->{uri} ] );
 				$request->source(__PACKAGE__);
+
+				# sync volume up to spotify if we just got connected
+				if ( !$client->pluginData('SpotifyConnect') ) {
+					$spotty->playerVolume(undef, $client->id, $client->volume);
+				}
 				
 				# on interactive Spotify Connect use we're going to reset the play history.
 				# this isn't really solving the problem of lack of context. But it's better than nothing...
