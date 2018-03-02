@@ -283,7 +283,7 @@ sub _connectEvent {
 				
 				# if status is already more than 10s in, then do seek
 				if ( $result->{progress} && $result->{progress} > 10 ) {
-					$client->execute( ['time', $result->{progress}] );
+					$client->execute( ['time', int($result->{progress})] );
 				}
 			}
 			elsif ( !$client->isPlaying ) {
@@ -326,7 +326,7 @@ sub _connectEvent {
 		elsif ( $cmd eq 'change' ) {
 			# seeking event from Spotify - we would only seek if the difference was larger than x seconds, as we'll never be perfectly in sync
 			if ( $client->isPlaying && abs($result->{progress} - Slim::Player::Source::songTime($client)) > SEEK_THRESHOLD ) {
-				$client->execute( ['time', $result->{progress}] );
+				$client->execute( ['time', int($result->{progress})] );
 			}
 		}
 		elsif (main::INFOLOG && $log->is_info) {
