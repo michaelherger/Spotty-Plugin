@@ -682,10 +682,10 @@ sub findBin {
 		# muslhf would not run on Pi1... have another gnueabi-hf for it
 		elsif ( $Config::Config{'archname'} =~ /(aarch64|arm).*linux/ ) {
 			if ($customFirst && $1 ne 'aarch64') {
-				unshift @candidates, $name . '-muslhf', $name . '-hf';
+				unshift @candidates, $name . '-hf', $name . '-muslhf';
 			}
 			else {
-				push @candidates, $name . '-muslhf', $name . '-hf';
+				push @candidates, $name . '-hf', $name . '-muslhf';
 			}
 		}
 	}
