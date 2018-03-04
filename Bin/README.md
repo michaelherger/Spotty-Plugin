@@ -106,6 +106,9 @@ Spotty on macOS 10.9 and older
 ------------------------------
 needs to be built using lewton, but doesn't work with --disable-discovery?
 
+According to the [Rust Platform Support document](https://forge.rust-lang.org/platform-support.html) 
+only macOS 10.7+ (Lion+) is supported by Rust.
+
 Spotty on Windows
 -----------------
 Requires MS VC 2015 runtime v14, 32-bit(!)

@@ -61,7 +61,7 @@ sub initPlugin {
 		audioCacheSize => 0,		# number of MB to cache
 		tracksSincePurge => 0,
 		accountSwitcherMenu => 0,
-		disableDiscovery => main::ISWINDOWS ? 1 : 0,
+		disableDiscovery => 0,
 		displayNames => {},
 	});
 
@@ -268,7 +268,7 @@ sub getAPIHandler {
 	return $api;
 }
 
-sub canDiscovery { 1 || !main::ISWINDOWS }
+sub canDiscovery { 1 }
 
 sub setAccount {
 	my ($class, $client, $id) = @_;
