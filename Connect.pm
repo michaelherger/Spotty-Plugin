@@ -31,9 +31,9 @@ sub init {
 		require Plugins::Spotty::PlayerSettings;
 		Plugins::Spotty::PlayerSettings->new();
 	}
-	
+
 	return unless $class->canSpotifyConnect('dontInit');
-	
+
 #                                                                |requires Client
 #                                                                |  |is a Query
 #                                                                |  |  |has Tags
@@ -42,13 +42,13 @@ sub init {
 	Slim::Control::Request::addDispatch(['spottyconnect','_cmd'],
 	                                                            [1, 0, 1, \&_connectEvent]
 	);
-	
+
 	# listen to playlist change events so we know when Spotify Connect mode ends
 	Slim::Control::Request::subscribe(\&_onNewSong, [['playlist'], ['newsong']]);
-	
+
 	# we want to tell the Spotify controller to pause playback when we pause locally
 	Slim::Control::Request::subscribe(\&_onPause, [['playlist'], ['pause', 'stop']]);
-	
+
 	# we want to tell the Spotify about local volume changes
 	Slim::Control::Request::subscribe(\&_onVolume, [['mixer'], ['volume']]);
 
@@ -60,38 +60,38 @@ sub init {
 
 sub canSpotifyConnect {
 	my ($class, $dontInit) = @_;
-	
+
 	# we need a minimum helper application version
 	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Plugin->getHelperVersion(), CONNECT_HELPER_VERSION, 10) ) {
 		$log->error("Cannot support Spotty Connect, need at least helper version " . CONNECT_HELPER_VERSION);
 		return;
 	}
-	
+
 	__PACKAGE__->init() unless $initialized || $dontInit;
-	
+
 	return 1;
 }
 
 sub isSpotifyConnect {
 	my ( $class, $client ) = @_;
-	
+
 	return unless $client;
 	$client = $client->master;
 	my $song = $client->playingSong();
-	
+
 	return unless $client->pluginData('SpotifyConnect');
-	
-	return $client->pluginData('newTrack') || ($song ? $song->pluginData('SpotifyConnect') : undef) ? 1 : 0; 
+
+	return $client->pluginData('newTrack') || ($song ? $song->pluginData('SpotifyConnect') : undef) ? 1 : 0;
 }
 
 sub setSpotifyConnect {
 	my ( $class, $client ) = @_;
-	
+
 	return unless $client;
 
 	$client = $client->master;
 	my $song = $client->playingSong();
-	
+
 	# state on song: need to know whether we're currently in Connect mode. Is lost when new track plays.
 	$song->pluginData( SpotifyConnect => time() );
 	# state on client: need to know whether we've been in Connect mode. If this is set, then we've been playing from Connect, but are no more.
@@ -100,10 +100,10 @@ sub setSpotifyConnect {
 
 sub getNextTrack {
 	my ($class, $song, $successCb, $errorCb) = @_;
-	
+
 	my $client = $song->master;
 
-	my $spotty = $class->getAPIHandler($client);			
+	my $spotty = $class->getAPIHandler($client);
 
 	if ( $client->pluginData('newTrack') ) {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
@@ -115,7 +115,7 @@ sub getNextTrack {
 		main::INFOLOG && $log->is_info && $log->info("We're approaching the end of a track - get the next track");
 
 		$client->pluginData( newTrack => 1 );
-		
+
 		# add current track to the history
 		my $history = $cache->get(HISTORY_KEY) || {};
 		$history->{$song->track->url}++;
@@ -124,19 +124,19 @@ sub getNextTrack {
 		$spotty->playerNext(sub {
 			$spotty->player(sub {
 				my ($result) = @_;
-				
+
 				if ( $result && ref $result && (my $uri = $result->{item}->{uri}) ) {
 					main::INFOLOG && $log->is_info && $log->info("Got a new track to be played next: $uri");
-					
+
 					$uri =~ s/^(spotify:)(track:.*)/$1\/\/$2/;
 
 					# stop playback if we've played this track before. It's likely trying to start over.
 					if ( $history->{$uri} && !($result->{repeat_state} && $result->{repeat_state} eq 'on')) {
 						main::INFOLOG && $log->is_info && $log->info('Stopping playback, as we have likely reached the end of our context (playlist, album, ...)');
-						
+
 						# set a timer to stop playback at the end of the track
 						my $remaining = $client->controller()->playingSongDuration() - Slim::Player::Source::songTime($client);
-						
+
 						Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining, sub {
 							$spotty->playerPause(undef, $client->id);
 						});
@@ -145,7 +145,7 @@ sub getNextTrack {
 						$song->track->url($uri);
 						$class->setSpotifyConnect($client);
 					}
-					
+
 					$successCb->();
 				}
 			});
@@ -163,9 +163,9 @@ sub _onNewSong {
 	$client = $client->master;
 
 	return if __PACKAGE__->isSpotifyConnect($client);
-	
+
 	return unless $client->pluginData('SpotifyConnect');
-	
+
 	main::INFOLOG && $log->is_info && $log->info("Got a new track event, but this is no longer Spotify Connect");
 	$client->playingSong()->pluginData( SpotifyConnect => 0 );
 	$client->pluginData( SpotifyConnect => 0 );
@@ -177,34 +177,37 @@ sub _onPause {
 
 	return if $request->source && $request->source eq __PACKAGE__;
 
+	# no need to pause if we unpause
+	return if $request->isCommand([['playlist'],['pause']]) && !$request->getParam('_newvalue');
+
 	my $client  = $request->client();
 	return if !defined $client;
 	$client = $client->master;
 
 	return if !__PACKAGE__->isSpotifyConnect($client);
 
-	if ( $request->isCommand([['playlist'],['stop']]) && $client->playingSong()->pluginData('SpotifyConnect') > time() - 5 ) {
+	if ( $request->isCommand([['playlist'],['stop','pause']]) && $client->playingSong()->pluginData('SpotifyConnect') > time() - 5 ) {
 		main::INFOLOG && $log->is_info && $log->info("Got a stop event within 5s after start of a new track - do NOT tell Spotify Connect controller to pause");
 		return;
 	}
-	
+
 	main::INFOLOG && $log->is_info && $log->info("Got a pause event - tell Spotify Connect controller to pause, too");
 	__PACKAGE__->getAPIHandler($client)->playerPause(undef, $client->id);
 }
 
 sub _onVolume {
 	my $request = shift;
-	
+
 	return if $request->source && $request->source eq __PACKAGE__;
-	
+
 	my $client  = $request->client();
 	return if !defined $client;
 	$client = $client->master;
 
 	return if !__PACKAGE__->isSpotifyConnect($client);
-	
+
 	my $volume = $client->volume;
-	
+
 	# buffer volume change events, as they often come in bursts
 	Slim::Utils::Timers::killTimers($client, \&_bufferedSetVolume);
 	Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + 0.5, \&_bufferedSetVolume, $volume);
@@ -219,42 +222,42 @@ sub _bufferedSetVolume {
 sub _connectEvent {
 	my $request = shift;
 	my $client = $request->client()->master;
-	
+
 	if ( $client->pluginData('newTrack') ) {
 		$client->pluginData( newTrack => 0 );
 		return;
 	}
 
 	my $cmd = $request->getParam('_cmd');
-	
+
 	main::INFOLOG && $log->is_info && $log->info("Got called from spotty helper: $cmd");
-	
+
 	if ( $cmd eq 'volume' && !($request->source && $request->source eq __PACKAGE__) ) {
 		my $volume = $request->getParam('_p2');
-		
+
 		return unless defined $volume;
-		
+
 		# we don't let spotty handle volume directly to prevent getting caught in a call loop
 		my $request = Slim::Control::Request->new( $client->id, [ 'mixer', 'volume', $volume ] );
 		$request->source(__PACKAGE__);
 		$request->execute();
-		
+
 		return;
 	}
 
-	my $spotty = __PACKAGE__->getAPIHandler($client);			
+	my $spotty = __PACKAGE__->getAPIHandler($client);
 
 	$spotty->player(sub {
 		my ($result) = @_;
-		
+
 		my $song = $client->playingSong();
 		my $streamUrl = ($song ? $song->streamUrl : '') || '';
 		$streamUrl =~ s/\/\///;
-		
+
 		$result ||= {};
-		
+
 		main::DEBUGLOG && $log->is_debug && $log->debug("Current Connect state: \n" . Data::Dump::dump($result, $cmd));
-		
+
 		# in case of a change event we need to figure out what actually changed...
 		if ( $cmd =~ /change/ && $result && ref $result && (($streamUrl ne $result->{track}->{uri} && $result->{is_playing}) || !__PACKAGE__->isSpotifyConnect($client)) ) {
 			main::INFOLOG && $log->is_info && $log->info("Got a $cmd event, but actually this is a play next track event");
@@ -276,11 +279,11 @@ sub _connectEvent {
 				if ( !$client->pluginData('SpotifyConnect') ) {
 					$spotty->playerVolume(undef, $client->id, $client->volume);
 				}
-				
+
 				# on interactive Spotify Connect use we're going to reset the play history.
 				# this isn't really solving the problem of lack of context. But it's better than nothing...
 				$cache->remove(HISTORY_KEY);
-				
+
 				# if status is already more than 10s in, then do seek
 				if ( $result->{progress} && $result->{progress} > 10 ) {
 					$client->execute( ['time', int($result->{progress})] );
@@ -289,21 +292,22 @@ sub _connectEvent {
 			elsif ( !$client->isPlaying ) {
 				main::INFOLOG && $log->is_info && $log->info("Got to resume playback");
 				__PACKAGE__->setSpotifyConnect($client);
-				my $request = $client->execute(['play']);
+				my $request = Slim::Control::Request->new( $client->id, ['play'] );
 				$request->source(__PACKAGE__);
+				$request->execute();
 			}
 		}
 		elsif ( $cmd eq 'stop' && $result->{device} ) {
 			my $clientId = $client->id;
-			
+
 			# if we're playing, got a stop event, and current Connect device is us, then pause
 			if ( $client->isPlaying && ($result->{device}->{id} eq Plugins::Spotty::API->idFromMac($clientId) || $result->{device}->{name} eq $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
-				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause");
+				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause: " . $client->id);
 
 				my $request = Slim::Control::Request->new( $client->id, ['pause', 1] );
 				$request->source(__PACKAGE__);
 				$request->execute();
-			} 
+			}
 			elsif ( $client->isPlaying && ($result->{device}->{id} ne Plugins::Spotty::API->idFromMac($clientId) && $result->{device}->{name} ne $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause, but current player is no longer the Connect target");
 
@@ -314,8 +318,8 @@ sub _connectEvent {
 				# reset Connect status on this device
 				$client->playingSong()->pluginData( SpotifyConnect => 0 );
 				$client->pluginData( SpotifyConnect => 0 );
-			} 
-			# if we're playing, got a stop event, and current Connect device is NOT us, then 
+			}
+			# if we're playing, got a stop event, and current Connect device is NOT us, then
 			# disable Connect and let the track end
 			elsif ( $client->isPlaying ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause, but current player is not Connect target");
@@ -338,15 +342,15 @@ sub _connectEvent {
 =pod
 	Here we're overriding some of the default handlers. In Connect mode, when discovery is enabled,
 	we could be streaming from any account, not only those configured in Spotty. Therefore we need
-	to use different cache folders with credentials. Use the currently set in Spotty as default, 
-	but read actual value whenever accessing the API. We won't keep these credentials around, to 
+	to use different cache folders with credentials. Use the currently set in Spotty as default,
+	but read actual value whenever accessing the API. We won't keep these credentials around, to
 	prevent using a visitor's account.
 =cut
 sub getAPIHandler {
 	my ($class, $client) = @_;
-	
+
 	return unless $client;
-	
+
 	my $api;
 
 	my $cacheFolder = $class->cacheFolder($client);
@@ -355,7 +359,7 @@ sub getAPIHandler {
 	my $credentials = eval {
 		from_json(read_file($credentialsFile));
 	};
-	
+
 	if ( !$@ && $credentials || ref $credentials && $credentials->{auth_data} ) {
 		$api = Plugins::Spotty::API->new({
 			client => $client,
@@ -363,7 +367,7 @@ sub getAPIHandler {
 			username => $credentials->{username},
 		});
 	}
-		
+
 	return $api || Plugins::Spotty::Plugin->getAPIHelper($client);
 }
 
@@ -371,14 +375,14 @@ sub cacheFolder {
 	my ($class, $clientId) = @_;
 
 	$clientId = $clientId->id if $clientId && blessed $clientId;
-	
+
 	my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($clientId) );
-	
+
 	# create a temporary account folder with the player's MAC address
 	if ( Plugins::Spotty::Plugin->canDiscovery() && !$prefs->get('disableDiscovery') ) {
 		my $id = $clientId;
 		$id =~ s/://g;
-		
+
 		my $playerCacheFolder = catdir(preferences('server')->get('cachedir'), 'spotty', $id);
 		mkpath $playerCacheFolder unless -e $playerCacheFolder;
 
@@ -388,7 +392,7 @@ sub cacheFolder {
 		}
 		$cacheFolder = $playerCacheFolder;
 	}
-	
+
 	return $cacheFolder
 }
 
