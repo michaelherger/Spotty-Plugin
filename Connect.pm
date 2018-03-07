@@ -184,6 +184,9 @@ sub _onPause {
 	return if !defined $client;
 	$client = $client->master;
 
+	# ignore pause while we're fetching a new track
+	return if $client->pluginData('newTrack');
+
 	return if !__PACKAGE__->isSpotifyConnect($client);
 
 	if ( $request->isCommand([['playlist'],['stop','pause']]) && $client->playingSong()->pluginData('SpotifyConnect') > time() - 5 ) {

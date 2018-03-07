@@ -60,7 +60,10 @@ sub start {
 		push @helperArgs, '--disable-discovery';
 	}
 
-	main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
+	if (main::INFOLOG && $log->is_info) {
+		$log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
+		push @helperArgs, '--verbose' if $helperPath =~ /spotty-custom$/;
+	}
 
 	eval { 
 		$self->_proc( Proc::Background->new(
