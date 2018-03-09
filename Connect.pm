@@ -132,13 +132,15 @@ sub getNextTrack {
 
 					# stop playback if we've played this track before. It's likely trying to start over.
 					if ( $history->{$uri} && !($result->{repeat_state} && $result->{repeat_state} eq 'on')) {
-						main::INFOLOG && $log->is_info && $log->info('Stopping playback, as we have likely reached the end of our context (playlist, album, ...)');
-
 						# set a timer to stop playback at the end of the track
 						my $remaining = $client->controller()->playingSongDuration() - Slim::Player::Source::songTime($client);
+						main::INFOLOG && $log->is_info && $log->info("Stopping playback in ${remaining}s, as we have likely reached the end of our context (playlist, album, ...)");
 
 						Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining, sub {
-							$spotty->playerPause(undef, $client->id);
+							$client->pluginData( newTrack => 0 );
+							$spotty->playerPause(sub {
+								$client->execute(['stop']);
+							}, $client->id);
 						});
 					}
 					else {
