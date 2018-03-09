@@ -34,6 +34,8 @@ sub init {
 
 	return unless $class->canSpotifyConnect('dontInit');
 
+	require Plugins::Spotty::Connect::Context;
+
 #                                                                |requires Client
 #                                                                |  |is a Query
 #                                                                |  |  |has Tags
@@ -81,7 +83,14 @@ sub isSpotifyConnect {
 
 	return unless $client->pluginData('SpotifyConnect');
 
-	return $client->pluginData('newTrack') || ($song ? $song->pluginData('SpotifyConnect') : undef) ? 1 : 0;
+	return $client->pluginData('newTrack') || _contextTime($song) ? 1 : 0;
+}
+
+sub _contextTime {
+	my ($song) = @_;
+
+	return unless $song && $song->pluginData('context');
+	return $song->pluginData('context')->time() || 0;
 }
 
 sub setSpotifyConnect {
@@ -93,7 +102,9 @@ sub setSpotifyConnect {
 	my $song = $client->playingSong();
 
 	# state on song: need to know whether we're currently in Connect mode. Is lost when new track plays.
-	$song->pluginData( SpotifyConnect => time() );
+	$song->pluginData('context') || $song->pluginData( context => Plugins::Spotty::Connect::Context->new() );
+	$song->pluginData('context')->time(time());
+
 	# state on client: need to know whether we've been in Connect mode. If this is set, then we've been playing from Connect, but are no more.
 	$client->pluginData( SpotifyConnect => 1 );
 }
@@ -117,9 +128,7 @@ sub getNextTrack {
 		$client->pluginData( newTrack => 1 );
 
 		# add current track to the history
-		my $history = $cache->get(HISTORY_KEY) || {};
-		$history->{$song->track->url}++;
-		$cache->set(HISTORY_KEY, $history);
+		$song->pluginData('context')->addPlay($song->track->url);
 
 		$spotty->playerNext(sub {
 			$spotty->player(sub {
@@ -131,7 +140,7 @@ sub getNextTrack {
 					$uri =~ s/^(spotify:)(track:.*)/$1\/\/$2/;
 
 					# stop playback if we've played this track before. It's likely trying to start over.
-					if ( $history->{$uri} && !($result->{repeat_state} && $result->{repeat_state} eq 'on')) {
+					if ( $song->pluginData('context')->hasPlay($uri) && !($result->{repeat_state} && $result->{repeat_state} eq 'on')) {
 						# set a timer to stop playback at the end of the track
 						my $remaining = $client->controller()->playingSongDuration() - Slim::Player::Source::songTime($client);
 						main::INFOLOG && $log->is_info && $log->info("Stopping playback in ${remaining}s, as we have likely reached the end of our context (playlist, album, ...)");
@@ -169,7 +178,7 @@ sub _onNewSong {
 	return unless $client->pluginData('SpotifyConnect');
 
 	main::INFOLOG && $log->is_info && $log->info("Got a new track event, but this is no longer Spotify Connect");
-	$client->playingSong()->pluginData( SpotifyConnect => 0 );
+	$client->playingSong()->pluginData( context => 0 );
 	$client->pluginData( SpotifyConnect => 0 );
 	__PACKAGE__->getAPIHandler($client)->playerPause(undef, $client->id);
 }
@@ -191,7 +200,7 @@ sub _onPause {
 
 	return if !__PACKAGE__->isSpotifyConnect($client);
 
-	if ( $request->isCommand([['playlist'],['stop','pause']]) && $client->playingSong()->pluginData('SpotifyConnect') > time() - 5 ) {
+	if ( $request->isCommand([['playlist'],['stop','pause']]) && _contextTime($client->playingSong()) > time() - 5 ) {
 		main::INFOLOG && $log->is_info && $log->info("Got a stop event within 5s after start of a new track - do NOT tell Spotify Connect controller to pause");
 		return;
 	}
@@ -287,7 +296,7 @@ sub _connectEvent {
 
 				# on interactive Spotify Connect use we're going to reset the play history.
 				# this isn't really solving the problem of lack of context. But it's better than nothing...
-				$cache->remove(HISTORY_KEY);
+				$song->pluginData('context') && $song->pluginData('context')->reset();
 
 				# if status is already more than 10s in, then do seek
 				if ( $result->{progress} && $result->{progress} > 10 ) {
@@ -321,14 +330,14 @@ sub _connectEvent {
 				$request->execute();
 
 				# reset Connect status on this device
-				$client->playingSong()->pluginData( SpotifyConnect => 0 );
+				$client->playingSong()->pluginData( context => 0 );
 				$client->pluginData( SpotifyConnect => 0 );
 			}
 			# if we're playing, got a stop event, and current Connect device is NOT us, then
 			# disable Connect and let the track end
 			elsif ( $client->isPlaying ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause, but current player is not Connect target");
-				$client->playingSong()->pluginData( SpotifyConnect => 0 );
+				$client->playingSong()->pluginData( context => 0 );
 				$client->pluginData( SpotifyConnect => 0 );
 			}
 		}
