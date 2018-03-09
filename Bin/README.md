@@ -12,7 +12,9 @@ Spotty on ARMv5 (Synology)
 Based on [https://github.com/joerg-krause/rust-cross-libs](https://github.com/joerg-krause/rust-cross-libs/issues/5):
 
 My host is Ubuntu 17.04 x86_64. Needs i386 support (maybe using i386 to start with would be easier?...)
-    `$ sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386`
+
+    $ sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
+
 
 My target is a synology DS212 running DSM 6.1 which according to [What_kind_of_CPU_does_my_NAS_have](https://www.synology.com/en-global/knowledgebase/DSM/tutorial/General/What_kind_of_CPU_does_my_NAS_have) has a Marvell Kirkwood 88F6282 CPU.
 
@@ -20,8 +22,9 @@ Synology provides downloadable toolchains here: [synology toolchains](https://so
 
 Download the one for DSM 6.1 and 88f62x CPU: [88f62x](https://sourceforge.net/projects/dsgpl/files/DSM%206.1%20Tool%20Chains/Marvell%2088F628x%20Linux%202.6.32/6281-gcc464_glibc215_88f6281-GPL.txz/download)
 
-Unpack the toolchain to /usr/local:  
-    `$ sudo tar Jxvf ~/Downloads/6281-gcc464_glibc215_88f6281-GPL.txz -C /usr/local`
+Unpack the toolchain to /usr/local:
+
+    $ sudo tar Jxvf ~/Downloads/6281-gcc464_glibc215_88f6281-GPL.txz -C /usr/local
 
 Set-up a sysroot.sh file.
 
@@ -33,8 +36,9 @@ Set-up a sysroot.sh file.
     /usr/local/arm-marvell-linux-gnueabi/bin/arm-marvell-linux-gnueabi-gcc --sysroot=\$SYSROOT \$(echo "\$@" | sed 's/-L \/usr\/lib //g')
     EOF
 
-Make the sysroot.sh executable  
-    `$ sudo chmod +x /usr/local/arm-marvell-linux-gnueabi/sysroot.sh`
+Make the sysroot.sh executable
+
+    $ sudo chmod +x /usr/local/arm-marvell-linux-gnueabi/sysroot.sh
 
 Set-up a cargo config file
 
@@ -49,8 +53,8 @@ Get the rust source and binaries
     $ git clone https://github.com/joerg-krause/rust-cross-libs.git
     $ cd rust-cross-libs
     $ git clone https://github.com/rust-lang/rust rust-git
-    $ wget https://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz
-    $ tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.gz
+    $ wget https://static.rust-lang.org/dist/2017-10-23/rust-nightly-x86_64-unknown-linux-gnu.tar.xz
+    $ tar Jxf rust-nightly-x86_64-unknown-linux-gnu.tar.xz
     $ rust-nightly-x86_64-unknown-linux-gnu/install.sh --prefix=$PWD/rust
 
 Define the rust environment
@@ -67,13 +71,15 @@ Define the cross toolchain environment
     $ export AR=/usr/local/arm-marvell-linux-gnueabi/bin/arm-marvell-linux-gnueabi-ar
     $ export CFLAGS="-Wall -Os -fPIC -D__arm__ -mfloat-abi=soft"
 
-The panic strategy in the armv5te $TARGET.json is abort, so use  
-    `$ ./rust-cross-libs.sh --rust-prefix=$PWD/rust --rust-git=$PWD/rust-git --target=$PWD/cfg/$TARGET.json`
+The panic strategy in the armv5te $TARGET.json is abort, so use
+
+    $ ./rust-cross-libs.sh --rust-prefix=$PWD/rust --rust-git=$PWD/rust-git --target=$PWD/cfg/$TARGET.json
 
 At this point I created the hello world example and verified it worked on the DS212.
 
-Download the spotty source code  
-    `$ git clone https://github.com/michaelherger/spotty`
+Download the spotty source code
+
+    $ git clone https://github.com/michaelherger/spotty
 
 Build spotty with cargo
 
@@ -82,8 +88,9 @@ Build spotty with cargo
 
 This failed the first time with a build error in nix 0.8.1 library
 
-I opened the failing file signal.rs in vi  
-    `$ vi ~/.cargo/registry/src/github.com-1ecc6299db9ec823/nix-0.8.1/src/sys/signal.rs`
+I opened the failing file signal.rs in vi
+
+    $ vi ~/.cargo/registry/src/github.com-1ecc6299db9ec823/nix-0.8.1/src/sys/signal.rs
 
 and added these line a few lines below 	sev.sigev_notify = match sigev_notify"
 
@@ -93,8 +100,9 @@ and added these line a few lines below 	sev.sigev_notify = match sigev_notify"
 I have no idea what this does, I just made sure it builds :-). The hack in signal.rs is not needed when env="gnu" in $PWD/cfg/armv5-rcross-linux-gnueabi.json. The "gnueabi" target was changed to "gnu" in rust.  
 I have submitted a [PR](https://github.com/joerg-krause/rust-cross-libs/pull/7) to [@joerg-krause](https://github.com/joerg-krause)
 
-Running the cargo build again:  
-    `$ cargo build --target=$TARGET --release`
+Running the cargo build again:
+
+    $ cargo build --target=$TARGET --release
 
 note: I tried using buildroot at first instead of the synology provided toolchain. With the external Sourcery Codebench ARM 2014.05 toolchain I got a spotty, but it was linked against glibc 2.17 and the DS212 has 2.15 installed, so that didn't work.
 
