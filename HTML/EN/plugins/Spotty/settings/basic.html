@@ -1,4 +1,3 @@
-[% USE Prefs %]
 [% PROCESS settings/header.html %]
 	[% title = "PLUGIN_SPOTTY" %]
 	[% IF helperMissing; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
@@ -26,7 +25,7 @@
 	[% WRAPPER setting title="" desc="" %]
 		<input name="addAccount" type=submit value="[% "PLUGIN_SPOTTY_ADD_ACCOUNT" | string %]" class="stdclick" />
 	[% END %]
-	
+
 	[% IF credentials && credentials.size > 1 %]
 		[% WRAPPER setting title="PLUGIN_SPOTTY_SELECT_ACCOUNT" desc="" %]
 			<input type="radio" name="pref_accountSwitcherMenu" id="pref_accountSwitcherMenu1" value="1" [% IF prefs.pref_accountSwitcherMenu %]checked="checked"[% END %] />
@@ -51,7 +50,7 @@
 		} %]
 			<option [% IF prefs.pref_bitrate == option.value %]selected [% END %]value="[% option.value %]">[% option.key | string %]</option>
 		[%- END -%]
-		
+
 		</select>
 	[% END %]
 
@@ -76,11 +75,11 @@
 		<input name="pref_disableDiscovery" id="pref_disableDiscovery" type="checkbox" [% IF prefs.pref_disableDiscovery %] checked [% END %]>
 		<label for="pref_disableDiscovery">[% "PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC" | string %]</label>
 	[% END; END %]
-	
+
 	[% WRAPPER setting title="PLUGIN_SPOTTY_HELPER" desc="" %]
 		[% helperPath %] ([% helperVersion %])
 	[% END %]
-	
+
 	[% WRAPPER setting title="PLUGIN_SPOTTY_CLIENT_ID" desc="PLUGIN_SPOTTY_CLIENT_ID_DESC" %]
 		<input name="pref_iconCode" id="pref_iconCode" type="text" value="[% IF !hasDefaultIcon; prefs.pref_iconCode; END %]" class="stdedit" size="40">
 	[% END %]

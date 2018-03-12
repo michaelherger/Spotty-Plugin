@@ -11,13 +11,19 @@ use Slim::Utils::Strings qw(string);
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::SettingsAuth;
 
+use constant SETTINGS_URL => 'plugins/Spotty/settings/basic.html';
+
 my $prefs = preferences('plugin.spotty');
 
 sub new {
 	my $class = shift;
 
 	Plugins::Spotty::SettingsAuth->new();
-	
+
+	if (!Slim::Networking::Async::HTTP->hasSSL()) {
+		Slim::Web::Pages->addPageFunction(SETTINGS_URL, $class);
+	}
+
 	return $class->SUPER::new(@_);
 }
 
@@ -28,7 +34,7 @@ sub name {
 sub page {
 	return Slim::Web::HTTP::CSRF->protectURI(
 		Slim::Networking::Async::HTTP->hasSSL()
-		? 'plugins/Spotty/settings/basic.html'
+		? SETTINGS_URL
 		: 'plugins/Spotty/settings/noSSL.html'
 	);
 }
@@ -41,28 +47,28 @@ sub prefs {
 
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
-	
+
 	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
 
 	# rename temporary authentication cache folder (if existing)
 	Plugins::Spotty::SettingsAuth->cleanup();
 
 	my $osDetails = Slim::Utils::OSDetect::details();
-	
+
 	my $knownIncompatible = $osDetails->{osName} =~ /Mac.?OS .*10\.(?:1|2|3|4|5|6)\./i
 		|| ($osDetails->{osArch} && $osDetails->{osArch} =~ /\b(?:powerpc)\b/i);
-		
+
 	# don't even continue if we're missing the helper application
 	if ( !$helperPath ) {
-		
+
 		# Windows should just work - except if the MSVC 2015 runtime was missing
 		if (main::ISWINDOWS) {
 			$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS');
 		}
 		else {
-			$paramRef->{helperMissing} = string($knownIncompatible ? 'PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE' : 'PLUGIN_SPOTTY_MISSING_HELPER') . 
+			$paramRef->{helperMissing} = string($knownIncompatible ? 'PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE' : 'PLUGIN_SPOTTY_MISSING_HELPER') .
 				sprintf('<br><br>%s %s / %s<br><br>%s<br>%s<br>%s',
-					string('INFORMATION_OPERATINGSYSTEM') . string('COLON'), 
+					string('INFORMATION_OPERATINGSYSTEM') . string('COLON'),
 					$osDetails->{'osName'},
 					($osDetails->{'osArch'} ? $osDetails->{'osArch'} : 'unknown'),
 					string('PLUGIN_SPOTTY_INFORMATION_BINDIRS') . string('COLON'),
@@ -83,7 +89,7 @@ sub handler {
 			$prefs->client($client)->set('enableSpotifyConnect', $paramRef->{'connect_' . $client->id} ? 1 : 0);
 		}
 	}
-	
+
 	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::Plugin->hasCredentials()) ) {
 		$response->code(RC_MOVED_TEMPORARILY);
 		$response->header('Location' => 'authentication.html');
@@ -92,18 +98,18 @@ sub handler {
 
 	# make sure our authentication helper isn't running
 	Plugins::Spotty::SettingsAuth->shutdownHelper();
-	
+
 	$paramRef->{credentials}   = Plugins::Spotty::Plugin->getSortedCredentialTupels();
 	$paramRef->{helperPath}    = $helperPath;
 	$paramRef->{helperVersion} = "v$helperVersion" || string('PLUGIN_SPOTTY_HELPER_ERROR');
 	$paramRef->{canDiscovery}  = Plugins::Spotty::Plugin->canDiscovery();
 	$paramRef->{error429}      = Plugins::Spotty::API->hasError429();
-	
+
 	$paramRef->{players}       = [ sort {
 		lc($a->{name}) cmp lc($b->{name})
 	} map {
-		{ 
-			name => $_->name, 
+		{
+			name => $_->name,
 			id => $_->id,
 			enabled => $prefs->client($_)->get('enableSpotifyConnect')
 		}
