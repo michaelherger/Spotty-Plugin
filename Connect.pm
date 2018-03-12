@@ -8,15 +8,15 @@ use File::Spec::Functions qw(catdir catfile);
 use JSON::XS::VersionOneAndTwo;
 use Scalar::Util qw(blessed);
 
-
 use Slim::Utils::Log;
 use Slim::Utils::Cache;
 use Slim::Utils::Prefs;
 use Slim::Utils::Timers;
 
+use Plugins::Spotty::API qw(uri2url);
+
 use constant CONNECT_HELPER_VERSION => '0.9.0';
 use constant SEEK_THRESHOLD => 3;
-use constant HISTORY_KEY => 'spotty-connect-history';
 
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
@@ -94,7 +94,7 @@ sub _contextTime {
 }
 
 sub setSpotifyConnect {
-	my ( $class, $client ) = @_;
+	my ( $class, $client, $context ) = @_;
 
 	return unless $client;
 
@@ -102,7 +102,8 @@ sub setSpotifyConnect {
 	my $song = $client->playingSong();
 
 	# state on song: need to know whether we're currently in Connect mode. Is lost when new track plays.
-	$song->pluginData('context') || $song->pluginData( context => Plugins::Spotty::Connect::Context->new() );
+	$song->pluginData('context') || $song->pluginData( context => Plugins::Spotty::Connect::Context->new($class->getAPIHandler($client)) );
+	$song->pluginData('context')->update($context);
 	$song->pluginData('context')->time(time());
 
 	# state on client: need to know whether we've been in Connect mode. If this is set, then we've been playing from Connect, but are no more.
@@ -118,6 +119,7 @@ sub getNextTrack {
 
 	if ( $client->pluginData('newTrack') ) {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
+		# XXX - how to deal with context here?
 		$class->setSpotifyConnect($client);
 		$client->pluginData( newTrack => 0 );
 		$successCb->();
@@ -137,7 +139,7 @@ sub getNextTrack {
 				if ( $result && ref $result && (my $uri = $result->{item}->{uri}) ) {
 					main::INFOLOG && $log->is_info && $log->info("Got a new track to be played next: $uri");
 
-					$uri =~ s/^(spotify:)(track:.*)/$1\/\/$2/;
+					$uri = uri2url($uri);
 
 					# stop playback if we've played this track before. It's likely trying to start over.
 					if ( $song->pluginData('context')->hasPlay($uri) && !($result->{repeat_state} && $result->{repeat_state} eq 'on')) {
@@ -154,7 +156,7 @@ sub getNextTrack {
 					}
 					else {
 						$song->track->url($uri);
-						$class->setSpotifyConnect($client);
+						$class->setSpotifyConnect($client, $result);
 					}
 
 					$successCb->();
@@ -268,6 +270,8 @@ sub _connectEvent {
 		my $streamUrl = ($song ? $song->streamUrl : '') || '';
 		$streamUrl =~ s/\/\///;
 
+		$song && $song->pluginData('context') && $song->pluginData('context')->update($result);
+
 		$result ||= {};
 
 		main::DEBUGLOG && $log->is_debug && $log->debug("Current Connect state: \n" . Data::Dump::dump($result, $cmd));
@@ -296,7 +300,7 @@ sub _connectEvent {
 
 				# on interactive Spotify Connect use we're going to reset the play history.
 				# this isn't really solving the problem of lack of context. But it's better than nothing...
-				$song->pluginData('context') && $song->pluginData('context')->reset();
+				$song && $song->pluginData('context') && $song->pluginData('context')->reset();
 
 				# if status is already more than 10s in, then do seek
 				if ( $result->{progress} && $result->{progress} > 10 ) {
@@ -305,7 +309,7 @@ sub _connectEvent {
 			}
 			elsif ( !$client->isPlaying ) {
 				main::INFOLOG && $log->is_info && $log->info("Got to resume playback");
-				__PACKAGE__->setSpotifyConnect($client);
+				__PACKAGE__->setSpotifyConnect($client, $result);
 				my $request = Slim::Control::Request->new( $client->id, ['play'] );
 				$request->source(__PACKAGE__);
 				$request->execute();

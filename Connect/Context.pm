@@ -1,5 +1,22 @@
 package Plugins::Spotty::Connect::Context;
 
+=pod
+	Unfortunately we don't always get the context in which a track is being played.
+	Therefore we add some rough rules here:
+
+	- if we have a context (album, playlist), get the list of tracks to be played.
+	  Whenever a track is played, it's removed from that list. When the list is
+	  empty, stop playback.
+
+	- if we don't have any context, keep a list of tracks we played. When the next
+	  track to be played has been played before, we're going to assume that we've
+	  played them all. This would effectively not allow us to play the same track
+	  in the same context twice. Or if you started on track 3, the playback would
+	  wrap and play tracks 1 & 2 last.
+
+	Fortunately albums and playlists are the most popular items to be played.
+=cut
+
 use strict;
 
 use base qw(Slim::Utils::Accessor);
@@ -9,12 +26,20 @@ use Slim::Utils::Cache;
 use Slim::Utils::Prefs;
 # use Slim::Utils::Timers;
 
+use Plugins::Spotty::API qw(uri2url);
+
 use constant HISTORY_KEY => 'spotty-connect-history';
+use constant KNOWN_TRACKS_KEY => 'spotty-connect-known-tracks';
 
 __PACKAGE__->mk_accessor( rw => qw(
 	time
+	shuffled
 	_id
+	_api
 	_cache
+	_context
+	_contextId
+	_lastURL
 ) );
 
 #my $prefs = preferences('plugin.spotty');
@@ -23,49 +48,149 @@ my $log = logger('plugin.spotty');
 my $memoryCache;
 
 sub new {
-	my ($class) = @_;
-	
+	my ($class, $api) = @_;
+
 	my $self = $class->SUPER::new();
 
+	$log->info("Create new Connect context...");
+
 	$self->time(time());
+	$self->_api($api);
 	$self->_id('SpottyContext' . int(rand 999999999999));
 	$self->_cache(
-		preferences('server')->get('dbhighmem') > 1 
+		preferences('server')->get('dbhighmem') > 1
 		? Plugins::Spotty::Connect::MemoryCache->new()
 		: Slim::Utils::Cache->new()
 	);
 
+	$self->reset();
+
 	return $self;
 }
 
-sub set {
+sub update {
 	my ($self, $context) = @_;
-	
-	# TODO - do something smart with the context...
-	
-	$self->_cache->remove($self->_id);
+
+#warn Data::Dump::dump($context);
+	if ( $context && ref $context && $context->{context} && ref $context->{context}
+		&& ($context->{context}->{uri} || '') ne $self->_contextId
+	) {
+		$self->reset() if $self->_contextId;
+		$self->_context($context->{context});
+		$self->_contextId($context->{context}->{uri});
+		$self->shuffled($context->{context})->{shuffle_state};
+		$self->_lastURL('');
+
+		if ($self->_context->{type} eq 'album') {
+			$self->_api->album(sub {
+				my ($album) = @_;
+
+				if ($album && ref $album && $album->{tracks}) {
+					$self->_prepareTrackList($album->{tracks});
+				}
+			},{
+				uri => $self->_contextId
+			});
+		}
+		elsif ($self->_context->{type} eq 'playlist') {
+			$self->_api->playlist(sub {
+				my ($playlist) = @_;
+
+				if ($playlist && ref $playlist) {
+					$self->_prepareTrackList($playlist);
+				}
+			}, {
+				uri => $self->_contextId
+			});
+		}
+	}
+}
+
+sub _prepareTrackList {
+	my ($self, $tracks) = @_;
+
+	my $knownTracks;
+	my $lastTrack = uri2url($tracks->[-1]->{uri});
+	my @lastTrackOccurrences;
+
+	my $x = 0;
+	map {
+		push @lastTrackOccurrences, $x if $_->{uri} eq $lastTrack;
+		$knownTracks->{uri2url($_->{uri})}++;
+		$x++;
+	} @{ $tracks || [] };
+
+	# TODO - use @lastTrackOccurrences to define a smarter filter, respecting previous track(s) or similar
+
+	$self->_lastURL(uri2url($lastTrack)) unless scalar @lastTrackOccurrences > 1;
+	$self->_setCache(KNOWN_TRACKS_KEY, $knownTracks);
 }
 
 sub reset {
-	$_[0]->_cache->remove($_[0]->_id);
+	my $self = shift;
+
+	$self->shuffled(0);
+	$self->_context({});
+	$self->_contextId('');
+	$self->_cache->remove($self->_id . HISTORY_KEY);
+	$self->_cache->remove($self->_id . KNOWN_TRACKS_KEY);
+	$self->_lastURL('');
 }
 
 sub addPlay {
 	my ($self, $url) = @_;
 
-	my $history = $self->_cache->get($self->_id) || {};
+	main::INFOLOG && $log->info("Adding track to played list: $url");
+
+	if ( my $knownTracks = $self->_getCache(KNOWN_TRACKS_KEY) ) {
+		if ( $knownTracks->{$url} ) {
+			$knownTracks->{$url}--;
+			delete $knownTracks->{$url} unless --$knownTracks->{$url};
+
+			$self->_setCache(KNOWN_TRACKS_KEY, $knownTracks)
+		}
+	}
+
+	my $history = $self->_getCache(HISTORY_KEY) || {};
 	$history->{$url}++;
-	$self->_cache->set($self->_id, $history);
+	$self->_setCache(HISTORY_KEY, $history);
 }
 
 sub getPlay {
 	my ($self, $url) = @_;
-	my $history = $self->_cache->get($self->_id) || {};
-	return $history->{$url} ? 1 : 0;
+	my $history = $self->_getCache(HISTORY_KEY) || {};
+
+	main::INFOLOG && $log->info("Has $url been played? " . ($history->{$url} ? 'yes' : 'no'));
+
+	return $history->{$url};
 }
 
 sub hasPlay {
 	return $_[0]->getPlay($_[1]) ? 1 : 0;
+}
+
+sub isLastTrack {
+	my ($self, $url) = @_;
+
+	# if we have a known last track, and this $url is it, then we're at the end
+	return 1 if $self->_lastURL && $self->_lastURL eq $url;
+
+	# if we had a list with known tracks, but it's empty now, then we've played it all
+	if ( my $knownTracks = $self->_getCache(KNOWN_TRACKS_KEY) ) {
+		return 1 if !keys %$knownTracks;
+	}
+
+	return 0;
+}
+
+sub _setCache {
+	my ($self, $key, $value, $expiry) = @_;
+	$self->_cache->set($self->_id . $key, $value);
+}
+
+sub _getCache {
+	my ($self, $key) = @_;
+	return $self->_cache->get($self->_id . $key);
 }
 
 1;

@@ -1,6 +1,9 @@
 package Plugins::Spotty::API;
 
 use strict;
+use Exporter::Lite;
+
+our @EXPORT_OK = qw(uri2url);
 
 BEGIN {
 	use constant CACHE_TTL  => 86400 * 7;
@@ -243,10 +246,11 @@ sub player {
 				}
 				
 				# unfortunately context only is transfered for playlists - otherwise let's assume the album
-				$result->{context} ||= {};
-				if (!$result->{context}->{uri} && $result->{track} && $result->{track}->{album}) {
-					$result->{context} = $result->{track}->{album}->{uri};
-				}
+	# TODO: leave context mangling to the caller
+#				$result->{context} ||= {};
+#				if (!$result->{context}->{uri} && $result->{track} && $result->{track}->{album}) {
+#					$result->{context} = $result->{track}->{album}->{uri};
+#				}
 				
 				# keep track of MAC -> ID mappings
 				if ($result->{device}) {
@@ -1437,6 +1441,12 @@ sub error429 {
 		$log->error($error429);
 	}
 	
+}
+
+sub uri2url {
+	my ($uri) = @_;
+	$uri =~ s/(^spotify:)/$1\/\//;
+	return $uri;
 }
 
 sub hasError429 {

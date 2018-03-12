@@ -794,6 +794,7 @@ sub transferPlaylist {
 sub _doTransferPlaylist {
 	my ($client, $cb, $params, $args) = @_;
 	
+	# TODO - check with latest context changes
 	if ($args && ref $args && $args->{track}) {
 		Plugins::Spotty::Plugin->getAPIHandler($client)->trackURIsFromURI(sub {
 			my $idx; 
