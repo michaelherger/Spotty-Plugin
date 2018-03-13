@@ -119,10 +119,13 @@ sub getNextTrack {
 
 	if ( $client->pluginData('newTrack') ) {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
+
 		# XXX - how to deal with context here?
-		$class->setSpotifyConnect($client);
-		$client->pluginData( newTrack => 0 );
-		$successCb->();
+		$spotty->player(sub {
+				$class->setSpotifyConnect($client, $_[0]);
+				$client->pluginData( newTrack => 0 );
+				$successCb->();
+		});
 	}
 	else {
 		main::INFOLOG && $log->is_info && $log->info("We're approaching the end of a track - get the next track");
@@ -131,6 +134,13 @@ sub getNextTrack {
 
 		# add current track to the history
 		$song->pluginData('context')->addPlay($song->track->url);
+
+		# for playlists and albums we can know the last track. In this case no further check would be required.
+		if ( $song->pluginData('context')->isLastTrack($song->track->url) ) {
+			$class->_delayedStop($client);
+			$successCb->();
+			return;
+		}
 
 		$spotty->playerNext(sub {
 			$spotty->player(sub {
@@ -143,16 +153,7 @@ sub getNextTrack {
 
 					# stop playback if we've played this track before. It's likely trying to start over.
 					if ( $song->pluginData('context')->hasPlay($uri) && !($result->{repeat_state} && $result->{repeat_state} eq 'on')) {
-						# set a timer to stop playback at the end of the track
-						my $remaining = $client->controller()->playingSongDuration() - Slim::Player::Source::songTime($client);
-						main::INFOLOG && $log->is_info && $log->info("Stopping playback in ${remaining}s, as we have likely reached the end of our context (playlist, album, ...)");
-
-						Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining, sub {
-							$client->pluginData( newTrack => 0 );
-							$spotty->playerPause(sub {
-								$client->execute(['stop']);
-							}, $client->id);
-						});
+						$class->_delayedStop($client);
 					}
 					else {
 						$song->track->url($uri);
@@ -164,6 +165,21 @@ sub getNextTrack {
 			});
 		});
 	}
+}
+
+sub _delayedStop {
+	my ($class, $client) = @_;
+
+	# set a timer to stop playback at the end of the track
+	my $remaining = $client->controller()->playingSongDuration() - Slim::Player::Source::songTime($client);
+	main::INFOLOG && $log->is_info && $log->info("Stopping playback in ${remaining}s, as we have likely reached the end of our context (playlist, album, ...)");
+
+	Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining, sub {
+		$client->pluginData( newTrack => 0 );
+		$class->getAPIHandler($client)->playerPause(sub {
+			$client->execute(['stop']);
+		}, $client->id);
+	});
 }
 
 sub _onNewSong {

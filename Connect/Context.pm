@@ -56,7 +56,7 @@ sub new {
 
 	$self->time(time());
 	$self->_api($api);
-	$self->_id('SpottyContext' . int(rand 999999999999));
+	$self->_id(Slim::Utils::Misc::createUUID());
 	$self->_cache(
 		preferences('server')->get('dbhighmem') > 1
 		? Plugins::Spotty::Connect::MemoryCache->new()
@@ -71,14 +71,13 @@ sub new {
 sub update {
 	my ($self, $context) = @_;
 
-#warn Data::Dump::dump($context);
 	if ( $context && ref $context && $context->{context} && ref $context->{context}
 		&& ($context->{context}->{uri} || '') ne $self->_contextId
 	) {
-		$self->reset() if $self->_contextId;
+		$self->reset();
 		$self->_context($context->{context});
 		$self->_contextId($context->{context}->{uri});
-		$self->shuffled($context->{context})->{shuffle_state};
+		$self->shuffled($context->{context}->{shuffle_state});
 		$self->_lastURL('');
 
 		if ($self->_context->{type} eq 'album') {
@@ -103,6 +102,9 @@ sub update {
 				uri => $self->_contextId
 			});
 		}
+
+		# when we're called, we're already playing an item of our context
+		$self->addPlay(uri2url($context->{item}->{uri}));
 	}
 }
 
@@ -110,7 +112,7 @@ sub _prepareTrackList {
 	my ($self, $tracks) = @_;
 
 	my $knownTracks;
-	my $lastTrack = uri2url($tracks->[-1]->{uri});
+	my $lastTrack = $tracks->[-1]->{uri};
 	my @lastTrackOccurrences;
 
 	my $x = 0;
@@ -145,7 +147,7 @@ sub addPlay {
 	if ( my $knownTracks = $self->_getCache(KNOWN_TRACKS_KEY) ) {
 		if ( $knownTracks->{$url} ) {
 			$knownTracks->{$url}--;
-			delete $knownTracks->{$url} unless --$knownTracks->{$url};
+			delete $knownTracks->{$url} if !$knownTracks->{$url};
 
 			$self->_setCache(KNOWN_TRACKS_KEY, $knownTracks)
 		}
@@ -173,7 +175,7 @@ sub isLastTrack {
 	my ($self, $url) = @_;
 
 	# if we have a known last track, and this $url is it, then we're at the end
-	return 1 if $self->_lastURL && $self->_lastURL eq $url;
+	return 1 if $self->_lastURL && $self->_lastURL eq $url && !$self->shuffled;
 
 	# if we had a list with known tracks, but it's empty now, then we've played it all
 	if ( my $knownTracks = $self->_getCache(KNOWN_TRACKS_KEY) ) {
