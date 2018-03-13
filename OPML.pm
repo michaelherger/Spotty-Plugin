@@ -46,7 +46,7 @@ my %topuri = (
 	NZ => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbM8SIrkERIYl',
 	SE => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbLoATJ81JYXz',
 	US => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbLRQDuF5jeBp',
-	
+
 	XX => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbMDoHDwVN2tF',	# fallback "Top 100 on Spotify"
 );
 
@@ -71,14 +71,14 @@ sub init {
 	Slim::Menu::GlobalSearch->registerInfoProvider( spotty => (
 		func => sub {
 			my ( $client, $tags ) = @_;
-			
+
 			return {
 				name  => cstring($client, Plugins::Spotty::Plugin::getDisplayName()),
 				items => [ map { delete $_->{image}; $_ } @{_searchItems($client, $tags->{search})} ],
 			};
 		},
 	) );
-	
+
 	# enforce initial refresh of users' display names
 	$cache->remove('spotty_got_names');
 }
@@ -93,7 +93,7 @@ sub handleFeed {
 				type => 'text'
 			}]
 		});
-		
+
 		return;
 	}
 	elsif (!Slim::Networking::Async::HTTP->hasSSL()) {
@@ -103,7 +103,7 @@ sub handleFeed {
 				type => 'textarea'
 			}]
 		});
-		
+
 		return;
 	}
 	elsif ( !Plugins::Spotty::Plugin->hasCredentials() || !Plugins::Spotty::Plugin->getAccount($client) ) {
@@ -113,7 +113,7 @@ sub handleFeed {
 				type => 'textarea'
 			}]
 		});
-		
+
 		return;
 	}
 	# if there's no account assigned to the player, just pick one - we should never get here...
@@ -128,18 +128,18 @@ sub handleFeed {
 			my ($name, $id) = each %{$_};
 			Plugins::Spotty::Plugin->getName($client, $name);
 		}
-		
+
 		$nextNameCheck = time() + 3600;
 	}
-	
+
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
 	$spotty->featuredPlaylists( sub {
 		my ($lists, $message) = @_;
-		
+
 		# Build main menu structure
 		my $items = [];
-	
+
 		if ( hasRecentSearches() ) {
 			push @{$items}, {
 				name  => cstring($client, 'SEARCH'),
@@ -156,7 +156,7 @@ sub handleFeed {
 				url   => \&search,
 			};
 		}
-		
+
 		push @{$items}, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_WHATS_NEW'),
 			type  => 'link',
@@ -178,7 +178,7 @@ sub handleFeed {
 			image => IMG_INBOX,
 			url   => \&categories
 		};
-		
+
 		if ( $message && $lists && ref $lists && scalar @$lists ) {
 			push @$items, {
 				name  => $message,
@@ -186,7 +186,7 @@ sub handleFeed {
 				items => playlistList($client, $lists)
 			};
 		}
-		
+
 		my $personalItems = [{
 			name  => cstring($client, 'ALBUMS'),
 			type  => 'link',
@@ -203,7 +203,7 @@ sub handleFeed {
 			image => IMG_PLAYLIST,
 			url   => \&playlists
 		}];
-		
+
 		# only give access to the tracks list if the user is using his own client ID
 		if ( _enableAdvancedFeatures() ) {
 			unshift @$personalItems, {
@@ -216,7 +216,7 @@ sub handleFeed {
 
 		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
 			my $credentials = Plugins::Spotty::Plugin->getAllCredentials();
-			
+
 			foreach my $name ( sort {
 				lc($a) cmp lc($b)
 			} keys %$credentials ) {
@@ -227,9 +227,9 @@ sub handleFeed {
 						type => $_->{type},
 						image => $_->{image},
 						url => \&_withAccount,
-						passthrough => [{ 
+						passthrough => [{
 							name => $name,
-							cb => $_->{url} 
+							cb => $_->{url}
 						}]
 					}} @$personalItems ],
 					image => IMG_ACCOUNT,
@@ -239,14 +239,14 @@ sub handleFeed {
 		else {
 			push @$items, @$personalItems;
 		}
-		
+
 		push @$items, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_TRANSFER'),
 			type  => 'link',
 			image => IMG_PLAYLIST,
 			url   => \&transferPlaylist
 		};
-		
+
 		if ( $prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
 			push @$items, {
 				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
@@ -260,7 +260,7 @@ sub handleFeed {
 				image => IMG_ACCOUNT,
 			};
 		}
-		
+
 		$cb->({
 # XXX - how to refresh the title when the account has changed?
 #			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::Plugin->hasMultipleAccounts() ? sprintf(' (%s)', _getDisplayName($spotty->username)) : ''),
@@ -282,14 +282,14 @@ sub search {
 
 	my $type = $params->{type} || '';
 	$type = '' if $type eq 'context';
-	
+
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
-	
+
 	# search for users is different...
 	if ($type eq 'user') {
 		$spotty->user(sub {
 			my ($result) = @_;
-			
+
 			my $items = [];
 			if ($result && $result->{id}) {
 				my $title = $result->{id};
@@ -308,7 +308,7 @@ sub search {
 					}],
 				};
 			}
-			
+
 			$cb->({ items => $items });
 		}, $params->{search});
 		return;
@@ -316,18 +316,18 @@ sub search {
 
 	$spotty->search(sub {
 		my ($results) = @_;
-		
+
 		my @items;
-		
+
 		if ( !$type ) {
-			push @items, grep { 
+			push @items, grep {
 				$_->{passthrough}->[0]->{type} ne 'track'
 			} @{
 				_searchItems($client, $params->{search})
 			};
-			
+
 			push @items, @{trackList($client, $results)};
-			
+
 			addRecentSearch($params->{search}) unless $args->{recent} || $params->{type} eq 'context';
 
 			splice(@items, $params->{quantity}) if defined $params->{index} && !$params->{index} && $params->{quantity} < scalar @items;
@@ -358,7 +358,7 @@ sub search {
 
 sub _searchItems {
 	my ($client, $query) = @_;
-	
+
 	my @items = map {
 		{
 			name  => cstring($client, $_->[0]),
@@ -377,29 +377,29 @@ sub _searchItems {
 		[ 'PLUGIN_SPOTTY_USERS', 'user', IMG_ACCOUNT ]
 	);
 
-	return \@items	
+	return \@items
 }
 
 sub whatsNew {
 	my ($client, $cb, $params) = @_;
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->newReleases(sub {
 		my ($albums) = @_;
-	
+
 		my $items = albumList($client, $albums);
-		
+
 		$cb->({ items => $items });
 	});
 }
 
 sub topTracks {
 	my ($client, $cb, $params) = @_;
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->topTracks(sub {
 		my ($tracks) = @_;
-	
+
 		my $items = tracksList($client, $tracks);
-		
+
 		$cb->({ items => $items });
 	});
 }
@@ -409,14 +409,14 @@ sub categories {
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->categories(sub {
 		my ($result) = @_;
-		
+
 		my $items = [];
 		for my $item ( @{$result} ) {
 			push @{$items}, {
 				type  => 'link',
 				name  => $item->{name},
 				url   => \&category,
-				passthrough => [{ 
+				passthrough => [{
 					id => $item->{id},
 					title => $item->{name},
 				}],
@@ -436,12 +436,12 @@ sub mySongs {
 
 
 		my ($items, $indexList) = trackList($client, $result);
-		
+
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_SONGS'),
 			type => 'text',
 		} unless scalar @$items;
-		
+
 		$cb->({
 			items => $items,
 			indexList => $indexList
@@ -456,12 +456,12 @@ sub myAlbums {
 		my ($result) = @_;
 
 		my ($items, $indexList) = albumList($client, $result);
-		
+
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
 			type => 'text',
 		} unless scalar @$items;
-		
+
 		$cb->({
 			items => $items,
 			indexList => $indexList
@@ -476,12 +476,12 @@ sub myArtists {
 		my ($result) = @_;
 
 		my ($items, $indexList) = artistList($client, $result, $prefs->get('myAlbumsOnly'));
-		
+
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
 			type => 'text',
 		} unless scalar @$items;
-		
+
 		$cb->({
 			items => $items,
 			indexList => $indexList
@@ -496,12 +496,12 @@ sub playlists {
 		my ($result) = @_;
 
 		my $items = playlistList($client, $result);
-		
+
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
 			type => 'text',
 		} unless scalar @$items;
-		
+
 		$cb->({ items => $items });
 	},{
 		user => $params->{user} || $args->{user}
@@ -510,19 +510,19 @@ sub playlists {
 
 sub album {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->album(sub {
 		my ($album) = @_;
 
 		my $items = trackList($client, $album->{tracks}, { show_numbers => 1 });
-		
+
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_ALBUM_TO_LIBRARY'),
 			url  => \&addAlbumToLibrary,
 			passthrough => [{ id => $album->{id}, name => $album->{name} }],
 			nextWindow => 'refresh'
 		};
-		
+
 		my %artists;
 		for my $track ( @{ $album->{tracks} } ) {
 			for my $artist ( @{ $track->{artists} } ) {
@@ -530,7 +530,7 @@ sub album {
 				$artists{ $artist->{name} } = $artist->{uri};
 			}
 		}
-	
+
 		my $prefix = cstring($client, 'ARTIST') . cstring($client, 'COLON') . ' ';
 		for my $artist ( sort keys %artists ) {
 			push @$items, {
@@ -540,14 +540,14 @@ sub album {
 				image => IMG_ACCOUNT,
 			};
 		}
-	
+
 		if ( $album->{release_date} && $album->{release_date} =~ /\b(\d{4})\b/ ) {
 			push @{$items}, {
 				name  => cstring($client, 'YEAR') . cstring($client, 'COLON') . " $1",
 				type  => 'text',
 			};
 		}
-		
+
 		$cb->({ items => $items });
 	},{
 		uri => $params->{uri} || $args->{uri}
@@ -556,7 +556,7 @@ sub album {
 
 sub addAlbumToLibrary {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	$args ||= {};
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->addAlbumToLibrary(sub {
@@ -569,28 +569,28 @@ sub addAlbumToLibrary {
 
 sub artist {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	my $uri = $params->{uri} || $args->{uri};
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
-	
+
 	# get artist, tracks and albums asynchronously, only process once we have it all
 	$client->pluginData(artistInfo => {});
-	
+
 	$spotty->artist(sub {
 		_gotArtistData($client, $cb, artist => $_[0]);
 	},{
 		uri => $uri
 	}, );
-	
+
 	$spotty->artistTracks(sub {
 		_gotArtistData($client, $cb, tracks => $_[0]);
 	}, {
 		uri => $uri
 	});
-	
+
 	$spotty->artistAlbums(sub {
 		my $albums = shift;
-		
+
 		# Sort albums by release date
 		$albums = [ sort { $b->{released} <=> $a->{released} } @$albums ];
 
@@ -616,40 +616,40 @@ sub _gotArtistData {
 	$artistInfo->{$type} = $data;
 
 	$client->pluginData(artistInfo => $artistInfo);
-	
+
 	return unless $artistInfo->{tracks} && $artistInfo->{albums} && $artistInfo->{artist};
 
 	my $artist = $artistInfo->{artist} || {};
 	my $artistURI = $artist->{uri};
 	my $items = [];
-	
+
 	# Split albums into compilations (albums with a different primary artist name), singles, and regular albums
 	# XXX Need a better way to determine album type. Unfortunately album->{album_type} doesn't work
 	my $albums = albumList($client, [ grep { $_->{album_type} ne 'single' && $_->{artist} eq $artist->{name} } @{ $artistInfo->{albums} } ]);
 	my $singles = albumList($client, [ grep { $_->{album_type} eq 'single' } @{ $artistInfo->{albums} } ]);
 	my $comps  = albumList($client, [ grep { $_->{album_type} ne 'single' && $_->{artist} ne $artist->{name} } @{ $artistInfo->{albums} } ]);
-	
-	if ( scalar @$albums ) {		
+
+	if ( scalar @$albums ) {
 		push @$items, {
 			name  => cstring($client, 'ALBUMS'),
 			items => $albums,
 		};
 	}
-	
-	if ( scalar @$singles ) {		
+
+	if ( scalar @$singles ) {
 		push @$items, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_SINGLES'),
 			items => $singles,
 		};
 	}
-	
-	if ( scalar @$comps ) {		
+
+	if ( scalar @$comps ) {
 		push @$items, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_COMPILATIONS'),
 			items => $comps,
 		};
 	}
-	
+
 	push @$items, {
 		type  => 'outline',
 		name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
@@ -678,7 +678,7 @@ sub _gotArtistData {
 		name => cstring($client, 'PLUGIN_SPOTTY_FOLLOW_ARTIST'),
 		url  => \&followArtist,
 		passthrough => [{
-			name => $artist->{name}, 
+			name => $artist->{name},
 			uri => $artistURI
 		}],
 		nextWindow => 'refresh'
@@ -695,7 +695,7 @@ sub relatedArtists {
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->relatedArtists(sub {
 		my ($items, $indexList) = artistList($client, shift);
-		
+
 		$cb->({
 			items => $items,
 			indexList => $indexList
@@ -720,7 +720,7 @@ sub followArtist {
 
 sub playlist {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->playlist(sub {
 		my ($playlist) = @_;
 
@@ -733,7 +733,7 @@ sub playlist {
 
 sub category {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->categoryPlaylists(sub {
 		my ($playlists) = @_;
 
@@ -744,12 +744,12 @@ sub category {
 
 sub transferPlaylist {
 	my ($client, $cb) = @_;
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->player(sub {
 		my ($info) = @_;
-		
+
 		my $items = [];
-		
+
 		# if Connect is enabled for the target player, switch playback
 		if ( $info && $info->{device} && Plugins::Spotty::Connect->canSpotifyConnect() && $prefs->client($client)->get('enableSpotifyConnect') ) {
 			push @$items, {
@@ -767,9 +767,9 @@ sub transferPlaylist {
 				nextWindow => 'nowPlaying',
 			}
 		}
-		
-		# otherwise just try to play 
-		elsif ( $info && $info->{track} ) {
+
+		# otherwise just try to play
+		elsif ( $info && $info->{context} ) {
 			push @$items, {
 				name => cstring($client, 'PLUGIN_SPOTTY_TRANSFER_DESC'),
 				type => 'textarea'
@@ -793,27 +793,26 @@ sub transferPlaylist {
 
 sub _doTransferPlaylist {
 	my ($client, $cb, $params, $args) = @_;
-	
-	# TODO - check with latest context changes
-	if ($args && ref $args && $args->{track}) {
+
+	if ($args && ref $args && $args->{context}) {
 		Plugins::Spotty::Plugin->getAPIHandler($client)->trackURIsFromURI(sub {
-			my $idx; 
+			my $idx;
 			my $i = 0;
-			
+
 			my $tracks = [ map {
 				$idx = $i if !defined $idx && $_ eq $args->{track}->{uri};
-				$i++; 
-				/(track:.*)/; 
+				$i++;
+				/(track:.*)/;
 				"spotify://$1";
 			} @{shift || []} ];
-			
+
 			if ( @$tracks ) {
 				$client->execute(['playlist', 'clear']);
 				$client->execute(['playlist', 'play', $tracks]);
 				$client->execute(['playlist', 'jump', $idx]) if $idx;
 				$client->execute(['time', $args->{progress}]) if $args->{progress};
 			}
-				
+
 			$cb->({
 				nextWindow => 'nowPlaying'
 			});
@@ -821,7 +820,7 @@ sub _doTransferPlaylist {
 
 		return;
 	}
-	
+
 	$log->warn("Incomplete Spotify playback data received?\n" . (main::INFOLOG ? Data::Dump::dump($args) : ''));
 
 	$cb->({
@@ -832,10 +831,10 @@ sub _doTransferPlaylist {
 =pod
 sub recentlyPlayed {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->recentlyPlayed(sub {
 		my ($items) = @_;
-		
+
 		foreach ( @{ $items, [] }) {
 			if ($_->{type} eq 'playlist') {
 				$_ = playlistList($client, [$_])->[0];
@@ -856,22 +855,22 @@ sub recentlyPlayed {
 
 sub trackList {
 	my ( $client, $tracks, $args ) = @_;
-	
+
 	my $show_numbers = $args->{show_numbers} || 0;
 	my $image        = $args->{image};
-	
+
 	my $items = [];
-	
-	
+
+
 	my $count = 0;
 	for my $track ( @{$tracks} ) {
 		if ( $track->{uri} ) {
 			my $title  = $show_numbers ? $track->{track_number} . '. ' . $track->{name} : $track->{name};
 			my $artist = join( ', ', map { $_->{name} } @{ $track->{artists} } );
 			my $album  = $track->{album}->{name};
-		
+
 			my ($track_uri) = $track->{uri} =~ /^spotify:(track:.+)/;
-			
+
 			if ( my $i = $track->{album}->{image} ) {
 				$image = $i;
 			}
@@ -881,7 +880,7 @@ sub trackList {
 				name => cstring($client, 'LENGTH') . cstring($client, 'COLON') . ' ' . sprintf('%s:%02s', int($track->{duration_ms} / 60_000), $track->{duration_ms} % 60_000),
 				type => 'text',
 			} if $track->{duration_ms};
-		
+
 			push @{$items}, {
 			#	type      => 'link',
 				name      => sprintf('%s %s %s %s %s', $title, cstring($client, 'BY'), $artist, cstring($client, 'FROM'), $album),
@@ -902,20 +901,20 @@ sub trackList {
 			$log->error("unsupported track data structure?\n" . Data::Dump::dump($track));
 		}
 	}
-	
+
 	return $items;
 }
 
 sub albumList {
 	my ( $client, $albums ) = @_;
-	
+
 	my $items = [];
 
 	my $indexList = [];
 	my $indexLetter;
 	my $count = 0;
-	
-	for my $album ( @{$albums} ) {		
+
+	for my $album ( @{$albums} ) {
 		my $artists = join( ', ', map { $_->{name} } @{ $album->{artists} } );
 
 		my $textkey = uc(substr($album->{name} || '', 0, 1));
@@ -927,7 +926,7 @@ sub albumList {
 
 		$count++;
 		$indexLetter = $textkey;
-					
+
 		push @{$items}, {
 			type  => 'playlist',
 			name  => $album->{name} . ($artists ? (' ' . cstring($client, 'BY') . ' ' . $artists) : ''),
@@ -944,13 +943,13 @@ sub albumList {
 	}
 
 	push @$indexList, [$indexLetter, $count];
-	
+
 	return wantarray ? ($items, $indexList) : $items;
 }
 
 sub artistList {
 	my ( $client, $artists, $myAlbumsOnly ) = @_;
-	
+
 	my $items = [];
 
 	my $indexList = [];
@@ -959,15 +958,15 @@ sub artistList {
 
 	for my $artist ( @{$artists} ) {
 		my $textkey = substr($artist->{sortname} || '', 0, 1);
-		
+
 		if ( defined $indexLetter && $indexLetter ne ($textkey || '') ) {
 			push @$indexList, [$indexLetter, $count];
 			$count = 0;
 		}
-		
+
 		$count++;
 		$indexLetter = $textkey;
-		
+
 		push @{$items}, {
 			name => $artist->{name},
 			textkey => $textkey,
@@ -983,18 +982,18 @@ sub artistList {
 	}
 
 	push @$indexList, [$indexLetter, $count];
-	
+
 	return wantarray ? ($items, $indexList) : $items;
 }
 
 sub playlistList {
 	my ( $client, $lists ) = @_;
-	
+
 	$lists ||= [];
 
 	my $items = [];
 	my $username = Plugins::Spotty::Plugin->getAPIHandler($client)->username;
-	
+
 	for my $list ( @{$lists} ) {
 		my $item = {
 			name  => $list->{name} || $list->{title},
@@ -1006,14 +1005,14 @@ sub playlistList {
 				uri => $list->{uri}
 			}]
 		};
-		
+
 		my $creator = $list->{creator};
 		$creator ||= $list->{owner}->{id} if $list->{owner};
-		
+
 		if ( $creator && $creator ne $username ) {
 			$item->{line2} = cstring($client, 'BY') . ' ' . $creator;
 		}
-		
+
 		push @{$items}, $item;
 	}
 
@@ -1022,7 +1021,7 @@ sub playlistList {
 
 sub trackInfoMenu {
 	my ( $client, $url, $track, $remoteMeta ) = @_;
-	
+
 	my $args;
 
 	# if we're dealing with a Spotify track we can use the URI to get more direct results
@@ -1032,7 +1031,7 @@ sub trackInfoMenu {
 
 		# Hmm... can't do an async lookup, as trackInfoMenu is run synchronously
 		my $track = Plugins::Spotty::Plugin->getAPIHandler($client)->trackCached(undef, $uri) || {};
-		
+
 		$args = {
 			artists => $track->{artists},
 			album   => $track->{album},
@@ -1052,9 +1051,9 @@ sub trackInfoMenu {
 
 sub artistInfoMenu {
 	my ($client, $url, $artist, $remoteMeta) = @_;
-	
+
 	$remoteMeta ||= {};
-	
+
 	return _objInfoMenu($client, {
 		artist => $artist->name || $remoteMeta->{artist},
 	});
@@ -1064,7 +1063,7 @@ sub albumInfoMenu {
 	my ($client, $url, $album, $remoteMeta) = @_;
 
 	$remoteMeta ||= {};
-	
+
 	return _objInfoMenu($client, {
 		album => $album->title || $remoteMeta->{album},
 		artists => [ map { $_->name } $album->artistsForRoles('ARTIST'), $album->artistsForRoles('ALBUMARTIST') ],
@@ -1075,7 +1074,7 @@ sub _objInfoMenu {
 	my ( $client, $args ) = @_;
 
 	return unless $client && ref $args;
-	
+
 	my $items = [];
 	my $prefix = cstring($client, 'PLUGIN_SPOTTY_ON_SPOTIFY') . cstring($client, 'COLON') . ' ';
 
@@ -1093,7 +1092,7 @@ sub _objInfoMenu {
 			url  => \&addTrackToPlaylist,
 			passthrough => [{ uri => $uri }],
 		} if $uri =~ /spotify:track/;
-	
+
 		for my $artist ( @{ $args->{artists} || [] } ) {
 			push @$items, {
 				name => $prefix . $artist->{name},
@@ -1104,7 +1103,7 @@ sub _objInfoMenu {
 				}]
 			};
 		}
-		
+
 		push @$items, {
 			name => $prefix . $args->{album}->{name},
 			type => 'link',
@@ -1120,7 +1119,7 @@ sub _objInfoMenu {
 		my $artists = $args->{artists} || [];
 		my $album  = $args->{album};
 		my $title  = $args->{title};
-		
+
 		push @$artists, $artist if defined $artist && !grep $artist, @$artists;
 
 		foreach my $artist (@$artists) {
@@ -1158,19 +1157,19 @@ sub _objInfoMenu {
 
 sub addTrackToPlaylist {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 	my $username = $spotty->username;
-	
+
 	$spotty->playlists(sub {
 		my ($playlists) = @_;
-		
+
 		my $items = [];
 
 		for my $list ( @{$playlists} ) {
 			my $creator = $list->{creator};
 			$creator ||= $list->{owner}->{id} if $list->{owner};
-			
+
 			# ignore other user's playlists we're following
 			if ( $creator && $creator ne $username ) {
 				next;
@@ -1189,7 +1188,7 @@ sub addTrackToPlaylist {
 			};
 		}
 
-		$cb->({ 
+		$cb->({
 			items => $items,
 			isContextMenu => 1,
 		});
@@ -1200,11 +1199,11 @@ sub addTrackToPlaylist {
 
 sub _addTrackToPlaylist {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	$args ||= {};
 	$args->{track} ||= $params->{track};
 	$args->{playlist} ||= $params->{playlist};
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->addTracksToPlaylist(sub {
 		$cb->({ items => [{
 			name => cstring($client, 'PLUGIN_SPOTTY_MUSIC_ADDED'),
@@ -1227,12 +1226,12 @@ sub artistRadio {
 
 sub _radio {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	my $type = delete $args->{type};
-	
+
 	my $id = $params->{uri} || $args->{uri};
 	$id =~ s/.*://;
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->recommendations(sub {
 		$cb->({ items => trackList($client, shift) });
 	},{
@@ -1246,43 +1245,43 @@ sub hasRecentSearches {
 
 sub addRecentSearch {
 	my ( $search ) = @_;
-	
+
 	my $list = $prefs->get('spotify_recent_search') || [];
-	
+
 	# remove potential duplicates
 	$list = [ grep { $_ ne $search } @$list ];
-	
+
 	push @$list, $search;
-	
+
 	# we only want MAX_RECENT items
 	$list = [ @$list[(-1 * MAX_RECENT)..-1] ] if scalar @$list > MAX_RECENT;
-	
+
 	$prefs->set( 'spotify_recent_search', $list );
 }
 
 sub recentSearches {
 	my ($client, $cb, $params) = @_;
-	
+
 	my $items = [];
-	
+
 	push @{$items}, {
 		name  => cstring($client, 'PLUGIN_SPOTTY_NEW_SEARCH'),
 		type  => 'search',
 		url   => \&search,
 	};
-	
+
 	for my $recent ( reverse @{ $prefs->get('spotify_recent_search') || [] } ) {
 		push @{$items}, {
 			name  => $recent,
 			type  => 'link',
 			url   => \&search,
-			passthrough => [{ 
+			passthrough => [{
 				query => $recent,
 				recent => 1
 			}],
 		};
 	}
-	
+
 	$cb->({ items => $items });
 }
 
@@ -1291,12 +1290,12 @@ sub selectAccount {
 
 	my $items = [];
 	my $username = Plugins::Spotty::Plugin->getAPIHandler($client)->username;
-	
+
 	foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
 		my ($name, $id) = each %{$_};
-		
+
 		next if $name eq $username;
-		
+
 		push @$items, {
 			name => $name,
 			url  => \&_selectAccount,
@@ -1306,17 +1305,17 @@ sub selectAccount {
 			nextWindow => 'parent'
 		}
 	}
-	
+
 	$cb->({ items => $items });
 }
 
 sub _selectAccount {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	return unless $client;
 
 	Plugins::Spotty::Plugin->setAccount($client, $args->{id});
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$cb->({ items => [{
 			nextWindow => 'grandparent',
@@ -1333,7 +1332,7 @@ sub _withAccount {
 	main::INFOLOG && $log->is_info && $log->info(sprintf('Running query for %s (%s)', $args->{name}, $id));
 
 	Plugins::Spotty::Plugin->setAccount($client, $id);
-	
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$args->{cb}->($client, $cb, $params);
 	});

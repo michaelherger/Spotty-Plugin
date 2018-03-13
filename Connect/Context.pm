@@ -80,52 +80,33 @@ sub update {
 		$self->shuffled($context->{context}->{shuffle_state});
 		$self->_lastURL('');
 
-		if ($self->_context->{type} eq 'album') {
-			$self->_api->album(sub {
-				my ($album) = @_;
+		if ($self->_context->{type} =~ /album|playlist/) {
+			$self->_api->trackURIsFromURI( sub {
+				my ($tracks) = @_;
 
-				if ($album && ref $album && $album->{tracks}) {
-					$self->_prepareTrackList($album->{tracks});
-				}
-			},{
-				uri => $self->_contextId
-			});
-		}
-		elsif ($self->_context->{type} eq 'playlist') {
-			$self->_api->playlist(sub {
-				my ($playlist) = @_;
+				if ($tracks && ref $tracks) {
+					my $knownTracks;
+					my $lastTrack = $tracks->[-1];
+					my @lastTrackOccurrences;
 
-				if ($playlist && ref $playlist) {
-					$self->_prepareTrackList($playlist);
+					my $x = 0;
+					map {
+						push @lastTrackOccurrences, $x if $_ eq $lastTrack;
+						$knownTracks->{uri2url($_)}++;
+						$x++;
+					} @{ $tracks || [] };
+
+					# TODO - use @lastTrackOccurrences to define a smarter filter, respecting previous track(s) or similar
+
+					$self->_lastURL(uri2url($lastTrack)) unless scalar @lastTrackOccurrences > 1;
+					$self->_setCache(KNOWN_TRACKS_KEY, $knownTracks);
 				}
-			}, {
-				uri => $self->_contextId
-			});
+			}, $self->_contextId );
 		}
 
 		# when we're called, we're already playing an item of our context
 		$self->addPlay(uri2url($context->{item}->{uri}));
 	}
-}
-
-sub _prepareTrackList {
-	my ($self, $tracks) = @_;
-
-	my $knownTracks;
-	my $lastTrack = $tracks->[-1]->{uri};
-	my @lastTrackOccurrences;
-
-	my $x = 0;
-	map {
-		push @lastTrackOccurrences, $x if $_->{uri} eq $lastTrack;
-		$knownTracks->{uri2url($_->{uri})}++;
-		$x++;
-	} @{ $tracks || [] };
-
-	# TODO - use @lastTrackOccurrences to define a smarter filter, respecting previous track(s) or similar
-
-	$self->_lastURL(uri2url($lastTrack)) unless scalar @lastTrackOccurrences > 1;
-	$self->_setCache(KNOWN_TRACKS_KEY, $knownTracks);
 }
 
 sub reset {
