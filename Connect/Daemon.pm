@@ -62,14 +62,15 @@ sub start {
 		push @helperArgs, '--disable-discovery';
 	}
 
-	# add authentication data
-	if ( $serverPrefs->get('authorize') ) {
-		push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')));
+	if (main::INFOLOG && $log->is_info) {
+		$log->info("Starting Spotty Connect daemon: \n$helperPath " . join(' ', @helperArgs));
+		push @helperArgs, '--verbose' if $helperPath =~ /spotty-custom$/;
 	}
 
-	if (main::INFOLOG && $log->is_info) {
-		$log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
-		push @helperArgs, '--verbose' if $helperPath =~ /spotty-custom$/;
+	# add authentication data (after the log statement)
+	if ( $serverPrefs->get('authorize') ) {
+		main::INFOLOG && $log->is_info && $log->info("Adding authentication data to Spotty Connect daemon configuration.");
+		push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')));
 	}
 
 	eval {
