@@ -21,19 +21,19 @@ my %helperInstances;
 
 sub init {
 	my $class = shift;
-	
+
 	# manage helper application instances
 	Slim::Control::Request::subscribe(\&initHelpers, [['client'], ['new', 'disconnect']]);
-	
+
 	# start/stop helpers when the Connect flag changes
 	$prefs->setChange(\&initHelpers, 'enableSpotifyConnect');
-	
+
 	# re-initialize helpers when the active account for a player changes
 	$prefs->setChange(sub {
 		my ($pref, $new, $client, $old) = @_;
-		
+
 		return unless $client && $client->id;
-		
+
 		main::INFOLOG && $log->is_info && $log->info("Spotify Account for player " . $client->id . " has changed - re-initialize Connect helper");
 		$class->stopHelper($client);
 		initHelpers();
@@ -44,11 +44,17 @@ sub init {
 		$class->shutdown();
 		initHelpers();
 	}, 'disableDiscovery') if Plugins::Spotty::Plugin->canDiscovery();
+
+	preferences('server')->setChange(sub {
+		main::INFOLOG && $log->is_info && $log->info("Authentication information for LMS has changed - re-initialize Connect helpers");
+		$class->shutdown();
+		initHelpers();
+	}, 'authorize', 'username', 'password');
 }
 
 sub initHelpers {
 	my $class = __PACKAGE__;
-	
+
 	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
 
 	main::DEBUGLOG && $log->is_debug && $log->debug("Initializing Spotty Connect helper daemons...");
@@ -72,10 +78,10 @@ sub startHelper {
 	my ($class, $clientId) = @_;
 
 	$clientId = $clientId->id if $clientId && blessed $clientId;
-	
+
 	# no need to restart if it's already there
 	my $helper = $helperInstances{$clientId};
-	
+
 	if (!$helper) {
 		main::INFOLOG && $log->is_info && $log->info("Need to create Connect daemon for $clientId");
 		$helper = $helperInstances{$clientId} = Plugins::Spotty::Connect::Daemon->new($clientId);
@@ -84,17 +90,17 @@ sub startHelper {
 		main::INFOLOG && $log->is_info && $log->info("Need to (re-)start Connect daemon for $clientId");
 		$helper->start;
 	}
-	
+
 	return $helper if $helper && $helper->alive;
 }
 
 sub stopHelper {
 	my ($class, $clientId) = @_;
-	
+
 	$clientId = $clientId->id if $clientId && blessed $clientId;
-	
+
 	my $helper = $helperInstances{$clientId};
-	
+
 	if ($helper) {
 		$helper->stop;
 	}
@@ -102,9 +108,9 @@ sub stopHelper {
 
 sub shutdown {
 	my ($class, $inactiveOnly) = @_;
-	
+
 	my %clientIds = map { $_->id => 1 } Slim::Player::Client::clients() if $inactiveOnly;
-	
+
 	foreach my $clientId ( keys %helperInstances ) {
 		next if $clientIds{$clientId};
 		$class->stopHelper($clientId);

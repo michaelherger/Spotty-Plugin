@@ -6,6 +6,7 @@ use base qw(Slim::Utils::Accessor);
 
 use File::Path qw(rmtree);
 use File::Spec::Functions qw(catdir);
+use MIME::Base64 qw(encode_base64);
 use Proc::Background;
 
 use Slim::Utils::Log;
@@ -23,11 +24,12 @@ __PACKAGE__->mk_accessor( rw => qw(
 ) );
 
 my $prefs = preferences('plugin.spotty');
+my $serverPrefs = preferences('server');
 my $log = logger('plugin.spotty');
 
 sub new {
 	my ($class, $id) = @_;
-	
+
 	my $self = $class->SUPER::new();
 
 	$self->mac($id);
@@ -35,16 +37,16 @@ sub new {
 	$self->id($id);
 	$self->_startTimes([]);
 	$self->start();
-	
+
 	return $self;
 }
 
 sub start {
 	my $self = shift;
-	
+
 	my $helperPath = Plugins::Spotty::Plugin->getHelper();
 	my $client = Slim::Player::Client::getClient($self->mac);
-	
+
 	$self->_checkStartTimes();
 
 	my @helperArgs = (
@@ -55,9 +57,14 @@ sub start {
 		'--player-mac', $self->mac,
 		'--lms', Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
 	);
-	
+
 	if ( !Plugins::Spotty::Plugin->canDiscovery() || $prefs->get('disableDiscovery') ) {
 		push @helperArgs, '--disable-discovery';
+	}
+
+	# add authentication data
+	if ( $serverPrefs->get('authorize') ) {
+		push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')));
 	}
 
 	if (main::INFOLOG && $log->is_info) {
@@ -65,7 +72,7 @@ sub start {
 		push @helperArgs, '--verbose' if $helperPath =~ /spotty-custom$/;
 	}
 
-	eval { 
+	eval {
 		$self->_proc( Proc::Background->new(
 			{ 'die_upon_destroy' => 1 },
 			$helperPath,
@@ -80,15 +87,15 @@ sub start {
 
 sub _checkStartTimes {
 	my $self = shift;
-	
+
 	if ( !$prefs->get('disableDiscovery') ) {
 		if ( scalar @{$self->_startTimes} > MAX_FAILURES_BEFORE_DISABLE_DISCOVERY ) {
 			splice @{$self->_startTimes}, 0, @{$self->_startTimes} - MAX_FAILURES_BEFORE_DISABLE_DISCOVERY;
-			
+
 			if ( time() - $self->_startTimes->[0] < MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY ) {
 				$log->warn(sprintf(
-					'The spotty helper has crashed %s times within less than %s minutes - disable local announcement of the Connect daemon.', 
-					MAX_FAILURES_BEFORE_DISABLE_DISCOVERY, 
+					'The spotty helper has crashed %s times within less than %s minutes - disable local announcement of the Connect daemon.',
+					MAX_FAILURES_BEFORE_DISABLE_DISCOVERY,
 					MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY / 60
 				));
 
@@ -102,11 +109,11 @@ sub _checkStartTimes {
 
 sub stop {
 	my $self = shift;
-	
+
 	if ($self->alive) {
 		main::INFOLOG && $log->is_info && $log->info("Quitting Spotty Connect daemon for " . $self->mac);
 		$self->_proc->die;
-		
+
 		rmtree catdir(preferences('server')->get('cachedir'), 'spotty', $self->id);
 	}
 }
