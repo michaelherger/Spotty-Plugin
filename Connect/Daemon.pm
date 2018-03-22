@@ -64,13 +64,18 @@ sub start {
 
 	if (main::INFOLOG && $log->is_info) {
 		$log->info("Starting Spotty Connect daemon: \n$helperPath " . join(' ', @helperArgs));
-		push @helperArgs, '--verbose' if $helperPath =~ /spotty-custom$/;
+		push @helperArgs, '--verbose' if Plugins::Spotty::Plugin->helperCapability('debug');
 	}
 
 	# add authentication data (after the log statement)
 	if ( $serverPrefs->get('authorize') ) {
-		main::INFOLOG && $log->is_info && $log->info("Adding authentication data to Spotty Connect daemon configuration.");
-		push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')));
+		if ( Plugins::Spotty::Plugin->helperCapability('lms-auth') ) {
+			main::INFOLOG && $log->is_info && $log->info("Adding authentication data to Spotty Connect daemon configuration.");
+			push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')));
+		}
+		else {
+			$log->error("Your Logitech Media Server is password protected, but your spotty helper can't deal with it! Spotty will NOT work. Please update.");
+		}
 	}
 
 	eval {
