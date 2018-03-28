@@ -361,10 +361,19 @@ sub renameCacheFolder {
 		$newId = substr( md5_hex($credentials->{username}), 0, 8 );
 	}
 
+	main::INFOLOG && $log->info("Trying to rename $oldId to $newId");
+
+	if (main::DEBUGLOG && $log->is_debug && !$newId) {
+		Slim::Utils::Log::logBacktrace("No newId found in '$oldId'");
+	}
+
 	if ($oldId && $newId) {
 		my $from = $class->cacheFolder($oldId);
 
-		return if !-e $from;
+		if (!-e $from) {
+			$log->warn("Source file does not exist: $from");
+			return;
+		}
 
 		my ($baseFolder) = $from =~ /(.*)$oldId/;
 		my $to = catdir($baseFolder, $newId);
@@ -374,6 +383,7 @@ sub renameCacheFolder {
 				rmtree($to);
 			}
 			else {
+				$log->warn("Target folder already exists: $to");
 				return;
 			}
 		}
@@ -382,6 +392,9 @@ sub renameCacheFolder {
 			require File::Copy;
 			File::Copy::move($from, $to);
 			$credsCache = undef;
+		}
+		else {
+			$log->warn("either '$from' or '$to' did not exist!");
 		}
 	}
 }
