@@ -1,5 +1,12 @@
 [% PROCESS settings/header.html %]
 
+	[% WRAPPER setting title="SETUP_REPLAYGAINMODE" desc="" %]
+		<select class="stdedit" name="pref_replaygain" id="pref_replaygain">
+			<option value="0">[% "REPLAYGAIN_DISABLED" | string %]</option>
+			<option [% IF prefs.pref_replaygain %]selected [% END %]value="1">[% "ENABLED" | string %]</option>
+		</select>
+	[% END %]
+
 	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="" %]
 		[% IF errorString %]
 			<div style="color: red">[% errorString %]</div>

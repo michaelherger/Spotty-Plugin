@@ -203,6 +203,11 @@ sub updateTranscodingTable {
 		$tmpDir = "TMPDIR=$tmpDir";
 	}
 
+	# default volume normalization to whatever the user chose for his player in LMS
+	if (!defined $prefs->client($client)->get('replaygain')) {
+		$prefs->client($client)->set('replaygain', $serverPrefs->client($client)->get('replayGainMode'));
+	}
+
 	my $commandTable = Slim::Player::TranscodingHelper::Conversions();
 	foreach ( keys %$commandTable ) {
 		if ( $_ =~ /^spt-/ && $commandTable->{$_} =~ /single-track/ ) {
@@ -214,7 +219,7 @@ sub updateTranscodingTable {
 			$commandTable->{$_} =~ s/disable-audio-cache/enable-audio-cache/g if ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize');
 			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !(ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize'));
 			$commandTable->{$_} =~ s/ --enable-volume-normalisation //;
-			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if $class->helperCapability('volume-normalisation') && $serverPrefs->client($client)->get('replayGainMode');
+			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if $class->helperCapability('volume-normalisation') && $prefs->client($client)->get('replaygain');
 		}
 	}
 }

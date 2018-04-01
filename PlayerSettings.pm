@@ -28,16 +28,16 @@ sub page {
 
 sub prefs {
 	my ($class, $client) = @_;
-	return ($prefs->client($client), qw(enableSpotifyConnect));
+	return ($prefs->client($client), qw(enableSpotifyConnect replaygain));
 }
 
 sub handler {
 	my ($class, $client, $params) = @_;
-	
+
 	if ( !Plugins::Spotty::Connect->canSpotifyConnect() ) {
 		$params->{errorString} = $client->string('PLUGIN_SPOTTY_NEED_HELPER_UPDATE');
 	}
-	
+
 	return $class->SUPER::handler( $client, $params );
 }
 
