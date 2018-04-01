@@ -64,8 +64,8 @@ sub initPlugin {
 		accountSwitcherMenu => 0,
 		disableDiscovery => 0,
 		displayNames => {},
+		helper => '',
 	});
-
 
 	if (ENABLE_AUDIO_CACHE) {
 		$prefs->setChange( sub {
@@ -79,7 +79,11 @@ sub initPlugin {
 
 	$prefs->setChange( sub {
 		__PACKAGE__->updateTranscodingTable();
-	}, 'bitrate') ;
+	}, 'bitrate', 'helper') ;
+
+	$prefs->setChange ( sub {
+		$helper = $helperVersion = $helperCapabilities = undef;
+	}, 'helper');
 
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
 	# this might be premature optimization, as ARM CPUs are getting more and more powerful...
@@ -623,35 +627,17 @@ sub getName {
 sub getHelper {
 	my ($class) = @_;
 
+	if ( !$helper && (my $candidate = $prefs->get('helper')) ) {
+		helperCheck($candidate);
+
+		main::INFOLOG && $helper && $log->info("Using helper from prefs: $helper");
+	}
+
 	if (!$helper) {
 		my $check;
 
 		$helper = $class->findBin(HELPER, sub {
-			my $candidate = $_[0];
-
-			my $checkCmd = sprintf('%s -n "%s (%s)" --check',
-				$candidate,
-				string('PLUGIN_SPOTTY_AUTH_NAME'),
-				Slim::Utils::Misc::getLibraryName()
-			);
-
-			$check = `$checkCmd 2>&1`;
-
-			if ( $check && $check =~ /^ok spotty v([\d\.]+)/i ) {
-				$helper = $candidate;
-				$helperVersion = $1;
-
-				if ( $check =~ /\n(.*)/s ) {
-					$helperCapabilities = eval {
-						from_json($1);
-					};
-
-					main::DEBUGLOG && $log->is_debug && $helperCapabilities && $log->debug("Found helper capabilities table: " . Data::Dump::dump($helperCapabilities));
-					$helperCapabilities ||= {};
-				}
-
-				return 1;
-			}
+			helperCheck(@_, \$check);
 		}, 'custom-first');
 
 		if (!$helper) {
@@ -661,6 +647,62 @@ sub getHelper {
 	}
 
 	return wantarray ? ($helper, $helperVersion) : $helper;
+}
+
+sub getHelpers {
+	my ($class) = @_;
+
+	my $candidates = {};
+
+	my @candidates = $class->findBin(HELPER, sub {
+		my $candidate = shift;
+
+		my $check = '';
+		if ( helperCheck($candidate, \$check, 1) && $check =~ /ok spotty v([\d\.]+)/ ) {
+			my $helperVersion = $1;
+
+			$check =~ /\n(.*)/s;
+			my $helperCapabilities = eval {
+				from_json($1);
+			};
+
+			$candidates->{$candidate} = $helperCapabilities || { version => $helperVersion };
+		}
+	});
+
+	return $candidates;
+}
+
+sub helperCheck {
+	my ($candidate, $check, $dontSet) = @_;
+
+	$$check = '' unless $check && ref $check;
+
+	my $checkCmd = sprintf('%s -n "%s (%s)" --check',
+		$candidate,
+		string('PLUGIN_SPOTTY_AUTH_NAME'),
+		Slim::Utils::Misc::getLibraryName()
+	);
+
+	$$check = `$checkCmd 2>&1`;
+
+	if ( $$check && $$check =~ /^ok spotty v([\d\.]+)/i ) {
+		return 1 if $dontSet;
+
+		$helper = $candidate;
+		$helperVersion = $1;
+
+		if ( $$check =~ /\n(.*)/s ) {
+			$helperCapabilities = eval {
+				from_json($1);
+			};
+
+			main::DEBUGLOG && $log->is_debug && $helperCapabilities && $log->debug("Found helper capabilities table: " . Data::Dump::dump($helperCapabilities));
+			$helperCapabilities ||= {};
+		}
+
+		return 1;
+	}
 }
 
 sub helperCapability {
@@ -720,6 +762,7 @@ sub findBin {
 	# try spotty-custom first, allowing users to drop their own build anywhere
 	unshift @candidates, $name . '-custom';
 	my $check;
+	my @binaries;
 
 	foreach (@candidates) {
 		my $candidate = Slim::Utils::Misc::findbin($_) || next;
@@ -731,13 +774,19 @@ sub findBin {
 		main::INFOLOG && $log->is_info && $log->info("Trying helper applicaton: $candidate");
 
 		if ( !$checkerCb || $checkerCb->($candidate) ) {
-			$binary = $candidate;
 			main::INFOLOG && $log->is_info && $log->info("Found helper applicaton: $candidate");
-			last;
+
+			if (wantarray) {
+				push @binaries, $candidate;
+			}
+			else {
+				$binary = $candidate;
+				last;
+			}
 		}
 	}
 
-	return $binary;
+	return wantarray ? @binaries : $binary;
 }
 
 

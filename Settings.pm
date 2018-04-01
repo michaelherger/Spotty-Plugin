@@ -40,7 +40,7 @@ sub page {
 }
 
 sub prefs {
-	my @prefs = qw(myAlbumsOnly bitrate iconCode accountSwitcherMenu);
+	my @prefs = qw(myAlbumsOnly bitrate iconCode accountSwitcherMenu helper);
 	push @prefs, 'disableDiscovery' if Plugins::Spotty::Plugin->canDiscovery();
 	return ($prefs, @prefs);
 }
@@ -99,13 +99,11 @@ sub handler {
 	# make sure our authentication helper isn't running
 	Plugins::Spotty::SettingsAuth->shutdownHelper();
 
-	$paramRef->{credentials}   = Plugins::Spotty::Plugin->getSortedCredentialTupels();
-	$paramRef->{helperPath}    = $helperPath;
-	$paramRef->{helperVersion} = "v$helperVersion" || string('PLUGIN_SPOTTY_HELPER_ERROR');
-	$paramRef->{canDiscovery}  = Plugins::Spotty::Plugin->canDiscovery();
-	$paramRef->{error429}      = Plugins::Spotty::API->hasError429();
+	$paramRef->{credentials}  = Plugins::Spotty::Plugin->getSortedCredentialTupels();
+	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
+	$paramRef->{error429}     = Plugins::Spotty::API->hasError429();
 
-	$paramRef->{players}       = [ sort {
+	$paramRef->{players}      = [ sort {
 		lc($a->{name}) cmp lc($b->{name})
 	} map {
 		{
@@ -120,6 +118,17 @@ sub handler {
 
 sub beforeRender {
 	my ($class, $paramRef) = @_;
+	my $helpers = Plugins::Spotty::Plugin->getHelpers();
+
+	if ($helpers && scalar keys %$helpers > 1) {
+		$paramRef->{helpers} = $helpers;
+	}
+
+	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
+
+	$paramRef->{helperPath}     = $helperPath;
+	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
+
 	$paramRef->{hasDefaultIcon} = Plugins::Spotty::Plugin->hasDefaultIcon();
 }
 

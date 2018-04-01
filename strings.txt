@@ -4,7 +4,7 @@ PLUGIN_SPOTTY
 
 PLUGIN_SPOTTY_NAME
 	EN	Spotty
-	
+
 SPT
 	EN	Spotty
 
@@ -19,7 +19,7 @@ PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT
 PLUGIN_SPOTTY_AUTH
 	DE	Spotify Anmeldung
 	EN	Spotify Authorization
-	
+
 PLUGIN_SPOTTY_AUTH_NAME
 	DE	Spotify Anmeldung
 	EN	Spotify Authorization
@@ -34,7 +34,7 @@ PLUGIN_SPOTTY_ADD_ACCOUNT
 
 PLUGIN_SPOTTY_USERNAME
 	DE	Spotify Benutzername
-	EN	Spotify Username	
+	EN	Spotify Username
 
 PLUGIN_SPOTTY_PASSWORD
 	DE	Spotify Passwort
@@ -51,7 +51,7 @@ PLUGIN_SPOTTY_PASSWORD_DESC
 PLUGIN_SPOTTY_AUTH_FAILED
 	DE	Anmeldung fehlgeschlagen
 	EN	Authorization failed
-	
+
 PLUGIN_USERS_LIBRARY
 	DE	Sammlung von %s
 	EN	%s's Library
@@ -68,7 +68,7 @@ PLUGIN_SPOTTY_ACCOUNT
 	PL	Konto
 	RU	Учетная запись
 	SV	Konto
-	
+
 PLUGIN_SPOTTY_SELECT_ACCOUNT
 	CS	Vyberte účet
 	DA	Vælg konto
@@ -98,7 +98,15 @@ PLUGIN_SPOTTY_HELPER
 
 PLUGIN_SPOTTY_HELPER_MISSING
 	DE	Die Spotify Connect Helferanwendung fehlt
-	EN	Spotify Connect Helper application is missing 
+	EN	Spotify Connect Helper application is missing
+
+PLUGIN_SPOTTY_HELPER_CHOOSE
+	DE	Wähle eine Helferanwendung, falls die automatische Erkennung fehl schlägt. Bitte nur anwenden, wenn "Automatisch" versagt.
+	EN	Select a helper application if the automatic detection fails. Do NOT use unless "Automatic" fails.
+
+PLUGIN_SPOTTY_HELPER_DISCOVER
+	DE	Automatisch Wählen
+	EN	Select Automatically (default)
 
 PLUGIN_SPOTTY_HELPER_MISSING_HELP
 	DE	Konnte die Spotify Connect Helferanwendung nicht finden oder nicht ausführen. Ist ihr Betriebssystem unterstützt?
@@ -106,12 +114,12 @@ PLUGIN_SPOTTY_HELPER_MISSING_HELP
 
 PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC
 	DE	Squeezebox Player im Spotify Connect Modus nicht im lokalen Netzwerk bekannt geben. Aktiviere diese Option, falls dein Player im Spotify Connect Modus nur vom Spotify-Konto gesehen werden soll, welches zuletzt für dieses Gerät verwendet wurde.
-	EN	Don't announce Squeezebox players running in Spotify Connect mode in your network. Check this option if you don't want your Spotify Connect enabled Squeezebox player to show up in all Spotify apps in your network. 
+	EN	Don't announce Squeezebox players running in Spotify Connect mode in your network. Check this option if you don't want your Spotify Connect enabled Squeezebox player to show up in all Spotify apps in your network.
 
 PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
 	DE	Zeige nur meine Alben unter meinen Interpreten.
 	EN	Only show my library's albums for my library's artists.
-	
+
 PLUGIN_SPOTTY_HELPER_ERROR
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten!
 	EN	There has been a problem running the Spotty helper application.
@@ -261,17 +269,17 @@ PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST
 PLUGIN_SPOTTY_FOLLOW_ARTIST
 	DE	Künstler folgen
 	EN	Follow artist
-	
+
 PLUGIN_SPOTTY_FOLLOWING_ARTIST
 	DE	Folge nun dem Künstler:
 	EN	Following this artist:
 
 PLUGIN_SPOTTY_ADD_STUFF
-	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen. 
+	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen.
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.
 
 PLUGIN_SPOTTY_ADD_SONGS
-	DE	Fügen Sie Ihrer Musikbibliothek Lieder hinzu, um diesen Abschnitt zu füllen. 
+	DE	Fügen Sie Ihrer Musikbibliothek Lieder hinzu, um diesen Abschnitt zu füllen.
 	EN	Please add songs to your music library to populate your this section.
 
 PLUGIN_SPOTTY_SONGS_LIST
@@ -352,7 +360,7 @@ PLUGIN_SPOTTY_NEW_SEARCH
 	PL	Nowe wyszukiwanie
 	RU	Новый поиск
 	SV	Ny sökning
-	
+
 PLUGIN_SPOTTY_RECOMMENDATIONS
 	DE	Spotify Empfehlungen (basierend auf aktueller Wiedergabeliste)
 	EN	Spotify Recommendations (based on the current playlist)
@@ -386,15 +394,15 @@ PLUGIN_SPOTTY_NO_PLAYER_CONNECTED
 	PL	Bez podłączenia odtwarzacza nie można uzyskać dostępu do usługi Spotify.
 	RU	Службы Spotify доступны только при подключенном плеере.
 	SV	Det går inte att få tillgång till Spotify-tjänsterna eftersom ingen spelare är ansluten.
-	
+
 PLUGIN_SPOTTY_ERROR_NO_ACCESS_TOKEN
 	DE	Konnte keinen Access Token erhalten
 	EN	Failed to get access token
-	
+
 PLUGIN_SPOTTY_ERROR_429
 	DE	Zugriffsrate überschritten
 	EN	Rate limit exceeded
-	
+
 PLUGIN_SPOTTY_ERROR_429_DESC
 	DE	Zugriffsrate überschritten für: %s; nächster Versuch in %s Sekunden. Bitte setzen Sie sich mit mir in Verbindung. Danke!
 	EN	Access Rate limit exceeded for: %s; retry after %s seconds. Please report this issue to me. Thanks!
@@ -402,12 +410,12 @@ PLUGIN_SPOTTY_ERROR_429_DESC
 PLUGIN_SPOTTY_MISSING_SSL
 	DE	Spotty benötigt das Perl Modul IO::Socket::SSL! Ohne dieses Modul ist die Nutzung von Spotty NICHT möglich. Bitte benutze den Paket-Manager deines Betriebssystems um es zu installieren.
 	EN	Spotty requires the Perl module IO::Socket::SSL. You can NOT use Spotty without this module. Please use your operating system's package manager to install it.
-	
+
 PLUGIN_SPOTTY_CLIENT_ID
 	EN	Spotify Client ID
 
 PLUGIN_SPOTTY_CLIENT_ID_DESC
-	DE	Sehr wahrscheinlich braucht dich diese Einstellung nicht zu interessieren. Falls doch, dann weisst du hoffentlich was das sein soll. Lass es einfach leer, falls dem nicht so ist. Weitere Informationen braucht es nicht 😀. 
+	DE	Sehr wahrscheinlich braucht dich diese Einstellung nicht zu interessieren. Falls doch, dann weisst du hoffentlich was das sein soll. Lass es einfach leer, falls dem nicht so ist. Weitere Informationen braucht es nicht 😀.
 	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀.
 
 # this is a duplicate of INFORMATION_BINDIRS - which is not available in 7.7.5
@@ -422,18 +430,18 @@ PLUGIN_SPOTTY_INFORMATION_BINDIRS
 PLUGIN_SPOTTY_PLEASE_UPDATE
 	DE	Information steht nicht zur Verfügung. Bitte Logitech Media Server auf 7.7.6 oder neuer aktualisieren.
 	EN	Information is not avaialable. Please update Logitech Media Server to 7.7.6 or more recent.
-	
+
 PLUGIN_SPOTTY_SPOTIFY_CONNECT
 	EN	Spotify Connect
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
 	DE	Wählen aus, welche Geräte als Spotify Connect Endpunkte zur Auswahl stehen sollen. Bitte beachte, dass für jedes Gerät ein Hintergrundprozess gestartet wird. Dies kann auf Geräten mit wenig Speicher u.U. zu Problemen führen.
 	EN	Select which players you'd like to use with Spotify Connect. Please keep in mind that every enabled device will launch a background process. This could potentially lead to issues on servers running low on memory.
-	
+
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
 	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen
 	EN	Enable Spotify Connect endpoint for this player
-	
+
 PLUGIN_SPOTTY_NEED_HELPER_UPDATE
 	DE	Spotify Connect ist nicht verfügbar.
 	EN	Spotify Connect is not available.
@@ -445,12 +453,11 @@ PLUGIN_SPOTTY_AUDIO_SETTINGS
 # leading 0 to allow for sorting....
 PLUGIN_SPOTTY_AUDIO_SETTINGS_096
 	EN	Normal (96kbps)
-	
+
 PLUGIN_SPOTTY_AUDIO_SETTINGS_160
 	DE	Hoch (160kbps)
 	EN	High (160kbps)
-	
+
 PLUGIN_SPOTTY_AUDIO_SETTINGS_320
 	DE	Extrem (320kbps)
 	EN	Extreme (320kbps)
-	
