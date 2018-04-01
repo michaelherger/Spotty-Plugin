@@ -70,16 +70,11 @@ sub initPlugin {
 	if (ENABLE_AUDIO_CACHE) {
 		$prefs->setChange( sub {
 			__PACKAGE__->purgeAudioCache();
-			__PACKAGE__->updateTranscodingTable();
 		}, 'audioCacheSize') ;
 	}
 	else {
 		$prefs->set('audioCacheSize', 0);
 	}
-
-	$prefs->setChange( sub {
-		__PACKAGE__->updateTranscodingTable();
-	}, 'bitrate', 'helper') ;
 
 	$prefs->setChange ( sub {
 		$helper = $helperVersion = $helperCapabilities = undef;
@@ -139,7 +134,6 @@ sub postinitPlugin { if (main::TRANSCODING) {
 	# we're going to hijack the Spotify URI schema
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
 
-	$class->updateTranscodingTable();
 	Plugins::Spotty::Connect->init($helper);
 
 	# if user has the Don't Stop The Music plugin enabled, register ourselves
