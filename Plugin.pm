@@ -213,6 +213,8 @@ sub updateTranscodingTable {
 			$commandTable->{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
 			$commandTable->{$_} =~ s/disable-audio-cache/enable-audio-cache/g if ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize');
 			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !(ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize'));
+			$commandTable->{$_} =~ s/ --enable-volume-normalisation //;
+			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if $class->helperCapability('volume-normalisation') && $serverPrefs->client($client)->get('replayGainMode');
 		}
 	}
 }
