@@ -1,0 +1,14 @@
+	[% IF helpers %]
+		[% WRAPPER setting title="PLUGIN_SPOTTY_HELPER" desc="PLUGIN_SPOTTY_HELPER_CHOOSE" %]
+			<select class="stdedit" name="pref_helper" id="pref_helper">
+				<option value="">[% "PLUGIN_SPOTTY_HELPER_DISCOVER" | string %] [% IF !prefs.pref_helper %] - [% helperPath %] ([% helperVersion %])[% END %]</option>
+				[% FOREACH helper IN helpers.keys.sort %]
+					<option value="[% helper %]" [% IF prefs.pref_helper == helper %]selected [% END %]>[% helper | html %] (v[% helpers.$helper.version %])</option>
+				[% END %]
+			</select>
+		[% END %]
+	[% ELSE %]
+		[% WRAPPER setting title="PLUGIN_SPOTTY_HELPER" desc="" %]
+			[% helperPath %] ([% helperVersion %])
+		[% END %]
+	[% END %]

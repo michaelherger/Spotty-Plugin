@@ -39,7 +39,7 @@ sub page {
 }
 
 sub prefs {
-	return ($prefs);
+	return ($prefs, 'helper');
 }
 
 sub handler {
@@ -86,6 +86,17 @@ sub handler {
 	if ( !$class->startHelper() ) {
 		$paramRef->{helperMissing} = Plugins::Spotty::Plugin->getHelper() || 1;
 	}
+
+	my $helpers = Plugins::Spotty::Plugin->getHelpers();
+
+	if ($helpers && scalar keys %$helpers > 1) {
+		$paramRef->{helpers} = $helpers;
+	}
+
+	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
+
+	$paramRef->{helperPath}     = $helperPath;
+	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
 
 	# discovery doesn't work on Windows
 	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
