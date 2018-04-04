@@ -85,13 +85,15 @@ sub new {
 }
 
 sub getToken {
-	my ( $self, $force ) = @_;
+	my ( $self, $cb ) = @_;
 
-	return '-429' if $cache->get('spotty_rate_limit_exceeded');
+	if ($cache->get('spotty_rate_limit_exceeded')) {
+		return $cb->(-429) ;
+	}
 
 	my $cacheKey = 'spotty_access_token' . ($self->username || '');
 
-	my $token = $cache->get($cacheKey) unless $force;
+	my $token = $cache->get($cacheKey);
 
 	if (main::DEBUGLOG && $log->is_debug) {
 		if ($token) {
@@ -102,42 +104,68 @@ sub getToken {
 		}
 	}
 
-	if ( $force || !$token ) {
+	if (!$token) {
 		# try to use client specific credentials
 		if ( $self->cache || (my $account = Plugins::Spotty::Plugin->getAccount($self->client)) ) {
-			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',
+			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s" 2>&1',
 				scalar Plugins::Spotty::Plugin->getHelper(),
 				$self->cache || Plugins::Spotty::Plugin->cacheFolder($account),
 				$prefs->get('iconCode'),
 				SPOTIFY_SCOPE
 			);
 
-			my $response;
-
-			eval {
-				if (main::INFOLOG && $log->is_info) {
-					my $cmd2 = $cmd;
-					$cmd2 =~ s/-i [a-f0-9]+/-i abcdef1234567890/;
-					$log->info("Trying to get access token: $cmd2");
-				}
-				$response = `$cmd 2>&1`;
-				main::INFOLOG && $log->is_info && $log->info("Got response: $response");
-				$response = decode_json($response);
-			};
-
-			$log->error("Failed to get Spotify access token: $@ \n$response") if $@;
-
-			if ( $response && ref $response ) {
-				if ( $token = $response->{accessToken} ) {
-					if ( main::INFOLOG && $log->is_info ) {
-						$log->info("Received access token: " . Data::Dump::dump($response));
-						$log->info("Caching for " . ($response->{expiresIn} || 3600) . " seconds.");
-					}
-
-					# Cache for the given expiry time (less some to be sure...)
-					$cache->set($cacheKey, $token, ($response->{expiresIn} || 3600) - 300);
-				}
+			if (main::INFOLOG && $log->is_info) {
+				my $cmd2 = $cmd;
+				$cmd2 =~ s/-i [a-f0-9]+/-i abcdef1234567890/;
+				$log->info("Trying to get access token: $cmd2");
 			}
+
+			# async stuff not working on Windows?
+			if (main::ISWINDOWS) {
+				_gotTokenResponse(`$cmd`, $cb, $cacheKey);
+			}
+			else {
+				open my $sh, '-|', $cmd;
+
+				my $response = '';
+				Slim::Networking::Select::addRead($sh, sub {
+					if (!sysread($sh, $response, 2 * 1024, length($response))) {
+						Slim::Networking::Select::removeRead($sh);
+						close $sh;
+
+						_gotTokenResponse($response, $cb, $cacheKey);
+					}
+				});
+			}
+
+			return;
+		}
+	}
+
+	$cb->($token);
+}
+
+sub _gotTokenResponse {
+	my ($response, $cb, $cacheKey) = @_;
+
+	my $token;
+
+	eval {
+		main::INFOLOG && $log->is_info && $log->info("Got response: $response");
+		$response = decode_json($response);
+	};
+
+	$log->error("Failed to get Spotify access token: $@ \n$response") if $@;
+
+	if ( $response && ref $response ) {
+		if ( $token = $response->{accessToken} ) {
+			if ( main::INFOLOG && $log->is_info ) {
+				$log->info("Received access token: " . Data::Dump::dump($response));
+				$log->info("Caching for " . ($response->{expiresIn} || 3600) . " seconds.");
+			}
+
+			# Cache for the given expiry time (less some to be sure...)
+			$cache->set($cacheKey, $token, ($response->{expiresIn} || 3600) - 300);
 		}
 	}
 
@@ -147,14 +175,7 @@ sub getToken {
 		$cache->set($cacheKey, $token = -1, 60);
 	}
 
-	return $token;
-}
-
-sub ready {
-	my ($self) = @_;
-	my $token = $self->getToken();
-
-	return $token && $token !~ /^-\d+$/ ? 1 : 0;
+	$cb->($token);
 }
 
 sub me {
@@ -727,48 +748,52 @@ sub tracks {
 		return;
 	}
 
-	if ( !$self->ready ) {
-		$cb->([ map {
-			my $t = {
-				title => 'Failed to get access token',
-				duration => 1,
-				uri => $_,
-			};
-			$cache->set($_, $t, 60);
-			$t;
-		} @$ids ]);
-		return;
-	}
+	$self->getToken(sub {
+		my ($token) = @_;
 
-	my $chunks = {};
-
-	# build list of chunks we can query in one go
-	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
-		my $idList = join(',', map { s/(?:spotify|track)://g; $_ } grep { $_ && /^(?:spotify|track):/ } @ids) || next;
-		$chunks->{md5_hex($idList)} = {
-			market => 'from_token',
-			ids => $idList
-		};
-	}
-
-	Plugins::Spotty::API::Pipeline->new($self, 'tracks', sub {
-		my ($tracks) = @_;
-
-		my @tracks;
-
-		foreach (@{$tracks->{tracks}}) {
-			# track info for invalid IDs is returned
-			next unless $_ && ref $_;
-
-			my $track = $self->_normalize($_);
-
-			push @tracks, $track if $self->_isPlayable($_);
+		if ($token && $token =~ /^-\d+$/) {
+			$cb->([ map {
+				my $t = {
+					title => 'Failed to get access token',
+					duration => 1,
+					uri => $_,
+				};
+				$cache->set($_, $t, 60);
+				$t;
+			} @$ids ]);
 		}
+		else {
+			my $chunks = {};
 
-		return \@tracks;
-	}, $cb, {
-		chunks => $chunks,
-	})->get();
+			# build list of chunks we can query in one go
+			while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
+				my $idList = join(',', map { s/(?:spotify|track)://g; $_ } grep { $_ && /^(?:spotify|track):/ } @ids) || next;
+				$chunks->{md5_hex($idList)} = {
+					market => 'from_token',
+					ids => $idList
+				};
+			}
+
+			Plugins::Spotty::API::Pipeline->new($self, 'tracks', sub {
+				my ($tracks) = @_;
+
+				my @tracks;
+
+				foreach (@{$tracks->{tracks}}) {
+					# track info for invalid IDs is returned
+					next unless $_ && ref $_;
+
+					my $track = $self->_normalize($_);
+
+					push @tracks, $track if $self->_isPlayable($_);
+				}
+
+				return \@tracks;
+			}, $cb, {
+				chunks => $chunks,
+			})->get();
+		}
+	});
 }
 
 # try to get a list of track URI
@@ -1256,170 +1281,173 @@ sub _isPlayable {
 sub _call {
 	my ( $self, $url, $cb, $type, $params ) = @_;
 
-	$type ||= 'GET';
+	$self->getToken(sub {
+		my ($token) = @_;
 
-	# $uri must not have a leading slash
-	$url =~ s/^\///;
+		if ( !$token || $token =~ /^-(\d+)$/ ) {
+			my $error = $1 || 'NO_ACCESS_TOKEN';
+			$error = 'NO_ACCESS_TOKEN' if $error !~ /429/;
 
-	my $content;
-
-	my @headers = ( 'Accept' => 'application/json', 'Accept-Encoding' => 'gzip' );
-
-	my $token = $self->getToken();
-
-	if ( !$token || $token =~ /^-(\d+)$/ ) {
-		my $error = $1 || 'NO_ACCESS_TOKEN';
-		$cb->({
-			name => string('PLUGIN_SPOTTY_ERROR_' . $error),
-			type => 'text'
-		});
-
-		return;
-	}
-
-	if ( !$params->{_no_auth_header} ) {
-		push @headers, 'Authorization' => 'Bearer ' . $token;
-	}
-
-	if ( my @keys = sort keys %{$params}) {
-		my @params;
-		foreach my $key ( @keys ) {
-			next if $key =~ /^_/;
-			push @params, $key . '=' . uri_escape_utf8( $params->{$key} );
-		}
-
-		# PUT requests can come with a body, or query params. In case of body,
-		# the caller should stringify the data already.
-		if ( $type eq 'GET' || ($type eq 'PUT' && !$params->{body}) ) {
-			$url .= '?' . join( '&', sort @params ) if scalar @params;
-		}
-		elsif ($type eq 'PUT' && $params->{body}) {
-			$content .= $params->{body};
+			$cb->({
+				name => string('PLUGIN_SPOTTY_ERROR_' . $error),
+				type => 'text'
+			});
 		}
 		else {
-			$content .= join( '&', sort @params );
-		}
-	}
+			$type ||= 'GET';
 
-	my $cached;
-	my $cache_key;
-	if (!$params->{_nocache} && $type eq 'GET') {
-		$cache_key = md5_hex($url . ($url =~ /^me\b/ ? $token : ''));
-	}
+			# $uri must not have a leading slash
+			$url =~ s/^\///;
 
-	main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");
+			my $content;
 
-	if ( $cache_key && ($cached = $cache->get($cache_key)) ) {
-		main::INFOLOG && $log->is_info && $log->info("Returning cached data for $url");
-		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
-		$cb->($cached);
-		return;
-	}
-	elsif ( main::INFOLOG && $log->is_info ) {
-		$log->info("API call: $url");
-		main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
-	}
+			my @headers = ( 'Accept' => 'application/json', 'Accept-Encoding' => 'gzip' );
 
-	my $http = Plugins::Spotty::API::AsyncRequest->new(
-		sub {
-			my $response = shift;
-			my $params   = $response->params('params');
-
-			if ($response->code =~ /429/) {
-				$self->error429($response);
+			if ( !$params->{_no_auth_header} ) {
+				push @headers, 'Authorization' => 'Bearer ' . $token;
 			}
 
-			my $result;
-
-			if ( $response->headers->content_type =~ /json/ ) {
-				$result = decode_json(
-					$response->content,
-				);
-
-				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
-
-				if ( !$result || (ref $result && ref $result eq 'HASH' && $result->{error}) ) {
-					$result = {
-						error => 'Error: ' . ($result->{error_message} || 'Unknown error')
-					};
-					$log->error($result->{error} . ' (' . $url . ')');
+			if ( my @keys = sort keys %{$params}) {
+				my @params;
+				foreach my $key ( @keys ) {
+					next if $key =~ /^_/;
+					push @params, $key . '=' . uri_escape_utf8( $params->{$key} );
 				}
-				elsif ( $cache_key ) {
-					if ( my $cache_control = $response->headers->header('Cache-Control') ) {
-						my ($ttl) = $cache_control =~ /max-age=(\d+)/;
 
-						# cache some items even if max-age is zero. We're navigating them often
-						if ( !$ttl && $response->url =~ m|v1/users/([^\/]+?)/playlists/[A-Za-z0-9]{22}/tracks| ) {
-							if ( $1 eq 'spotify' || $1 eq 'spotifycharts' ) {
-								$ttl = 3600;
-							}
-							elsif ( $1 ne $self->username ) {
-								$ttl = 300;
-							}
+				# PUT requests can come with a body, or query params. In case of body,
+				# the caller should stringify the data already.
+				if ( $type eq 'GET' || ($type eq 'PUT' && !$params->{body}) ) {
+					$url .= '?' . join( '&', sort @params ) if scalar @params;
+				}
+				elsif ($type eq 'PUT' && $params->{body}) {
+					$content .= $params->{body};
+				}
+				else {
+					$content .= join( '&', sort @params );
+				}
+			}
+
+			my $cached;
+			my $cache_key;
+			if (!$params->{_nocache} && $type eq 'GET') {
+				$cache_key = md5_hex($url . ($url =~ /^me\b/ ? $token : ''));
+			}
+
+			main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");
+
+			if ( $cache_key && ($cached = $cache->get($cache_key)) ) {
+				main::INFOLOG && $log->is_info && $log->info("Returning cached data for $url");
+				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
+				$cb->($cached);
+				return;
+			}
+			elsif ( main::INFOLOG && $log->is_info ) {
+				$log->info("API call: $url");
+				main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
+			}
+
+			my $http = Plugins::Spotty::API::AsyncRequest->new(
+				sub {
+					my $response = shift;
+					my $params   = $response->params('params');
+
+					if ($response->code =~ /429/) {
+						$self->error429($response);
+					}
+
+					my $result;
+
+					if ( $response->headers->content_type =~ /json/ ) {
+						$result = decode_json(
+							$response->content,
+						);
+
+						main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
+
+						if ( !$result || (ref $result && ref $result eq 'HASH' && $result->{error}) ) {
+							$result = {
+								error => 'Error: ' . ($result->{error_message} || 'Unknown error')
+							};
+							$log->error($result->{error} . ' (' . $url . ')');
 						}
+						elsif ( $cache_key ) {
+							if ( my $cache_control = $response->headers->header('Cache-Control') ) {
+								my ($ttl) = $cache_control =~ /max-age=(\d+)/;
 
-						$ttl ||= 60;		# XXX - we're going to always cache for a minute, as we often do follow up calls while navigating
+								# cache some items even if max-age is zero. We're navigating them often
+								if ( !$ttl && $response->url =~ m|v1/users/([^\/]+?)/playlists/[A-Za-z0-9]{22}/tracks| ) {
+									if ( $1 eq 'spotify' || $1 eq 'spotifycharts' ) {
+										$ttl = 3600;
+									}
+									elsif ( $1 ne $self->username ) {
+										$ttl = 300;
+									}
+								}
 
-						if ($ttl) {
-							main::INFOLOG && $log->is_info && $log->info("Caching result for $ttl using max-age (" . $response->url . ")");
-							$cache->set($cache_key, $result, $ttl);
-							main::INFOLOG && $log->is_info && $log->info("Data cached (" . $response->url . ")");
+								$ttl ||= 60;		# XXX - we're going to always cache for a minute, as we often do follow up calls while navigating
+
+								if ($ttl) {
+									main::INFOLOG && $log->is_info && $log->info("Caching result for $ttl using max-age (" . $response->url . ")");
+									$cache->set($cache_key, $result, $ttl);
+									main::INFOLOG && $log->is_info && $log->info("Data cached (" . $response->url . ")");
+								}
+							}
 						}
 					}
-				}
+					elsif ( $type =~ /PUT|POST/ && $response->code =~ /^20\d/ ) {
+						# ignore - v1/me/following doesn't return anything but 204 on success
+						# ignore me/albums?ids=...
+					}
+					else {
+						$log->error("Invalid data");
+						main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
+						$result = {
+							error => 'Error: Invalid data',
+						};
+					}
+
+					$cb->($result, $response);
+				},
+				sub {
+					my ($http, $error, $response) = @_;
+
+					$log->warn("error: $error");
+
+					if ($error =~ /429/ || ($response && $response->code == 429)) {
+						$self->error429($response);
+
+						$cb->({
+							name => string('PLUGIN_SPOTTY_ERROR_429'),
+							type => 'text'
+						}, $response);
+					}
+					else {
+						main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
+						$cb->({
+							name => 'Unknown error: ' . $error,
+							type => 'text'
+						}, $response);
+					}
+				},
+				{
+					cache => $params->{_nocache} ? 0 : 1,
+					expires => 3600,
+					timeout => 30,
+					no_revalidate => $params->{_no_revalidate},
+				},
+			);
+
+			if ( $type eq 'POST' ) {
+				$http->post($url, @headers, $content);
 			}
-			elsif ( $type =~ /PUT|POST/ && $response->code =~ /^20\d/ ) {
-				# ignore - v1/me/following doesn't return anything but 204 on success
-				# ignore me/albums?ids=...
+			elsif ( $type eq 'PUT' ) {
+				$http->put($url, @headers, $content);
 			}
 			else {
-				$log->error("Invalid data");
-				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
-				$result = {
-					error => 'Error: Invalid data',
-				};
+				$http->get($url, @headers);
 			}
-
-			$cb->($result, $response);
-		},
-		sub {
-			my ($http, $error, $response) = @_;
-
-			$log->warn("error: $error");
-
-			if ($error =~ /429/ || ($response && $response->code == 429)) {
-				$self->error429($response);
-
-				$cb->({
-					name => string('PLUGIN_SPOTTY_ERROR_429'),
-					type => 'text'
-				}, $response);
-			}
-			else {
-				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
-				$cb->({
-					name => 'Unknown error: ' . $error,
-					type => 'text'
-				}, $response);
-			}
-		},
-		{
-			cache => $params->{_nocache} ? 0 : 1,
-			expires => 3600,
-			timeout => 30,
-			no_revalidate => $params->{_no_revalidate},
-		},
-	);
-
-	if ( $type eq 'POST' ) {
-		$http->post($url, @headers, $content);
-	}
-	elsif ( $type eq 'PUT' ) {
-		$http->put($url, @headers, $content);
-	}
-	else {
-		$http->get($url, @headers);
-	}
+		}
+	});
 }
 
 # if we get a "rate limit exceeded" error, pause for the given delay
@@ -1439,7 +1467,6 @@ sub error429 {
 	else {
 		$log->error($error429);
 	}
-
 }
 
 sub uri2url {
