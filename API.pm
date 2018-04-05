@@ -12,6 +12,7 @@ BEGIN {
 	use constant DEFAULT_LIMIT => 200;
 	use constant MAX_LIMIT => 10_000;
 	use constant SPOTIFY_LIMIT => 50;
+	use constant GET_TOKEN_TIMEOUT => 30;
 
 	use Exporter::Lite;
 	our @EXPORT_OK = qw( SPOTIFY_LIMIT DEFAULT_LIMIT );
@@ -39,6 +40,7 @@ my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $error429;
+my %tokenHandlers;
 
 tie my %connectDevices, 'Tie::Cache::LRU::Expires', EXPIRES => 3600, ENTRIES => 64;
 
@@ -58,7 +60,6 @@ use constant SPOTIFY_SCOPE => join(',', qw(
   playlist-modify-public
   playlist-modify-private
 ));
-
 
 {
 	__PACKAGE__->mk_accessor( 'rw', 'client' );
@@ -91,9 +92,9 @@ sub getToken {
 		return $cb->(-429) ;
 	}
 
-	my $cacheKey = 'spotty_access_token' . ($self->username || '');
+	my $username = $self->username || 'generic';
 
-	my $token = $cache->get($cacheKey);
+	my $token = $cache->get('spotty_access_token' . $username);
 
 	if (main::DEBUGLOG && $log->is_debug) {
 		if ($token) {
@@ -122,20 +123,31 @@ sub getToken {
 
 			# async stuff not working on Windows?
 			if (main::ISWINDOWS) {
-				_gotTokenResponse(`$cmd`, $cb, $cacheKey);
+				$self->_gotTokenResponse(`$cmd`);
 			}
 			else {
 				open my $sh, '-|', $cmd;
 
-				my $response = '';
-				Slim::Networking::Select::addRead($sh, sub {
-					if (!sysread($sh, $response, 2 * 1024, length($response))) {
-						Slim::Networking::Select::removeRead($sh);
-						close $sh;
+				# keep a list of callbacks which need to be executed once we're done
+				my $tokenHandler = $tokenHandlers{$username} || {};
+				my $listeners = $tokenHandler->{listeners} || [];
+				$tokenHandler->{listeners} = [ @$listeners, $cb ];
 
-						_gotTokenResponse($response, $cb, $cacheKey);
-					}
-				});
+				if (!$tokenHandler->{timer}) {
+					Slim::Utils::Timers::killTimers($self, \&_killTokenHelper);
+					$tokenHandler->{timer} = Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + GET_TOKEN_TIMEOUT, \&_killTokenHelper, $sh);
+					$tokenHandlers{$username} = $tokenHandler;
+
+					my $response = '';
+					Slim::Networking::Select::addRead($sh, sub {
+						if (!sysread($sh, $response, 2 * 1024, length($response))) {
+							Slim::Networking::Select::removeRead($sh);
+							close $sh;
+
+							$self->_gotTokenResponse($response);
+						}
+					});
+				}
 			}
 
 			return;
@@ -146,7 +158,10 @@ sub getToken {
 }
 
 sub _gotTokenResponse {
-	my ($response, $cb, $cacheKey) = @_;
+	my ($self, $response) = @_;
+
+	my $username = $self->username || 'generic';
+	my $cacheKey = 'spotty_access_token' . $username;
 
 	my $token;
 
@@ -172,11 +187,25 @@ sub _gotTokenResponse {
 	if (!$token) {
 		$log->error("Failed to get Spotify access token");
 		# store special value to prevent hammering the backend
-		$cache->set($cacheKey, $token = -1, 60);
+		$cache->set($cacheKey, $token = -1, 15);
 	}
 
-	$cb->($token);
+	foreach (@{ $tokenHandlers{$username}->{listeners} || [] }) {
+		$_->($token);
+	}
+
+	Slim::Utils::Timers::killTimers($self, \&_killTokenHelper);
+	delete $tokenHandlers{$username};
 }
+
+sub _killTokenHelper { if (!main::ISWINDOWS) {
+	my ($self, $sh) = @_;
+
+	Slim::Networking::Select::removeRead($sh);
+	close $sh;
+
+	$self->_gotTokenResponse('getToken timed out');
+} }
 
 sub me {
 	my ( $self, $cb ) = @_;
@@ -1143,7 +1172,7 @@ sub categoryPlaylists {
 sub featuredPlaylists {
 	my ( $self, $cb ) = @_;
 
-	# let's manipulate the timestamp so we only pull updated every few minutes
+	# let's manipulate the timestamp so we only pull updates every few minutes
 	my $timestamp = strftime("%Y-%m-%dT%H:%M:00", localtime(time()));
 	$timestamp =~ s/\d(:00)$/0$1/;
 
