@@ -1331,7 +1331,7 @@ sub _call {
 
 			my $result;
 
-			if ( $response->headers->content_type =~ /json/ ) {
+			if ( $response->headers->content_type =~ /json/i ) {
 				$result = decode_json(
 					$response->content,
 				);

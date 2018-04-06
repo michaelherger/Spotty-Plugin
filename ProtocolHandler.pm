@@ -7,13 +7,15 @@ use Scalar::Util qw(blessed);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
-#use Slim::Utils::Prefs;
+use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(cstring);
 
 use Plugins::Spotty::Plugin;
 
 my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.spotty');
+my $prefs = preferences('plugin.spotty');
+my $serverPrefs = preferences('server');
 
 use constant IMG_TRACK => '/html/images/cover.png';
 
@@ -28,16 +30,29 @@ sub getSeekData {
 	return { timeOffset => $newtime };
 }
 
-sub formatOverride { 
+sub trackGain {
+	my ($class, $client, $url) = @_;
+
+	return unless $client && blessed $client;
+
+	# if spotty's replaygain is enabled, then don't additionally change in LMS
+	return if $prefs->client($client)->get('replaygain');
+
+	# otherwise respect LMS' settings
+	my $cprefs = $serverPrefs->client($client);
+	return $cprefs->get('replayGainMode') && $cprefs->get('remoteReplayGain');
+}
+
+sub formatOverride {
 	my ($class, $song) = @_;
-	
+
 	# Update the transcoding table with the current player's Spotty ID...
 	Plugins::Spotty::Plugin->updateTranscodingTable($song->master);
 
 	# check if we want/need to purge the audio cache
 	# this needs to be done from whatever code being run once per track
 	Plugins::Spotty::Plugin->purgeAudioCacheAfterXTracks();
-	
+
 	return 'spt';
 }
 
@@ -50,12 +65,12 @@ sub explodePlaylist {
 	my ( $class, $client, $uri, $cb ) = @_;
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
-	
+
 	if ($spotty) {
 		$spotty->trackURIsFromURI(sub {
-			$cb->([ 
-				map { 
-					/(track:.*)/; 
+			$cb->([
+				map {
+					/(track:.*)/;
 					"spotify://$1";
 				} @{shift || []}
 			]);
@@ -81,13 +96,13 @@ sub getNextTrack {
 		Plugins::Spotty::Connect->getNextTrack($song, $successCb, $errorCb);
 		return;
 	}
-	
+
 	$successCb->();
 }
 
 sub getMetadataFor {
 	my ( $class, $client, $url, undef, $song ) = @_;
-	
+
 	my $meta = {
 		artist    => '',
 		album     => '',
@@ -98,9 +113,9 @@ sub getMetadataFor {
 		bitrate   => 0,
 		originalType => 'Ogg Vorbis (Spotify)',
 	};
-	
+
 	$meta->{type} = $meta->{originalType};
-	
+
 	if ( !Plugins::Spotty::Plugin->hasCredentials() ) {
 		$meta->{artist} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
 		$meta->{title} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
@@ -111,7 +126,7 @@ sub getMetadataFor {
 		$meta->{title} = cstring($client, 'PLUGIN_SPOTTY_MISSING_SSL');
 		return $meta;
 	}
-	
+
 	$meta = undef;
 
 	if ( $song ||= $client->currentSongForUrl($url) ) {
@@ -122,7 +137,7 @@ sub getMetadataFor {
 			if ($bitrate) {
 				$info->{bitrate} = Slim::Schema::Track->buildPrettyBitRate( $bitrate );
 			}
-			
+
 			# Append "...converted to [format]" if stream has been transcoded
 			my $converted = $song->streamformat;
 			if ($converted) {
@@ -132,18 +147,18 @@ sub getMetadataFor {
 				}
 				$info->{type} = sprintf('%s (%s %s)', $info->{originalType}, cstring($client, 'CONVERTED_TO'), $converted);
 			}
-			
+
 			$song->streamUrl($url);
 			$song->duration($info->{duration});
 			return $info;
 		}
 	}
-	
+
 	my $uri = $url;
 	$uri =~ s/\///g;
-	
+
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
-	
+
 	if ( my $cached = $spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
 		$meta = {
 			artist    => join( ', ', map { $_->{name} } @{ $cached->{artists} } ),
@@ -159,13 +174,13 @@ sub getMetadataFor {
 		$class->getBulkMetadata($client);
 		$meta = {};
 	}
-	
+
 	$meta->{bitrate} ||= '320k VBR';
 	$meta->{originalType} ||= 'Ogg Vorbis (Spotify)';
 	$meta->{type}    = $meta->{originalType};
 	$meta->{cover}   ||= IMG_TRACK;
 	$meta->{icon}    ||= IMG_TRACK;
-	
+
 	if ($song) {
 		if ( $meta->{duration} && !($song->duration && $song->duration > 0) ) {
 			$song->duration($meta->{duration});
@@ -174,13 +189,13 @@ sub getMetadataFor {
 
 		$song->pluginData( info => $meta );
 	}
-	
+
 	return $meta;
 }
 
 sub getBulkMetadata {
 	my ($class, $client) = @_;
-	
+
 	if ( !$client->master->pluginData('fetchingMeta') ) {
 		$client->master->pluginData( fetchingMeta => 1 );
 
@@ -188,26 +203,26 @@ sub getBulkMetadata {
 		my @need;
 
 		my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
-		
+
 		for my $track ( @{ Slim::Player::Playlist::playList($client) } ) {
 			my $uri = blessed($track) ? $track->url : $track;
 			$uri =~ s/\///g;
-			
+
 			next unless $uri =~ /^spotify:track/;
 
 			if ( !$spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
 				push @need, $uri;
 			}
 		}
-		
+
 		if ( main::INFOLOG && $log->is_info ) {
 			$log->info( "Need to fetch metadata for: " . Data::Dump::dump(@need) );
 		}
-		
+
 		$spotty->tracks(sub {
 			# Update the playlist time so the web will refresh, etc
 			$client->currentPlaylistUpdateTime( Time::HiRes::time() );
-			
+
 			Slim::Control::Request::notifyFromArray( $client, [ 'newmetadata' ] );
 
 			$client->master->pluginData( fetchingMeta => 0 );
