@@ -126,7 +126,12 @@ sub getToken {
 				$self->_gotTokenResponse(`$cmd`);
 			}
 			else {
-				open my $sh, '-|', $cmd;
+				open my $sh, '-|', $cmd or do {
+					# fall back to blocking code if needed...
+					main::INFOLOG && $log->info('Failed to do non-blocking getToken call - trying blocking mode. Good luck!');
+					$self->_gotTokenResponse(`$cmd`);
+					return;
+				};
 
 				# keep a list of callbacks which need to be executed once we're done
 				my $tokenHandler = $tokenHandlers{$username} || {};
