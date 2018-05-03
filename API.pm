@@ -377,7 +377,9 @@ sub playerPause {
 	my ( $self, $cb, $device ) = @_;
 
 	$self->withIdFromMac(sub {
-		my $args = {};
+		my $args = {
+			_headers => [ 'Content-Length' => 0 ]
+		};
 		$args->{device_id} = $_[0] if $_[0];
 
 		$self->_call('me/player/pause',
@@ -393,7 +395,9 @@ sub playerNext {
 	my ( $self, $cb, $device ) = @_;
 
 	$self->withIdFromMac(sub {
-		my $args = {};
+		my $args = {
+			_headers => [ 'Content-Length' => 0 ]
+		};
 		$args->{device_id} = $_[0] if $_[0];
 
 		$self->_call('me/player/next',
@@ -411,6 +415,7 @@ sub playerVolume {
 	$self->withIdFromMac(sub {
 		my $args = {
 			volume_percent => $volume,
+			_headers => [ 'Content-Length' => 0 ]
 		};
 
 		$args->{device_id} = $_[0] if $_[0];
@@ -1344,6 +1349,10 @@ sub _call {
 			if ( my @keys = sort keys %{$params}) {
 				my @params;
 				foreach my $key ( @keys ) {
+					if ($key eq '_headers') {
+						push @headers, @{$params->{$key}};
+					}
+
 					next if $key =~ /^_/;
 					push @params, $key . '=' . uri_escape_utf8( $params->{$key} );
 				}
