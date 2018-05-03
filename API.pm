@@ -377,9 +377,7 @@ sub playerPause {
 	my ( $self, $cb, $device ) = @_;
 
 	$self->withIdFromMac(sub {
-		my $args = {
-			_headers => [ 'Content-Length' => 0 ]
-		};
+		my $args = {};
 		$args->{device_id} = $_[0] if $_[0];
 
 		$self->_call('me/player/pause',
@@ -395,9 +393,7 @@ sub playerNext {
 	my ( $self, $cb, $device ) = @_;
 
 	$self->withIdFromMac(sub {
-		my $args = {
-			_headers => [ 'Content-Length' => 0 ]
-		};
+		my $args = {};
 		$args->{device_id} = $_[0] if $_[0];
 
 		$self->_call('me/player/next',
@@ -415,7 +411,6 @@ sub playerVolume {
 	$self->withIdFromMac(sub {
 		my $args = {
 			volume_percent => $volume,
-			_headers => [ 'Content-Length' => 0 ]
 		};
 
 		$args->{device_id} = $_[0] if $_[0];
@@ -1368,6 +1363,10 @@ sub _call {
 				else {
 					$content .= join( '&', sort @params );
 				}
+			}
+
+			if ( ($type eq 'PUT' || $type eq 'POST') && !$content ) {
+				push @headers, 'Content-Length' => 0;
 			}
 
 			my $cached;
