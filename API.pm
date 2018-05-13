@@ -1365,10 +1365,6 @@ sub _call {
 				}
 			}
 
-			if ( ($type eq 'PUT' || $type eq 'POST') && !$content ) {
-				push @headers, 'Content-Length' => 0;
-			}
-
 			my $cached;
 			my $cache_key;
 			if (!$params->{_nocache} && $type eq 'GET') {
@@ -1478,6 +1474,10 @@ sub _call {
 					no_revalidate => $params->{_no_revalidate},
 				},
 			);
+
+			if ( $type eq 'PUT' || $type eq 'POST' ) {
+				push @headers, 'Content-Length' => length($content || '');
+			}
 
 			if ( $type eq 'POST' ) {
 				$http->post($url, @headers, $content);
