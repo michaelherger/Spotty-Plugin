@@ -55,23 +55,27 @@
 	[% END %]
 
 	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG" %]
-		[% IF players.size == 0 %]
-			[% "NO_PLAYER_FOUND" | string %]
+		[% IF !canConnect %]
+			[% "PLUGIN_SPOTTY_NEED_HELPER_UPDATE" | string %]
+		[% ELSE %]
+			[% IF players.size == 0 %]
+				[% "NO_PLAYER_FOUND" | string %]
+			[% END %]
+			<table style="border-spacing:0">
+			[% FOREACH player IN players %]
+				[% maxCols = 5 %]
+				[% IF loop.index() % maxCols == 0 %]<tr>[% END %]
+				<td style="padding: 0 10px 2px 0">
+					<input type="checkbox" name="connect_[% player.id %]" id="connect_[% player.id %]" [% IF player.enabled %] checked [% END %] value="1" />
+					<label for="connect_[% player.id %]">[% player.name %]</label>
+				</td>
+				[% IF (loop.index + 1) % maxCols == 0 %]</tr>[% END %]
+			[% END %]
+			</table>
 		[% END %]
-		<table style="border-spacing:0">
-		[% FOREACH player IN players %]
-			[% maxCols = 5 %]
-			[% IF loop.index() % maxCols == 0 %]<tr>[% END %]
-			<td style="padding: 0 10px 2px 0">
-				<input type="checkbox" name="connect_[% player.id %]" id="connect_[% player.id %]" [% IF player.enabled %] checked [% END %] value="1" />
-				<label for="connect_[% player.id %]">[% player.name %]</label>
-			</td>
-			[% IF (loop.index + 1) % maxCols == 0 %]</tr>[% END %]
-		[% END %]
-		</table>
 	[% END %]
 
-	[% IF canDiscovery; WRAPPER setting title="" desc="" %]
+	[% IF canConnect && canDiscovery; WRAPPER setting title="" desc="" %]
 		<input name="pref_disableDiscovery" id="pref_disableDiscovery" type="checkbox" [% IF prefs.pref_disableDiscovery %] checked [% END %]>
 		<label for="pref_disableDiscovery">[% "PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC" | string %]</label>
 	[% END; END %]

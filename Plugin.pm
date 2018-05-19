@@ -78,6 +78,12 @@ sub initPlugin {
 
 	$prefs->setChange ( sub {
 		$helper = $helperVersion = $helperCapabilities = undef;
+
+		# can't call this immediately, as it would trigger another onChange event
+		Slim::Utils::Timers::setTimer($class, time() + 1, sub {
+			Plugins::Spotty::Connect->init();
+		});
+
 	}, 'helper');
 
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
@@ -134,7 +140,7 @@ sub postinitPlugin { if (main::TRANSCODING) {
 	# we're going to hijack the Spotify URI schema
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
 
-	Plugins::Spotty::Connect->init($helper);
+	Plugins::Spotty::Connect->init();
 
 	# if user has the Don't Stop The Music plugin enabled, register ourselves
 	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::DontStopTheMusic::Plugin')

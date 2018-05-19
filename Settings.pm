@@ -128,6 +128,7 @@ sub beforeRender {
 
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
+	$paramRef->{canConnect}     = Plugins::Spotty::Connect->canSpotifyConnect();
 
 	$paramRef->{hasDefaultIcon} = Plugins::Spotty::Plugin->hasDefaultIcon();
 }

@@ -15,7 +15,7 @@ use Slim::Utils::Timers;
 
 use Plugins::Spotty::API qw(uri2url);
 
-use constant CONNECT_HELPER_VERSION => '0.9.0';
+use constant CONNECT_HELPER_VERSION => '0.12.0';
 use constant SEEK_THRESHOLD => 3;
 
 my $cache = Slim::Utils::Cache->new();
@@ -31,6 +31,8 @@ sub init {
 		require Plugins::Spotty::PlayerSettings;
 		Plugins::Spotty::PlayerSettings->new();
 	}
+
+	return if $initialized;
 
 	return unless $class->canSpotifyConnect('dontInit');
 
