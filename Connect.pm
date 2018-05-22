@@ -193,7 +193,15 @@ sub _onNewSong {
 	return if !defined $client;
 	$client = $client->master;
 
-	return if __PACKAGE__->isSpotifyConnect($client);
+	if (__PACKAGE__->isSpotifyConnect($client)) {
+		# if we're in Connect mode and have seek information, go there
+		if ( $client && (my $progress = $client->pluginData('progress')) ) {
+			$client->pluginData( progress => 0 );
+			$client->execute( ['time', int($progress)] );
+		}
+
+		return;
+	}
 
 	return unless $client->pluginData('SpotifyConnect');
 
@@ -320,9 +328,11 @@ sub _connectEvent {
 				# this isn't really solving the problem of lack of context. But it's better than nothing...
 				$song && $song->pluginData('context') && $song->pluginData('context')->reset();
 
+				$result->{progress} ||= ($result->{progress_ms} / 1000) if $result->{progress_ms};
+
 				# if status is already more than 10s in, then do seek
 				if ( $result->{progress} && $result->{progress} > 10 ) {
-					$client->execute( ['time', int($result->{progress})] );
+					$song && $client->pluginData( progress => $result->{progress} );
 				}
 			}
 			elsif ( !$client->isPlaying ) {
