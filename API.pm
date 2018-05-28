@@ -513,26 +513,19 @@ sub album {
 
 			$album = $self->_normalize($album);
 
-			for my $track ( @{ $album->{tracks} || [] } ) {
-				# Add missing album data to track
-				$track->{album} = {
-					name => $album->{name},
-					image => $album->{image},
-				};
-				$track = $self->_normalize($track);
-			}
-
 			# we might need to grab more tracks: audio books can have hundreds of "tracks"
 			if ( $total && $total > SPOTIFY_LIMIT ) {
 				Plugins::Spotty::API::Pipeline->new($self, 'albums/' . $id . '/tracks', sub {
 					my $items = [];
 
+					my $minAlbum = {
+						name => $album->{name},
+						image => $album->{image},
+					};
+
 					for my $track ( @{ $_[0]->{items} } ) {
 						# Add missing album data to track
-						$track->{album} = {
-							name => $album->{name},
-							image => $album->{image},
-						};
+						$track->{album} = $minAlbum;
 						push @$items, $self->_normalize($track);
 					}
 
@@ -1241,7 +1234,16 @@ sub _normalize {
 		$item->{image}   = _getLargestArtwork(delete $item->{images});
 		$item->{artist}  ||= $item->{artists}->[0]->{name} if $item->{artists} && ref $item->{artists};
 
-		$item->{tracks}  = [ map { $self->_normalize($_, $fast) } @{ $item->{tracks}->{items} } ] if $item->{tracks};
+		my $minAlbum = {
+			name => $item->{name},
+			image => $item->{image},
+		};
+
+		$item->{tracks}  = [ map {
+			$_->{album} = $minAlbum unless $_->{album} && $_->{album}->{name};
+
+			$self->_normalize($_, $fast)
+		} @{ $item->{tracks}->{items} } ] if $item->{tracks};
 	}
 	elsif ($type eq 'playlist') {
 		if ( $item->{owner} && ref $item->{owner} ) {
