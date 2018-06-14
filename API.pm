@@ -694,12 +694,11 @@ sub playlist {
 
 	my ($user, $id) = $self->getPlaylistUserAndId($args->{uri});
 
-	# XXX - what if we don't find the user's name? Can't access using the users/.../playlists endpoint
 	my $limit = $args->{limit};
 	# set the limit higher if it's the user's self curated playlist
 	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();
 
-	Plugins::Spotty::API::Pipeline->new($self, 'users/' . $user . '/playlists/' . $id . '/tracks', sub {
+	Plugins::Spotty::API::Pipeline->new($self, 'playlists/' . $id . '/tracks', sub {
 		my $items = [];
 
 		my $cc = $self->country;
@@ -1091,7 +1090,7 @@ sub addTracksToPlaylist {
 		$owner = lc($owner);
 		$owner =~ s/ /\+/g;
 
-		$self->_call("users/$owner/playlists/$playlist/tracks?uris=$trackIds",
+		$self->_call("playlists/$playlist/tracks?uris=$trackIds",
 			$cb,
 			POST => {
 				ids => $trackIds,
@@ -1415,11 +1414,14 @@ sub _call {
 								my ($ttl) = $cache_control =~ /max-age=(\d+)/;
 
 								# cache some items even if max-age is zero. We're navigating them often
-								if ( !$ttl && $response->url =~ m|v1/users/([^\/]+?)/playlists/[A-Za-z0-9]{22}/tracks| ) {
-									if ( $1 eq 'spotify' || $1 eq 'spotifycharts' ) {
+								if ( !$ttl && $response->url =~ m|/playlists/([A-Za-z0-9]{22})/tracks| ) {
+									my ($user) = $self->getPlaylistUserAndId("spotify:playlist:$1");
+									$user ||= '';
+
+									if ( $user eq 'spotify' || $user eq 'spotifycharts' ) {
 										$ttl = 3600;
 									}
-									elsif ( $1 ne $self->username ) {
+									elsif ( $user ne $self->username ) {
 										$ttl = 300;
 									}
 								}

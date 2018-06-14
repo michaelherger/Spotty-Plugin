@@ -159,6 +159,7 @@ sub getNextTrack {
 					}
 					else {
 						$song->track->url($uri);
+						# $song->streamUrl($uri); # wouldn't continue to next track
 						$class->setSpotifyConnect($client, $result);
 					}
 
