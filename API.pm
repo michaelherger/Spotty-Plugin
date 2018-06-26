@@ -123,13 +123,15 @@ sub getToken {
 
 			# async stuff not working on Windows?
 			if (main::ISWINDOWS) {
-				$self->_gotTokenResponse(`$cmd`);
+				main::INFOLOG && $log->info("We're on Windows - can't do non-blocking getToken call. Good luck!");
+				$cb->($self->_gotTokenResponse(`$cmd`));
+				return;
 			}
 			else {
 				open my $sh, '-|', $cmd or do {
 					# fall back to blocking code if needed...
 					main::INFOLOG && $log->info('Failed to do non-blocking getToken call - trying blocking mode. Good luck!');
-					$self->_gotTokenResponse(`$cmd`);
+					$cb->($self->_gotTokenResponse(`$cmd`));
 					return;
 				};
 
@@ -201,6 +203,8 @@ sub _gotTokenResponse {
 
 	Slim::Utils::Timers::killTimers($self, \&_killTokenHelper);
 	delete $tokenHandlers{$username};
+
+	return $token;
 }
 
 sub _killTokenHelper { if (!main::ISWINDOWS) {
