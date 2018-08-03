@@ -278,6 +278,8 @@ sub _connectEvent {
 	if ( $cmd eq 'volume' && !($request->source && $request->source eq __PACKAGE__) ) {
 		my $volume = $request->getParam('_p2');
 
+		main::INFOLOG && $log->is_info && $log->info("Set volume to $volume");
+
 		return unless defined $volume;
 
 		# we don't let spotty handle volume directly to prevent getting caught in a call loop
