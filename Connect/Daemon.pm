@@ -94,23 +94,23 @@ sub start {
 sub _checkStartTimes {
 	my $self = shift;
 
-	if ( !$prefs->get('disableDiscovery') ) {
-		if ( scalar @{$self->_startTimes} > MAX_FAILURES_BEFORE_DISABLE_DISCOVERY ) {
-			splice @{$self->_startTimes}, 0, @{$self->_startTimes} - MAX_FAILURES_BEFORE_DISABLE_DISCOVERY;
+	if ( scalar @{$self->_startTimes} > MAX_FAILURES_BEFORE_DISABLE_DISCOVERY ) {
+		splice @{$self->_startTimes}, 0, @{$self->_startTimes} - MAX_FAILURES_BEFORE_DISABLE_DISCOVERY;
 
-			if ( time() - $self->_startTimes->[0] < MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY ) {
-				$log->warn(sprintf(
-					'The spotty helper has crashed %s times within less than %s minutes - disable local announcement of the Connect daemon.',
-					MAX_FAILURES_BEFORE_DISABLE_DISCOVERY,
-					MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY / 60
-				));
+		if ( time() - $self->_startTimes->[0] < MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY
+			&& !$prefs->get('disableDiscovery')
+		) {
+			$log->warn(sprintf(
+				'The spotty helper has crashed %s times within less than %s minutes - disable local announcement of the Connect daemon.',
+				MAX_FAILURES_BEFORE_DISABLE_DISCOVERY,
+				MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY / 60
+			));
 
-				$prefs->set('disableDiscovery', 1);
-			}
+			$prefs->set('disableDiscovery', 1);
 		}
-
-		push @{$self->_startTimes}, time();
 	}
+
+	push @{$self->_startTimes}, time();
 }
 
 sub stop {
@@ -131,7 +131,7 @@ sub alive {
 
 sub uptime {
 	my $self = shift;
-	return Time::HiRes::time() - ($self->_startTimes->[-1] || 0);
+	return Time::HiRes::time() - ($self->_startTimes->[-1] || time());
 }
 
 
