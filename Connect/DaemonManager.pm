@@ -129,4 +129,14 @@ sub shutdown {
 	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
 }
 
+sub uptime {
+	my ($class, $clientId) = @_;
+
+	return unless $clientId;
+
+	my $helper = $helperInstances{$clientId} || return 0;
+
+	return $helper->uptime();
+}
+
 1;

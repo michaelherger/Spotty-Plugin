@@ -17,6 +17,7 @@ use Plugins::Spotty::API qw(uri2url);
 
 use constant CONNECT_HELPER_VERSION => '0.12.0';
 use constant SEEK_THRESHOLD => 3;
+use constant VOLUME_GRACE_PERIOD => 5;
 
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
@@ -276,11 +277,15 @@ sub _connectEvent {
 	main::INFOLOG && $log->is_info && $log->info("Got called from spotty helper: $cmd");
 
 	if ( $cmd eq 'volume' && !($request->source && $request->source eq __PACKAGE__) ) {
-		my $volume = $request->getParam('_p2');
+		my $volume = $request->getParam('_p2') || return;
+
+		# sometimes volume would be reset to a default 50 right after the daemon start - ignore
+		if ( $volume == 50 && Plugins::Spotty::Connect::DaemonManager->uptime($client->id) < VOLUME_GRACE_PERIOD ) {
+			main::INFOLOG && $log->is_info && $log->info("Ignoring initial volume reset right after daemon start");
+			return;
+		}
 
 		main::INFOLOG && $log->is_info && $log->info("Set volume to $volume");
-
-		return unless defined $volume;
 
 		# we don't let spotty handle volume directly to prevent getting caught in a call loop
 		my $request = Slim::Control::Request->new( $client->id, [ 'mixer', 'volume', $volume ] );

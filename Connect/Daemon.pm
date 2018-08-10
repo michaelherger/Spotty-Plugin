@@ -129,5 +129,10 @@ sub alive {
 	return 1 if $self->_proc && $self->_proc->alive;
 }
 
+sub uptime {
+	my $self = shift;
+	return Time::HiRes::time() - ($self->_startTimes->[-1] || 0);
+}
+
 
 1;
