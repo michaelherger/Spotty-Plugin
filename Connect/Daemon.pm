@@ -51,7 +51,7 @@ sub start {
 
 	my @helperArgs = (
 		'-c', Plugins::Spotty::Connect->cacheFolder($self->mac),
-		'-n', $client->name,
+		'-n', $client->isSynced() ? Slim::Player::Sync::syncname($client) : $client->name,
 		'--disable-audio-cache',
 		'--bitrate', 96,
 		'--player-mac', $self->mac,
