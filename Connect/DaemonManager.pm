@@ -113,7 +113,7 @@ sub initHelpers {
 			else {
 				($syncMaster) = grep {
 					$prefs->client($_)->get('enableSpotifyConnect')
-				} sort map { $_->id } Slim::Player::Sync::slaves($master);
+				} sort { $a->id cmp $b->id } Slim::Player::Sync::slaves($master);
 
 				main::INFOLOG && $log->is_info && $log->info("Master doesn't have Connect, but slave does: $syncMaster");
 			}
