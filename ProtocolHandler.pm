@@ -87,6 +87,16 @@ sub isRepeatingStream {
 	return $song && Plugins::Spotty::Connect->isSpotifyConnect($song->master());
 }
 
+sub canDoAction {
+	my ( $class, $client, $url, $action ) = @_;
+
+	if ( $action eq 'pause' && Plugins::Spotty::Connect->isSpotifyConnect($client) ) {
+		return 0;
+	}
+
+	return 1;
+}
+
 sub getNextTrack {
 	my ( $class, $song, $successCb, $errorCb ) = @_;
 

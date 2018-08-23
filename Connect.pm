@@ -118,57 +118,86 @@ sub getNextTrack {
 
 	my $client = $song->master;
 
-	my $spotty = $class->getAPIHandler($client);
+	Slim::Utils::Timers::killTimers($client, \&_getNextTrack);
 
 	if ( $client->pluginData('newTrack') ) {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
 
 		# XXX - how to deal with context here?
-		$spotty->player(sub {
+		$class->getAPIHandler($client)->player(sub {
 				$class->setSpotifyConnect($client, $_[0]);
 				$client->pluginData( newTrack => 0 );
 				$successCb->();
 		});
 	}
 	else {
-		main::INFOLOG && $log->is_info && $log->info("We're approaching the end of a track - get the next track");
+		my $duration  = $client->controller()->playingSongDuration() || 0;
+		my $remaining = $duration - (Slim::Player::Source::songTime($client) || 0);
 
-		$client->pluginData( newTrack => 1 );
-
-		# add current track to the history
-		$song->pluginData('context')->addPlay($song->track->url);
-
-		# for playlists and albums we can know the last track. In this case no further check would be required.
-		if ( $song->pluginData('context')->isLastTrack($song->track->url) ) {
-			$class->_delayedStop($client);
-			$successCb->();
-			return;
+		if ($remaining && $remaining > 5) {
+			$remaining -= 5;
+			main::INFOLOG && $log->is_info && $log->info("We're still far away from the end - delay getting the next track by ${remaining}s.");
+			Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining, \&_getNextTrack, $class, $song, $successCb);
+		}
+		elsif (!$duration) {
+			main::INFOLOG && $log->is_info && $log->info("Ignoring 'getNextTrack' call, as we've been called before");
+		}
+		else {
+			_getNextTrack($client, $class, $song, $successCb);
 		}
 
-		$spotty->playerNext(sub {
-			$spotty->player(sub {
-				my ($result) = @_;
-
-				if ( $result && ref $result && (my $uri = $result->{item}->{uri}) ) {
-					main::INFOLOG && $log->is_info && $log->info("Got a new track to be played next: $uri");
-
-					$uri = uri2url($uri);
-
-					# stop playback if we've played this track before. It's likely trying to start over.
-					if ( $song->pluginData('context')->hasPlay($uri) && !($result->{repeat_state} && $result->{repeat_state} eq 'on')) {
-						$class->_delayedStop($client);
-					}
-					else {
-						$song->track->url($uri);
-						# $song->streamUrl($uri); # wouldn't continue to next track
-						$class->setSpotifyConnect($client, $result);
-					}
-
-					$successCb->();
-				}
-			});
-		});
 	}
+}
+
+sub _getNextTrack {
+	# params kind of reversed, to help the timer keep track of the client
+	my ($client, $class, $song, $successCb) = @_;
+
+	Slim::Utils::Timers::killTimers($client, \&_getNextTrack);
+
+	if (!$client->isPlaying() || !$class->isSpotifyConnect($client)) {
+		main::INFOLOG && $log->is_info && $log->info("Don't get next track, we're no longer playing or not in Connect mode");
+		return;
+	}
+
+	my $spotty = $class->getAPIHandler($client);
+
+	main::INFOLOG && $log->is_info && $log->info("We're approaching the end of a track - get the next track");
+	$client->pluginData( newTrack => 1 );
+
+	# add current track to the history
+	$song->pluginData('context')->addPlay($song->track->url);
+
+	# for playlists and albums we can know the last track. In this case no further check would be required.
+	if ( $song->pluginData('context')->isLastTrack($song->track->url) ) {
+		$class->_delayedStop($client);
+		$successCb->();
+		return;
+	}
+
+	$spotty->playerNext(sub {
+		$spotty->player(sub {
+			my ($result) = @_;
+
+			if ( $result && ref $result && (my $uri = $result->{item}->{uri}) ) {
+				main::INFOLOG && $log->is_info && $log->info("Got a new track to be played next: $uri");
+
+				$uri = uri2url($uri);
+
+				# stop playback if we've played this track before. It's likely trying to start over.
+				if ( $song->pluginData('context')->hasPlay($uri) && !($result->{repeat_state} && $result->{repeat_state} eq 'on')) {
+					$class->_delayedStop($client);
+				}
+				else {
+					$song->track->url($uri);
+					# $song->streamUrl($uri); # wouldn't continue to next track
+					$class->setSpotifyConnect($client, $result);
+				}
+
+				$successCb->();
+			}
+		});
+	});
 }
 
 sub _delayedStop {
