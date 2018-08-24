@@ -18,6 +18,7 @@ use Plugins::Spotty::API qw(uri2url);
 use constant CONNECT_HELPER_VERSION => '0.12.0';
 use constant SEEK_THRESHOLD => 3;
 use constant VOLUME_GRACE_PERIOD => 5;
+use constant PRE_BUFFER_TIME => 7;
 
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
@@ -134,12 +135,23 @@ sub getNextTrack {
 		my $duration  = $client->controller()->playingSongDuration() || 0;
 		my $remaining = $duration - (Slim::Player::Source::songTime($client) || 0);
 
-		if ($remaining && $remaining > 5) {
-			$remaining -= 5;
+		main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump({
+			duration => $duration,
+			remaining => $remaining,
+			current_url => $song->track->url,
+		}));
+
+		if ($remaining && $remaining > PRE_BUFFER_TIME) {
+			$remaining -= PRE_BUFFER_TIME;
 			main::INFOLOG && $log->is_info && $log->info("We're still far away from the end - delay getting the next track by ${remaining}s.");
 			Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining, \&_getNextTrack, $class, $song, $successCb);
+
+			Slim::Utils::Timers::killTimers($client, \&_syncController);
+			if ($remaining > 20) {
+				Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining - 15, \&_syncController);
+			}
 		}
-		elsif (!$duration) {
+		elsif (!$duration || !$remaining) {
 			main::INFOLOG && $log->is_info && $log->info("Ignoring 'getNextTrack' call, as we've been called before");
 		}
 		else {
@@ -153,6 +165,7 @@ sub _getNextTrack {
 	# params kind of reversed, to help the timer keep track of the client
 	my ($client, $class, $song, $successCb) = @_;
 
+	Slim::Utils::Timers::killTimers($client, \&_syncController);
 	Slim::Utils::Timers::killTimers($client, \&_getNextTrack);
 
 	if (!$client->isPlaying() || !$class->isSpotifyConnect($client)) {
@@ -198,6 +211,16 @@ sub _getNextTrack {
 			}
 		});
 	});
+}
+
+sub _syncController {
+	my ($client) = @_;
+
+	Slim::Utils::Timers::killTimers($client, \&_syncController);
+
+	my $songtime = Slim::Player::Source::songTime($client);
+
+	__PACKAGE__->getAPIHandler($client)->playerSeek(undef, $client->id, $songtime) if $songtime;
 }
 
 sub _delayedStop {
