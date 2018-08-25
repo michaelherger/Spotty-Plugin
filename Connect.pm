@@ -131,7 +131,7 @@ sub getNextTrack {
 				$successCb->();
 		});
 	}
-	else {
+	elsif ( $prefs->get('optimizePreBuffer') ) {
 		my $duration  = $client->controller()->playingSongDuration() || 0;
 		my $remaining = $duration - (Slim::Player::Source::songTime($client) || 0);
 
@@ -157,7 +157,9 @@ sub getNextTrack {
 		else {
 			_getNextTrack($client, $class, $song, $successCb);
 		}
-
+	}
+	else {
+		_getNextTrack($client, $class, $song, $successCb);
 	}
 }
 

@@ -90,7 +90,7 @@ sub isRepeatingStream {
 sub canDoAction {
 	my ( $class, $client, $url, $action ) = @_;
 
-	if ( $action eq 'pause' && Plugins::Spotty::Connect->isSpotifyConnect($client) ) {
+	if ( $action eq 'pause' && $prefs->get('optimizePreBuffer') && Plugins::Spotty::Connect->isSpotifyConnect($client) ) {
 		return 0;
 	}
 

@@ -40,7 +40,7 @@ sub page {
 }
 
 sub prefs {
-	my @prefs = qw(myAlbumsOnly bitrate iconCode accountSwitcherMenu helper);
+	my @prefs = qw(myAlbumsOnly bitrate iconCode accountSwitcherMenu helper optimizePreBuffer);
 	push @prefs, 'disableDiscovery' if Plugins::Spotty::Plugin->canDiscovery();
 	return ($prefs, @prefs);
 }

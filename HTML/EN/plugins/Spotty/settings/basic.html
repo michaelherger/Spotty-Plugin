@@ -75,6 +75,13 @@
 		[% END %]
 	[% END %]
 
+	[% IF canConnect; WRAPPER setting title="" desc="" %]
+		<input name="pref_optimizePreBuffer" id="pref_optimizePreBuffer" type="checkbox" [% IF prefs.pref_optimizePreBuffer %] checked [% END %]>
+		<label for="pref_optimizePreBuffer">[% "PLUGIN_SPOTTY_OPTIMIZE_PRE_BUFFERING" | string %]</label>
+	[% END; ELSE %]
+		<input name="pref_optimizePreBuffer" id="pref_optimizePreBuffer" type="hidden" value="[% prefs.pref_optimizePreBuffer %]">
+	[% END %]
+
 	[% IF canConnect && canDiscovery; WRAPPER setting title="" desc="" %]
 		<input name="pref_disableDiscovery" id="pref_disableDiscovery" type="checkbox" [% IF prefs.pref_disableDiscovery %] checked [% END %]>
 		<label for="pref_disableDiscovery">[% "PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC" | string %]</label>

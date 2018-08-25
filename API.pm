@@ -1465,7 +1465,7 @@ sub _call {
 					}
 					else {
 						$log->error("Invalid data");
-						main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
+						main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response, $response->headers, $response->content));
 						$result = {
 							error => 'Error: Invalid data',
 						};
