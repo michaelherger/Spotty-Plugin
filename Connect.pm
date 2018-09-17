@@ -476,7 +476,7 @@ sub getAPIHandler {
 		});
 	}
 
-	return $api || Plugins::Spotty::Plugin->getAPIHelper($client);
+	return $api || Plugins::Spotty::Plugin->getAPIHandler($client);
 }
 
 sub cacheFolder {
