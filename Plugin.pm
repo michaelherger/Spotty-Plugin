@@ -97,7 +97,7 @@ sub initPlugin {
 
 	if (main::WEBUI) {
 		require Plugins::Spotty::Settings;
-		require Plugins::Spotty::SettingsAuth;
+		require Plugins::Spotty::Settings::Auth;
 		Plugins::Spotty::Settings->new();
 	}
 
@@ -620,7 +620,7 @@ sub getName {
 sub shutdownPlugin { if (main::TRANSCODING) {
 	# make sure we don't leave our helper app running
 	if (main::WEBUI) {
-		Plugins::Spotty::SettingsAuth->shutdownHelper();
+		Plugins::Spotty::Settings::Auth->shutdownHelper();
 	}
 
 	Plugins::Spotty::Connect->shutdown();

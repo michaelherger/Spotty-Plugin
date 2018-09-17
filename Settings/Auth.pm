@@ -1,4 +1,4 @@
-package Plugins::Spotty::SettingsAuth;
+package Plugins::Spotty::Settings::Auth;
 
 use strict;
 use base qw(Slim::Web::Settings);

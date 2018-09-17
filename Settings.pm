@@ -9,7 +9,7 @@ use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 use Plugins::Spotty::Plugin;
-use Plugins::Spotty::SettingsAuth;
+use Plugins::Spotty::Settings::Auth;
 
 use constant SETTINGS_URL => 'plugins/Spotty/settings/basic.html';
 
@@ -18,7 +18,7 @@ my $prefs = preferences('plugin.spotty');
 sub new {
 	my $class = shift;
 
-	Plugins::Spotty::SettingsAuth->new();
+	Plugins::Spotty::Settings::Auth->new();
 
 	if (!Slim::Networking::Async::HTTP->hasSSL()) {
 		Slim::Web::Pages->addPageFunction(SETTINGS_URL, $class);
@@ -51,7 +51,7 @@ sub handler {
 	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
 
 	# rename temporary authentication cache folder (if existing)
-	Plugins::Spotty::SettingsAuth->cleanup();
+	Plugins::Spotty::Settings::Auth->cleanup();
 
 	my $osDetails = Slim::Utils::OSDetect::details();
 
@@ -97,7 +97,7 @@ sub handler {
 	}
 
 	# make sure our authentication helper isn't running
-	Plugins::Spotty::SettingsAuth->shutdownHelper();
+	Plugins::Spotty::Settings::Auth->shutdownHelper();
 
 	$paramRef->{credentials}  = Plugins::Spotty::Plugin->getSortedCredentialTupels();
 	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();

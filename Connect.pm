@@ -30,8 +30,8 @@ sub init {
 	my ($class) = @_;
 
 	if (main::WEBUI && !$initialized) {
-		require Plugins::Spotty::PlayerSettings;
-		Plugins::Spotty::PlayerSettings->new();
+		require Plugins::Spotty::Settings::Player;
+		Plugins::Spotty::Settings::Player->new();
 	}
 
 	return if $initialized;
