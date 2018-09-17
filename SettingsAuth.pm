@@ -46,7 +46,7 @@ sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
 
 	if ($paramRef->{'saveSettings'}) {
-		if ( $paramRef->{'username'} && $paramRef->{'password'} && (my $helperPath = Plugins::Spotty::Plugin->getHelper()) ) {
+		if ( $paramRef->{'username'} && $paramRef->{'password'} && (my $helperPath = Plugins::Spotty::Helper->get()) ) {
 			my $command = sprintf(
 				'%s -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery',
 				$helperPath,
@@ -84,16 +84,16 @@ sub handler {
 	}
 
 	if ( !$class->startHelper() ) {
-		$paramRef->{helperMissing} = Plugins::Spotty::Plugin->getHelper() || 1;
+		$paramRef->{helperMissing} = Plugins::Spotty::Helper->get() || 1;
 	}
 
-	my $helpers = Plugins::Spotty::Plugin->getHelpers();
+	my $helpers = Plugins::Spotty::Helper->getAll();
 
 	if ($helpers && scalar keys %$helpers > 1) {
 		$paramRef->{helpers} = $helpers;
 	}
 
-	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
+	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
 
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
@@ -134,7 +134,7 @@ sub startHelper {
 	# no need to restart if it's already there
 	return $helper->alive if $helper && $helper->alive;
 
-	if ( my $helperPath = Plugins::Spotty::Plugin->getHelper() ) {
+	if ( my $helperPath = Plugins::Spotty::Helper->get() ) {
 		if ( !($helper && $helper->alive) ) {
 			my @helperArgs = (
 				'-c', $class->_cacheFolder(),

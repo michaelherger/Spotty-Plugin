@@ -48,7 +48,7 @@ sub prefs {
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
 
-	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
+	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
 
 	# rename temporary authentication cache folder (if existing)
 	Plugins::Spotty::SettingsAuth->cleanup();
@@ -118,13 +118,13 @@ sub handler {
 
 sub beforeRender {
 	my ($class, $paramRef) = @_;
-	my $helpers = Plugins::Spotty::Plugin->getHelpers();
+	my $helpers = Plugins::Spotty::Helper->getAll();
 
 	if ($helpers && scalar keys %$helpers > 1) {
 		$paramRef->{helpers} = $helpers;
 	}
 
-	my ($helperPath, $helperVersion) = Plugins::Spotty::Plugin->getHelper();
+	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
 
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');

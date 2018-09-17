@@ -44,7 +44,7 @@ sub new {
 sub start {
 	my $self = shift;
 
-	my $helperPath = Plugins::Spotty::Plugin->getHelper();
+	my $helperPath = Plugins::Spotty::Helper->get();
 	my $client = Slim::Player::Client::getClient($self->mac);
 
 	$self->_checkStartTimes();
@@ -64,12 +64,12 @@ sub start {
 
 	if (main::INFOLOG && $log->is_info) {
 		$log->info("Starting Spotty Connect daemon: \n$helperPath " . join(' ', @helperArgs));
-		push @helperArgs, '--verbose' if Plugins::Spotty::Plugin->helperCapability('debug');
+		push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');
 	}
 
 	# add authentication data (after the log statement)
 	if ( $serverPrefs->get('authorize') ) {
-		if ( Plugins::Spotty::Plugin->helperCapability('lms-auth') ) {
+		if ( Plugins::Spotty::Helper->getCapability('lms-auth') ) {
 			main::INFOLOG && $log->is_info && $log->info("Adding authentication data to Spotty Connect daemon configuration.");
 			push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')));
 		}

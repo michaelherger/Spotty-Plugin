@@ -68,7 +68,7 @@ sub canSpotifyConnect {
 	my ($class, $dontInit) = @_;
 
 	# we need a minimum helper application version
-	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Plugin->getHelperVersion(), CONNECT_HELPER_VERSION, 10) ) {
+	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Helper->getVersion(), CONNECT_HELPER_VERSION, 10) ) {
 		$log->error("Cannot support Spotty Connect, need at least helper version " . CONNECT_HELPER_VERSION);
 		return;
 	}

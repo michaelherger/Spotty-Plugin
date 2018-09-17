@@ -109,7 +109,7 @@ sub getToken {
 		# try to use client specific credentials
 		if ( $self->cache || (my $account = Plugins::Spotty::Plugin->getAccount($self->client)) ) {
 			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s" 2>&1',
-				scalar Plugins::Spotty::Plugin->getHelper(),
+				scalar Plugins::Spotty::Helper->get(),
 				$self->cache || Plugins::Spotty::Plugin->cacheFolder($account),
 				$prefs->get('iconCode'),
 				SPOTIFY_SCOPE

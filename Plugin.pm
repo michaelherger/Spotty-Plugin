@@ -9,7 +9,7 @@ use vars qw($VERSION);
 use Digest::MD5 qw(md5_hex);
 use File::Basename;
 use File::Next;
-use File::Path qw(mkpath rmtree);
+use File::Path qw(rmtree);
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile tmpdir);
 use JSON::XS::VersionOneAndTwo;
@@ -21,10 +21,9 @@ use Slim::Utils::Strings qw(string);
 
 use Plugins::Spotty::API;
 use Plugins::Spotty::Connect;
+use Plugins::Spotty::Helper;
 use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
-
-use constant HELPER => 'spotty';
 
 use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
@@ -41,7 +40,6 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	description  => 'PLUGIN_SPOTTY',
 } );
 
-my ($helper, $helperVersion, $helperCapabilities);
 
 sub initPlugin {
 	my $class = shift;
@@ -76,16 +74,6 @@ sub initPlugin {
 		$prefs->set('audioCacheSize', 0);
 	}
 
-	$prefs->setChange ( sub {
-		$helper = $helperVersion = $helperCapabilities = undef;
-
-		# can't call this immediately, as it would trigger another onChange event
-		Slim::Utils::Timers::setTimer($class, time() + 1, sub {
-			Plugins::Spotty::Connect->init();
-		});
-
-	}, 'helper');
-
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
 	# this might be premature optimization, as ARM CPUs are getting more and more powerful...
 	if ( !main::ISWINDOWS && !main::ISMAC
@@ -102,10 +90,7 @@ sub initPlugin {
 		});
 	}
 
-	# aarch64 can potentially use helper binaries from armhf
-	if ( !main::ISWINDOWS && !main::ISMAC && Slim::Utils::OSDetect::details()->{osArch} =~ /^aarch64/i ) {
-		Slim::Utils::Misc::addFindBinPaths(catdir($class->_pluginDataFor('basedir'), 'Bin', 'arm-linux'));
-	}
+	Plugins::Spotty::Helper->init();
 
 	$VERSION = $class->_pluginDataFor('version');
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
@@ -196,11 +181,11 @@ sub updateTranscodingTable {
 	my $cacheDir = $class->cacheFolder($id);
 
 	my $bitrate = '';
-	if ( Slim::Utils::Versions->checkVersion($class->getHelperVersion(), '0.8.0', 10) ) {
+	my ($helper, $helperVersion) = Plugins::Spotty::Helper->get();
+	if ( Slim::Utils::Versions->checkVersion($helperVersion, '0.8.0', 10) ) {
 		$bitrate = sprintf('--bitrate %s', $prefs->get('bitrate') || 320);
 	}
 
-	my $helper = $class->getHelper();
 	$helper = basename($helper) if $helper;
 	$helper = '' if $helper eq 'spotty';
 
@@ -225,7 +210,7 @@ sub updateTranscodingTable {
 			$commandTable->{$_} =~ s/disable-audio-cache/enable-audio-cache/g if ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize');
 			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !(ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize'));
 			$commandTable->{$_} =~ s/ --enable-volume-normalisation //;
-			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if $class->helperCapability('volume-normalisation') && $prefs->client($client)->get('replaygain');
+			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if Plugins::Spotty::Helper->getCapability('volume-normalisation') && $prefs->client($client)->get('replaygain');
 		}
 	}
 }
@@ -631,172 +616,6 @@ sub getName {
 	}, $userId);
 }
 
-sub getHelper {
-	my ($class) = @_;
-
-	if ( !$helper && (my $candidate = $prefs->get('helper')) ) {
-		helperCheck($candidate);
-
-		main::INFOLOG && $helper && $log->info("Using helper from prefs: $helper");
-	}
-
-	if (!$helper) {
-		my $check;
-
-		$helper = $class->findBin(HELPER, sub {
-			helperCheck(@_, \$check);
-		}, 'custom-first');
-
-		if (!$helper) {
-			$log->warn("Didn't find Spotty helper application!");
-			$log->warn("Last error: \n" . $check) if $check;
-		}
-	}
-
-	return wantarray ? ($helper, $helperVersion) : $helper;
-}
-
-sub getHelpers {
-	my ($class) = @_;
-
-	my $candidates = {};
-
-	my @candidates = $class->findBin(HELPER, sub {
-		my $candidate = shift;
-
-		my $check = '';
-		if ( helperCheck($candidate, \$check, 1) && $check =~ /ok spotty v([\d\.]+)/ ) {
-			my $helperVersion = $1;
-
-			$check =~ /\n(.*)/s;
-			my $helperCapabilities = eval {
-				from_json($1);
-			};
-
-			$candidates->{$candidate} = $helperCapabilities || { version => $helperVersion };
-		}
-	});
-
-	return $candidates;
-}
-
-sub helperCheck {
-	my ($candidate, $check, $dontSet) = @_;
-
-	$$check = '' unless $check && ref $check;
-
-	my $checkCmd = sprintf('%s -n "%s (%s)" --check',
-		$candidate,
-		string('PLUGIN_SPOTTY_AUTH_NAME'),
-		Slim::Utils::Misc::getLibraryName()
-	);
-
-	$$check = `$checkCmd 2>&1`;
-
-	if ( $$check && $$check =~ /^ok spotty v([\d\.]+)/i ) {
-		return 1 if $dontSet;
-
-		$helper = $candidate;
-		$helperVersion = $1;
-
-		if ( $$check =~ /\n(.*)/s ) {
-			$helperCapabilities = eval {
-				from_json($1);
-			};
-
-			main::DEBUGLOG && $log->is_debug && $helperCapabilities && $log->debug("Found helper capabilities table: " . Data::Dump::dump($helperCapabilities));
-			$helperCapabilities ||= {};
-		}
-
-		return 1;
-	}
-}
-
-sub helperCapability {
-	return $helperCapabilities->{$_[1]};
-}
-
-sub getHelperVersion {
-	my ($class) = @_;
-
-	if (!$helperVersion) {
-		$class->getHelper();
-	}
-
-	return $helperVersion;
-}
-
-# custom file finder around Slim::Utils::Misc::findbin: check for multiple versions per platform etc.
-sub findBin {
-	my ($class, $name, $checkerCb, $customFirst) = @_;
-
-	my @candidates = ($name);
-	my $binary;
-
-	# trying to find the correct binary can be tricky... some ARM platforms behave oddly.
-	# do some trial-and-error testing to see what we can use
-	if (Slim::Utils::OSDetect::OS() eq 'unix') {
-		# on 64 bit try 64 bit builds first
-		if ( $Config::Config{'archname'} =~ /x86_64/ ) {
-			if ($customFirst) {
-				unshift @candidates, $name . '-x86_64';
-			}
-			else {
-				push @candidates, $name . '-x86_64';
-			}
-		}
-		elsif ( $Config::Config{'archname'} =~ /[3-6]86/ ) {
-			if ($customFirst) {
-				unshift @candidates, $name . '-i386';
-			}
-			else {
-				push @candidates, $name . '-i386';
-			}
-		}
-
-		# on armhf use hf binaries instead of default arm5te binaries
-		# muslhf would not run on Pi1... have another gnueabi-hf for it
-		elsif ( $Config::Config{'archname'} =~ /(aarch64|arm).*linux/ ) {
-			if ($customFirst && $1 ne 'aarch64') {
-				unshift @candidates, $name . '-hf', $name . '-muslhf';
-			}
-			else {
-				push @candidates, $name . '-hf', $name . '-muslhf';
-			}
-		}
-	}
-
-	# try spotty-custom first, allowing users to drop their own build anywhere
-	unshift @candidates, $name . '-custom';
-	my $check;
-	my @binaries;
-
-	foreach (@candidates) {
-		my $candidate = Slim::Utils::Misc::findbin($_) || next;
-
-		$candidate = Slim::Utils::OSDetect::getOS->decodeExternalHelperPath($candidate);
-
-		next unless -f $candidate && -x $candidate;
-
-		main::INFOLOG && $log->is_info && $log->info("Trying helper applicaton: $candidate");
-
-		if ( !$checkerCb || $checkerCb->($candidate) ) {
-			main::INFOLOG && $log->is_info && $log->info("Found helper applicaton: $candidate");
-
-			if (wantarray) {
-				push @binaries, $candidate;
-			}
-			else {
-				$binary = $candidate;
-				last;
-			}
-		}
-	}
-
-	return wantarray ? @binaries : $binary;
-}
-
-
 # we only run when transcoding is enabled, but shutdown would be called no matter what
 sub shutdownPlugin { if (main::TRANSCODING) {
 	# make sure we don't leave our helper app running
@@ -805,12 +624,7 @@ sub shutdownPlugin { if (main::TRANSCODING) {
 	}
 
 	Plugins::Spotty::Connect->shutdown();
-
-	# XXX - ugly attempt at killing all hanging helper applications...
-	if ( !main::ISWINDOWS && $_[0]->getHelper() ) {
-		my $helper = File::Basename::basename(scalar $_[0]->getHelper());
-		`killall $helper > /dev/null 2>&1`;
-	}
+	Plugins::Spotty::Helper->shutdown();
 } }
 
 1;
