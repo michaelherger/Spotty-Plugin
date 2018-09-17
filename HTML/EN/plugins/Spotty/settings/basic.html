@@ -5,6 +5,11 @@
 		[% title = "" %]
 	[% END; END %]
 
+	[% IF isLowCaloriesPi; WRAPPER setting title="PLUGIN_SPOTTY" desc="" %]
+		<div style="color: red">[% 'PLUGIN_SPOTTY_LO_POWER_PI' | string %]</div>
+		[% title = "" %]
+	[% END; END %]
+
 	[% IF error429; WRAPPER setting title="" desc="" %]
 		<div style="color: red">[% error429 %]</div>
 	[% END; END %]

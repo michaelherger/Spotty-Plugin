@@ -102,6 +102,7 @@ sub handler {
 	$paramRef->{credentials}  = Plugins::Spotty::Plugin->getSortedCredentialTupels();
 	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
 	$paramRef->{error429}     = Plugins::Spotty::API->hasError429();
+	$paramRef->{isLowCaloriesPi} = Plugins::Spotty::Helper->isLowCaloriesPi();
 
 	$paramRef->{players}      = [ sort {
 		lc($a->{name}) cmp lc($b->{name})

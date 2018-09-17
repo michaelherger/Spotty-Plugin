@@ -1,6 +1,7 @@
 package Plugins::Spotty::Helper;
 
 use strict;
+use JSON::XS::VersionOneAndTwo;
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
@@ -53,12 +54,19 @@ sub get {
 	}
 
 	# recommend not to use Spotty on a Pi zero/1
-	# if (not defined $isLowCaloriesPi) {
-	# 	$isLowCaloriesPi = 0;
-	# 	if ($helper =~ /arm/ && -f '/proc/device-tree/model') {
-	# 		read_file($credentialsFile)
-	# 	}
-	# }
+	if (!main::ISWINDOWS && !main::ISMAC && Slim::Utils::OSDetect::isLinux() && not defined $isLowCaloriesPi) {
+		$isLowCaloriesPi = 0;
+		if ($helper =~ /arm/ && -f '/proc/device-tree/model') {
+			if ((read_file('/proc/device-tree/model') || '') =~ /Raspberry/si) {
+				my $cpuinfo = read_file('/proc/cpuinfo') || '';
+				# check revision against https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md
+				if ($cpuinfo =~ /^Revision\s*:\s*(\b[89][0-5]\d\d[0-3569ac]\d\b|\b00[01][0-9a-f]\b)/si) {
+					$log->warn(string('PLUGIN_SPOTTY_LO_POWER_PI'));
+					$isLowCaloriesPi = 1;
+				}
+			}
+		}
+	}
 
 	return wantarray ? ($helper, $helperVersion) : $helper;
 }
@@ -199,6 +207,10 @@ sub _findBin {
 	}
 
 	return wantarray ? @binaries : $binary;
+}
+
+sub isLowCaloriesPi {
+	return $isLowCaloriesPi;
 }
 
 # XXX - this should no longer be needed 16.09.18
