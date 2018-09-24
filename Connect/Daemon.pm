@@ -122,6 +122,14 @@ sub stop {
 
 		rmtree catdir(preferences('server')->get('cachedir'), 'spotty', $self->id);
 	}
+	elsif (main::INFOLOG && $log->is_info) {
+		$log->info("This daemon is dead already... no need to stop it!");
+	}
+}
+
+sub pid {
+	my $self = shift;
+	return $self->_proc && $self->_proc->pid;
 }
 
 sub alive {

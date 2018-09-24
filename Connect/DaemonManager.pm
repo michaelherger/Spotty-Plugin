@@ -96,7 +96,7 @@ sub initHelpers {
 
 	Slim::Utils::Timers::killTimers( $class, \&initHelpers );
 
-	main::INFOLOG && $log->is_info && $log->info("Initializing/verifying Spotty Connect helper daemons...");
+	main::INFOLOG && $log->is_info && $log->info("Checking Spotty Connect helper daemons...");
 
 	# shut down orphaned instances
 	$class->shutdown('inactive-only');
@@ -164,10 +164,10 @@ sub stopHelper {
 
 	$clientId = $clientId->id if $clientId && blessed $clientId;
 
-	my $helper = $helperInstances{$clientId};
+	my $helper = delete $helperInstances{$clientId};
 
-	if ($helper) {
-		main::INFOLOG && $log->is_info && $log->info("Shutting down Connect daemon for $clientId");
+	if ($helper && $helper->alive) {
+		main::INFOLOG && $log->is_info && $log->info(sprintf("Shutting down Connect daemon for $clientId (pid: %s)", $helper->pid));
 		$helper->stop;
 	}
 }
