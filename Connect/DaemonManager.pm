@@ -111,7 +111,7 @@ sub initHelpers {
 			}
 			# if the master of the sync group doesn't have connect enabled, enable anyway if one of the slaves has
 			else {
-				($syncMaster) = grep {
+				($syncMaster) = map { $_->id } grep {
 					$prefs->client($_)->get('enableSpotifyConnect')
 				} sort { $a->id cmp $b->id } Slim::Player::Sync::slaves($master);
 
