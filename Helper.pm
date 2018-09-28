@@ -1,6 +1,8 @@
 package Plugins::Spotty::Helper;
 
 use strict;
+use File::Slurp;
+use File::Spec::Functions qw(catdir);
 use JSON::XS::VersionOneAndTwo;
 
 use Slim::Utils::Log;

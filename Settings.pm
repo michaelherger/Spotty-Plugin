@@ -3,7 +3,6 @@ package Plugins::Spotty::Settings;
 use strict;
 use base qw(Slim::Web::Settings);
 
-use File::Spec::Functions qw(catdir);
 use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 
 use Slim::Utils::Prefs;
