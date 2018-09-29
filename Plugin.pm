@@ -354,7 +354,7 @@ sub renameCacheFolder {
 	my ($class, $oldId, $newId) = @_;
 
 	if ( !$newId && (my $credentials = $class->getCredentials($oldId)) ) {
-		$newId = substr( md5_hex($credentials->{username}), 0, 8 );
+		$newId = substr( md5_hex(Slim::Utils::Unicode::utf8toLatin1Transliterate($credentials->{username})), 0, 8 );
 	}
 
 	main::INFOLOG && $log->info("Trying to rename $oldId to $newId");
