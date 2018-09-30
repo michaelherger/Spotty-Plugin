@@ -94,7 +94,7 @@ sub getToken {
 
 	my $username = $self->username || 'generic';
 
-	my $token = $cache->get('spotty_access_token' . $username);
+	my $token = $cache->get('spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($username));
 
 	if (main::DEBUGLOG && $log->is_debug) {
 		if ($token) {
@@ -168,7 +168,7 @@ sub _gotTokenResponse {
 	my ($self, $response) = @_;
 
 	my $username = $self->username || 'generic';
-	my $cacheKey = 'spotty_access_token' . $username;
+	my $cacheKey = 'spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
 
 	my $token;
 
@@ -961,7 +961,7 @@ sub myArtists {
 
 	# Getting the artists list is such a pain. Even when fetching every single request from cache,
 	# this would be slow on some systems. Let's just cache the full result...
-	my $cacheKey = 'spotify_my_artists' . ($self->username || '');
+	my $cacheKey = 'spotify_my_artists' . Slim::Utils::Unicode::utf8toLatin1Transliterate($self->username || '');
 
 	if ( my $cached = $cache->get($cacheKey) ) {
 		$cb->($cached);
