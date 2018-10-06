@@ -42,7 +42,7 @@ my $prefs = preferences('plugin.spotty');
 my $error429;
 my %tokenHandlers;
 
-tie my %connectDevices, 'Tie::Cache::LRU::Expires', EXPIRES => 3600, ENTRIES => 64;
+tie my %connectDevices, 'Tie::Cache::LRU::Expires', EXPIRES => 600, ENTRIES => 64;
 
 # override the scope list hard-coded in to the spotty helper application
 use constant SPOTIFY_SCOPE => join(',', qw(
@@ -354,6 +354,7 @@ sub playerTransfer {
 sub _extractIdMapping {
 	my $device = shift;
 
+	# does this still work with grouped players?!?
 	if ( $device && $device->{name} && $device->{id} && (my $player = Slim::Player::Client::getClient($device->{name})) ) {
 		$connectDevices{$player->id} = $device->{id};
 	}

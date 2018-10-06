@@ -155,6 +155,20 @@ sub startHelper {
 		main::INFOLOG && $log->is_info && $log->info("Need to (re-)start Connect daemon for $clientId");
 		$helper->start;
 	}
+	# grab player list form Spotify if current player is not known yet. Restart daemon if Spotty doesn't know our player.
+	# TODO - remove check for disableDiscovery if this proves to be working ok
+	elsif ( $prefs->get('disableDiscovery') && !Plugins::Spotty::API->idFromMac($clientId) ) {
+		my $spotty = Plugins::Spotty::Connect->getAPIHandler(Slim::Player::Client::getClient($clientId));
+		$spotty->withIdFromMac(sub {
+			my $deviceId = shift;
+
+			if (!$deviceId) {
+				main::INFOLOG && $log->is_info && $log->info("Daemon for $clientId seems to be alive, but not known to Spotify - restart");
+				$class->stopHelper($clientId);
+				$helper = $helperInstances{$clientId} = Plugins::Spotty::Connect::Daemon->new($clientId);
+			}
+		}, $clientId);
+	}
 
 	return $helper if $helper && $helper->alive;
 }
