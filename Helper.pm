@@ -193,10 +193,10 @@ sub _findBin {
 
 		next unless -f $candidate && -x $candidate;
 
-		main::INFOLOG && $log->is_info && $log->info("Trying helper applicaton: $candidate");
+		main::INFOLOG && $log->is_info && $log->info("Trying helper application: $candidate");
 
 		if ( !$checkerCb || $checkerCb->($candidate) ) {
-			main::INFOLOG && $log->is_info && $log->info("Found helper applicaton: $candidate");
+			main::INFOLOG && $log->is_info && $log->info("Found helper application: $candidate");
 
 			if (wantarray) {
 				push @binaries, $candidate;
