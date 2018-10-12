@@ -330,12 +330,16 @@ sub _connectEvent {
 
 	main::INFOLOG && $log->is_info && $log->info("Got called from spotty helper: $cmd");
 
+	my $spotty = __PACKAGE__->getAPIHandler($client);
+
 	if ( $cmd eq 'volume' && !($request->source && $request->source eq __PACKAGE__) ) {
 		my $volume = $request->getParam('_p2') || return;
 
 		# sometimes volume would be reset to a default 50 right after the daemon start - ignore
 		if ( $volume == 50 && Plugins::Spotty::Connect::DaemonManager->uptime($client->id) < VOLUME_GRACE_PERIOD ) {
 			main::INFOLOG && $log->is_info && $log->info("Ignoring initial volume reset right after daemon start");
+			# this is kind of the "onConnect" handler - get a list of all players
+			$spotty->devices();
 			return;
 		}
 
@@ -348,8 +352,6 @@ sub _connectEvent {
 
 		return;
 	}
-
-	my $spotty = __PACKAGE__->getAPIHandler($client);
 
 	$spotty->player(sub {
 		my ($result) = @_;
@@ -409,14 +411,14 @@ sub _connectEvent {
 			my $clientId = $client->id;
 
 			# if we're playing, got a stop event, and current Connect device is us, then pause
-			if ( $client->isPlaying && ($result->{device}->{id} eq Plugins::Spotty::API->idFromMac($clientId) || $result->{device}->{name} eq $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
+			if ( $client->isPlaying && ($result->{device}->{id} eq Plugins::Spotty::Connect::DaemonManager->idFromMac($clientId) || $result->{device}->{name} eq $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause: " . $client->id);
 
 				my $request = Slim::Control::Request->new( $client->id, ['pause', 1] );
 				$request->source(__PACKAGE__);
 				$request->execute();
 			}
-			elsif ( $client->isPlaying && ($result->{device}->{id} ne Plugins::Spotty::API->idFromMac($clientId) && $result->{device}->{name} ne $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
+			elsif ( $client->isPlaying && ($result->{device}->{id} ne Plugins::Spotty::Connect::DaemonManager->idFromMac($clientId) && $result->{device}->{name} ne $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause, but current player is no longer the Connect target");
 
 				my $request = Slim::Control::Request->new( $client->id, ['pause', 1] );
@@ -458,6 +460,10 @@ sub getAPIHandler {
 	my ($class, $client) = @_;
 
 	return unless $client;
+
+	if (!blessed $client) {
+		$client = Slim::Player::Client::getClient($client);
+	}
 
 	my $api;
 

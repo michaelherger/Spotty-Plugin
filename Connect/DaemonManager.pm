@@ -4,7 +4,6 @@ use strict;
 
 use Scalar::Util qw(blessed);
 
-
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Timers;
@@ -34,18 +33,6 @@ sub init {
 		my $request = shift;
 
 		return if $request->isNotCommand([['sync']]);
-
-		# # we need to re-initialize daemons for all members or the sync group
-		# if ( my $client = $request->client ) {
-		# 	foreach ($client, $client->master, Slim::Player::Sync::slaves($client->master)) {
-		# 		warn $_->name;
-		# 		__PACKAGE__->stopHelper($_->id);
-		# 	}
-		# }
-
-		# if ( my $buddy = $request->getParam('_indexid-') ) {
-		# 	__PACKAGE__->stopHelper($buddy);
-		# }
 
 		# we're not going to try to be smart... just kill them all :-/
 		__PACKAGE__->shutdown();
@@ -155,22 +142,23 @@ sub startHelper {
 		main::INFOLOG && $log->is_info && $log->info("Need to (re-)start Connect daemon for $clientId");
 		$helper->start;
 	}
-	# grab player list form Spotify if current player is not known yet. Restart daemon if Spotty doesn't know our player.
+	# Every few minutes we'll verify whether the daemon is still connected to Spotify
 	# TODO - remove check for disableDiscovery if this proves to be working ok
-	elsif ( $prefs->get('disableDiscovery') && !Plugins::Spotty::API->idFromMac($clientId) ) {
-		my $spotty = Plugins::Spotty::Connect->getAPIHandler(Slim::Player::Client::getClient($clientId));
-		$spotty->withIdFromMac(sub {
-			my $deviceId = shift;
+	elsif ( $prefs->get('disableDiscovery') && !$helper->spotifyIdIsRecent ) {
+		main::INFOLOG && $log->is_info && $log->info("Haven't seen this daemon online in a while - get an updated list ($clientId)");
 
-			if (!$deviceId) {
-				main::INFOLOG && $log->is_info && $log->info("Daemon for $clientId seems to be alive, but not known to Spotify - restart");
-				$class->stopHelper($clientId);
-				$helper = $helperInstances{$clientId} = Plugins::Spotty::Connect::Daemon->new($clientId);
-			}
-		}, $clientId);
+		my $spotty = Plugins::Spotty::Connect->getAPIHandler($clientId);
+		Slim::Utils::Timers::killTimers( $spotty, \&_getDevices );
+		Slim::Utils::Timers::setTimer( $spotty, time() + 2, \&_getDevices);
 	}
 
 	return $helper if $helper && $helper->alive;
+}
+
+sub _getDevices {
+	my ($spotty) = shift;
+	Slim::Utils::Timers::killTimers( $spotty, \&_getDevices );
+	$spotty->devices();
 }
 
 sub stopHelper {
@@ -183,6 +171,58 @@ sub stopHelper {
 	if ($helper && $helper->alive) {
 		main::INFOLOG && $log->is_info && $log->info(sprintf("Shutting down Connect daemon for $clientId (pid: %s)", $helper->pid));
 		$helper->stop;
+	}
+}
+
+sub idFromMac {
+	my ($class, $mac) = @_;
+
+	return unless $mac;
+
+	my $helper = $helperInstances{$mac} || return;
+
+	# refresh the Connect status every now and then
+	if (!$helper->spotifyIdIsRecent) {
+		_getDevices(Plugins::Spotty::Connect->getAPIHandler($mac));
+	}
+
+	return $helper->spotifyId;
+}
+
+sub checkAPIConnectPlayers {
+	my ($class, $spotty, $data, $oneHelper) = @_;
+
+	if ($data && ref $data && $data->{devices}) {
+		my %connectDevices = map {
+			$_->{name} => $_->{id};
+		} @{$data->{devices}};
+
+		my $cacheFolder = $spotty->cache;
+
+		foreach my $helper ( $oneHelper || values %helperInstances ) {
+			my $spotifyId = $connectDevices{$helper->name};
+
+			if ( !$spotifyId && $helper->cache eq $cacheFolder ) {
+				main::INFOLOG && $log->is_info && $log->info("Connect daemon is running, but not connected - shutting down to force restart: " . $helper->mac);
+				$class->stopHelper($helper->mac);
+			}
+			elsif ( $spotifyId ) {
+				main::INFOLOG && $log->is_info && $log->info("Updating id of Connect connected dameon for " . $helper->mac);
+				$helper->spotifyId($spotifyId);
+			}
+		}
+	}
+}
+
+sub checkAPIConnectPlayer {
+	my ($class, $spotty, $data) = @_;
+
+	if ( $data && ref $data && $data->{device} && $spotty && $spotty->client && (my $helper = $helperInstances{$spotty->client->id}) ) {
+		$class->checkAPIConnectPlayers($spotty, {
+			devices => [
+				$data->{device}
+			]
+		}, $helper);
 	}
 }
 

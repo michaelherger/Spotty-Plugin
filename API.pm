@@ -24,7 +24,6 @@ use Digest::MD5 qw(md5_hex);
 use JSON::XS::VersionOneAndTwo;
 use List::Util qw(min max);
 use POSIX qw(strftime);
-use Tie::Cache::LRU::Expires;
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::Plugin;
@@ -41,8 +40,6 @@ my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $error429;
 my %tokenHandlers;
-
-tie my %connectDevices, 'Tie::Cache::LRU::Expires', EXPIRES => 600, ENTRIES => 64;
 
 # override the scope list hard-coded in to the spotty helper application
 use constant SPOTIFY_SCOPE => join(',', qw(
@@ -62,10 +59,12 @@ use constant SPOTIFY_SCOPE => join(',', qw(
 ));
 
 {
-	__PACKAGE__->mk_accessor( 'rw', 'client' );
-	__PACKAGE__->mk_accessor( 'rw', 'cache' );
-	__PACKAGE__->mk_accessor( 'rw', '_username' );
-	__PACKAGE__->mk_accessor( 'rw', '_country' );
+	__PACKAGE__->mk_accessor( rw => qw(
+		client
+		cache
+		_username
+		_country
+	) );
 }
 
 sub new {
@@ -303,16 +302,9 @@ sub player {
 					$result->{track} = $self->_normalize($result->{item});
 				}
 
-				# unfortunately context only is transfered for playlists - otherwise let's assume the album
-	# TODO: leave context mangling to the caller
-#				$result->{context} ||= {};
-#				if (!$result->{context}->{uri} && $result->{track} && $result->{track}->{album}) {
-#					$result->{context} = $result->{track}->{album}->{uri};
-#				}
-
-				# keep track of MAC -> ID mappings
-				if ($result->{device}) {
-					_extractIdMapping($result->{device});
+				# keep track of MAC -> ID mapping
+				if ( Plugins::Spotty::Connect->canSpotifyConnect() ) {
+					Plugins::Spotty::Connect::DaemonManager->checkAPIConnectPlayer($self, $result);
 				}
 
 				$cb->($result);
@@ -349,15 +341,6 @@ sub playerTransfer {
 			}
 		);
 	}, $device);
-}
-
-sub _extractIdMapping {
-	my $device = shift;
-
-	# does this still work with grouped players?!?
-	if ( $device && $device->{name} && $device->{id} && (my $player = Slim::Player::Client::getClient($device->{name})) ) {
-		$connectDevices{$player->id} = $device->{id};
-	}
 }
 
 =pod
@@ -450,13 +433,15 @@ sub playerVolume {
 
 sub idFromMac {
 	my ( $class, $mac ) = @_;
-	return $connectDevices{$mac};
+
+	return Plugins::Spotty::Connect->canSpotifyConnect()
+		&& Plugins::Spotty::Connect::DaemonManager->idFromMac($mac);
 }
 
 sub withIdFromMac {
 	my ( $self, $cb, $mac ) = @_;
 
-	my $id = $connectDevices{$mac};
+	my $id = $self->idFromMac($mac);
 
 	if ( $id || $mac !~ /((?:[a-f0-9]{2}:){5}[a-f0-9]{2})/i ) {
 		$cb->($id || $mac);
@@ -464,7 +449,7 @@ sub withIdFromMac {
 	else {
 		# ID wasn't in the cache yet, let's get the playerlist
 		$self->devices(sub {
-			$cb->($connectDevices{$mac});
+			$cb->($self->idFromMac($mac));
 		});
 	}
 }
@@ -476,10 +461,8 @@ sub devices {
 		sub {
 			my ($result) = @_;
 
-			if ( $result && ref $result && $result->{devices} ) {
-				map {
-					_extractIdMapping($_)
-				} @{$result->{devices} || []};
+			if ( Plugins::Spotty::Connect->canSpotifyConnect() ) {
+				Plugins::Spotty::Connect::DaemonManager->checkAPIConnectPlayers($self, $result);
 			}
 
 			$cb->() if $cb;

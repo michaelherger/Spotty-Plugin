@@ -16,9 +16,15 @@ use Slim::Utils::Prefs;
 use constant MAX_FAILURES_BEFORE_DISABLE_DISCOVERY => 3;
 use constant MAX_INTERVAL_BEFORE_DISABLE_DISCOVERY => 5 * 60;
 
+use constant SPOTIFY_ID_TTL => 600;
+
 __PACKAGE__->mk_accessor( rw => qw(
 	id
 	mac
+	name
+	cache
+	_lastSeen
+	_spotifyId
 	_proc
 	_startTimes
 ) );
@@ -47,11 +53,14 @@ sub start {
 	my $helperPath = Plugins::Spotty::Helper->get();
 	my $client = Slim::Player::Client::getClient($self->mac);
 
+	$self->name($client->isSynced() ? Slim::Player::Sync::syncname($client) : $client->name);
+	$self->cache(Plugins::Spotty::Connect->cacheFolder($self->mac));
+
 	$self->_checkStartTimes();
 
 	my @helperArgs = (
-		'-c', Plugins::Spotty::Connect->cacheFolder($self->mac),
-		'-n', $client->isSynced() ? Slim::Player::Sync::syncname($client) : $client->name,
+		'-c', $self->cache,
+		'-n', $self->name,
 		'--disable-audio-cache',
 		'--bitrate', 96,
 		'--player-mac', $self->mac,
@@ -125,6 +134,22 @@ sub stop {
 	elsif (main::INFOLOG && $log->is_info) {
 		$log->info("This daemon is dead already... no need to stop it!");
 	}
+}
+
+sub spotifyId {
+	my ($self, $value) = @_;
+
+	if (defined $value) {
+		$self->_spotifyId($value);
+		$self->_lastSeen(time);
+	}
+
+	return $self->_spotifyId;
+}
+
+sub spotifyIdIsRecent {
+	my $self = shift;
+	return (time() - $self->_lastSeen) <= SPOTIFY_ID_TTL ? $self->_spotifyId : undef;
 }
 
 sub pid {
