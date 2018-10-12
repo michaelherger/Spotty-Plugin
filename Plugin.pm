@@ -67,9 +67,9 @@ sub initPlugin {
 	});
 
 	if (ENABLE_AUDIO_CACHE) {
-		$prefs->setChange( sub {
+		$prefs->setChange(sub {
 			__PACKAGE__->purgeAudioCache();
-		}, 'audioCacheSize') ;
+		}, 'audioCacheSize');
 	}
 	else {
 		$prefs->set('audioCacheSize', 0);

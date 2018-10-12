@@ -44,6 +44,10 @@ sub init {
 	# start/stop helpers when the Connect flag changes
 	$prefs->setChange(\&initHelpers, 'enableSpotifyConnect');
 
+	$prefs->setChange(sub {
+		$prefs->set('checkDaemonConnected', 0) if !$_[1];
+	}, 'disableDiscovery');
+
 	# re-initialize helpers when the active account for a player changes
 	$prefs->setChange(sub {
 		my ($pref, $new, $client, $old) = @_;
