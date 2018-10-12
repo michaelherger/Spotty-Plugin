@@ -80,6 +80,12 @@
 		[% END %]
 	[% END %]
 
+	[% PROCESS "plugins/Spotty/settings/helpers.html" %]
+
+	[% WRAPPER setting title="PLUGIN_SPOTTY_ADVANCED_SETTING" desc="" %]
+		[% "PLUGIN_SPOTTY_ADVANCED_SETTING_DESC" | string %]
+	[% END %]
+
 	[% IF canConnect; WRAPPER setting title="" desc="" %]
 		<input name="pref_optimizePreBuffer" id="pref_optimizePreBuffer" type="checkbox" [% IF prefs.pref_optimizePreBuffer %] checked [% END %]>
 		<label for="pref_optimizePreBuffer">[% "PLUGIN_SPOTTY_OPTIMIZE_PRE_BUFFERING" | string %]</label>
@@ -92,7 +98,12 @@
 		<label for="pref_disableDiscovery">[% "PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC" | string %]</label>
 	[% END; END %]
 
-	[% PROCESS "plugins/Spotty/settings/helpers.html" %]
+	[% IF canConnect && canDiscovery; IF prefs.pref_disableDiscovery; WRAPPER setting title="" desc="" %]
+		<input name="pref_checkDaemonConnected" id="pref_checkDaemonConnected" type="checkbox" [% IF prefs.pref_checkDaemonConnected %] checked [% END %]>
+		<label for="pref_checkDaemonConnected">[% "PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED" | string %]</label>
+	[% END; ELSE %]
+		<input name="pref_checkDaemonConnected" id="pref_checkDaemonConnected" type="hidden" value="[% prefs.pref_checkDaemonConnected %]">
+	[% END; END %]
 
 	[% WRAPPER setting title="PLUGIN_SPOTTY_CLIENT_ID" desc="PLUGIN_SPOTTY_CLIENT_ID_DESC" %]
 		<input name="pref_iconCode" id="pref_iconCode" type="text" value="[% IF !hasDefaultIcon; prefs.pref_iconCode; END %]" class="stdedit" size="40">

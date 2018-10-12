@@ -61,6 +61,7 @@ sub initPlugin {
 		tracksSincePurge => 0,
 		accountSwitcherMenu => 0,
 		disableDiscovery => 0,
+		checkDaemonConnected => 0,
 		displayNames => {},
 		helper => '',
 	});

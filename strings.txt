@@ -144,6 +144,18 @@ PLUGIN_SPOTTY_LO_POWER_PI
 	DE	Sie scheinen Spotty auf einem schwachbrüstigen Raspberry Pi (erste Generation Pi A/A+/B/B+, oder Pi Zero) zu verwenden. Spotty wird darauf vermutlich nicht funktionieren.
 	EN	You seem to be running Spotty on a lowest spec Raspberry Pi (first generation Pi A/A+/B/B+, or Pi Zero). Spotty likely will not work on this platform.
 
+PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED
+	DE	Überwache die Verbindung der Spotty Connect Helferanwendung mit den Spotify Servern. Dies kann helfen, wenn Spotty Connect aktivierte Geräte regelmässig aus den Spotify-Anwendungen verschwinden.
+	EN	Monitor the connection of the Spotty Connect helper with the Spotify servers. This can be useful if your Spotty Connect enabled devices regularly disappear from the Spotify apps.
+
+PLUGIN_SPOTTY_ADVANCED_SETTING
+	DE	Erweiterte Einstellungen
+	EN	Advanced Settings
+
+PLUGIN_SPOTTY_ADVANCED_SETTING_DESC
+	DE	Bitte verändere die folgenden Einstellungen nur, wenn du weisst was du tust, oder dazu aufgefordert wirst. Falsche Einstellungen können einen negativen Einfluss haben auf den Betrieb von Spotty.
+	EN	Please don't change the following settings, unless you know exactly what you're doing - or I told you to do so. Used the wrong way they can have a negative impact on the Spotty experience.
+
 PLUGIN_SPOTTY_WHATS_NEW
 	CS	Novinky
 	DA	Nyheder

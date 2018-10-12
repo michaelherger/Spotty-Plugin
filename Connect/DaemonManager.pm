@@ -144,7 +144,7 @@ sub startHelper {
 	}
 	# Every few minutes we'll verify whether the daemon is still connected to Spotify
 	# TODO - remove check for disableDiscovery if this proves to be working ok
-	elsif ( $prefs->get('disableDiscovery') && !$helper->spotifyIdIsRecent ) {
+	elsif ( $prefs->get('disableDiscovery') && $prefs->get('checkDaemonConnected') && !$helper->spotifyIdIsRecent ) {
 		main::INFOLOG && $log->is_info && $log->info("Haven't seen this daemon online in a while - get an updated list ($clientId)");
 
 		my $spotty = Plugins::Spotty::Connect->getAPIHandler($clientId);
@@ -203,8 +203,11 @@ sub checkAPIConnectPlayers {
 			my $spotifyId = $connectDevices{$helper->name};
 
 			if ( !$spotifyId && $helper->cache eq $cacheFolder ) {
-				main::INFOLOG && $log->is_info && $log->info("Connect daemon is running, but not connected - shutting down to force restart: " . $helper->mac);
+				$log->warn("Connect daemon is running, but not connected - shutting down to force restart: " . $helper->mac);
 				$class->stopHelper($helper->mac);
+
+				# flag this system as flaky if we have to restart and the user is relying on the server
+				$prefs->set('checkDaemonConnected', 1) if $prefs->get('disableDiscovery');
 			}
 			elsif ( $spotifyId ) {
 				main::INFOLOG && $log->is_info && $log->info("Updating id of Connect connected dameon for " . $helper->mac);
