@@ -59,7 +59,7 @@ sub handler {
 
 			if (main::INFOLOG && $log->is_info) {
 				my $logCmd = $command;
-				$logCmd =~ s/$paramRef->{password}/\*\*\*\*\*\*\*\*/g;
+				$logCmd =~ s/-p ".*?"/-p "\*\*\*\*\*\*\*\*"/g;
 				$log->info("Trying to authenticate using: $logCmd");
 			}
 
@@ -67,6 +67,11 @@ sub handler {
 
 			if ( !($response && $response =~ /authorized/) ) {
 				$paramRef->{'warning'} = string('PLUGIN_SPOTTY_AUTH_FAILED');
+
+				if ($response =~ /panicked at '(.*?)'/i) {
+					$paramRef->{'warning'} .= string('COLON') . " $1";
+				}
+
 				$log->warn($paramRef->{'warning'} . string('COLON') . " $response");
 			}
 		}
