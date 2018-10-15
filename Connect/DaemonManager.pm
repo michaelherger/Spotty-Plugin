@@ -211,7 +211,8 @@ sub checkAPIConnectPlayers {
 				$class->stopHelper($helper->mac);
 
 				# flag this system as flaky if we have to restart and the user is relying on the server
-				$prefs->set('checkDaemonConnected', 1) if $prefs->get('disableDiscovery');
+				# XXX - let's not enable yet, it might be over-acting
+				# $prefs->set('checkDaemonConnected', 1) if $prefs->get('disableDiscovery');
 			}
 			elsif ( $spotifyId ) {
 				main::INFOLOG && $log->is_info && $log->info("Updating id of Connect connected dameon for " . $helper->mac);
