@@ -88,8 +88,16 @@ sub initPlugin {
 				push @$disabledFormats, "spt-flc-*-*";
 				$serverPrefs->set('disabledformats', $disabledFormats);
 			}
+
+			return 1;
 		});
 	}
+
+	# we probably turned this on for too many users - let's start over
+	$prefs->migrate(2, sub {
+		$prefs->set('checkDaemonConnected', 0);
+		return 1;
+	});
 
 	Plugins::Spotty::Helper->init();
 
@@ -511,7 +519,7 @@ sub purgeAudioCache {
 
 		foreach my $tmp ( grep { /^\.tmp[a-z0-9]{6}$/i && -f catfile($tmpFolder, $_) } readdir(DIR) ) {
 			my $tmpFile = catfile($tmpFolder, $tmp);
-			my (undef, undef, undef, undef, $uid, $gid, undef, $size, undef, $mtime, $ctime) = stat($tmpFile);
+			my (undef, undef, undef, undef, $uid, undef, undef, undef, undef, $mtime) = stat($tmpFile);
 
 			# delete file if it matches our name, user ID, and is of a certain age
 			if ( $uid == $> ) {
