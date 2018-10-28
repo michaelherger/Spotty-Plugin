@@ -26,7 +26,7 @@ sub dontStopTheMusic {
 		main::INFOLOG && $log->info("Auto-mixing Spotify tracks from random items in current playlist");
 
 		my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
-		
+
 		if (!$spotty) {
 			$cb->($client);
 			return;
@@ -36,15 +36,15 @@ sub dontStopTheMusic {
 		my $seedData = {
 			limit => 25
 		};
-		
+
 		my $getRecommendations = sub {
 			if ( grep /^seed_/, keys %$seedData ) {
 				$spotty->recommendations(sub {
-					$cb->($client, [ 
-						map { 
+					$cb->($client, [
+						map {
 							$_->{uri} =~ /(track:.*)/;
 							"spotify://$1";
-						} @{$_[0] || []} 
+						} @{$_[0] || []}
 					]);
 				}, $seedData);
 			}
@@ -71,7 +71,7 @@ sub dontStopTheMusic {
 				push @searchData, [ $track->{artist}, $track->{title} ];
 			}
 		}
-		
+
 		# if we're not done yet...
 		if ( scalar @searchData ) {
 			my $findArtistSeed = sub {
@@ -80,7 +80,7 @@ sub dontStopTheMusic {
 
 					foreach my $searchData ( @searchData ) {
 						my $artist = $searchData->[0] || next;
-	
+
 						if ( my ($match) = grep {
 							$_->{name} =~ /\Q$artist\E/i
 						} @$artists ) {
@@ -97,21 +97,19 @@ sub dontStopTheMusic {
 					$getRecommendations->();
 				},{
 					series => { map { $_ => {
-						q      => sprintf('artist:%s', $_),
+						q      => sprintf('artist:"%s"', $_),
 						type   => 'artist',
 						market => 'from_token',
 						limit  => 5
 					} } map {
-						my $artist = $_->[0];
-						$artist =~ s/ /+/g;
-						$artist;
+						$_->[0];
 					} grep {
 						$_->[0]
 					} @searchData },
 					type => 'artist'
 				});
 			};
-			
+
 			$spotty->search(sub {
 				my $tracks = shift || [];
 
@@ -129,7 +127,7 @@ sub dontStopTheMusic {
 						$searchData = [];
 					}
 				}
-				
+
 				if ( $seedData->{seed_tracks} && scalar @{$seedData->{seed_tracks}} > 5 ) {
 					splice @{$seedData->{seed_tracks}}, 5;
 				}
@@ -141,17 +139,12 @@ sub dontStopTheMusic {
 					$findArtistSeed->();
 				}
 			},{
-				series => { map { md5_hex($_->[0] . $_->[1]) => {
-					q      => sprintf('artist:%s title:%s', $_->[0], $_->[1]),
+				series => { map { md5_hex(utf8::encode($_->[0] . $_->[1])) => {
+					q      => sprintf('%s artist:"%s"', $_->[1], $_->[0]),
 					type   => 'track',
 					market => 'from_token',
 					limit  => 5
-				} } map {
-					my ($artist, $title) = @{$_};
-					$artist =~ s/ /+/g;
-					$title  =~ s/ /+/g;
-					[ $artist, $title ]
-				} @searchData },
+				} } @searchData },
 				type => 'track'
 			});
 		}
