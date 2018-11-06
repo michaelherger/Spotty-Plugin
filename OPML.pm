@@ -860,11 +860,14 @@ sub trackList {
 	my $image        = $args->{image};
 
 	my $items = [];
-
+	my $filterExplicitContent = $prefs->client($client->master)->get('filterExplicitContent') || 0;
 
 	my $count = 0;
 	for my $track ( @{$tracks} ) {
-		if ( $track->{uri} ) {
+		if ( $track->{explicit} && $filterExplicitContent == 1) {
+			main::INFOLOG && $log->is_info && $log->info('skip track, it has explicit content: ' . $track->{name});
+		}
+		elsif ( $track->{uri} ) {
 			my $title  = $show_numbers ? $track->{track_number} . '. ' . $track->{name} : $track->{name};
 			my $artist = join( ', ', map { $_->{name} } @{ $track->{artists} } );
 			my $album  = $track->{album}->{name};
@@ -881,21 +884,30 @@ sub trackList {
 				type => 'text',
 			} if $track->{duration_ms};
 
-			push @{$items}, {
-			#	type      => 'link',
+			my $item = {
 				name      => sprintf('%s %s %s %s %s', $title, cstring($client, 'BY'), $artist, cstring($client, 'FROM'), $album),
 				line1     => $title,
 				line2     => "${artist} \x{2022} ${album}",
-				play      => 'spotify://' . $track_uri,
-				favorites_url => $track->{uri},
 				image     => $image || IMG_TRACK,
-				on_select => 'play',
-				duration  => $track->{duration_ms} / 1000,
-				playall   => 1,
-				passthrough => [{
-					uri => $track->{uri}
-				}]
 			};
+
+			if ($track->{explicit} && $filterExplicitContent) {
+				$item->{type} = 'text';
+				$item->{name} = '* ' . $item->{name};
+				$item->{line1} = '* ' . $item->{line1};
+			}
+			else {
+				$item->{play} = 'spotify://' . $track_uri;
+				$item->{favorites_url} = $track->{uri};
+				$item->{on_select} = 'play';
+				$item->{duration} = $track->{duration_ms} / 1000;
+				$item->{playall} = 1;
+				$item->{passthrough} = [{
+					uri => $track->{uri}
+				}];
+			}
+
+			push @{$items}, $item;
 		}
 		else {
 			$log->error("unsupported track data structure?\n" . Data::Dump::dump($track));

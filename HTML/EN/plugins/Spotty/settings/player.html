@@ -16,4 +16,12 @@
 		[% END %]
 	[% END %]
 
+	[% WRAPPER setting title="PLUGIN_SPOTTY_EXPLICIT" desc="" %]
+		<select class="stdedit" name="pref_filterExplicitContent" id="pref_filterExplicitContent">
+			<option value="0">[% "PLUGIN_SPOTTY_EXPLICIT_DONT_CARE" | string %]</option>
+			<option [% IF prefs.pref_filterExplicitContent == 1 %]selected [% END %]value="1">[% "PLUGIN_SPOTTY_EXPLICIT_HIDE" | string %]</option>
+			<option [% IF prefs.pref_filterExplicitContent == 2 %]selected [% END %]value="2">[% "PLUGIN_SPOTTY_EXPLICIT_DONT_PLAY" | string %]</option>
+		</select>
+	[% END %]
+
 [% PROCESS settings/footer.html %]

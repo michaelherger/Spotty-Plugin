@@ -28,7 +28,7 @@ sub page {
 
 sub prefs {
 	my ($class, $client) = @_;
-	return ($prefs->client($client), qw(enableSpotifyConnect replaygain));
+	return ($prefs->client($client), qw(enableSpotifyConnect replaygain filterExplicitContent));
 }
 
 sub handler {

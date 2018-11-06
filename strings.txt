@@ -481,3 +481,19 @@ PLUGIN_SPOTTY_AUDIO_SETTINGS_160
 PLUGIN_SPOTTY_AUDIO_SETTINGS_320
 	DE	Extrem (320kbps)
 	EN	Extreme (320kbps)
+
+PLUGIN_SPOTTY_EXPLICIT
+	DE	Anstössige Inhalte
+	EN	Explicit content
+
+PLUGIN_SPOTTY_EXPLICIT_HIDE
+	DE	Aus Listen entfernen
+	EN	Hide tracks
+
+PLUGIN_SPOTTY_EXPLICIT_DONT_PLAY
+	DE	Anzeigen, aber nicht wiedergeben
+	EN	Show, but don't play
+
+PLUGIN_SPOTTY_EXPLICIT_DONT_CARE
+	DE	Normal wiedergeben
+	EN	Play normally
