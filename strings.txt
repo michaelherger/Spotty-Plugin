@@ -294,6 +294,10 @@ PLUGIN_SPOTTY_FOLLOWING_ARTIST
 	DE	Folge nun dem Künstler:
 	EN	Following this artist:
 
+PLUGIN_SPOTTY_FOLLOWERS
+	DE	Follower:
+	EN	Followers:
+
 PLUGIN_SPOTTY_ADD_STUFF
 	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen.
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.

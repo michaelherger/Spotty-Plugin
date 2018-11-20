@@ -979,7 +979,7 @@ sub artistList {
 		$count++;
 		$indexLetter = $textkey;
 
-		push @{$items}, {
+		my $item = {
 			name => $artist->{name},
 			textkey => $textkey,
 			image => $artist->{image} || IMG_ACCOUNT,
@@ -991,6 +991,12 @@ sub artistList {
 				myAlbumsOnly => $myAlbumsOnly ? 1 : 0,
 			}]
 		};
+
+		if ($artist->{followers} && $artist->{followers}->{total}) {
+			$item->{line2} = cstring($client, 'PLUGIN_SPOTTY_FOLLOWERS') . ' ' . $artist->{followers}->{total};
+		}
+
+		push @{$items}, $item;
 	}
 
 	push @$indexList, [$indexLetter, $count];
