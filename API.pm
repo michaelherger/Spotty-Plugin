@@ -312,8 +312,9 @@ sub player {
 			}
 
 			$cb->();
-		},{
-			_nocache => 1,
+		},
+		GET => {
+			market => 'from_token',
 		}
 	)
 }
@@ -466,8 +467,6 @@ sub devices {
 			}
 
 			$cb->() if $cb;
-		},{
-			_nocache => 1,
 		}
 	);
 }
@@ -750,7 +749,8 @@ sub track {
 
 	$self->_call('tracks/' . $id, sub {
 		$cb->(@_) if $cb;
-	}, {
+	},
+	GET => {
 		market => 'from_token'
 	})
 }
@@ -1487,7 +1487,7 @@ sub _call {
 				},
 				{
 					cache => $params->{_nocache} ? 0 : 1,
-					expires => 3600,
+					expires => $params->{_expires} || 3600,
 					timeout => 30,
 					no_revalidate => $params->{_no_revalidate},
 				},
