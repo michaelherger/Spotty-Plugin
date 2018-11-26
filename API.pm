@@ -1467,6 +1467,12 @@ sub _call {
 				sub {
 					my ($http, $error, $response) = @_;
 
+					# log call if it hasn't been logged already
+					if (!$log->is_info) {
+						$log->warn("API call: $url");
+						$content && $log->warn($content);
+					}
+
 					$log->warn("error: $error");
 
 					if ($error =~ /429/ || ($response && $response->code == 429)) {
