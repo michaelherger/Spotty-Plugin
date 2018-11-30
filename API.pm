@@ -314,6 +314,7 @@ sub player {
 			$cb->();
 		},
 		GET => {
+			_nocache => 1,
 			market => 'from_token',
 		}
 	)
@@ -467,6 +468,9 @@ sub devices {
 			}
 
 			$cb->() if $cb;
+		},
+		GET => {
+			_nocache => 1,
 		}
 	);
 }
@@ -1447,13 +1451,15 @@ sub _call {
 						# ignore - v1/me/following doesn't return anything but 204 on success
 						# ignore me/albums?ids=...
 					}
-					elsif ( $type eq 'GET' && $response->code =~ /^20\d/
-						&& $response->cachedResponse && ($response->cachedResponse->{code} || 0) =~ /^20\d/
-						&& (my $json = eval { decode_json($response->cachedResponse->{content}) })
-					) {
-						$log->warn("$url returned an unexpected code (" . $response->code . "). Using cached result instead");
-						$result = $json;
-					}
+					# requires us to enable cache - which leads to other issues
+					# if request fails, then we're f...ed, there's not much we can do
+					# elsif ( $type eq 'GET' && $response->code =~ /^20\d/
+					# 	&& $response->cachedResponse && ($response->cachedResponse->{code} || 0) =~ /^20\d/
+					# 	&& (my $json = eval { decode_json($response->cachedResponse->{content}) })
+					# ) {
+					# 	$log->warn("$url returned an unexpected code (" . $response->code . "). Using cached result instead");
+					# 	$result = $json;
+					# }
 					else {
 						$log->error("Invalid data");
 						main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
