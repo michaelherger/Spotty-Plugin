@@ -224,6 +224,7 @@ sub me {
 			if ( $result && ref $result ) {
 				$self->country($result->{country});
 				$self->_username($result->{username}) if $result->{username};
+				Plugins::Spotty::Plugin->setName($self->username, $result);
 
 				$cb->($result) if $cb;
 			}

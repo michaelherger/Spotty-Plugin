@@ -615,14 +615,18 @@ sub getName {
 	return unless $client;
 
 	$class->getAPIHandler($client)->user(sub {
-		my ($result) = @_;
-
-		if ($result && $result->{display_name}) {
-			my $names = $prefs->get('displayNames');
-			$names->{$userId} = $result->{display_name};
-			$prefs->set('displayNames', $names);
-		}
+		$class->setName($userId, shift);
 	}, $userId);
+}
+
+sub setName {
+	my ($class, $userId, $result) = @_;
+
+	if ($result && $result->{display_name}) {
+		my $names = $prefs->get('displayNames');
+		$names->{$userId} = $result->{display_name};
+		$prefs->set('displayNames', $names);
+	}
 }
 
 # we only run when transcoding is enabled, but shutdown would be called no matter what
