@@ -1315,7 +1315,7 @@ sub selectAccount {
 		next if $name eq $username;
 
 		push @$items, {
-			name => $name,
+			name => _getDisplayName($name),
 			url  => \&_selectAccount,
 			passthrough => [{
 				id => $id
