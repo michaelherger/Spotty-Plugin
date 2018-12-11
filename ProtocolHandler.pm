@@ -139,6 +139,11 @@ sub getMetadataFor {
 
 	$meta = undef;
 
+	# sometimes we wouldn't get a song object, and an outdated url. Get latest data instead!
+	if (!$song && ($song = $client->playingSong)) {
+		$url = $song->track->url if $song->track && $song->track->url;
+	}
+
 	if ( $song ||= $client->currentSongForUrl($url) ) {
 		# we store a copy of the metadata in the song object - no need to read from the disk cache
 		my $info = $song->pluginData('info');
@@ -160,6 +165,9 @@ sub getMetadataFor {
 
 			$song->streamUrl($url);
 			$song->duration($info->{duration});
+
+			main::INFOLOG && $log->is_info && $log->info("Returning metadata cached in song object for $url");
+			main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($info));
 			return $info;
 		}
 	}
@@ -177,6 +185,9 @@ sub getMetadataFor {
 			duration  => $cached->{duration_ms} / 1000,
 			cover     => $cached->{album}->{image},
 		};
+
+		main::INFOLOG && $log->is_info && $log->info("Found cached metadata for $uri");
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($meta));
 	}
 
 	if (!$meta) {

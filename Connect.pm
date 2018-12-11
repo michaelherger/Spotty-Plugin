@@ -321,12 +321,13 @@ sub _connectEvent {
 	my $request = shift;
 	my $client = $request->client()->master;
 
+	my $cmd = $request->getParam('_cmd');
+
 	if ( $client->pluginData('newTrack') ) {
+		main::INFOLOG && $log->info("Ignoring request, as it's a follow up to a new track event: $cmd");
 		$client->pluginData( newTrack => 0 );
 		return;
 	}
-
-	my $cmd = $request->getParam('_cmd');
 
 	main::INFOLOG && $log->is_info && $log->info("Got called from spotty helper: $cmd");
 
@@ -364,7 +365,7 @@ sub _connectEvent {
 
 		$result ||= {};
 
-		main::DEBUGLOG && $log->is_debug && $log->debug("Current Connect state: \n" . Data::Dump::dump($result, $cmd));
+		main::INFOLOG && $log->is_info && $log->info("Current Connect state: \n" . Data::Dump::dump($result, $cmd));
 
 		# in case of a change event we need to figure out what actually changed...
 		if ( $cmd =~ /change/ && $result && ref $result && (($streamUrl ne $result->{track}->{uri} && $result->{is_playing}) || !__PACKAGE__->isSpotifyConnect($client)) ) {
