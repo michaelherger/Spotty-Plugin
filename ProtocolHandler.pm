@@ -140,10 +140,9 @@ sub getMetadataFor {
 	$meta = undef;
 
 	# sometimes we wouldn't get a song object, and an outdated url. Get latest data instead!
-	# XXXX - needs refinement, as this would break the web UI's playlist view...
-	# if (!$song && ($song = $client->playingSong)) {
-	# 	$url = $song->track->url if $song->track && $song->track->url;
-	# }
+	if (!$song && Plugins::Spotty::Connect->isSpotifyConnect($client) && ($song = $client->playingSong)) {
+		$url = $song->track->url if $song->track && $song->track->url;
+	}
 
 	if ( $song ||= $client->currentSongForUrl($url) ) {
 		# we store a copy of the metadata in the song object - no need to read from the disk cache
