@@ -64,9 +64,10 @@ sub audioScrobblerSource { 'P' }
 sub explodePlaylist {
 	my ( $class, $client, $uri, $cb ) = @_;
 
-	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
-
-	if ($spotty) {
+	if ($uri =~ m|/connect-\d+|) {
+		$cb->([$uri]);
+	}
+	elsif (my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client)) {
 		$spotty->trackURIsFromURI(sub {
 			$cb->([
 				map {
@@ -141,7 +142,7 @@ sub getMetadataFor {
 
 	# sometimes we wouldn't get a song object, and an outdated url. Get latest data instead!
 	if (!$song && Plugins::Spotty::Connect->isSpotifyConnect($client) && ($song = $client->playingSong)) {
-		$url = $song->track->url if $song->track && $song->track->url;
+		$url = $song->streamUrl;
 	}
 
 	if ( $song ||= $client->currentSongForUrl($url) ) {
@@ -163,7 +164,6 @@ sub getMetadataFor {
 				$info->{type} = sprintf('%s (%s %s)', $info->{originalType}, cstring($client, 'CONVERTED_TO'), $converted);
 			}
 
-			$song->streamUrl($url);
 			$song->duration($info->{duration});
 
 			main::INFOLOG && $log->is_info && $log->info("Returning metadata cached in song object for $url");
@@ -236,18 +236,20 @@ sub getBulkMetadata {
 			}
 		}
 
-		if ( main::INFOLOG && $log->is_info ) {
-			$log->info( "Need to fetch metadata for: " . Data::Dump::dump(@need) );
+		if (scalar @need) {
+			if ( main::INFOLOG && $log->is_info ) {
+				$log->info( "Need to fetch metadata for: " . Data::Dump::dump(@need) );
+			}
+
+			$spotty->tracks(sub {
+				# Update the playlist time so the web will refresh, etc
+				$client->currentPlaylistUpdateTime( Time::HiRes::time() );
+
+				Slim::Control::Request::notifyFromArray( $client, [ 'newmetadata' ] );
+
+				$client->master->pluginData( fetchingMeta => 0 );
+			}, \@need);
 		}
-
-		$spotty->tracks(sub {
-			# Update the playlist time so the web will refresh, etc
-			$client->currentPlaylistUpdateTime( Time::HiRes::time() );
-
-			Slim::Control::Request::notifyFromArray( $client, [ 'newmetadata' ] );
-
-			$client->master->pluginData( fetchingMeta => 0 );
-		}, \@need);
 	}
 }
 

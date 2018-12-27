@@ -87,7 +87,7 @@ sub isSpotifyConnect {
 
 	return unless $client->pluginData('SpotifyConnect');
 
-	return $client->pluginData('newTrack') || _contextTime($song) ? 1 : 0;
+	return ($client->pluginData('newTrack') || _contextTime($song)) ? 1 : 0;
 }
 
 sub _contextTime {
@@ -126,9 +126,10 @@ sub getNextTrack {
 
 		# XXX - how to deal with context here?
 		$class->getAPIHandler($client)->player(sub {
-				$class->setSpotifyConnect($client, $_[0]);
-				$client->pluginData( newTrack => 0 );
-				$successCb->();
+			$song->streamUrl($_[0]->{item}->{uri});
+			$class->setSpotifyConnect($client, $_[0]);
+			$client->pluginData( newTrack => 0 );
+			$successCb->();
 		});
 	}
 	elsif ( $prefs->get('optimizePreBuffer') ) {
@@ -138,7 +139,7 @@ sub getNextTrack {
 		main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump({
 			duration => $duration,
 			remaining => $remaining,
-			current_url => $song->track->url,
+			current_url => $song->streamUrl,
 		}));
 
 		if ($remaining && $remaining > PRE_BUFFER_TIME) {
@@ -181,10 +182,10 @@ sub _getNextTrack {
 	$client->pluginData( newTrack => 1 );
 
 	# add current track to the history
-	$song->pluginData('context')->addPlay($song->track->url);
+	$song->pluginData('context')->addPlay($song->streamUrl);
 
 	# for playlists and albums we can know the last track. In this case no further check would be required.
-	if ( $song->pluginData('context')->isLastTrack($song->track->url) ) {
+	if ( $song->pluginData('context')->isLastTrack($song->streamUrl) ) {
 		$class->_delayedStop($client);
 		$successCb->();
 		return;
@@ -204,8 +205,7 @@ sub _getNextTrack {
 					$class->_delayedStop($client);
 				}
 				else {
-					$song->track->url($uri);
-					# $song->streamUrl($uri); # wouldn't continue to next track
+					$song->streamUrl($uri);
 					$class->setSpotifyConnect($client, $result);
 				}
 
@@ -381,7 +381,7 @@ sub _connectEvent {
 				$client->pluginData( SpotifyConnect => 1 );
 				$client->pluginData( newTrack => 1 );
 
-				my $request = $client->execute( [ 'playlist', 'play', $result->{track}->{uri} ] );
+				my $request = $client->execute( [ 'playlist', 'play', sprintf("spotify://connect-%u", Time::HiRes::time() * 1000) ] );
 				$request->source(__PACKAGE__);
 
 				# sync volume up to spotify if we just got connected
