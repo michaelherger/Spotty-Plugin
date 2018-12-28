@@ -19,6 +19,7 @@ use constant CONNECT_HELPER_VERSION => '0.12.0';
 use constant SEEK_THRESHOLD => 3;
 use constant VOLUME_GRACE_PERIOD => 5;
 use constant PRE_BUFFER_TIME => 7;
+use constant PRE_BUFFER_SIZE_THRESHOLD => 10 * 1024 * 1024;
 
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
@@ -57,6 +58,22 @@ sub init {
 
 	# we want to tell the Spotify about local volume changes
 	Slim::Control::Request::subscribe(\&_onVolume, [['mixer'], ['volume']]);
+
+	# set optimizePreBuffer if client with huge buffer connects
+	Slim::Control::Request::subscribe(sub {
+		my $request = shift;
+		my $client  = $request->client();
+
+		if (!$prefs->get('optimizePreBuffer')) {
+			# we have to wait a few seconds before the buffer size is known
+			Slim::Utils::Timers::setTimer($client, time() + 5, sub {
+				if ($client->bufferSize > PRE_BUFFER_SIZE_THRESHOLD) {
+					main::INFOLOG && $log->is_info && $log->info(sprintf("Enabling pre-buffer optimization as player seems to be using very large buffer: %s (%sMB)", $client->name, int($client->bufferSize/1024/1024)));
+					$prefs->set('optimizePreBuffer', 1);
+				}
+			});
+		}
+	}, [['client'], ['new']]);
 
 	require Plugins::Spotty::Connect::DaemonManager;
 	Plugins::Spotty::Connect::DaemonManager->init();
