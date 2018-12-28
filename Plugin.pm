@@ -25,10 +25,9 @@ use Plugins::Spotty::Helper;
 use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
-use constant ENABLE_AUDIO_CACHE => 0;
 use constant CACHE_PURGE_INTERVAL => 86400;
-use constant CACHE_PURGE_INTERVAL_COUNT => 5;
 use constant CACHE_PURGE_MAX_AGE => 60 * 60;
+use constant CACHE_PURGE_INTERVAL_COUNT => 15;
 
 my $prefs = preferences('plugin.spotty');
 my $serverPrefs = preferences('server');
@@ -57,7 +56,6 @@ sub initPlugin {
 		country => 'US',
 		bitrate => 320,
 		iconCode => \&_initIcon,
-		audioCacheSize => 0,		# number of MB to cache
 		tracksSincePurge => 0,
 		accountSwitcherMenu => 0,
 		disableDiscovery => 0,
@@ -65,15 +63,6 @@ sub initPlugin {
 		displayNames => {},
 		helper => '',
 	});
-
-	if (ENABLE_AUDIO_CACHE) {
-		$prefs->setChange(sub {
-			__PACKAGE__->purgeAudioCache();
-		}, 'audioCacheSize');
-	}
-	else {
-		$prefs->set('audioCacheSize', 0);
-	}
 
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
 	# this might be premature optimization, as ARM CPUs are getting more and more powerful...
@@ -216,8 +205,7 @@ sub updateTranscodingTable {
 			$commandTable->{$_} =~ s/^[^\[]+// if !$tmpDir;
 			$commandTable->{$_} =~ s/--bitrate \d{2,3}/$bitrate/;
 			$commandTable->{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
-			$commandTable->{$_} =~ s/disable-audio-cache/enable-audio-cache/g if ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize');
-			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g if !(ENABLE_AUDIO_CACHE && $prefs->get('audioCacheSize'));
+			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g;
 			$commandTable->{$_} =~ s/ --enable-volume-normalisation //;
 			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if Plugins::Spotty::Helper->getCapability('volume-normalisation') && $prefs->client($client)->get('replaygain');
 		}
@@ -461,56 +449,6 @@ sub purgeAudioCache {
 
 	Slim::Utils::Timers::killTimers($class, \&purgeAudioCache);
 
-	main::INFOLOG && $log->is_info && $log->info("Starting audio cache cleanup...");
-
-	# purge our local file cache
-	if (ENABLE_AUDIO_CACHE || $ignoreTimeStamp) {
-		my $files = File::Next::files( catdir(__PACKAGE__->cacheFolder(), 'files') );
-		my @files;
-		my $totalSize = 0;
-
-		while ( defined ( my $file = $files->() ) ) {
-			# give the server some room to breath...
-			main::idleStreams();
-
-			my @stat = stat($file);
-
-			# keep track of file path, size and last access/modification date
-			push @files, [$file, $stat[7], $stat[8] || $stat[9]];
-			$totalSize += $stat[7];
-		}
-
-		@files = sort { $a->[2] <=> $b->[2] } @files;
-
-		my $maxCacheSize = $prefs->get('audioCacheSize') * 1024 * 1024;
-
-		main::INFOLOG && $log->is_info && $log->info(sprintf("Max. cache size is: %iMB, current cache size is %iMB", $prefs->get('audioCacheSize'), $totalSize / (1024*1024)));
-
-		# we're going to reduce the cache size to get some slack before exceeding the cache size
-		$maxCacheSize *= 0.8;
-
-		foreach my $file ( @files ) {
-			main::idleStreams();
-
-			last if $totalSize < $maxCacheSize;
-
-			unlink $file->[0];
-			$totalSize -= $file->[1];
-
-			my $dir = dirname($file->[0]);
-
-			opendir DIR, $dir or next;
-
-			if ( !scalar File::Spec->no_upwards(readdir DIR) ) {
-				close DIR;
-				rmdir $dir;
-			}
-			else {
-				close DIR;
-			}
-		}
-	}
-
 	# clean up temporary files the spotty helper (librespot) is leaving behind on skips
 	my $tmpFolder = __PACKAGE__->getTmpDir() || tmpdir();
 
@@ -528,14 +466,14 @@ sub purgeAudioCache {
 
 			main::idleStreams();
 		}
+
+		main::INFOLOG && $log->is_info && $log->info("Audio cache cleanup done!");
 	}
 
 	# only purge the audio cache if it's enabled
 	Slim::Utils::Timers::setTimer($class, time() + CACHE_PURGE_INTERVAL, \&purgeAudioCache);
 
 	$prefs->set('tracksSincePurge', 0);
-
-	main::INFOLOG && $log->is_info && $log->info("Audio cache cleanup done!");
 }
 
 sub hasCredentials {
