@@ -79,6 +79,15 @@ sub init {
 		},
 	) );
 
+#                                                               |requires Client
+#                                                               |  |is a Query
+#                                                               |  |  |has Tags
+#                                                               |  |  |  |Function to call
+#                                                               C  Q  T  F
+	Slim::Control::Request::addDispatch(['spotty','recentsearches'],
+	                                                            [0, 0, 1, \&_recentSearchesCLI]
+	);
+
 	# enforce initial refresh of users' display names
 	$cache->remove('spotty_got_names');
 }
@@ -1277,28 +1286,82 @@ sub addRecentSearch {
 	$prefs->set( 'spotify_recent_search', $list );
 }
 
+sub _recentSearchesCLI {
+	my $request = shift;
+	my $client = $request->client;
+
+	# check this is the correct command.
+	if ($request->isNotCommand([['spotty'], ['recentsearches']])) {
+		$request->setStatusBadDispatch();
+		return;
+	}
+
+	my $list = $prefs->get('spotify_recent_search') || [];
+	my $del = $request->getParam('deleteMenu') || $request->getParam('delete') || 0;
+
+	if (!scalar @$list || $del >= scalar @$list) {
+		$request->setStatusBadDispatch();
+		return;
+	}
+
+	my $items = [];
+
+	if (defined $request->getParam('deleteMenu')) {
+		push @$items, {
+			text => cstring($client, 'DELETE') . cstring($client, 'COLON') . ' "' . ($list->[$del] || '') . '"',
+			actions => {
+				go => {
+					player => 0,
+					cmd    => ['spotty', 'recentsearches' ],
+					params => {
+						delete => $del
+					},
+				},
+			},
+			nextWindow => 'parent',
+		};
+
+		$request->addResult('offset', 0);
+		$request->addResult('count', 1);
+		$request->addResult('item_loop', $items);
+	}
+	elsif (defined $request->getParam('delete')) {
+		splice(@$list, $del, 1);
+		$prefs->set( 'spotify_recent_search', $list );
+	}
+
+	$request->setStatusDone;
+}
+
 sub recentSearches {
 	my ($client, $cb, $params) = @_;
 
 	my $items = [];
 
-	push @{$items}, {
-		name  => cstring($client, 'PLUGIN_SPOTTY_NEW_SEARCH'),
-		type  => 'search',
-		url   => \&search,
-	};
-
-	for my $recent ( reverse @{ $prefs->get('spotify_recent_search') || [] } ) {
-		push @{$items}, {
+	my $i = 0;
+	for my $recent ( @{ $prefs->get('spotify_recent_search') || [] } ) {
+		unshift @$items, {
 			name  => $recent,
 			type  => 'link',
 			url   => \&search,
+			itemActions => {
+				info => {
+					command     => ['spotty', 'recentsearches'],
+					fixedParams => { deleteMenu => $i++ },
+				},
+			},
 			passthrough => [{
 				query => $recent,
 				recent => 1
 			}],
 		};
 	}
+
+	unshift @$items, {
+		name  => cstring($client, 'PLUGIN_SPOTTY_NEW_SEARCH'),
+		type  => 'search',
+		url   => \&search,
+	};
 
 	$cb->({ items => $items });
 }
