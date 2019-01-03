@@ -139,12 +139,16 @@ sub dontStopTheMusic {
 					$findArtistSeed->();
 				}
 			},{
-				series => { map { md5_hex(utf8::encode($_->[0] . $_->[1])) => {
-					q      => sprintf('%s artist:"%s"', $_->[1], $_->[0]),
-					type   => 'track',
-					market => 'from_token',
-					limit  => 5
-				} } @searchData },
+				series => { map {
+					my $key = $_->[0] . $_->[1];
+					utf8::encode($key);
+					md5_hex($key) => {
+						q      => sprintf('%s artist:"%s"', $_->[1], $_->[0]),
+						type   => 'track',
+						market => 'from_token',
+						limit  => 5
+					};
+				} @searchData },
 				type => 'track'
 			});
 		}
