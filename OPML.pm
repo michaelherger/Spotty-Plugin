@@ -1319,11 +1319,26 @@ sub _recentSearchesCLI {
 				},
 			},
 			nextWindow => 'parent',
+		},{
+			text => cstring($client, 'PLUGIN_SPOTTY_CLEAR_SEARCH_HISTORY'),
+			actions => {
+				go => {
+					player => 0,
+					cmd    => ['spotty', 'recentsearches' ],
+					params => {
+						deleteAll => 1
+					},
+				}
+			},
+			nextWindow => 'grandParent',
 		};
 
 		$request->addResult('offset', 0);
-		$request->addResult('count', 1);
+		$request->addResult('count', scalar @$items);
 		$request->addResult('item_loop', $items);
+	}
+	elsif ($request->getParam('deleteAll')) {
+		$prefs->set( 'spotify_recent_search', [] );
 	}
 	elsif (defined $request->getParam('delete')) {
 		splice(@$list, $del, 1);

@@ -385,6 +385,14 @@ PLUGIN_SPOTTY_NEW_SEARCH
 	RU	Новый поиск
 	SV	Ny sökning
 
+PLUGIN_SPOTTY_SEARCH_HISTORY
+	DE	Gespeicherte Suchen
+	EN	Search History
+
+PLUGIN_SPOTTY_CLEAR_SEARCH_HISTORY
+	DE	Alle gespeicherte Suchen löschen
+	EN	Clear complete search history
+
 PLUGIN_SPOTTY_RECOMMENDATIONS
 	DE	Spotify Empfehlungen (basierend auf aktueller Wiedergabeliste)
 	EN	Spotify Recommendations (based on the current playlist)

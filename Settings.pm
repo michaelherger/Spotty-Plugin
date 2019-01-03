@@ -87,6 +87,10 @@ sub handler {
 		foreach my $client ( Slim::Player::Client::clients() ) {
 			$prefs->client($client)->set('enableSpotifyConnect', $paramRef->{'connect_' . $client->id} ? 1 : 0);
 		}
+
+		if ($paramRef->{clearSearchHistory}) {
+			$prefs->set('spotify_recent_search', []);
+		}
 	}
 
 	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::Plugin->hasCredentials()) ) {
