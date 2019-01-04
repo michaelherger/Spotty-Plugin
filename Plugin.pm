@@ -8,7 +8,6 @@ use vars qw($VERSION);
 
 use Digest::MD5 qw(md5_hex);
 use File::Basename;
-use File::Next;
 use File::Path qw(rmtree);
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile tmpdir);

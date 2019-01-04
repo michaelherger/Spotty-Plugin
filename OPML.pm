@@ -5,6 +5,7 @@ use strict;
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::API;
+use Plugins::Spotty::PlaylistFolders;
 
 use Slim::Menu::GlobalSearch;
 use Slim::Utils::Cache;
@@ -25,7 +26,7 @@ use constant IMG_INBOX => 'plugins/Spotty/html/images/inbox.png';
 use constant MAX_RECENT => 50;
 
 my $prefs = preferences('plugin.spotty');
-my $log = logger('network.asynchttp');
+my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
 
 my %topuri = (
@@ -501,19 +502,55 @@ sub myArtists {
 sub playlists {
 	my ($client, $cb, $params, $args) = @_;
 
+	my $user = $params->{user} || $args->{user};
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->playlists(sub {
 		my ($result) = @_;
 
-		my $items = playlistList($client, $result);
+		my $items;
 
-		push @$items, {
-			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
-			type => 'text',
-		} unless scalar @$items;
+		my $hierarchy = Plugins::Spotty::PlaylistFolders->getTree($user, [ map {
+			$_->{uri};
+		} @$result ]);
+
+		if ($hierarchy) {
+			main::INFOLOG && $log->is_info && $log->info("Found playlist folder hierarchy! Let's use it: " . Data::Dump::dump($hierarchy));
+
+			my %tree;
+			foreach my $playlist (@$result) {
+				my $node = $hierarchy->{$playlist->{uri}} || '/';
+
+				$tree{$node} ||= [];
+				push @{$tree{$node}}, @{playlistList($client, [$playlist])};
+			}
+
+			foreach my $id (sort keys %$hierarchy) {
+				my $data = $hierarchy->{$id};
+				if (ref $data && $tree{$id} && (my $parent = $data->{parent})) {
+					$tree{$parent} ||= [];
+					push @{$tree{$parent}}, {
+						type  => 'outline',
+						name  => $data->{name},
+						items => $tree{$id},
+						image => IMG_PLAYLIST,
+					};
+				}
+			}
+
+			$items = $tree{'/'};
+		}
+		else {
+			$items = playlistList($client, $result);
+
+			push @$items, {
+				name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
+				type => 'text',
+			} unless scalar @$items;
+		}
 
 		$cb->({ items => $items });
 	},{
-		user => $params->{user} || $args->{user}
+		$user => $user
 	});
 }
 
