@@ -502,14 +502,14 @@ sub myArtists {
 sub playlists {
 	my ($client, $cb, $params, $args) = @_;
 
-	my $user = $params->{user} || $args->{user};
+	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
-	Plugins::Spotty::Plugin->getAPIHandler($client)->playlists(sub {
+	$spotty->playlists(sub {
 		my ($result) = @_;
 
 		my $items;
 
-		my $hierarchy = Plugins::Spotty::PlaylistFolders->getTree($user, [ map {
+		my $hierarchy = Plugins::Spotty::PlaylistFolders->getTree($spotty->username, [ map {
 			$_->{uri};
 		} @$result ]);
 
@@ -550,8 +550,10 @@ sub playlists {
 
 		$cb->({ items => $items });
 	},{
-		$user => $user
+		user => $params->{user} || $args->{user}
 	});
+
+	Plugins::Spotty::PlaylistFolders->findAllCachedFiles();
 }
 
 sub album {

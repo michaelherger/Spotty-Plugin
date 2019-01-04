@@ -74,6 +74,10 @@ sub parse {
 sub findAllCachedFiles {
 	my $cacheFolder;
 
+	if (my $cached = $treeCache{'spotty-playlist-folders'}) {
+		return $cached;
+	}
+
 	if (main::ISMAC) {
 		$cacheFolder = MAC_PERSISTENT_CACHE_PATH;
 	}
@@ -86,12 +90,14 @@ sub findAllCachedFiles {
 		$cacheFolder = LINUX_PERSISTENT_CACHE_PATH;
 	}
 
+	return [] unless -d $cacheFolder && -r _;
+
 	my $files = File::Next::files($cacheFolder);
 
 	my $i = 0;
 	my $candidates = [];
 	while ( defined (my $file = $files->()) ) {
-		if ($file =~ /\.file$/ && -s $file < MAX_FILE_TO_PARSE) {
+		if (-r $file && -s _ < MAX_FILE_TO_PARSE && $file =~ /\.file$/) {
 			my $data = read_file($file);
 			if ($data =~ /\bstart-group\b/) {
 				push @$candidates, $file;
@@ -101,7 +107,7 @@ sub findAllCachedFiles {
 		main::idle() if !(++$i % 10);
 	}
 
-	return $candidates;
+	return $treeCache{'spotty-playlist-folders'} = $candidates;
 }
 
 sub getTree {
@@ -116,8 +122,10 @@ sub getTree {
 	my $max = scalar @$uris;
 	my (%stats, $paths);
 
-	if (my $cached = $cache->get("spotty-playlist-folders-$user")) {
-		$paths = [$cached];
+	my $cachedPath = $cache->get("spotty-playlist-folders-$user");
+	if ( $cachedPath && -r $cachedPath ) {
+		main::INFOLOG && $log->is_info && $log->info("Using cached file path for user $user: $cachedPath");
+		$paths = [$cachedPath];
 	}
 	else {
 		$paths = findAllCachedFiles();
@@ -142,7 +150,7 @@ sub getTree {
 		my $treeData = $stats{$winner};
 
 		# remember what file we chose for this user
-		$cache->set("spotty-playlist-folders-$user", $treeData->{path}, 86400);
+		$cache->set("spotty-playlist-folders-$user", $treeData->{path}, 7*86400);
 		return $treeCache{$key} = $treeData->{data};
 	}
 }
