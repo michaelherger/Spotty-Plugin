@@ -422,6 +422,8 @@ sub purgeCache {
 			# ignore player specific folders unless during initialization - name is MAC address less the colons
 			next if !$init && $subDir =~ /^[0-9a-f]{12}$/i;
 
+			next if $subDir eq 'playlistFolders';
+
 			rmtree($subCacheDir);
 			$credsCache = undef;
 		}

@@ -5,15 +5,20 @@ package Plugins::Spotty::PlaylistFolders;
 use strict;
 
 use Digest::MD5 qw(md5_hex);
+use File::Basename qw(basename);
 use File::Next;
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
+use JSON::XS::VersionOneAndTwo;
 use Tie::Cache::LRU::Expires;
 use URI::Escape qw(uri_unescape);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
+use Slim::Utils::Prefs;
+use Slim::Utils::Strings qw(string);
 
+use constant MAX_PLAYLIST_FOLDER_FILE_AGE => 86400 * 30;
 use constant MAX_FILE_TO_PARSE => 512 * 1024;
 use constant MAC_PERSISTENT_CACHE_PATH => catdir($ENV{HOME}, 'Library/Application Support/Spotify/PersistentCache/Storage');
 use constant LINUX_PERSISTENT_CACHE_PATH => catdir(($ENV{XDG_CACHE_HOME} || catdir($ENV{HOME}, '.cache')), 'spotify/Storage');
@@ -27,11 +32,19 @@ tie my %treeCache, 'Tie::Cache::LRU::Expires', EXPIRES => 60, 5;
 my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.spotty');
 
+# the file upload is handled through a custom request handler, dealing with multi-part POST requests
+Slim::Web::Pages->addRawFunction("plugins/spotty/uploadPlaylistFolderData", \&handleUpload);
+
 sub parse {
 	my ($filename) = @_;
 
-	my $data = read_file($filename);
+	return {} unless $filename && -f $filename && -r _ && -s _ < MAX_FILE_TO_PARSE;
+
+	my $data = read_file($filename) || '';
 	main::idle();
+
+	# don't continue if there are no groups - we're not interested in flat lists
+	return {} unless $data && $data =~ /\bstart-group\b/;
 
 	my @items = split /spotify:[use]/, $data;
 
@@ -90,21 +103,26 @@ sub findAllCachedFiles {
 		$cacheFolder = LINUX_PERSISTENT_CACHE_PATH;
 	}
 
-	return [] unless -d $cacheFolder && -r _;
-
-	my $files = File::Next::files($cacheFolder);
-
 	my $i = 0;
 	my $candidates = [];
-	while ( defined (my $file = $files->()) ) {
-		if (-r $file && -s _ < MAX_FILE_TO_PARSE && $file =~ /\.file$/) {
-			my $data = read_file($file);
-			if ($data =~ /\bstart-group\b/) {
+
+	for my $folder (Plugins::Spotty::Plugin->cacheFolder('playlistFolders'), $cacheFolder) {
+		next unless -d $folder && -r _;
+
+		my $files = File::Next::files({
+			file_filter => sub {
+				main::idle() if !(++$i % 10);
+				return -s $File::Next::name < MAX_FILE_TO_PARSE && /\.file$/;
+			}
+		}, $folder);
+		main::idle();
+
+		while ( defined (my $file = $files->()) ) {
+			my $data = read_file($file, scalar_ref => 1);
+			if ($$data =~ /\bstart-group\b/) {
 				push @$candidates, $file;
 			}
 		}
-
-		main::idle() if !(++$i % 10);
 	}
 
 	return $treeCache{'spotty-playlist-folders'} = $candidates;
@@ -153,6 +171,107 @@ sub getTree {
 		$cache->set("spotty-playlist-folders-$user", $treeData->{path}, 7*86400);
 		return $treeCache{$key} = $treeData->{data};
 	}
+}
+
+sub handleUpload {
+	my ($httpClient, $response, $func) = @_;
+
+	my $request = $response->request;
+	my $result = {};
+
+	my $t = Time::HiRes::time();
+
+	main::INFOLOG && $log->is_info && $log->info("New data to upload. Size: " . formatKB($request->content_length));
+
+	if ( $request->content_length > MAX_FILE_TO_PARSE ) {
+		$result = {
+			error => string('PLUGIN_DNDPLAY_FILE_TOO_LARGE', formatKB($request->content_length), formatKB(MAX_FILE_TO_PARSE)),
+			code  => 413,
+		};
+	}
+	else {
+		my $ct = $request->header('Content-Type');
+		my ($boundary) = $ct =~ /boundary=(.*)/;
+
+		my ($k, $fh, $uploadedFile);
+		my $folder = Plugins::Spotty::Plugin->cacheFolder('playlistFolders');
+
+		# open a pseudo-filehandle to the uploaded data ref for further processing
+		open TEMP, '<', $request->content_ref;
+
+		while (<TEMP>) {
+			if ( Time::HiRes::time - $t > 0.2 ) {
+				main::idleStreams();
+				$t = Time::HiRes::time();
+			}
+
+			# a new part starts - reset some variables
+			if ( /--\Q$boundary\E/i ) {
+				$k = '';
+				close $fh if $fh;
+			}
+
+			# write data to file handle
+			elsif ( $fh ) {
+				print $fh $_;
+			}
+
+			# we got an uploaded file name
+			elsif ( !$k && /filename="(.+?)"/i ) {
+				$k = $1;
+				main::INFOLOG && $log->is_info && $log->info("New file to upload: $k")
+			}
+
+			# we got the separator after the upload file name: file data comes next. Open a file handle to write the data to.
+			elsif ( $k && /^\s*$/ ) {
+				mkdir $folder if ! -d $folder;
+
+				$uploadedFile = catfile($folder, $k);
+				open($fh, '>', $uploadedFile) || $log->warn("Failed to open file $uploadedFile: $@");
+			}
+		}
+
+		close $fh if $fh;
+
+		close TEMP;
+
+		main::idle();
+
+		# some cache cleanup
+		if ( $folder && -d $folder && opendir(DIR, $folder) ) {
+			foreach my $file ( grep { -f $_ && -r _ } map { catfile($folder, $_) } readdir(DIR) ) {
+				my (undef, undef, undef, undef, undef, undef, undef, undef, undef, $mtime) = stat($file);
+				unlink $file if time() - $mtime > MAX_PLAYLIST_FOLDER_FILE_AGE;
+			}
+		}
+
+		my $parsed = parse($uploadedFile);
+		if (!$parsed || !ref $parsed || keys %$parsed < 2) {
+			$result->{error} = 'No playlist items found';
+		}
+
+		if ( $result->{error} && $uploadedFile && -f $uploadedFile ) {
+			unlink $uploadedFile;
+			$result->{basename($uploadedFile)} = 'failed';
+		}
+		else {
+			$result->{basename($uploadedFile)} = 'success';
+		}
+	}
+
+	$log->error($result->{error}) if $result->{error};
+
+	my $content = to_json($result);
+	$response->header( 'Content-Length' => length($content) );
+	$response->code($result->{code} || 200);
+	$response->header('Connection' => 'close');
+	$response->content_type('application/json');
+
+	Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \$content	);
+}
+
+sub formatKB {
+	return Slim::Utils::Misc::delimitThousands(int($_[0] / 1024)) . 'KB';
 }
 
 1;
