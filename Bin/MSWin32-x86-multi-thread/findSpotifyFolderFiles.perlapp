@@ -1,0 +1,33 @@
+#!C:\Program Files (x86)\ActiveState Perl Dev Kit 9.1\bin\perlapp-gui.exe
+PAP-Version: 1.0
+Packer: C:\Program Files (x86)\ActiveState Perl Dev Kit 9.1\bin\perlapp.exe
+Script: findSpotifyFolderFiles.pl
+Cwd: C:\cygwin\home\mh\git\slimserver\Plugins\Spotty\Bin\MSWin32-x86-multi-thread
+Clean: 0
+Date: 2019-01-06 21:00:02
+Debug: 
+Dependent: 0
+Dyndll: 0
+Exe: findSpotifyFolderFiles.exe
+Force: 1
+Gui: 0
+Hostname: mh-PC
+Manifest: 
+No-Compress: 0
+No-Logo: 0
+Runlib: 
+Shared: none
+Tmpdir: 
+Verbose: 0
+Version-Comments: 
+Version-CompanyName: Michael Herger
+Version-FileDescription: 
+Version-FileVersion: 
+Version-InternalName: 
+Version-LegalCopyright: Michael Herger
+Version-LegalTrademarks: 
+Version-OriginalFilename: 
+Version-ProductName: findSpotifyFolderFiles
+Version-ProductVersion: 1.0.0
+Warnings: 0
+Xclude: 1
