@@ -26,6 +26,7 @@ use constant IMG_INBOX => 'plugins/Spotty/html/images/inbox.png';
 use constant MAX_RECENT => 50;
 
 my $prefs = preferences('plugin.spotty');
+my $serverPrefs = preferences('server');
 my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
 
@@ -1011,9 +1012,15 @@ sub albumList {
 		$count++;
 		$indexLetter = $textkey;
 
+		my $year = $serverPrefs->get('showYear') && $album->{release_date};
+		if ($year) {
+			$year =~ s/.*(\d{4}).*/$1/;
+			$year = " ($year)"
+		}
+
 		push @{$items}, {
 			type  => 'playlist',
-			name  => $album->{name} . ($artists ? (' ' . cstring($client, 'BY') . ' ' . $artists) : ''),
+			name  => $album->{name} . ($year || '') . ($artists ? (' ' . cstring($client, 'BY') . ' ' . $artists) : ''),
 			line1 => $album->{name},
 			line2 => $artists,
 			textkey => $textkey,
