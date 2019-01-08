@@ -60,7 +60,10 @@ sub parse {
 		$item =~ s/(.*?)\r.*/$1/s;
 
 		if ($item =~ /^ser:/) {
-			$map->{'spotify:u' . substr($item, 0, -1)} = $parent;
+			$map->{'spotify:u' . substr($item, 0, -1)} = {
+				parent => $parent,
+				order => $i++
+			};
 		}
 		elsif ($item =~ /^tart-group/) {
 			my @tags = split ':', $item;
@@ -76,6 +79,7 @@ sub parse {
 			$map->{$tags[-2]} = {
 				name => $name,
 				order => $i++,
+				isFolder => 1,
 				parent => $parent
 			};
 

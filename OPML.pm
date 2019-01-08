@@ -518,23 +518,47 @@ sub playlists {
 
 			my %tree;
 			foreach my $playlist (@$result) {
-				my $node = $hierarchy->{$playlist->{uri}} || '/';
+				my $parent = '/';
+				my $node = $hierarchy->{$playlist->{uri}};
+				if ($node && ref $node) {
+					$parent = $node->{parent} || '/';
+				}
 
-				$tree{$node} ||= [];
-				push @{$tree{$node}}, @{playlistList($client, [$playlist])};
+				$tree{$parent} ||= [];
+				push @{$tree{$parent}}, @{playlistList($client, [$playlist])};
 			}
 
-			foreach my $id (sort keys %$hierarchy) {
-				my $data = $hierarchy->{$id};
-				if (ref $data && $tree{$id} && (my $parent = $data->{parent})) {
+			foreach my $data (map {
+				$hierarchy->{$_}->{id} = $_;
+				$hierarchy->{$_};
+			} sort {
+				$hierarchy->{$a}->{order} <=> $hierarchy->{$b}->{order}
+			} grep {
+				ref $hierarchy->{$_} && $hierarchy->{$_}->{isFolder} && $tree{$_}
+			} keys %$hierarchy) {
+				if (my $parent = $data->{parent}) {
 					$tree{$parent} ||= [];
 					push @{$tree{$parent}}, {
 						type  => 'outline',
 						name  => $data->{name},
-						items => $tree{$id},
+						items => $tree{$data->{id}},
 						image => IMG_PLAYLIST,
+						id    => $data->{id}
 					};
 				}
+			}
+
+			# now let's try to bring the order back in...
+			foreach my $parent (keys %tree) {
+				$tree{$parent} = [ sort {
+					my $aId = $a->{favorites_url} || $a->{id};
+					my $bId = $b->{favorites_url} || $b->{id};
+
+					my $aOrder = eval { $hierarchy->{$aId}->{order} } || 0;
+					my $bOrder = eval { $hierarchy->{$bId}->{order} } || 0;
+
+					$aOrder <=> $bOrder;
+				} @{$tree{$parent}} ];
 			}
 
 			$items = $tree{'/'};
