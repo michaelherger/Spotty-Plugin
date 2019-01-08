@@ -9,6 +9,7 @@ use File::Basename qw(basename);
 use File::Next;
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
+use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 use JSON::XS::VersionOneAndTwo;
 use Tie::Cache::LRU::Expires;
 use URI::Escape qw(uri_unescape);
@@ -34,6 +35,7 @@ my $log = logger('plugin.spotty');
 
 # the file upload is handled through a custom request handler, dealing with multi-part POST requests
 Slim::Web::Pages->addRawFunction("plugins/spotty/uploadPlaylistFolderData", \&handleUpload);
+Slim::Web::Pages->addPageFunction("plugins/spotty/playlistFolder", \&handlePage) if main::WEBUI;
 
 sub parse {
 	my ($filename) = @_;
@@ -111,9 +113,10 @@ sub parse {
 }
 
 sub findAllCachedFiles {
+	my ($class, $forceFresh) = @_;
 	my $cacheFolder;
 
-	if (my $cached = $treeCache{'spotty-playlist-folders'}) {
+	if (!$forceFresh && (my $cached = $treeCache{'spotty-playlist-folders'})) {
 		return $cached;
 	}
 
@@ -218,11 +221,18 @@ sub getTree {
 	}
 }
 
+sub handlePage {
+	my ($client, $params) = @_;
+
+	return Slim::Web::HTTP::filltemplatefile('plugins/Spotty/playlistFolder.html', $params);
+}
+
 sub handleUpload {
-	my ($httpClient, $response, $func) = @_;
+	my ($httpClient, $response) = @_;
 
 	my $request = $response->request;
 	my $result = {};
+	my $uploadFromSettings;
 
 	my $t = Time::HiRes::time();
 
@@ -238,7 +248,7 @@ sub handleUpload {
 		my $ct = $request->header('Content-Type');
 		my ($boundary) = $ct =~ /boundary=(.*)/;
 
-		my ($k, $fh, $uploadedFile);
+		my ($filename, $fh, $uploadedFile);
 		my $folder = Plugins::Spotty::Plugin->cacheFolder('playlistFolders');
 
 		# open a pseudo-filehandle to the uploaded data ref for further processing
@@ -252,8 +262,9 @@ sub handleUpload {
 
 			# a new part starts - reset some variables
 			if ( /--\Q$boundary\E/i ) {
-				$k = '';
+				$filename = '';
 				close $fh if $fh;
+				$fh = undef;
 			}
 
 			# write data to file handle
@@ -262,16 +273,20 @@ sub handleUpload {
 			}
 
 			# we got an uploaded file name
-			elsif ( !$k && /filename="(.+?)"/i ) {
-				$k = $1;
-				main::INFOLOG && $log->is_info && $log->info("New file to upload: $k")
+			elsif ( !$filename && /filename="(.+?)"/i ) {
+				$filename = $1;
+				main::INFOLOG && $log->is_info && $log->info("New file to upload: $filename")
+			}
+
+			elsif ( !$filename && !defined $uploadFromSettings && /uploadFromSettings/ ) {
+				$uploadFromSettings = 1;
 			}
 
 			# we got the separator after the upload file name: file data comes next. Open a file handle to write the data to.
-			elsif ( $k && /^\s*$/ ) {
+			elsif ( $filename && /^\s*$/ ) {
 				mkdir $folder if ! -d $folder;
 
-				$uploadedFile = catfile($folder, $k);
+				$uploadedFile = catfile($folder, $filename);
 				open($fh, '>', $uploadedFile) || $log->warn("Failed to open file $uploadedFile: $@");
 			}
 		}
@@ -283,12 +298,7 @@ sub handleUpload {
 		main::idleStreams();
 
 		# some cache cleanup
-		if ( $folder && -d $folder && opendir(DIR, $folder) ) {
-			foreach my $file ( grep { -f $_ && -r _ } map { catfile($folder, $_) } readdir(DIR) ) {
-				my $mtime = (stat(_))[9];
-				unlink $file if time() - $mtime > MAX_PLAYLIST_FOLDER_FILE_AGE;
-			}
-		}
+		__PACKAGE__->purgeCache();
 
 		my $parsed = parse($uploadedFile);
 		if (!$parsed || !ref $parsed || keys %$parsed < 2) {
@@ -306,17 +316,49 @@ sub handleUpload {
 
 	$log->error($result->{error}) if $result->{error};
 
+	if ($uploadFromSettings) {
+		$response->code(RC_MOVED_TEMPORARILY);
+		$response->header('Location' => '/' . Plugins::Spotty::Settings::PlaylistFolders->page . '?uploadError=' . $result->{error});
+		$response->header('Connection' => 'close');
+		return Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \"" );
+	}
+
 	my $content = to_json($result);
 	$response->header( 'Content-Length' => length($content) );
 	$response->code($result->{code} || 200);
 	$response->header('Connection' => 'close');
 	$response->content_type('application/json');
 
-	Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \$content	);
+	Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \$content );
+}
+
+sub purgeCache {
+	my ($class, $delete) = @_;
+
+	my $folder = Plugins::Spotty::Plugin->cacheFolder('playlistFolders');
+
+	if ( $folder && -d $folder && opendir(DIR, $folder) ) {
+		foreach my $file ( grep { -f $_ && -r _ } map { catfile($folder, $_) } readdir(DIR) ) {
+			if (!$delete) {
+				my $mtime = (stat(_))[9];
+				$delete = time() - $mtime > MAX_PLAYLIST_FOLDER_FILE_AGE;
+			}
+
+			unlink $file if $delete;
+		}
+
+		close DIR;
+	}
 }
 
 sub formatKB {
-	return Slim::Utils::Misc::delimitThousands(int($_[0] / 1024)) . 'KB';
+	my $size = $_[0];
+
+	if ($size < 1200) {
+		return "$size Bytes";
+	}
+
+	return Slim::Utils::Misc::delimitThousands(int($size / 1024)) . ' KB';
 }
 
 1;

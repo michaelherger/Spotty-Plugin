@@ -59,6 +59,11 @@
 		</select>
 	[% END %]
 
+	[% WRAPPER setting title="PLUGIN_SPOTTY_PLAYLIST_FOLDERS" desc="" %]
+		<input name="clearPlaylistFolderCache" id="clearPlaylistFolderCache" type="checkbox">
+		<label for="clearPlaylistFolderCache">[% "PLUGIN_SPOTTY_CLEAR_PLAYLIST_FOLDERS_CACHE" | string %]</label>
+	[% END %]
+
 	[% WRAPPER setting title="PLUGIN_SPOTTY_SEARCH_HISTORY" desc="" %]
 		<input name="clearSearchHistory" id="clearSearchHistory" type="checkbox">
 		<label for="clearSearchHistory">[% "PLUGIN_SPOTTY_CLEAR_SEARCH_HISTORY" | string %]</label>

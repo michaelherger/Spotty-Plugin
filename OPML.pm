@@ -1377,7 +1377,8 @@ sub _recentSearchesCLI {
 	my $del = $request->getParam('deleteMenu') || $request->getParam('delete') || 0;
 
 	if (!scalar @$list || $del >= scalar @$list) {
-		$request->setStatusBadDispatch();
+		$log->error('Search item to delete is outside the history list!');
+		$request->setStatusBadParams();
 		return;
 	}
 

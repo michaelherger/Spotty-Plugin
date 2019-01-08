@@ -1,0 +1,10 @@
+<div class='spotty-instructions'>
+	<ul>
+		[% FOREACH file = cacheFiles %]
+		<li>
+			<input name="delete_[% file %]" id="[% file %]" type="checkbox">
+			<label for="[% file %]">[% file %] ([% cacheFileInfo.$file.size %] - [% cacheFileInfo.$file.changedate %])</label>
+		</li>
+		[% END %]
+	</ul>
+</div>

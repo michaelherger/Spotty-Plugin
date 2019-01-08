@@ -51,6 +51,15 @@ sub initPlugin {
 		$log->error(string('PLUGIN_SPOTTY_MISSING_SSL'));
 	}
 
+	# some debug code, dumping all locally stored files for further analysis
+	# my $files = Plugins::Spotty::PlaylistFolders->findAllCachedFiles();
+	# warn Data::Dump::dump($files);
+	# foreach my $candidate ( @$files ) {
+	# 	next unless $candidate =~ /51d3f5cfc935f7a059410f7b2ba206498815075a.file/;
+	# 	my $data = Plugins::Spotty::PlaylistFolders::parse($candidate);
+	# 	warn Data::Dump::dump($data, $candidate);
+	# }
+
 	$prefs->init({
 		country => 'US',
 		bitrate => 320,
@@ -94,7 +103,6 @@ sub initPlugin {
 
 	if (main::WEBUI) {
 		require Plugins::Spotty::Settings;
-		require Plugins::Spotty::Settings::Auth;
 		Plugins::Spotty::Settings->new();
 	}
 

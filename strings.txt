@@ -509,3 +509,11 @@ PLUGIN_SPOTTY_EXPLICIT_DONT_PLAY
 PLUGIN_SPOTTY_EXPLICIT_DONT_CARE
 	DE	Normal wiedergeben
 	EN	Play normally
+
+PLUGIN_SPOTTY_PLAYLIST_FOLDERS
+	DE	Wiedergabelisten Ordner
+	EN	Playlist Folders
+
+PLUGIN_SPOTTY_CLEAR_PLAYLIST_FOLDERS_CACHE
+	DE	Gespeicherte Wiedergabelisten-Ordner Informationen löschen (<a href="playlist-folders.html">mehr Informationen</a>)
+	EN	Clear stored playlist folder information (<a href="playlist-folders.html">more information</a>)

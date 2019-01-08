@@ -30,11 +30,6 @@ my $initialized;
 sub init {
 	my ($class) = @_;
 
-	if (main::WEBUI && !$initialized) {
-		require Plugins::Spotty::Settings::Player;
-		Plugins::Spotty::Settings::Player->new();
-	}
-
 	return if $initialized;
 
 	return unless $class->canSpotifyConnect('dontInit');

@@ -9,6 +9,8 @@ use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::Settings::Auth;
+use Plugins::Spotty::Settings::Player;
+use Plugins::Spotty::Settings::PlaylistFolders;
 
 use constant SETTINGS_URL => 'plugins/Spotty/settings/basic.html';
 
@@ -18,6 +20,8 @@ sub new {
 	my $class = shift;
 
 	Plugins::Spotty::Settings::Auth->new();
+	Plugins::Spotty::Settings::Player->new();
+	Plugins::Spotty::Settings::PlaylistFolders->new();
 
 	if (!Slim::Networking::Async::HTTP->hasSSL()) {
 		Slim::Web::Pages->addPageFunction(SETTINGS_URL, $class);
@@ -86,6 +90,10 @@ sub handler {
 
 		foreach my $client ( Slim::Player::Client::clients() ) {
 			$prefs->client($client)->set('enableSpotifyConnect', $paramRef->{'connect_' . $client->id} ? 1 : 0);
+		}
+
+		if ($paramRef->{clearPlaylistFolderCache}) {
+			Plugins::Spotty::PlaylistFolders->purgeCache(1);
 		}
 
 		if ($paramRef->{clearSearchHistory}) {
