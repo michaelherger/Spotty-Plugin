@@ -54,6 +54,11 @@ sub parse {
 
 	my $i = 0;
 	foreach my $item (@items) {
+		# Note: '\r' marks end of repeated block. This might break in
+		# future versions of Spotify. An alternative solution is to read
+		# the number of repeats coded into the protobuf file.
+		$item =~ s/(.*?)\r.*/$1/s;
+
 		if ($item =~ /^ser:/) {
 			$map->{'spotify:u' . substr($item, 0, -1)} = $parent;
 		}
@@ -70,6 +75,7 @@ sub parse {
 
 			$map->{$tags[-2]} = {
 				name => $name,
+				order => $i++,
 				parent => $parent
 			};
 
