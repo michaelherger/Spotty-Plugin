@@ -1,6 +1,7 @@
 PAP-Version: 1.0
 Packer:
 Script: findSpotifyFolderFiles.pl
+Add: URI
 Clean: 1
 Debug:
 Dyndll: 0
