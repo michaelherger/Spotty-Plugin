@@ -60,7 +60,10 @@ sub parse {
 		$item =~ s/(.*?)\r.*/$1/s;
 
 		if ($item =~ /^ser:/) {
-			$map->{'spotify:u' . substr($item, 0, -1)} = {
+			# the the last part of the URI is an ID which must be no longer than 22 characters
+			$item =~ s/^(ser(:[^:]*){0,1}:playlist:[a-z0-9]{22}).*$/$1/i;
+
+			$map->{'spotify:u' . $item} = {
 				parent => $parent,
 				order => $i++
 			};
@@ -70,11 +73,13 @@ sub parse {
 			my $name = uri_unescape($tags[-1]);
 			$name =~ s/\+/ /g;
 			if (Slim::Utils::Unicode::looks_like_latin1($name)) {
-				$name = substr($name, 0, -1);
+				$name = substr(Slim::Utils::Unicode::utf8decode($name), 0, -1);
 			}
 			else {
 				$name = Slim::Utils::Unicode::utf8decode( Slim::Utils::Unicode::recomposeUnicode($name) );
 			}
+
+			main::INFOLOG && $log->is_info && $log->info("Start Group $name : $parent ($i)");
 
 			$map->{$tags[-2]} = {
 				name => $name,
@@ -85,9 +90,12 @@ sub parse {
 
 			push @stack, $parent;
 			$parent = $tags[-2];
+			main::INFOLOG && $log->is_info && $log->info("Start Group Push : $parent ($i)");
+
 		}
 		elsif ($item =~ /nd-group/) {
 			$parent = pop @stack;
+			main::INFOLOG && $log->is_info && $log->info("End Group : $parent ($i)");
 		}
 	}
 
