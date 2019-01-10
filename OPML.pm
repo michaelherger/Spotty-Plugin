@@ -542,7 +542,6 @@ sub playlists {
 					push @{$tree{$parent}}, {
 						type  => 'outline',
 						name  => $data->{name},
-						items => $tree{$data->{id}},
 						image => IMG_PLAYLIST,
 						id    => $data->{id}
 					};
@@ -551,6 +550,7 @@ sub playlists {
 
 			# now let's try to bring the order back in...
 			foreach my $parent (keys %tree) {
+				main::INFOLOG && $log->is_info && $log->info("Sort items in $parent");
 				$tree{$parent} = [ sort {
 					my $aId = $a->{favorites_url} || $a->{id};
 					my $bId = $b->{favorites_url} || $b->{id};
@@ -562,6 +562,15 @@ sub playlists {
 				} @{$tree{$parent}} ];
 			}
 
+			# now add ordered sub trees
+			foreach my $parent (keys %tree) {
+				main::INFOLOG && $log->is_info && $log->info("Add items to $parent");
+				foreach my $item (@{$tree{$parent}}) {
+					$item->{items} = $tree{$item->{id}} if $item->{id};
+				}
+			}
+
+			main::DEBUGLOG && $log->is_debug && $log->debug("Final playlist folder order " . Data::Dump::dump($tree{'/'}));
 			$items = $tree{'/'};
 		}
 		else {
