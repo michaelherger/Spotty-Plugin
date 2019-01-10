@@ -40,8 +40,15 @@ sub parse {
 
 	return {} unless $filename && -f $filename && -r _ && -s _ < MAX_FILE_TO_PARSE;
 
+	my $key = _cacheKey($filename);
+	my $cached = $cache->get($key);
+
+	if ($cached && ref $cached) {
+		return $cached;
+	}
+
 	my $data = read_file($filename) || '';
-	main::idle();
+	main::idleStreams();
 
 	# don't continue if there are no groups - we're not interested in flat lists
 	return {} unless $data && $data =~ /\bstart-group\b/;
@@ -99,6 +106,7 @@ sub parse {
 		}
 	}
 
+	$cache->set($key, $map, 86400 * 7);
 	return $map;
 }
 
@@ -129,16 +137,28 @@ sub findAllCachedFiles {
 
 		my $files = File::Next::files({
 			file_filter => sub {
-				main::idle() if !(++$i % 10);
+				main::idleStreams() if !(++$i % 10);
 				return -s $File::Next::name < MAX_FILE_TO_PARSE && /\.file$/;
 			}
 		}, $folder);
-		main::idle();
 
 		while ( defined (my $file = $files->()) ) {
-			my $data = read_file($file, scalar_ref => 1);
-			if ($$data =~ /\bstart-group\b/) {
-				push @$candidates, $file;
+			my $key = _cacheKey($file);
+
+			# we keep state in cache, as it's cheaper to look up than parsing the file all the time
+			my $cached = $cache->get($key);
+			if (defined $cached) {
+				push @$candidates, $file if $cached;
+			}
+			else {
+				my $data = read_file($file, scalar_ref => 1);
+				if ($$data =~ /\bstart-group\b/) {
+					$cache->set($key, 1, 86400 * 7);
+					push @$candidates, $file;
+				}
+				else {
+					$cache->set($key, 0, 86400 * 7);
+				}
 			}
 		}
 	}
@@ -146,8 +166,16 @@ sub findAllCachedFiles {
 	return $treeCache{'spotty-playlist-folders'} = $candidates;
 }
 
+sub _cacheKey {
+	my $file = $_[0];
+	my $size = (stat($file))[7];
+	my $mtime = (stat(_))[9];
+
+	return join(':', 'spotty', $file, $size, $mtime);
+}
+
 sub getTree {
-	my ($class, $user, $uris) = @_;
+	my ($class, $uris) = @_;
 
 	my $key = md5_hex(join('||', sort @$uris));
 
@@ -156,16 +184,9 @@ sub getTree {
 	}
 
 	my $max = scalar @$uris;
-	my (%stats, $paths);
+	my @stats;
 
-	my $cachedPath = $cache->get("spotty-playlist-folders-$user");
-	if ( $cachedPath && -r $cachedPath ) {
-		main::INFOLOG && $log->is_info && $log->info("Using cached file path for user $user: $cachedPath");
-		$paths = [$cachedPath];
-	}
-	else {
-		$paths = findAllCachedFiles();
-	}
+	my $paths = findAllCachedFiles();
 
 	foreach my $candidate ( @$paths ) {
 		my $data = parse($candidate);
@@ -174,20 +195,26 @@ sub getTree {
 			$hits++ if $data->{$_};
 		}
 
-		$stats{$hits / $max} = {
+		push @stats, {
+			ratio => $hits / $max,
 			path => $candidate,
-			data => $data
+			data => $data,
+			timestamp => (stat($candidate))[9]
 		};
 	}
 
-	my ($winner) = sort { $b <=> $a } keys %stats;
-	if ($winner && $winner > ASSUMED_HIT_THRESHOLD) {
-		main::INFOLOG && $log->is_info && $log->info(sprintf('Found a hierarchy which has %s%% of the playlist\'s tracks', int($winner * 100)));
-		my $treeData = $stats{$winner};
+	my ($winner) = sort {
+		# if two have the same hit-rate, the more recent wins
+		if ($a->{ratio} == $b->{ratio}) {
+			return $b->{timestamp} <=> $a->{timestamp};
+		}
 
-		# remember what file we chose for this user
-		$cache->set("spotty-playlist-folders-$user", $treeData->{path}, 7*86400);
-		return $treeCache{$key} = $treeData->{data};
+		return $b->{ratio} <=> $a->{ratio};
+	} @stats;
+
+	if ($winner && ref $winner && $winner->{ratio} > ASSUMED_HIT_THRESHOLD) {
+		main::INFOLOG && $log->is_info && $log->info(sprintf('Found a hierarchy which has %s%% of the playlist\'s tracks', int($winner->{ratio} * 100)));
+		return $treeCache{$key} = $winner->{data};
 	}
 }
 
@@ -253,12 +280,12 @@ sub handleUpload {
 
 		close TEMP;
 
-		main::idle();
+		main::idleStreams();
 
 		# some cache cleanup
 		if ( $folder && -d $folder && opendir(DIR, $folder) ) {
 			foreach my $file ( grep { -f $_ && -r _ } map { catfile($folder, $_) } readdir(DIR) ) {
-				my (undef, undef, undef, undef, undef, undef, undef, undef, undef, $mtime) = stat($file);
+				my $mtime = (stat(_))[9];
 				unlink $file if time() - $mtime > MAX_PLAYLIST_FOLDER_FILE_AGE;
 			}
 		}

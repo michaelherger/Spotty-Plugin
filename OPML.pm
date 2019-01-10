@@ -510,7 +510,7 @@ sub playlists {
 
 		my $items;
 
-		my $hierarchy = Plugins::Spotty::PlaylistFolders->getTree($spotty->username, [ map {
+		my $hierarchy = Plugins::Spotty::PlaylistFolders->getTree([ map {
 			$_->{uri};
 		} @$result ]);
 
@@ -586,8 +586,6 @@ sub playlists {
 	},{
 		user => $params->{user} || $args->{user}
 	});
-
-	Plugins::Spotty::PlaylistFolders->findAllCachedFiles();
 }
 
 sub album {
