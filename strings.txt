@@ -517,3 +517,18 @@ PLUGIN_SPOTTY_PLAYLIST_FOLDERS
 PLUGIN_SPOTTY_CLEAR_PLAYLIST_FOLDERS_CACHE
 	DE	Gespeicherte Wiedergabelisten-Ordner Informationen löschen (<a href="playlist-folders.html">mehr Informationen</a>)
 	EN	Clear stored playlist folder information (<a href="playlist-folders.html">more information</a>)
+
+PLUGIN_SPOTTY_FILE_NOT_FOUND
+	CS	Soubor nenalezen
+	DA	Filen blev ikke fundet
+	DE	Datei nicht gefunden
+	EN	File Not Found
+	ES	Archivo no encontrado
+	FI	Tiedostoa ei löydy
+	FR	Fichier introuvable
+	IT	File non trovato
+	NL	Bestand niet gevonden
+	NO	Finner ikke filen
+	PL	Nie znaleziono pliku
+	RU	Файл не найден
+	SV	Det går inte att hitta filen

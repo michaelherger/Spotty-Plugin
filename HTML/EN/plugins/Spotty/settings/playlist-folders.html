@@ -13,22 +13,41 @@
 		-->
 	</style>
 
-	[% WRAPPER setting title="Spotify Cache Folder" desc="" %]
+	[% WRAPPER setting title="Playlist Hierarchies" desc="" %]
+		Unfortunately Spotify does not send information about the hierarchy in which you've organized your playlists.
+		But we can try to find that information from a Spotify application's cache folder. This can either happen automatically
+		if a Spotify application is run on the same computer as your Logitech Media Server. Or, if this is not the case
+		(eg. Logitech Media Server is run on a NAS), you can import those files from a computer on which you run Spotify.
+	[% END %]
+
+	[% WRAPPER setting title="Playlist Hierarchies found in Spotify" desc="" %]
+		[% endOfPhrase = "found in your system's Spotify installation (${spotifyCacheFolder})" %]
 		[% IF spotifyFiles.size == 1 %]
-			A cached playlist hierarchy was found on your system.
+			One playlist hierarchy was [% endOfPhrase %]
 		[% ELSIF spotifyFiles.size %]
-			[% spotifyFiles.size %] cached playlist hierarchies were found on your system.
+			[% spotifyFiles.size %] playlist hierarchies were [% endOfPhrase %]
 		[% ELSE %]
-			No Spotify cache folder was found on your system.
+			No Spotify cache folder was [% endOfPhrase %].
 		[% END %]
 	[% END %]
 
 	[% WRAPPER setting title="Imported Playlist Hierarchy Files" desc="" %]
-		Sometimes Spotty cannot find playlist hierarchy information automatically.
-		This typically is the case when Logitech Media Server is running on a system where no Spotify application is installed.
-		In this case you can import the information from a computer where you do run Spotify.
-		<br/><br/>
-		In order to transfer the playlist hierarchy information, please follow these steps:
+		[% IF cacheFiles.size == 1 %]
+			One imported playlist hierarchy was found.
+		[% ELSIF cacheFiles.size %]
+			[% cacheFiles.size %] imported playlist hierarchies were found.
+		[% ELSE %]
+			No imported playlist hierarchy was found.
+		[% END %]
+	[% END %]
+
+	[% IF cacheFiles.size; WRAPPER setting title="" desc="" %]
+		<div>Please select the file(s) you want to delete:</div>
+		[% PROCESS "plugins/Spotty/settings/playlist-folders-list.html" %]
+	[% END; END %]
+
+	[% WRAPPER setting title="" desc="" %]
+		If you want to transfer the playlist hierarchy information, please follow these steps:
 		<div class='spotty-instructions'>
 			<ol class="spotty">
 				<li>Download <a href="http://www.herger.net/spotty/findSpotifyFolderFiles.sh.zip" target="_blank">this script for
@@ -41,16 +60,6 @@
 			</ol>
 		</div>
 		<div>In the success case you'd get a list of file names that got imported. Otherwise some error message.</div>
-		<br/>
-	[% END %]
-
-	[% WRAPPER setting title="" desc="" %]
-		[% IF spotifyFiles.size %]
-			<div>Please select the file(s) you want to delete:</div>
-			[% PROCESS "plugins/Spotty/settings/playlist-folders-list.html" %]
-		[% ELSE %]
-			No playlist hierarchy file was imported.
-		[% END %]
 	[% END %]
 
 	</form>

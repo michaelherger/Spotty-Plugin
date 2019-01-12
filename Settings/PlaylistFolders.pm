@@ -63,6 +63,7 @@ sub handler {
 		$name;
 	} grep /\Q$cacheFolder\E/i, @$cacheFiles ];
 	$paramRef->{spotifyFiles} = [ grep { $_ !~ /\Q$cacheFolder\E/i } @$cacheFiles ];
+	$paramRef->{spotifyCacheFolder} = Plugins::Spotty::PlaylistFolders->spotifyCacheFolder() || Slim::Utils::Strings::string('PLUGIN_SPOTTY_FILE_NOT_FOUND');
 
 	return $class->SUPER::handler( $client, $paramRef, $pageSetup, $httpClient, $response );
 }

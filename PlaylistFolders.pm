@@ -112,25 +112,28 @@ sub parse {
 	return $map;
 }
 
+sub spotifyCacheFolder {
+	if (main::ISMAC) {
+		return MAC_PERSISTENT_CACHE_PATH;
+	}
+	elsif (main::ISWINDOWS) {
+		# C:\Users\michael\AppData\Local\Spotify\Storage
+		require Win32;
+		return catdir(Win32::GetFolderPath(Win32::CSIDL_LOCAL_APPDATA), 'Spotify', 'Storage');
+	}
+	else {
+		return LINUX_PERSISTENT_CACHE_PATH;
+	}
+}
+
 sub findAllCachedFiles {
 	my ($class, $forceFresh) = @_;
-	my $cacheFolder;
 
 	if (!$forceFresh && (my $cached = $treeCache{'spotty-playlist-folders'})) {
 		return $cached;
 	}
 
-	if (main::ISMAC) {
-		$cacheFolder = MAC_PERSISTENT_CACHE_PATH;
-	}
-	elsif (main::ISWINDOWS) {
-		# C:\Users\michael\AppData\Local\Spotify\Storage
-		require Win32;
-		$cacheFolder = catdir(Win32::GetFolderPath(Win32::CSIDL_LOCAL_APPDATA), 'Spotify', 'Storage');
-	}
-	else {
-		$cacheFolder = LINUX_PERSISTENT_CACHE_PATH;
-	}
+	my $cacheFolder = spotifyCacheFolder();
 
 	my $i = 0;
 	my $candidates = [];
