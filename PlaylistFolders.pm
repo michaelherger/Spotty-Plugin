@@ -357,7 +357,7 @@ sub purgeCache {
 sub formatKB {
 	my $size = $_[0];
 
-	if ($size < 1200) {
+	if ($size < 3200) {
 		return "$size Bytes";
 	}
 
