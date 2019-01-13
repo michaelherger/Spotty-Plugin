@@ -1,0 +1,90 @@
+[% PROCESS settings/header.html %]
+	[% title = "PLUGIN_SPOTTY" %]
+	<style>
+		<!-- div.spotty-instructions {
+			margin: 10px;
+			line-height: 150%;
+		}
+
+		ol.spotty {
+			list-style-type: decimal;
+			list-style-position: inside;
+		}
+		-->
+	</style>
+
+	[% BLOCK niceNumbers %]
+		[% PERL %]
+			my $count = $stash->{count} - 2;
+			print ['Zwei', 'Drei', 'Vier', 'F&uuml;nf', 'Sechs', 'Sieben', 'Acht', 'Neun', 'Zehn', 'Elf', 'Zw&ouml;lf']->[$count] || $count;
+		[% END %]
+	[% END %]
+
+	[% WRAPPER setting title="Playlisten Ordnerstruktur" desc="" %]
+		Leider stellt Spotify keinerlei Informationen zur Ordnerstruktur der Playlisten zur Verf&uuml;gung.
+		Aber Spotty kann versuchen, diese Informationen aus dem Zwischenspeicher-Ordner einer Spotify Anwendung
+		zu extrahieren. Dies kann automatisch geschehen, wenn Spotify auf dem gleichen Rechner installiert ist,
+		wie Logitech Media Server l&auml;uft. Oder du kannst, wenn z.B. Logitech Media Server auf einem NAS installiert
+		ist, diese Daten vom Computer, auf welchem Spotify l&auml;uft, importieren.
+	[% END %]
+
+	[% WRAPPER setting title="Ordnerstruktur in Spotify gefunden" desc="" %]
+		[% endOfPhrase = "in der Spotify Installation deines Systems gefunden (${spotifyCacheFolder})" %]
+		[% IF spotifyFiles.size == 1 %]
+			Eine Playlisten Ordnerstruktur wurde [% endOfPhrase %]
+		[% ELSIF spotifyFiles.size %]
+			[% PROCESS niceNumbers count=spotifyFiles.size %] Playlisten Ordnerstrukturen wurden [% endOfPhrase %]
+		[% ELSE %]
+			Es wurde kein Zwischenspeicher-Ordner [% endOfPhrase %].
+		[% END %]
+	[% END %]
+
+	[% WRAPPER setting title="Importierte Ordnerstruktur Daten" desc="" %]
+		[% IF cacheFiles.size == 1 %]
+			Es wurde eine importierte Ordnerstruktur gefunden.
+		[% ELSIF cacheFiles.size %]
+			Es wurden [% PROCESS niceNumbers count=cacheFiles.size FILTER lower %] importierte Ordnerstrukturen gefunden.
+		[% ELSE %]
+			Es wurde keine importierte Ordnerstruktur gefunden.
+		[% END %]
+	[% END %]
+
+	[% IF cacheFiles.size; WRAPPER setting title="" desc="" %]
+		<div>W&auml;hle die Ordnerstruktur Dateien aus, die du l&ouml;schen m&ouml;chtest:</div>
+		[% PROCESS "plugins/Spotty/settings/playlist-folders-list.html" %]
+	[% END; END %]
+
+	[% WRAPPER setting title="" desc="" %]
+		Falls du Playlisten Ordnerstruktur Informationen importieren m&ouml;chtest, befolge diese Schritte:
+		<div class='spotty-instructions'>
+			<ol class="spotty">
+				<li>Lade <a href="http://www.herger.net/spotty/findSpotifyFolderFiles.sh.zip" target="_blank">dieses Script f&uuml;r
+					Linux/macOS/Unix</a>, oder <a href="http://www.herger.net/spotty/findSpotifyFolderFiles.zip" target="_blank">diese
+					Helfer-Anwendung f&uuml;r Windows</a> auf dem Computer herunter, auf welchem Spotify installiert ist.</li>
+				<li>Entpacke die heruntergeladenen Dateien. Auf Linux/macOS/Unix f&uuml;hre <code>chmod a+x findSpotifyFolderFiles.sh</code>
+					im Ordner, in welchem du das Script gespeichert hast, aus, um es ausf&uuml;hrbar zu machen.</li>
+				<li>F&uuml;hre das Script mit IP Adresse und Port deines Logitech Media Server aus: z.B. <code>./findSpotifyFolderFiles.sh 192.168.0.1:9000</code> (Linux/macOS/Unix),
+					oder <code>findSpotifyFolderFiles.exe 192.168.0.1:9000</code> (Windows)</li>
+			</ol>
+		</div>
+		<div>Du solltest eine Liste mit den Namen der importierten Dateien erhalten. Falls ein Problem aufgetaucht ist, kriegst du eine Fehlermeldung.</div>
+	[% END %]
+
+	</form>
+
+	[% WRAPPER setting title="Ordnerstruktur Datei &uuml;bertragen" desc="" %]
+		Falls die oben beschriebene Methode zum Transfer der Playlisten Ordnerstruktur Informationen fehlschl&auml;gt
+		kannst du die Dateien hier hochladen:<br>
+		<form method="post" enctype="multipart/form-data" action="/plugins/spotty/uploadPlaylistFolderData">
+			<div class="spotty-instructions">
+				<input type="file" name="uploadPlaylistFolderFile"><br>
+				<input type="submit" name="uploadDatFile" value="Hochladen">
+				<input type="hidden" name="uploadFromSettings" value=1>
+			</div>
+	[% END %]
+
+	[% IF uploadError; WRAPPER setting title="" desc="" %]
+		<span style="color: red">[% uploadError %]</span>
+	[% END; END %]
+
+[% PROCESS settings/footer.html %]
