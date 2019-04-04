@@ -119,7 +119,7 @@ sub helperCheck {
 				from_json($1);
 			};
 
-			main::DEBUGLOG && $log->is_debug && $helperCapabilities && $log->debug("Found helper capabilities table: " . Data::Dump::dump($helperCapabilities));
+			main::INFOLOG && $log->is_info && $helperCapabilities && $log->info("Found helper capabilities table: " . Data::Dump::dump($helperCapabilities));
 			$helperCapabilities ||= {};
 		}
 

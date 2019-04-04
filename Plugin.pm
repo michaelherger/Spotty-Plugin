@@ -173,6 +173,8 @@ sub postinitPlugin { if (main::TRANSCODING) {
 			});
 		}
 	}
+
+	$class->updateTranscodingTable();
 } }
 
 sub updateTranscodingTable {
@@ -192,7 +194,6 @@ sub updateTranscodingTable {
 	}
 
 	$helper = basename($helper) if $helper;
-	$helper = '' if $helper eq 'spotty';
 
 	my $tmpDir = $class->getTmpDir();
 	if ($tmpDir) {
@@ -200,7 +201,7 @@ sub updateTranscodingTable {
 	}
 
 	# default volume normalization to whatever the user chose for his player in LMS
-	if (!defined $prefs->client($client)->get('replaygain')) {
+	if ($client && !defined $prefs->client($client)->get('replaygain')) {
 		$prefs->client($client)->set('replaygain', $serverPrefs->client($client)->get('replayGainMode'));
 	}
 
@@ -212,9 +213,10 @@ sub updateTranscodingTable {
 			$commandTable->{$_} =~ s/^[^\[]+// if !$tmpDir;
 			$commandTable->{$_} =~ s/--bitrate \d{2,3}/$bitrate/;
 			$commandTable->{$_} =~ s/\[spotty\]/\[$helper\]/g if $helper;
+			$commandTable->{$_} =~ s/\[spotty-ogg\]/\[$helper\]/g if $helper && Plugins::Spotty::Helper->getCapability('ogg-direct');
 			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g;
 			$commandTable->{$_} =~ s/ --enable-volume-normalisation //;
-			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if Plugins::Spotty::Helper->getCapability('volume-normalisation') && $prefs->client($client)->get('replaygain');
+			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if Plugins::Spotty::Helper->getCapability('volume-normalisation') && $client && $prefs->client($client)->get('replaygain');
 		}
 	}
 }
