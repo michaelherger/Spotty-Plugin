@@ -196,7 +196,7 @@ sub getMetadataFor {
 		$meta = {};
 	}
 
-	$meta->{bitrate} ||= '320k VBR';
+	$meta->{bitrate} ||= $prefs->get('bitrate') . 'k VBR';
 	$meta->{originalType} ||= 'Ogg Vorbis (Spotify)';
 	$meta->{type}    = $meta->{originalType};
 	$meta->{cover}   ||= IMG_TRACK;
