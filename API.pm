@@ -1426,6 +1426,7 @@ sub _call {
 								my ($ttl) = $cache_control =~ /max-age=(\d+)/;
 
 								# cache some items even if max-age is zero. We're navigating them often
+								# TODO - verify once usernames are being removed from the playlist ID
 								if ( !$ttl && $response->url =~ m|/playlists/([A-Za-z0-9]{22})/tracks| ) {
 									my ($user) = $self->getPlaylistUserAndId("spotify:playlist:$1");
 									$user ||= '';
@@ -1438,7 +1439,7 @@ sub _call {
 									}
 								}
 
-								$ttl ||= 60;		# XXX - we're going to always cache for a minute, as we often do follow up calls while navigating
+								$ttl ||= 60;		# we're going to always cache for a minute, as we often do follow up calls while navigating
 
 								if ($ttl) {
 									main::INFOLOG && $log->is_info && $log->info("Caching result for $ttl using max-age (" . $response->url . ")");

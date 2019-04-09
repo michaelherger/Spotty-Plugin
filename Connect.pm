@@ -136,7 +136,6 @@ sub getNextTrack {
 	if ( $client->pluginData('newTrack') ) {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
 
-		# XXX - how to deal with context here?
 		$class->getAPIHandler($client)->player(sub {
 			$song->streamUrl($_[0]->{item}->{uri});
 			$class->setSpotifyConnect($client, $_[0]);
