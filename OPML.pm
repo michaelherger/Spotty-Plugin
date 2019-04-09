@@ -600,7 +600,7 @@ sub album {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_ALBUM_TO_LIBRARY'),
 			url  => \&addAlbumToLibrary,
 			passthrough => [{ id => $album->{id}, name => $album->{name} }],
-			nextWindow => 'refresh'
+			nextWindow => 'parent'
 		};
 
 		my %artists;
@@ -761,7 +761,7 @@ sub _gotArtistData {
 			name => $artist->{name},
 			uri => $artistURI
 		}],
-		nextWindow => 'refresh'
+		nextWindow => 'parent'
 	};
 
 	$cb->({ items => $items });
