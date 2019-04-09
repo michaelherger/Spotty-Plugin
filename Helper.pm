@@ -215,13 +215,4 @@ sub isLowCaloriesPi {
 	return $isLowCaloriesPi;
 }
 
-# TODO - this should no longer be needed 16.09.18
-# sub shutdown {
-# 	# ugly attempt at killing all hanging helper applications...
-# 	if ( !main::ISWINDOWS && (my $helper = $_[0]->get()) ) {
-# 		File::Basename::basename($helper);
-# 		`killall $helper > /dev/null 2>&1`;
-# 	}
-# }
-
 1;

@@ -586,7 +586,6 @@ sub shutdownPlugin { if (main::TRANSCODING) {
 	}
 
 	Plugins::Spotty::Connect->shutdown();
-	Plugins::Spotty::Helper->shutdown();
 } }
 
 1;
