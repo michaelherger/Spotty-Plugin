@@ -81,7 +81,7 @@ sub initPlugin {
 			my $disabledFormats = $serverPrefs->get('disabledformats');
 
 			if (!grep /^spt/, @$disabledFormats) {
-				# XXX - ugly... but there's no API to disable formats
+				# ugly... but there's no API to disable formats
 				push @$disabledFormats, "spt-flc-*-*";
 				$serverPrefs->set('disabledformats', $disabledFormats);
 			}

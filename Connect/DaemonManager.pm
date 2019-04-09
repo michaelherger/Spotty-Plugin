@@ -147,7 +147,6 @@ sub startHelper {
 		$helper->start;
 	}
 	# Every few minutes we'll verify whether the daemon is still connected to Spotify
-	# TODO - remove check for disableDiscovery if this proves to be working ok
 	elsif ( $prefs->get('disableDiscovery') && $prefs->get('checkDaemonConnected') && !$helper->spotifyIdIsRecent ) {
 		main::INFOLOG && $log->is_info && $log->info("Haven't seen this daemon online in a while - get an updated list ($clientId)");
 
@@ -211,7 +210,6 @@ sub checkAPIConnectPlayers {
 				$class->stopHelper($helper->mac);
 
 				# flag this system as flaky if we have to restart and the user is relying on the server
-				# XXX - let's not enable yet, it might be over-acting
 				# $prefs->set('checkDaemonConnected', 1) if $prefs->get('disableDiscovery');
 			}
 			elsif ( $spotifyId ) {
