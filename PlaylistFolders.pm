@@ -177,7 +177,8 @@ sub _cacheKey {
 	my $size = (stat($file))[7];
 	my $mtime = (stat(_))[9];
 
-	return join(':', 'spotty', $file, $size, $mtime);
+	# make second part a version string to allow flushing the cache
+	return join(':', 'spotty', 2, $file, $size, $mtime);
 }
 
 sub getTree {
