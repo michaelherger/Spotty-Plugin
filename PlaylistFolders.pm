@@ -69,10 +69,10 @@ sub parse {
 		$item =~ s/(.*?)\r.*/$1/s;
 
 		if ($item =~ /^ser:/) {
-			# the the last part of the URI is an ID which must be no longer than 22 characters
-			$item =~ s/^(ser(:[^:]*){0,1}:playlist:[a-z0-9]{22}).*$/$1/i;
+			# the last part of the URI is an ID which must be no longer than 22 characters
+			$item =~ s/^ser(?::[^:]*){0,1}(:playlist:[a-z0-9]{22}).*$/$1/i;
 
-			$map->{'spotify:u' . $item} = {
+			$map->{'spotify' . $item} = {
 				parent => $parent,
 				order => $i++
 			};
@@ -198,6 +198,8 @@ sub getTree {
 		my $data = parse($candidate);
 		my $hits = 0;
 		foreach (@$uris) {
+			# sometimes playlist URIs come with the user, sometimes not...
+			s/user:[^:]*//;
 			$hits++ if $data->{$_};
 		}
 
@@ -222,6 +224,11 @@ sub getTree {
 		main::INFOLOG && $log->is_info && $log->info(sprintf('Found a hierarchy which has %s%% of the playlist\'s tracks', int($winner->{ratio} * 100)));
 		return $treeCache{$key} = $winner->{data};
 	}
+	elsif (main::INFOLOG && $log->is_info) {
+		$log->info("Didn't find any likely matching hierarchy: best ratio is $winner->{ratio}");
+	}
+
+	return;
 }
 
 sub handlePage {
