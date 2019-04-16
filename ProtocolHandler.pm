@@ -192,7 +192,7 @@ sub getMetadataFor {
 
 	if (!$meta) {
 		# grab missing metadata asynchronously
-		$class->getBulkMetadata($client);
+		$class->getBulkMetadata($client, $song ? undef : $url);
 		$meta = {};
 	}
 
@@ -215,17 +215,25 @@ sub getMetadataFor {
 }
 
 sub getBulkMetadata {
-	my ($class, $client) = @_;
+	my ($class, $client, $uri) = @_;
 
-	if ( !$client->master->pluginData('fetchingMeta') ) {
+	my @uris;
+
+	if ($uri) {
+		@uris = ($uri);
+	}
+	elsif ( !$client->master->pluginData('fetchingMeta') ) {
 		$client->master->pluginData( fetchingMeta => 1 );
+		@uris = @{ Slim::Player::Playlist::playList($client) };
+	}
 
+	if (scalar @uris) {
 		# Go fetch metadata for all tracks on the playlist without metadata
 		my @need;
 
 		my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
-		for my $track ( @{ Slim::Player::Playlist::playList($client) } ) {
+		for my $track ( @uris ) {
 			my $uri = blessed($track) ? $track->url : $track;
 			$uri =~ s/\///g;
 
