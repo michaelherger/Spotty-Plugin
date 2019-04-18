@@ -136,6 +136,10 @@ PLUGIN_SPOTTY_MISSING_HELPER
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Vermutlich wird diese auf ihrem System nicht unterstützt. Bitte wenden Sie sich an mich, unter Angabe der folgenden Plattform-Informationen:
 	EN	There has been a problem running the Spotty helper application. Most likely your operating system and/or platform is not supported. Please report the following details to me:
 
+PLUGIN_SPOTTY_MISSING_HELPER_ARM_LEGACY
+	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Du musst ev. das zusätzliche "Spotty Legacy Helper für ARM" Plugin installieren.
+	EN	There has been a problem running the Spotty helper application. You might want to give the additional "Spotty Legacy Helper for ARM" plugin a try.
+
 PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Bitte stellen Sie sicher, dass die <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (32-Bit!)</a> installiert ist.
 	EN	There has been a problem running the Spotty helper application. Please make sure you have the <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (32-bit!)</a> installed on your system.

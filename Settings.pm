@@ -69,8 +69,17 @@ sub handler {
 			$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS');
 		}
 		else {
-			$paramRef->{helperMissing} = string($knownIncompatible ? 'PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE' : 'PLUGIN_SPOTTY_MISSING_HELPER') .
-				sprintf('<br><br>%s %s / %s<br><br>%s<br>%s<br>%s',
+			if ($knownIncompatible) {
+				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE');
+			}
+			elsif (Slim::Utils::OSDetect::isLinux() && ($osDetails->{'osArch'} || '') =~ /arm/i) {
+				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_ARM_LEGACY');
+			}
+			else {
+				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER');
+			}
+
+			$paramRef->{helperMissing} .= sprintf('<br><br>%s %s / %s<br><br>%s<br>%s<br>%s',
 					string('INFORMATION_OPERATINGSYSTEM') . string('COLON'),
 					$osDetails->{'osName'},
 					($osDetails->{'osArch'} ? $osDetails->{'osArch'} : 'unknown'),
