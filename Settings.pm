@@ -58,9 +58,6 @@ sub handler {
 
 	my $osDetails = Slim::Utils::OSDetect::details();
 
-	my $knownIncompatible = $osDetails->{osName} =~ /Mac.?OS .*10\.(?:1|2|3|4|5|6)\./i
-		|| ($osDetails->{osArch} && $osDetails->{osArch} =~ /\b(?:powerpc)\b/i);
-
 	# don't even continue if we're missing the helper application
 	if ( !$helperPath ) {
 
@@ -69,8 +66,14 @@ sub handler {
 			$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS');
 		}
 		else {
+			my $knownIncompatible = $osDetails->{osName} =~ /Mac.?OS .*10\.(?:1|2|3|4|5|6)\./i
+				|| ($osDetails->{osArch} && $osDetails->{osArch} =~ /\b(?:powerpc)\b/i);
+
 			if ($knownIncompatible) {
 				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE');
+			}
+			elsif (Slim::Utils::OSDetect::isLinux() && ($osDetails->{'osArch'} || '') =~ /armv8|aarch64/i) {
+				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_AARCH64');
 			}
 			elsif (Slim::Utils::OSDetect::isLinux() && ($osDetails->{'osArch'} || '') =~ /arm/i) {
 				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_ARM_LEGACY');
