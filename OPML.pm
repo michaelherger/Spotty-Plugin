@@ -397,7 +397,7 @@ sub whatsNew {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->newReleases(sub {
 		my ($albums) = @_;
 
-		my $items = albumList($client, $albums);
+		my $items = albumList($client, $albums, 1);
 
 		$cb->({ items => $items });
 	});
@@ -998,7 +998,7 @@ sub trackList {
 }
 
 sub albumList {
-	my ( $client, $albums ) = @_;
+	my ( $client, $albums, $noIndexList ) = @_;
 
 	my $items = [];
 
@@ -1009,7 +1009,7 @@ sub albumList {
 	for my $album ( @{$albums} ) {
 		my $artists = join( ', ', map { $_->{name} } @{ $album->{artists} } );
 
-		my $textkey = uc(substr($album->{name} || '', 0, 1));
+		my $textkey = $noIndexList ? '' : uc(substr($album->{name} || '', 0, 1));
 
 		if ( defined $indexLetter && $indexLetter ne ($textkey || '') ) {
 			push @$indexList, [$indexLetter, $count];
