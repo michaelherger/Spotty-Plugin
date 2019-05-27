@@ -275,6 +275,8 @@ sub _onNewSong {
 	main::INFOLOG && $log->is_info && $log->info("Got a new track event, but this is no longer Spotify Connect");
 	$client->playingSong()->pluginData( context => 0 );
 	$client->pluginData( SpotifyConnect => 0 );
+	Slim::Utils::Timers::killTimers($client, \&_syncController);
+	Slim::Utils::Timers::killTimers($client, \&_getNextTrack);
 	__PACKAGE__->getAPIHandler($client)->playerPause(undef, $client->id);
 }
 
