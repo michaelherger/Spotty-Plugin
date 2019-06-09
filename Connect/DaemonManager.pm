@@ -105,24 +105,23 @@ sub initHelpers {
 				($syncMaster) = map { $_->id } grep {
 					$prefs->client($_)->get('enableSpotifyConnect')
 				} sort { $a->id cmp $b->id } Slim::Player::Sync::slaves($master);
-
-				main::INFOLOG && $log->is_info && $log->info("Master doesn't have Connect, but slave does: $syncMaster");
 			}
 		}
 
-		# we're not the sync group's master itself, but the first slave with Connect enabled
 		if ( $syncMaster && $syncMaster eq $client->id ) {
+			main::INFOLOG && $log->is_info && $log->info("This is not the sync group's master itself, but the first slave with Connect enabled: $syncMaster");
 			$class->startHelper($client);
 		}
-		# we're not the sync group's master, and not the first slave with Connect either
 		elsif ( $syncMaster ) {
+			main::INFOLOG && $log->is_info && $log->info("This is not the sync group's master, and not the first slave with Connect either: $syncMaster");
 			$class->stopHelper($client);
 		}
-		# we're the sync group's master, or there's no group
 		elsif ( !$syncMaster && $prefs->client($client)->get('enableSpotifyConnect') ) {
+			main::INFOLOG && $log->is_info && $log->info("This is the sync group's master, or a standalone player with Spotify Connect enabled: $syncMaster");
 			$class->startHelper($client);
 		}
 		else {
+			main::INFOLOG && $log->is_info && $log->info("This is a standalone player with Spotify Connect disabled: $syncMaster");
 			$class->stopHelper($client);
 		}
 	}
