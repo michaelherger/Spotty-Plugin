@@ -72,6 +72,8 @@ sub initPlugin {
 		helper => '',
 	});
 
+	$prefs->setValidate({ 'validator' => sub { $_[1] =~ /^[a-f0-9]{32}$/i } }, 'iconCode');
+
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
 	# this might be premature optimization, as ARM CPUs are getting more and more powerful...
 	if ( !main::ISWINDOWS && !main::ISMAC

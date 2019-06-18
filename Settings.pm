@@ -155,6 +155,8 @@ sub beforeRender {
 	$paramRef->{canConnect}     = Plugins::Spotty::Connect->canSpotifyConnect();
 
 	$paramRef->{hasDefaultIcon} = Plugins::Spotty::Plugin->hasDefaultIcon();
+
+	$paramRef->{warning} && $paramRef->{warning} =~ s/iconCode/Client ID/i;
 }
 
 

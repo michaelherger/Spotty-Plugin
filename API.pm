@@ -41,6 +41,9 @@ my $prefs = preferences('plugin.spotty');
 my $error429;
 my %tokenHandlers;
 
+# async stuff not working on Windows?
+use constant CAN_ASYNC_GET_TOKEN => !main::ISWINDOWS;
+
 # override the scope list hard-coded in to the spotty helper application
 use constant SPOTIFY_SCOPE => join(',', qw(
   user-read-private
@@ -120,13 +123,7 @@ sub getToken {
 				$log->info("Trying to get access token: $cmd2");
 			}
 
-			# async stuff not working on Windows?
-			if (main::ISWINDOWS) {
-				main::INFOLOG && $log->info("We're on Windows - can't do non-blocking getToken call. Good luck!");
-				$cb->($self->_gotTokenResponse(`$cmd`));
-				return;
-			}
-			else {
+			if (CAN_ASYNC_GET_TOKEN) {
 				open my $sh, '-|', $cmd or do {
 					# fall back to blocking code if needed...
 					main::INFOLOG && $log->info('Failed to do non-blocking getToken call - trying blocking mode. Good luck!');
@@ -154,6 +151,11 @@ sub getToken {
 						}
 					});
 				}
+			}
+			else {
+				main::INFOLOG && $log->info("Can't do non-blocking getToken call. Good luck!");
+				$cb->($self->_gotTokenResponse(`$cmd`));
+				return;
 			}
 
 			return;
