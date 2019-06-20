@@ -108,7 +108,7 @@
 		<label for="pref_disableDiscovery">[% "PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC" | string %]</label>
 	[% END; END %]
 
-	[% IF canConnect && canDiscovery && prefs.pref_disableDiscovery; WRAPPER setting title="" desc="" %]
+	[% IF canConnect && canDiscovery; WRAPPER setting title="" desc="" %]
 		<input name="pref_checkDaemonConnected" id="pref_checkDaemonConnected" type="checkbox" [% IF prefs.pref_checkDaemonConnected %] checked [% END %]>
 		<label for="pref_checkDaemonConnected">[% "PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED" | string %]</label>
 	[% END; END %]

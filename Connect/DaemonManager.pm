@@ -117,11 +117,11 @@ sub initHelpers {
 			$class->stopHelper($client);
 		}
 		elsif ( !$syncMaster && $prefs->client($client)->get('enableSpotifyConnect') ) {
-			main::INFOLOG && $log->is_info && $log->info("This is the sync group's master, or a standalone player with Spotify Connect enabled: $syncMaster");
+			main::INFOLOG && $log->is_info && $log->info("This is the sync group's master, or a standalone player with Spotify Connect enabled: " .  $client->id);
 			$class->startHelper($client);
 		}
 		else {
-			main::INFOLOG && $log->is_info && $log->info("This is a standalone player with Spotify Connect disabled: $syncMaster");
+			main::INFOLOG && $log->is_info && $log->info("This is a standalone player with Spotify Connect disabled: " .  $client->id);
 			$class->stopHelper($client);
 		}
 	}
@@ -146,7 +146,7 @@ sub startHelper {
 		$helper->start;
 	}
 	# Every few minutes we'll verify whether the daemon is still connected to Spotify
-	elsif ( $prefs->get('disableDiscovery') && $prefs->get('checkDaemonConnected') && !$helper->spotifyIdIsRecent ) {
+	elsif ( $prefs->get('checkDaemonConnected') && !$helper->spotifyIdIsRecent ) {
 		main::INFOLOG && $log->is_info && $log->info("Haven't seen this daemon online in a while - get an updated list ($clientId)");
 
 		my $spotty = Plugins::Spotty::Connect->getAPIHandler($clientId);
