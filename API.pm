@@ -1261,8 +1261,9 @@ sub _normalize {
 	elsif ($type eq 'playlist') {
 		if ( $item->{owner} && ref $item->{owner} ) {
 			$item->{creator} = $item->{owner}->{id};
-			if ( ($cache->get('playlist_owner_' . $item->{id}) || '') ne $item->{owner}->{id}) {
-				$cache->set('playlist_owner_' . $item->{id}, $item->{owner}->{id}, 86400*30);
+			my $ownerId = Slim::Utils::Unicode::utf8off($item->{owner}->{id});
+			if ( ($cache->get('playlist_owner_' . $item->{id}) || '') ne $ownerId)  {
+				$cache->set('playlist_owner_' . $item->{id}, $ownerId, 86400*30);
 			}
 		}
 		$item->{image} = _getLargestArtwork(delete $item->{images});
