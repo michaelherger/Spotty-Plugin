@@ -3,8 +3,6 @@ package Plugins::Spotty::API;
 use strict;
 use Exporter::Lite;
 
-our @EXPORT_OK = qw(uri2url);
-
 BEGIN {
 	use constant CACHE_TTL  => 86400 * 7;
 	use constant LIBRARY_LIMIT => 500;
@@ -12,10 +10,9 @@ BEGIN {
 	use constant DEFAULT_LIMIT => 200;
 	use constant MAX_LIMIT => 10_000;
 	use constant SPOTIFY_LIMIT => 50;
-	use constant GET_TOKEN_TIMEOUT => 30;
 
 	use Exporter::Lite;
-	our @EXPORT_OK = qw( SPOTIFY_LIMIT DEFAULT_LIMIT );
+	our @EXPORT_OK = qw( SPOTIFY_LIMIT DEFAULT_LIMIT uri2url );
 }
 
 use base qw(Slim::Utils::Accessor);
@@ -29,6 +26,7 @@ use URI::Escape qw(uri_escape_utf8);
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::API::Pipeline;
 use Plugins::Spotty::API::AsyncRequest;
+use Plugins::Spotty::API::Token;
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -40,26 +38,6 @@ my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $error429;
 my %tokenHandlers;
-
-# async stuff not working on Windows?
-use constant CAN_ASYNC_GET_TOKEN => !main::ISWINDOWS;
-
-# override the scope list hard-coded in to the spotty helper application
-use constant SPOTIFY_SCOPE => join(',', qw(
-  user-read-private
-  user-follow-modify
-  user-follow-read
-  user-library-read
-  user-library-modify
-  user-top-read
-  user-read-recently-played
-  user-read-playback-state
-  user-modify-playback-state
-  playlist-read-private
-  playlist-read-collaborative
-  playlist-modify-public
-  playlist-modify-private
-));
 
 {
 	__PACKAGE__->mk_accessor( rw => qw(
@@ -107,115 +85,13 @@ sub getToken {
 		}
 	}
 
-	if (!$token) {
-		# try to use client specific credentials
-		if ( $self->cache || (my $account = Plugins::Spotty::Plugin->getAccount($self->client)) ) {
-			my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s" 2>&1',
-				scalar Plugins::Spotty::Helper->get(),
-				$self->cache || Plugins::Spotty::Plugin->cacheFolder($account),
-				$prefs->get('iconCode'),
-				SPOTIFY_SCOPE
-			);
-
-			if (main::INFOLOG && $log->is_info) {
-				my $cmd2 = $cmd;
-				$cmd2 =~ s/-i [a-f0-9]+/-i abcdef1234567890/;
-				$log->info("Trying to get access token: $cmd2");
-			}
-
-			if (CAN_ASYNC_GET_TOKEN) {
-				open my $sh, '-|', $cmd or do {
-					# fall back to blocking code if needed...
-					main::INFOLOG && $log->info('Failed to do non-blocking getToken call - trying blocking mode. Good luck!');
-					$cb->($self->_gotTokenResponse(`$cmd`));
-					return;
-				};
-
-				# keep a list of callbacks which need to be executed once we're done
-				my $tokenHandler = $tokenHandlers{$username} || {};
-				my $listeners = $tokenHandler->{listeners} || [];
-				$tokenHandler->{listeners} = [ @$listeners, $cb ];
-
-				if (!$tokenHandler->{timer}) {
-					Slim::Utils::Timers::killTimers($self, \&_killTokenHelper);
-					$tokenHandler->{timer} = Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + GET_TOKEN_TIMEOUT, \&_killTokenHelper, $sh);
-					$tokenHandlers{$username} = $tokenHandler;
-
-					my $response = '';
-					Slim::Networking::Select::addRead($sh, sub {
-						if (!sysread($sh, $response, 2 * 1024, length($response))) {
-							Slim::Networking::Select::removeRead($sh);
-							close $sh;
-
-							$self->_gotTokenResponse($response);
-						}
-					});
-				}
-			}
-			else {
-				main::INFOLOG && $log->info("Can't do non-blocking getToken call. Good luck!");
-				$cb->($self->_gotTokenResponse(`$cmd`));
-				return;
-			}
-
-			return;
-		}
+	if ($token) {
+		$cb->($token);
 	}
-
-	$cb->($token);
+	else {
+		Plugins::Spotty::API::Token->get($self, $cb);
+	}
 }
-
-sub _gotTokenResponse {
-	my ($self, $response) = @_;
-
-	my $username = $self->username || 'generic';
-	my $cacheKey = 'spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
-
-	my $token;
-
-	eval {
-		main::INFOLOG && $log->is_info && $log->info("Got response: $response");
-		$response = decode_json($response);
-	};
-
-	$log->error("Failed to get Spotify access token: $@ \n$response") if $@;
-
-	if ( $response && ref $response ) {
-		if ( $token = $response->{accessToken} ) {
-			if ( main::INFOLOG && $log->is_info ) {
-				$log->info("Received access token: " . Data::Dump::dump($response));
-				$log->info("Caching for " . ($response->{expiresIn} || 3600) . " seconds.");
-			}
-
-			# Cache for the given expiry time (less some to be sure...)
-			$cache->set($cacheKey, $token, ($response->{expiresIn} || 3600) - 300);
-		}
-	}
-
-	if (!$token) {
-		$log->error("Failed to get Spotify access token");
-		# store special value to prevent hammering the backend
-		$cache->set($cacheKey, $token = -1, 15);
-	}
-
-	foreach (@{ $tokenHandlers{$username}->{listeners} || [] }) {
-		$_->($token);
-	}
-
-	Slim::Utils::Timers::killTimers($self, \&_killTokenHelper);
-	delete $tokenHandlers{$username};
-
-	return $token;
-}
-
-sub _killTokenHelper { if (!main::ISWINDOWS) {
-	my ($self, $sh) = @_;
-
-	Slim::Networking::Select::removeRead($sh);
-	close $sh;
-
-	$self->_gotTokenResponse('getToken timed out');
-} }
 
 sub me {
 	my ( $self, $cb ) = @_;
