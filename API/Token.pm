@@ -41,6 +41,9 @@ use constant SPOTIFY_SCOPE => join(',', qw(
 use constant POLLING_INTERVAL => 0.5;
 use constant TIMEOUT => 15;
 
+# Argh...
+use constant CAN_ASYNC_GET_TOKEN => !main::ISWINDOWS;
+
 my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
@@ -66,11 +69,7 @@ sub new {
 		$self->_tmpfile
 	);
 
-	if (main::INFOLOG && $log->is_info) {
-		my $cmd2 = $cmd;
-		$cmd2 =~ s/-i [a-f0-9]+/-i abcdef1234567890/;
-		$log->info("Trying to get access token: $cmd2");
-	}
+	_logCommand($cmd);
 
 	eval {
 		$self->_proc( Proc::Background->new($cmd) );
@@ -90,42 +89,14 @@ sub _pollTokenHelper {
 	my ($self) = @_;
 	Slim::Utils::Timers::killTimers($self, \&_pollTokenHelper);
 
-	if ($self && $self->_tmpfile && -f $self->_tmpfile && -s $self->_tmpfile) {
+	if ($self && $self->_tmpfile && -f $self->_tmpfile && -s _) {
 		Slim::Utils::Timers::killTimers($self, \&_killTokenHelper);
 		$self->_killTokenHelper(1);
 
 		my $response = read_file($self->_tmpfile);
 		unlink $self->_tmpfile;
 
-		my $username = $self->api->username || 'generic';
-		my $cacheKey = 'spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
-
-		my $token;
-
-		eval {
-			main::INFOLOG && $log->is_info && $log->info("Got response: $response");
-			$response = decode_json($response);
-		};
-
-		$log->error("Failed to get Spotify access token: $@ \n$response") if $@;
-
-		if ( $response && ref $response ) {
-			if ( $token = $response->{accessToken} ) {
-				if ( main::DEBUGLOG && $log->is_debug ) {
-					$log->debug("Received access token: " . Data::Dump::dump($response));
-					$log->debug("Caching for " . ($response->{expiresIn} || 3600) . " seconds.");
-				}
-
-				# Cache for the given expiry time (less some to be sure...)
-				$cache->set($cacheKey, $token, ($response->{expiresIn} || 3600) - 300);
-			}
-		}
-
-		if (!$token) {
-			$log->error("Failed to get Spotify access token");
-			# store special value to prevent hammering the backend
-			$cache->set($cacheKey, $token = -1, 15);
-		}
+		my $token = $self->_gotTokenInfo($response, $self->api->username || 'generic');
 
 		my $cbs = $self->_callbacks();
 		$self->_callbacks([]);
@@ -136,6 +107,49 @@ sub _pollTokenHelper {
 	else {
 		Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper);
 	}
+}
+
+sub _logCommand {
+	if (main::INFOLOG && $log->is_info) {
+		my ($cmd) = @_;
+		$cmd =~ s/-i [a-f0-9]+/-i abcdef1234567890/;
+		$log->info("Trying to get access token: $cmd");
+	}
+}
+
+sub _gotTokenInfo {
+	my ($class, $response, $username) = @_;
+
+	my $cacheKey = 'spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
+
+	my $token;
+
+	eval {
+		main::INFOLOG && $log->is_info && $log->info("Got response: $response");
+		$response = decode_json($response);
+	};
+
+	$log->error("Failed to get Spotify access token: $@ \n$response") if $@;
+
+	if ( $response && ref $response ) {
+		if ( $token = $response->{accessToken} ) {
+			if ( main::DEBUGLOG && $log->is_debug ) {
+				$log->debug("Received access token: " . Data::Dump::dump($response));
+				$log->debug("Caching for " . ($response->{expiresIn} || 3600) . " seconds.");
+			}
+
+			# Cache for the given expiry time (less some to be sure...)
+			$cache->set($cacheKey, $token, ($response->{expiresIn} || 3600) - 300);
+		}
+	}
+
+	if (!$token) {
+		$log->error("Failed to get Spotify access token");
+		# store special value to prevent hammering the backend
+		$cache->set($cacheKey, $token = -1, 15);
+	}
+
+	return $token;
 }
 
 sub _killTokenHelper {
@@ -155,16 +169,34 @@ sub _killTokenHelper {
 sub get {
 	my ($class, $api, $cb) = @_;
 
-	my $proc = $procs{$api};
+	if (CAN_ASYNC_GET_TOKEN) {
+		my $proc = $procs{$api};
 
-	if ( !($proc && $proc->_proc && $proc->_proc->alive()) ) {
-		$proc = $procs{$api} = $class->new($api);
+		if ( !($proc && $proc->_proc && $proc->_proc->alive()) ) {
+			$proc = $procs{$api} = $class->new($api);
+		}
+
+		if ($cb) {
+			my $cbs = $proc->_callbacks;
+			push @$cbs, $cb;
+			$proc->_callbacks($cbs);
+		}
 	}
+	else {
+		main::INFOLOG && $log->info("Can't do non-blocking getToken call. Good luck!");
 
-	if ($cb) {
-		my $cbs = $proc->_callbacks;
-		push @$cbs, $cb;
-		$proc->_callbacks($cbs);
+		my $account = Plugins::Spotty::Plugin->getAccount($api->client);
+
+		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',
+			scalar Plugins::Spotty::Helper->get(),
+			$api->cache || Plugins::Spotty::Plugin->cacheFolder($account),
+			$prefs->get('iconCode'),
+			SPOTIFY_SCOPE
+		);
+
+		_logCommand($cmd);
+
+		$cb->($class->_gotTokenInfo(`$cmd 2>&1`), $api->username || 'generic');
 	}
 }
 
