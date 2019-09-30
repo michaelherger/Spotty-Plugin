@@ -115,7 +115,7 @@ sub handler {
 
 	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::Plugin->hasCredentials()) ) {
 		$response->code(RC_MOVED_TEMPORARILY);
-		$response->header('Location' => 'authentication.html');
+		$response->header('Location' => 'authentication.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 	}
 

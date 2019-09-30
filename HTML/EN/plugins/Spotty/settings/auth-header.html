@@ -1,4 +1,4 @@
-[% extJsScripts = BLOCK %]
+[% IF useExtJS; extJsScripts = BLOCK %]
 	<script TYPE="text/javascript">
 		Ext.onReady(function() {
 			// check whether credentials have been saved
@@ -24,13 +24,26 @@
 			margin: 10px;
 			line-height: 150%;
 		}
-		
+
 		ol.spotty {
 			list-style-type: decimal;
 			list-style-position: inside;
 		}
 	-->
 	</style>
+[% END; ELSE %]
+	<script TYPE="text/javascript" language="JavaScript">
+		window.setInterval(function () {
+			new Ajax.Request('/plugins/Spotty/settings/hasCredentials[% IF accountId; "?accountId=" _ accountId; END %]', {
+				onSuccess: function(response) {
+					response = response.responseText.evalJSON();
+
+					if (response.hasCredentials)
+						window.location.href = 'basic.html';
+				}
+			});
+		}, 2000);
+	</script>
 [% END %]
 [% PROCESS settings/header.html %]
 
