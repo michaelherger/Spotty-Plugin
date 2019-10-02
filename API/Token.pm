@@ -196,7 +196,7 @@ sub get {
 
 		_logCommand($cmd);
 
-		$cb->($class->_gotTokenInfo(`$cmd 2>&1`), $api->username || 'generic');
+		$cb->($class->_gotTokenInfo(`$cmd 2>&1`, $api->username || 'generic'));
 	}
 }
 
