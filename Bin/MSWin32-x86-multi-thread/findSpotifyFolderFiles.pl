@@ -12,6 +12,9 @@ use Win32;
 use constant MAX_FILE_TO_PARSE => 512 * 1024;
 
 my $folder = catdir(Win32::GetFolderPath(Win32::CSIDL_LOCAL_APPDATA), 'Spotify', 'Storage');
+
+print "Searching '$folder' for playlist information...\n";
+
 my $candidates;
 
 if (-d $folder && -r _) {
@@ -22,6 +25,7 @@ if (-d $folder && -r _) {
     }, $folder);
 
     while ( defined (my $file = $files->()) ) {
+      #   print "Candidate: $file: " . (-s $file) . "?\n";
         my $data = read_file($file, scalar_ref => 1);
         if ($$data =~ /\bstart-group\b/) {
             push @$candidates, $file;
@@ -35,16 +39,19 @@ $server = undef if $server !~ /:\d+$/;
 foreach (@$candidates) {
     if ($server) {
         my $url = sprintf('http://%s/plugins/spotty/uploadPlaylistFolderData', $server);
-        my $ua = LWP::UserAgent->new();
+        my $ua = LWP::UserAgent->new(
+           timeout => 15
+        );
         my $response = $ua->post(
             $url,
-            Content_Type => 'multipart/form-data', 
+            Content_Type => 'multipart/form-data',
             Content => [filename => [$_, basename($_)]]
         );
         print $response->content;
     }
     else {
-        print "$_\n";
+        print "Found: $_: " . (-s $_) . "\n";
     }
 }
 
+print "Done.";

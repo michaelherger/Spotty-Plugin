@@ -4,6 +4,7 @@ Script: findSpotifyFolderFiles.pl
 Add: URI
 Clean: 1
 Debug:
+Dependent: 0
 Dyndll: 0
 Exe: findSpotifyFolderFiles.exe
 Force: 1
@@ -14,8 +15,14 @@ Runlib:
 Shared: none
 Tmpdir:
 Verbose: 0
+Trim: Net::SSLeay::
+Trim: utf8::
+Trim: Compress::
+Trim: Encode::
+Trim: HTML::Parser
 Version-CompanyName: Michael Herger
 Version-LegalCopyright: Michael Herger
 Version-ProductName: findSpotifyFolderFiles
-Version-ProductVersion: 1.0.1
+Version-ProductVersion: 1.0.2
 Warnings: 0
+Xclude: 0
