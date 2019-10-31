@@ -184,6 +184,8 @@ sub _cacheKey {
 sub getTree {
 	my ($class, $uris) = @_;
 
+	return unless $uris && ref $uris && scalar @$uris;
+
 	my $key = md5_hex(join('||', sort @$uris));
 
 	if (my $cached = $treeCache{$key}) {
