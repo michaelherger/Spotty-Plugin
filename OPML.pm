@@ -15,7 +15,7 @@ use Slim::Utils::Strings qw(string cstring);
 
 use constant IMG_TRACK => '/html/images/cover.png';
 use constant IMG_ALBUM => 'plugins/Spotty/html/images/album.png';
-use constant IMG_PODCAST => 'plugins/Spotty/html/images/playlist.png';
+use constant IMG_PODCAST => 'plugins/Spotty/html/images/podcast.png';
 use constant IMG_PLAYLIST => 'plugins/Spotty/html/images/playlist.png';
 use constant IMG_COLLABORATIVE => 'plugins/Spotty/html/images/playlist-collab.png';
 use constant IMG_SEARCH => 'plugins/Spotty/html/images/search.png';
