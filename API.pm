@@ -1248,11 +1248,12 @@ sub _normalize {
 	}
 	elsif ($type eq 'show') {
 		$item->{image} = _getLargestArtwork(delete $item->{images});
-		$item->{artist} ||= $item->{publisher} if $item->{publisher};
+		$item->{artists} ||= [{ name => $item->{publisher} }] if $item->{publisher};
 		delete $item->{available_markets};
 
 		my $minShow = {
 			name => $item->{name},
+			artists => $item->{artists},
 			image => $item->{image},
 		};
 
@@ -1264,11 +1265,15 @@ sub _normalize {
 	}
 	elsif ($type eq 'episode') {
 		$item->{album}  ||= {};
+
+		$item->{image} ||= _getLargestArtwork(delete $item->{images}) if $item->{images};
 		$item->{album}->{image} ||= _getLargestArtwork(delete $item->{show}->{images}) if $item->{show}->{images};
 		$item->{album}->{image} ||= _getLargestArtwork(delete $item->{album}->{images}) if $item->{album}->{images};
+
 		delete $item->{show}->{available_markets};
-		$item->{artist} ||= $item->{publisher} if $item->{publisher};
-		$item->{artist} ||= $item->{show}->{publisher} if $item->{show}->{publisher};
+		$item->{artists} ||= [{ name => $item->{publisher} }] if $item->{publisher};
+		$item->{artists} ||= [{ name => $item->{show}->{publisher} }] if $item->{show}->{publisher};
+		$item->{artists} ||= $item->{album}->{artists} if $item->{album}->{artists};
 
 		# Cache all tracks for use in track_metadata
 		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri} && (!$fast || !$cache->get( $item->{uri} ));

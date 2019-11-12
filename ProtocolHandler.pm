@@ -180,11 +180,11 @@ sub getMetadataFor {
 
 	if ( my $cached = $spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
 		$meta = {
-			artist    => join( ', ', map { $_->{name} } @{ $cached->{artists} } ) || $cached->{artist},
+			artist    => join( ', ', map { $_->{name} } @{ $cached->{artists} } ),
 			album     => $cached->{album}->{name},
 			title     => $cached->{name},
 			duration  => $cached->{duration_ms} / 1000,
-			cover     => $cached->{album}->{image},
+			cover     => $cached->{image} || $cached->{album}->{image},
 		};
 
 		main::INFOLOG && $log->is_info && $log->info("Found cached metadata for $uri");
