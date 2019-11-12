@@ -15,6 +15,7 @@ use Slim::Utils::Strings qw(string cstring);
 
 use constant IMG_TRACK => '/html/images/cover.png';
 use constant IMG_ALBUM => 'plugins/Spotty/html/images/album.png';
+use constant IMG_PODCAST => 'plugins/Spotty/html/images/playlist.png';
 use constant IMG_PLAYLIST => 'plugins/Spotty/html/images/playlist.png';
 use constant IMG_COLLABORATIVE => 'plugins/Spotty/html/images/playlist-collab.png';
 use constant IMG_SEARCH => 'plugins/Spotty/html/images/search.png';
@@ -214,6 +215,15 @@ sub handleFeed {
 			image => IMG_PLAYLIST,
 			url   => \&playlists
 		}];
+
+		if ( Plugins::Spotty::Helper->getCapability('podcasts') ) {
+			push @$personalItems, {
+				name  => cstring($client, 'PLUGIN_SPOTTY_SHOWS'),
+				type  => 'link',
+				image => IMG_PODCAST,
+				url   => \&shows
+			};
+		}
 
 		# only give access to the tracks list if the user is using his own client ID
 		if ( _enableAdvancedFeatures() ) {
@@ -497,6 +507,35 @@ sub myArtists {
 			items => $items,
 			indexList => $indexList
 		});
+	});
+}
+
+sub shows {
+	my ($client, $cb, $params) = @_;
+
+	Plugins::Spotty::Plugin->getAPIHandler($client)->myShows(sub {
+		my ($result) = @_;
+
+		my ($items, $indexList) = podcastList($client, $result);
+
+		$cb->({
+			items => $items,
+			indexList => $indexList
+		});
+	});
+}
+
+sub show {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::Spotty::Plugin->getAPIHandler($client)->show(sub {
+		my ($episodes) = @_;
+
+		my $items = episodesList($client, $episodes->{episodes});
+
+		$cb->({ items => $items });
+	}, {
+		uri => $params->{uri} || $args->{uri}
 	});
 }
 
@@ -1088,6 +1127,109 @@ sub artistList {
 	push @$indexList, [$indexLetter, $count];
 
 	return wantarray ? ($items, $indexList) : $items;
+}
+
+sub podcastList {
+	my ( $client, $shows, $noIndexList ) = @_;
+
+	my $items = [];
+
+	my $indexList = [];
+	my $indexLetter;
+	my $count = 0;
+
+	for my $show ( @{$shows} ) {
+		my $textkey = $noIndexList ? '' : uc(substr($show->{name} || '', 0, 1));
+
+		if ( defined $indexLetter && $indexLetter ne ($textkey || '') ) {
+			push @$indexList, [$indexLetter, $count];
+			$count = 0;
+		}
+
+		$count++;
+		$indexLetter = $textkey;
+
+		push @{$items}, {
+			type  => 'playlist',
+			name  => $show->{name},
+			line1 => $show->{name},
+			line2 => $show->{description},
+			textkey => $textkey,
+			url   => \&show,
+			favorites_url => $show->{uri},
+			image => $show->{image} || IMG_PODCAST,
+			passthrough => [{
+				uri => $show->{uri}
+			}]
+		};
+	}
+
+	push @$indexList, [$indexLetter, $count];
+
+	return wantarray ? ($items, $indexList) : $items;
+}
+
+sub episodesList {
+	my ( $client, $episodes, $args ) = @_;
+
+# TODO - what should this be?
+	my $image = $args->{image};
+
+	my $items = [];
+	my $filterExplicitContent = $prefs->client($client->master)->get('filterExplicitContent') || 0;
+
+	my $count = 0;
+	for my $episode ( @{$episodes} ) {
+		if ( $episode->{explicit} && $filterExplicitContent == 1) {
+			main::INFOLOG && $log->is_info && $log->info('skip episode, it has explicit content: ' . $episode->{name});
+		}
+		elsif ( $episode->{uri} ) {
+			my $title  = $episode->{name};
+			my $show  = $episode->{show}->{name} || $episode->{album}->{name};
+
+			my ($episode_uri) = $episode->{uri} =~ /^spotify:(episode:.+)/;
+
+			if ( my $i = ($episode->{image} || $episode->{show}->{image} || $episode->{album}->{image}) ) {
+				$image = $i;
+			}
+
+			my $episodeinfo = [];
+			push @$episodeinfo, {
+				name => cstring($client, 'LENGTH') . cstring($client, 'COLON') . ' ' . sprintf('%s:%02s', int($episode->{duration_ms} / 60_000), $episode->{duration_ms} % 60_000),
+				type => 'text',
+			} if $episode->{duration_ms};
+
+			my $item = {
+				name  => join(' - ', $episode->{release_date}, $title),
+				line1 => join(' - ', $episode->{release_date}, $title),
+				line2 => substr($episode->{description}, 0, 512),		# longer descriptions would wrap, rendering the screen unreadable
+				image => $image || IMG_TRACK,
+			};
+
+			if ($episode->{explicit} && $filterExplicitContent) {
+				$item->{type} = 'text';
+				$item->{name} = '* ' . $item->{name};
+				$item->{line1} = '* ' . $item->{line1};
+			}
+			else {
+				$item->{play} = 'spotify://' . $episode_uri;
+				$item->{favorites_url} = $episode->{uri};
+				$item->{on_select} = 'play';
+				$item->{duration} = $episode->{duration_ms} / 1000;
+				# $item->{playall} = 1;
+				$item->{passthrough} = [{
+					uri => $episode->{uri}
+				}];
+			}
+
+			push @{$items}, $item;
+		}
+		else {
+			$log->error("unsupported episode data structure?\n" . Data::Dump::dump($episode));
+		}
+	}
+
+	return $items;
 }
 
 sub playlistList {

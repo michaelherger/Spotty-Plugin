@@ -137,8 +137,17 @@ sub getNextTrack {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
 
 		$class->getAPIHandler($client)->player(sub {
-			$song->streamUrl($_[0]->{item}->{uri});
-			$class->setSpotifyConnect($client, $_[0]);
+			my $state = $_[0];
+
+			if ( !$state->{item} && (my $uri = $client->pluginData('episodeUri')) ) {
+				$state->{item} = {
+					uri => $uri
+				};
+				$client->pluginData( episodeUri => '' );
+			}
+
+			$song->streamUrl($state->{item}->{uri});
+			$class->setSpotifyConnect($client, $state);
 			$client->pluginData( newTrack => 0 );
 			$successCb->();
 		});
@@ -380,8 +389,17 @@ sub _connectEvent {
 
 		main::INFOLOG && $log->is_info && $log->info("Current Connect state: \n" . Data::Dump::dump($result, $cmd));
 
+		# the spotty helper would send us the track ID, but unfortunately not the full URI. Let's assume this was an episode ID if we're currently in an episode and got an ID...
+		if ( $cmd =~ /^start|change$/ && ($result->{currently_playing_type} || '') eq 'episode' && !$result->{track} && (my $uri = $request->getParam('_p2')) ) {
+			$uri = "spotify:episode:$uri";
+			main::INFOLOG && $log->is_info && $log->info("Didn't get track info in player request, but in notification from spotty helper: $uri");
+			$result->{track} = {
+				uri => $uri
+			};
+		}
+
 		# in case of a change event we need to figure out what actually changed...
-		if ( $cmd =~ /change/ && $result && ref $result && (($streamUrl ne $result->{track}->{uri} && $result->{is_playing}) || !__PACKAGE__->isSpotifyConnect($client)) ) {
+		if ( $cmd eq 'change' && $result && ref $result && ref $result->{track} && (($streamUrl ne $result->{track}->{uri} && $result->{is_playing}) || !__PACKAGE__->isSpotifyConnect($client)) ) {
 			main::INFOLOG && $log->is_info && $log->info("Got a $cmd event, but actually this is a play next track event");
 			$cmd = 'start';
 		}
@@ -393,6 +411,9 @@ sub _connectEvent {
 				# Sometimes we want to know whether we're in Spotify Connect mode or not
 				$client->pluginData( SpotifyConnect => 1 );
 				$client->pluginData( newTrack => 1 );
+
+				# we need to keep track of the episodeUri, as it won't be sent in the player status response. Stupid.
+				$client->pluginData( episodeUri => $result->{track}->{uri}) if ($result->{currently_playing_type} || '') eq 'episode';
 
 				my $request = $client->execute( [ 'playlist', 'play', sprintf("spotify://connect-%u", Time::HiRes::time() * 1000) ] );
 				$request->source(__PACKAGE__);

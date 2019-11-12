@@ -24,6 +24,7 @@ use POSIX qw(strftime);
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::Plugin;
+use Plugins::Spotty::Helper;
 use Plugins::Spotty::API::Pipeline;
 use Plugins::Spotty::API::AsyncRequest;
 use Plugins::Spotty::API::Token;
@@ -45,6 +46,7 @@ my %tokenHandlers;
 		cache
 		_username
 		_country
+		_canPodcast
 	) );
 }
 
@@ -627,6 +629,17 @@ sub getPlaylistUserAndId {
 sub track {
 	my ( $self, $cb, $uri ) = @_;
 
+	if ($self->canPodcast() && $uri =~ /episode:/) {
+		$self->episode($cb, $uri);
+	}
+	else {
+		$self->_track($cb, $uri);
+	}
+}
+
+sub _track {
+	my ( $self, $cb, $uri ) = @_;
+
 	my $id = $uri;
 	$id =~ s/(?:spotify|track)://g;
 
@@ -635,13 +648,27 @@ sub track {
 	},
 	GET => {
 		market => 'from_token'
-	})
+	});
+}
+
+sub episode {
+	my ( $self, $cb, $uri ) = @_;
+
+	my $id = $uri;
+	$id =~ s/(?:spotify|episode)://g;
+
+	$self->_call('episodes/' . $id, sub {
+		$cb->(@_) if $cb;
+	},
+	GET => {
+		market => 'from_token'
+	});
 }
 
 sub trackCached {
 	my ( $self, $cb, $uri, $args ) = @_;
 
-	if ( $uri !~ /^spotify:track/ ) {
+	if ( $uri !~ /^spotify:(?:episode|track)/ ) {
 		$cb->() if $cb;
 		return;
 	}
@@ -679,37 +706,62 @@ sub tracks {
 			} @$ids ]);
 		}
 		else {
-			my $chunks = {};
-
-			# build list of chunks we can query in one go
-			while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
-				my $idList = join(',', map { s/(?:spotify|track)://g; $_ } grep { $_ && /^(?:spotify|track):/ } @ids) || next;
-				$chunks->{md5_hex($idList)} = {
-					market => 'from_token',
-					ids => $idList
-				};
-			}
-
-			Plugins::Spotty::API::Pipeline->new($self, 'tracks', sub {
-				my ($tracks) = @_;
-
-				my @tracks;
-
-				foreach (@{$tracks->{tracks}}) {
-					# track info for invalid IDs is returned
-					next unless $_ && ref $_;
-
-					my $track = $self->_normalize($_);
-
-					push @tracks, $track if $self->_isPlayable($_);
-				}
-
-				return \@tracks;
-			}, $cb, {
-				chunks => $chunks,
-			})->get();
+			# TODO - this is potentially dangerous, as we're calling our callback twice.
+			# In this particular case it's ok, but we have to fix this should there be more callers.
+			$self->_tracks($cb, $ids);
+			$self->_episodes($cb, $ids) if $self->canPodcast();
 		}
 	});
+}
+
+sub _tracks() {
+	my ($self, $cb, undef, $type ) = @_;
+
+	$type ||= 'track';
+
+	my $chunks = {};
+
+	my $ids = Storable::dclone($_[2]);
+
+	# build list of chunks we can query in one go
+	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
+		my $idList = join(',', map { s/(?:spotify|$type)://g; $_ } grep { $_ && /^(?:spotify:$type|$type):/ } @ids) || next;
+		$chunks->{md5_hex($idList)} = {
+			market => 'from_token',
+			ids => $idList
+		};
+	}
+
+	if (!keys %$chunks) {
+		return $cb->([]);
+	}
+
+	$type .= 's';
+
+	Plugins::Spotty::API::Pipeline->new($self, $type, sub {
+		my ($tracks) = @_;
+
+		my @tracks;
+
+		foreach (@{$tracks->{$type}}) {
+			# track info for invalid IDs is returned
+			next unless $_ && ref $_;
+
+			my $track = $self->_normalize($_);
+
+			push @tracks, $track if $self->_isPlayable($_);
+		}
+
+		return \@tracks;
+	}, $cb, {
+		chunks => $chunks,
+	})->get();
+}
+
+sub _episodes {
+	my ($self, $cb, $ids ) = @_;
+
+	$self->_tracks($cb, $ids, 'episode');
 }
 
 # try to get a list of track URI
@@ -737,7 +789,7 @@ sub trackURIsFromURI {
 			$cb2->(($_[0] || {})->{tracks});
 		}, $params);
 	}
-	elsif ( $uri =~ m|:/*track:| ) {
+	elsif ( $uri =~ m{:/*(?:track|episode):} ) {
 		$cb->([ $uri ]);
 	}
 	else {
@@ -902,6 +954,45 @@ sub myArtists {
 		type  => 'artist',
 		limit => max(LIBRARY_LIMIT, _DEFAULT_LIMIT()),
 	})->get();
+}
+
+sub myShows {
+	my ( $self, $cb ) = @_;
+
+	Plugins::Spotty::API::Pipeline->new($self, 'me/shows', sub {
+		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
+			return [ map { $self->_normalize($_->{show}) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+		}
+	}, sub {
+		my $results = shift;
+
+		my $items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @{$results || []} ];
+		$cb->($items);
+	}, {
+		limit => max(LIBRARY_LIMIT, _DEFAULT_LIMIT()),
+	})->get();
+}
+
+sub show {
+	my ( $self, $cb, $args ) = @_;
+
+	my ($id) = $args->{uri} =~ /show:(.*)/;
+
+	$self->_call('shows/' . $id,
+		sub {
+			my ($show) = @_;
+
+			my $total = $show->{episodes}->{total} if $show->{episodes} && ref $show->{episodes};
+
+			$show = $self->_normalize($show);
+			$cb->($show);
+		},
+		GET => {
+			market => 'from_token',
+			limit  => min($args->{limit} || SPOTIFY_LIMIT, SPOTIFY_LIMIT),
+			offset => $args->{offset} || 0,
+		}
+	);
 }
 
 =pod
@@ -1154,6 +1245,33 @@ sub _normalize {
 		elsif ( !$fast || !$cache->get('spotify_artist_image_' . $item->{id}) ) {
 			$cache->set('spotify_artist_image_' . $item->{id}, $item->{image}, CACHE_TTL);
 		}
+	}
+	elsif ($type eq 'show') {
+		$item->{image} = _getLargestArtwork(delete $item->{images});
+		$item->{artist} ||= $item->{publisher} if $item->{publisher};
+		delete $item->{available_markets};
+
+		my $minShow = {
+			name => $item->{name},
+			image => $item->{image},
+		};
+
+		$item->{episodes}  = [ map {
+			$_->{album} = $minShow unless $_->{show} && $_->{show}->{name};
+
+			$self->_normalize($_, $fast)
+		} @{ $item->{episodes}->{items} } ] if $item->{episodes};
+	}
+	elsif ($type eq 'episode') {
+		$item->{album}  ||= {};
+		$item->{album}->{image} ||= _getLargestArtwork(delete $item->{show}->{images}) if $item->{show}->{images};
+		$item->{album}->{image} ||= _getLargestArtwork(delete $item->{album}->{images}) if $item->{album}->{images};
+		delete $item->{show}->{available_markets};
+		$item->{artist} ||= $item->{publisher} if $item->{publisher};
+		$item->{artist} ||= $item->{show}->{publisher} if $item->{show}->{publisher};
+
+		# Cache all tracks for use in track_metadata
+		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri} && (!$fast || !$cache->get( $item->{uri} ));
 	}
 	# track
 	else {
@@ -1430,6 +1548,14 @@ sub uri2url {
 
 sub hasError429 {
 	return $error429;
+}
+
+sub canPodcast {
+	my $self = $_[0];
+
+	return $self->_canPodcast if defined $self->_canPodcast;
+
+	$self->_canPodcast(Plugins::Spotty::Helper->getCapability('podcasts') || 0);
 }
 
 sub _DEFAULT_LIMIT {

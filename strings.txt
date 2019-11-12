@@ -540,3 +540,19 @@ PLUGIN_SPOTTY_FILE_NOT_FOUND
 	PL	Nie znaleziono pliku
 	RU	Файл не найден
 	SV	Det går inte att hitta filen
+
+PLUGIN_SPOTTY_SHOWS
+	CS	Podcasty
+	DA	Podcasts
+	DE	Podcasts
+	EN	Podcasts
+	ES	Podcasts
+	FI	Podcast-lähetykset
+	FR	Podcasts
+	HE	פריטי Podcast
+	IT	Podcast
+	NL	Podcasts
+	NO	Podkaster
+	PL	Podcasty
+	RU	Подкасты
+	SV	Poddsändningar

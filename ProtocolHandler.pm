@@ -64,6 +64,7 @@ sub audioScrobblerSource { 'P' }
 sub explodePlaylist {
 	my ( $class, $client, $uri, $cb ) = @_;
 
+	main::INFOLOG && $log->is_info && $log->info("Explode URI: $uri");
 	if ($uri =~ m|/connect-\d+|) {
 		$cb->([$uri]);
 	}
@@ -71,7 +72,7 @@ sub explodePlaylist {
 		$spotty->trackURIsFromURI(sub {
 			$cb->([
 				map {
-					/(track:.*)/;
+					/((?:track|episode):.*)/;
 					"spotify://$1";
 				} @{shift || []}
 			]);
@@ -179,7 +180,7 @@ sub getMetadataFor {
 
 	if ( my $cached = $spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
 		$meta = {
-			artist    => join( ', ', map { $_->{name} } @{ $cached->{artists} } ),
+			artist    => join( ', ', map { $_->{name} } @{ $cached->{artists} } ) || $cached->{artist},
 			album     => $cached->{album}->{name},
 			title     => $cached->{name},
 			duration  => $cached->{duration_ms} / 1000,
@@ -237,7 +238,7 @@ sub getBulkMetadata {
 			my $uri = blessed($track) ? $track->url : $track;
 			$uri =~ s/\///g;
 
-			next unless $uri =~ /^spotify:track/;
+			next unless $uri =~ /^spotify:(?:episode|track)/;
 
 			if ( !$spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
 				push @need, $uri;
