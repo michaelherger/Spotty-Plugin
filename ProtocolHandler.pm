@@ -193,6 +193,7 @@ sub getMetadataFor {
 
 	if (!$meta) {
 		# grab missing metadata asynchronously
+		main::INFOLOG && $log->is_info && $log->info("No metadata found - need to look online");
 		$class->getBulkMetadata($client, $song ? undef : $url);
 		$meta = {};
 	}

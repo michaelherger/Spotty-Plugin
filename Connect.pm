@@ -136,7 +136,9 @@ sub getNextTrack {
 	if ( $client->pluginData('newTrack') ) {
 		main::INFOLOG && $log->is_info && $log->info("Don't get next track as we got called by a play track event from spotty");
 
-		$class->getAPIHandler($client)->player(sub {
+		my $spotty = $class->getAPIHandler($client);
+
+		$spotty->player(sub {
 			my $state = $_[0];
 
 			if ( !$state->{item} && (my $uri = $client->pluginData('episodeUri')) ) {
@@ -144,6 +146,11 @@ sub getNextTrack {
 					uri => $uri
 				};
 				$client->pluginData( episodeUri => '' );
+
+				$spotty->track(sub {
+					$state->{item} = $_[0];
+					$class->setSpotifyConnect($client, $state);
+				}, $uri);
 			}
 
 			$song->streamUrl($state->{item}->{uri});

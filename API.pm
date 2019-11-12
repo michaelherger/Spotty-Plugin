@@ -644,7 +644,8 @@ sub _track {
 	$id =~ s/(?:spotify|track)://g;
 
 	$self->_call('tracks/' . $id, sub {
-		$cb->(@_) if $cb;
+		my $track = $self->_normalize(shift);
+		$cb->($track, @_) if $cb;
 	},
 	GET => {
 		market => 'from_token'
@@ -658,7 +659,8 @@ sub episode {
 	$id =~ s/(?:spotify|episode)://g;
 
 	$self->_call('episodes/' . $id, sub {
-		$cb->(@_) if $cb;
+		my $episode = $self->_normalize(shift);
+		$cb->($episode, @_) if $cb;
 	},
 	GET => {
 		market => 'from_token'
@@ -1265,6 +1267,8 @@ sub _normalize {
 	}
 	elsif ($type eq 'episode') {
 		$item->{album}  ||= {};
+
+		$item->{album}->{name} ||= $item->{show}->{name} if $item->{show}->{name};
 
 		$item->{image} ||= _getLargestArtwork(delete $item->{images}) if $item->{images};
 		$item->{album}->{image} ||= _getLargestArtwork(delete $item->{show}->{images}) if $item->{show}->{images};
