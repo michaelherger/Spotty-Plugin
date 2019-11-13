@@ -557,6 +557,17 @@ PLUGIN_SPOTTY_SHOWS
 	RU	Подкасты
 	SV	Poddsändningar
 
+PLUGIN_SPOTTY_ADD_SHOW_TO_LIBRARY
+	DA	Føj podcast til bibliotek
+	DE	Podcast zu Bibliothek hinzufügen
+	EN	Add podcast to library
+	ES	Agregar podcast a biblioteca
+	FR	Ajouter le podcast à la bibliothèque en ligne
+	IT	Aggiungi podcast a libreria
+	NL	Podcast aan collectie toevoegen
+	NO	Legg podcast til i biblioteket
+	SV	Lägg till podcast i biblioteket
+
 PLUGIN_SPOTTY_EPISODES
 	DE	Podcast-Folgen
 	EN	Podcast Episodes

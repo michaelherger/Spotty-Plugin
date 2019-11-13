@@ -538,14 +538,52 @@ sub show {
 	my ($client, $cb, $params, $args) = @_;
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->show(sub {
-		my ($episodes) = @_;
+		my ($show) = @_;
 
-		my $items = episodesList($client, $episodes->{episodes});
+		my $items = episodesList($client, $show->{episodes});
+
+		push @$items, {
+			name => cstring($client, 'PLUGIN_SPOTTY_ADD_SHOW_TO_LIBRARY'),
+			url  => \&addShowToLibrary,
+			passthrough => [{ id => $show->{id}, name => $show->{name} }],
+			nextWindow => 'parent'
+		};
+
+		if ($show->{description}) {
+			push @$items, {
+				name => cstring($client, 'DESCRIPTION'),
+				items => [{
+					name => $show->{description},
+					type => 'textarea'
+				}]
+			};
+		}
+
+		if ($show->{languages}) {
+			my $lang = ref $show->{languages} ? join(', ', map { uc } @{$show->{languages}}) : uc($show->{languages});
+			push @$items, {
+				name => cstring($client, 'LANGUAGE') . cstring($client, 'COLON') . " $lang",
+				type => 'text'
+			} if $lang;
+		}
 
 		$cb->({ items => $items });
 	}, {
 		uri => $params->{uri} || $args->{uri}
 	});
+}
+
+sub addShowToLibrary {
+	my ($client, $cb, $params, $args) = @_;
+
+	$args ||= {};
+
+	Plugins::Spotty::Plugin->getAPIHandler($client)->addShowToLibrary(sub {
+		$cb->({ items => [{
+			name => cstring($client, 'PLUGIN_SPOTTY_MUSIC_ADDED'),
+			showBriefly => 1
+		}] });
+	}, $params->{ids} || $args->{ids} || $params->{id} || $args->{id});
 }
 
 sub playlists {

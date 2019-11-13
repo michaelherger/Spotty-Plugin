@@ -1010,47 +1010,18 @@ sub show {
 	);
 }
 
-=pod
-# XXX - unfortunately tracks played through LMS aren't part of this menu.
-# Therefore it's rather confusing. Let's not use it.
-sub recentlyPlayed {
-	my ( $self, $cb, $args ) = @_;
+sub addShowToLibrary {
+	my ( $self, $cb, $showIds ) = @_;
 
-	Plugins::Spotty::API::Pipeline->new($self, 'me/player/recently-played', sub {
-		my $items = [];
-		my %seen;
+	$showIds = join(',', @$showIds) if ref $showIds;
 
-		foreach ( sort { $b->{played_at} cmp $a->{played_at} } @{ $_[0]->{items} || [] } ) {
-			if (my $c = $_->{context}) {
-				# don't return playlists or albums more than once
-				next if $seen{$c->{uri}}++;
-
-				if ($c->{type} eq 'playlist') {
-					push @$items, {
-						name => $c->{uri},
-						uri => $c->{uri},
-						type => 'playlist',
-					}
-				}
-				elsif ( $c->{type} eq 'album' && $_->{track} && $_->{track}->{album} ) {
-					push @$items, $self->_normalize($_->{track}->{album})
-				}
-				else {
-					$log->error("Unexpected contex type found: " . $c->{type});
-					main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($_));
-				}
-			}
-			elsif ($_->{track}) {
-				warn $_->{track}->{uri};
-				next if $seen{$_->{track}->{uri}}++;
-				push @$items, $self->_normalize($_->{track});
-			}
+	$self->_call("me/shows",
+		$cb,
+		PUT => {
+			ids => $showIds,
 		}
-
-		return $items, $_[0]->{'next'} ? _DEFAULT_LIMIT() : 0, $_[0]->{'next'};
-	}, $cb)->get();
+	);
 }
-=cut
 
 sub playlists {
 	my ( $self, $cb, $args ) = @_;
