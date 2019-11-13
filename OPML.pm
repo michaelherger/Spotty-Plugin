@@ -396,6 +396,8 @@ sub _searchItems {
 				type  => $_->[1]
 			}]
 		}
+	} grep {
+		Plugins::Spotty::Helper->getCapability('podcasts') || $_->[1] !~ /^(?:show|episode)_/;
 	} (
 		[ 'ARTISTS', 'artist', IMG_ACCOUNT ],
 		[ 'ALBUMS', 'album', IMG_ALBUM ],
