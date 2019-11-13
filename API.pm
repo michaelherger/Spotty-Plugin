@@ -372,12 +372,24 @@ sub search {
 		limit  => $args->{limit} || DEFAULT_LIMIT
 	};
 
-	if ( $type =~ /album|artist|track|playlist/ ) {
+	if ( $type =~ /album|artist|track|playlist|show_audio|episode_audio/ ) {
 		Plugins::Spotty::API::Pipeline->new($self, 'search', sub {
 			my $type = $type . 's';
+			$type =~ s/_audio//;
+
 			my $items = [];
 
 			for my $item ( @{ $_[0]->{$type}->{items} } ) {
+				# sometimes we'd get empty list items...
+				next unless $item;
+
+				if (main::INFOLOG) {
+				# if (main::INFOLOG && $log->is_info) {
+					if ($item->{is_externally_hosted} || ($item->{media_type} || 'audio') ne 'audio') {
+						$log->warn("This item needs inspection: " . Data::Dump::dump($item));
+					}
+				}
+
 				$item = $self->_normalize($item);
 
 				push @$items, $item;
@@ -387,6 +399,7 @@ sub search {
 		}, $cb, $params)->get();
 	}
 	else {
+		$log->error("Unknown search type: $type");
 		$cb->([])
 	}
 }
@@ -1415,9 +1428,13 @@ sub _call {
 					my $result;
 
 					if ( $response->headers->content_type =~ /json/i ) {
-						$result = decode_json(
-							$response->content,
-						);
+						eval {
+							$result = decode_json(
+								$response->content,
+							);
+						};
+
+						$log->error("Failed to parse JSON response from $url: $@") if $@;
 
 						main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
 

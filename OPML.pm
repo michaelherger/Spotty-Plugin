@@ -365,6 +365,12 @@ sub search {
 		elsif ($type eq 'playlist') {
 			push @items, @{playlistList($client, $results)};
 		}
+		elsif ($type eq 'show_audio') {
+			push @items, @{podcastList($client, $results)};
+		}
+		elsif ($type eq 'episode_audio') {
+			push @items, @{episodesList($client, $results)};
+		}
 		else {
 			$log->error("Unkonwn search type: ") . Data::Dump::dump($results);
 		}
@@ -395,6 +401,9 @@ sub _searchItems {
 		[ 'ALBUMS', 'album', IMG_ALBUM ],
 		[ 'PLAYLISTS', 'playlist', IMG_PLAYLIST ],
 		[ 'SONGS', 'track', IMG_TRACK ],
+		# https://github.com/spotify/web-api/issues/551#issuecomment-486898766
+		[ 'PLUGIN_SPOTTY_SHOWS', 'show_audio', IMG_PODCAST ],
+		[ 'PLUGIN_SPOTTY_EPISODES', 'episode_audio', IMG_PODCAST ],
 		[ 'PLUGIN_SPOTTY_USERS', 'user', IMG_ACCOUNT ]
 	);
 
@@ -981,7 +990,6 @@ sub trackList {
 	my $items = [];
 	my $filterExplicitContent = $prefs->client($client->master)->get('filterExplicitContent') || 0;
 
-	my $count = 0;
 	for my $track ( @{$tracks} ) {
 		if ( $track->{explicit} && $filterExplicitContent == 1) {
 			main::INFOLOG && $log->is_info && $log->info('skip track, it has explicit content: ' . $track->{name});
@@ -1139,6 +1147,11 @@ sub podcastList {
 	my $count = 0;
 
 	for my $show ( @{$shows} ) {
+		if ( $show->{media_type} && $show->{media_type} ne 'audio' ) {
+			main::INFOLOG && $log->warn("This show needs inspection: " . Data::Dump::dump($show));
+			main::INFOLOG && $log->is_info && $log->info('skip show, it is not of audio content: ' . $show->{uri});
+		}
+
 		my $textkey = $noIndexList ? '' : uc(substr($show->{name} || '', 0, 1));
 
 		if ( defined $indexLetter && $indexLetter ne ($textkey || '') ) {
@@ -1178,9 +1191,12 @@ sub episodesList {
 	my $items = [];
 	my $filterExplicitContent = $prefs->client($client->master)->get('filterExplicitContent') || 0;
 
-	my $count = 0;
 	for my $episode ( @{$episodes} ) {
-		if ( $episode->{explicit} && $filterExplicitContent == 1) {
+		if ( $episode->{media_type} && $episode->{media_type} ne 'audio' ) {
+			main::INFOLOG && $log->warn("This item episode inspection: " . Data::Dump::dump($episode));
+			main::INFOLOG && $log->is_info && $log->info('skip episode, it is not of audio content: ' . $episode->{uri});
+		}
+		elsif ( $episode->{explicit} && $filterExplicitContent == 1) {
 			main::INFOLOG && $log->is_info && $log->info('skip episode, it has explicit content: ' . $episode->{name});
 		}
 		elsif ( $episode->{uri} ) {

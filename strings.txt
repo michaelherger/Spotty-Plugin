@@ -556,3 +556,12 @@ PLUGIN_SPOTTY_SHOWS
 	PL	Podcasty
 	RU	Подкасты
 	SV	Poddsändningar
+
+PLUGIN_SPOTTY_EPISODES
+	DE	Podcast-Folgen
+	EN	Podcast Episodes
+	FR	Épisodes podcast
+	NL	Podcastfleveringen
+	NO	Podcast-episoder
+	SV	Podcastavsnitt
+
