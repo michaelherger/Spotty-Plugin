@@ -7,6 +7,11 @@
 		</select>
 	[% END %]
 
+	[% WRAPPER setting title="PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER" desc="" %]
+		<input type="checkbox" name="pref_reversePodcastOrder" id="pref_reversePodcastOrder" value="1" [% prefs.pref_reversePodcastOrder ? "checked" : "" %]>
+		<label for="pref_reversePodcastOrder">[% "PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER_DESC" | string %]</label>
+	[% END %]
+
 	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="" %]
 		[% IF errorString %]
 			<div style="color: red">[% errorString %]</div>

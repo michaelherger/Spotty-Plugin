@@ -542,6 +542,10 @@ sub show {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->show(sub {
 		my ($show) = @_;
 
+		if ($prefs->client($client)->get('reversePodcastOrder')) {
+			$show->{episodes} = [ reverse @{$show->{episodes}}];
+		}
+
 		my $items = episodesList($client, $show->{episodes});
 
 		push @$items, {

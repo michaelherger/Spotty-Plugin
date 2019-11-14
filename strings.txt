@@ -518,6 +518,14 @@ PLUGIN_SPOTTY_EXPLICIT_DONT_CARE
 	DE	Normal wiedergeben
 	EN	Play normally
 
+PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER
+	DE	Podcast Reihenfolge
+	EN	Podcast Sort Order
+
+PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER_DESC
+	DE	Die Reihenfolge der Podcast-Folgen umkehren. Dies kann hilfreich sein, wenn Sie alle Folgen eines Podcasts am Stück hören wollen.
+	EN	Reverse the episode sort order. This can be helpful if you want to listen to all episodes of a show in the correct order.
+
 PLUGIN_SPOTTY_PLAYLIST_FOLDERS
 	DE	Wiedergabelisten Ordner
 	EN	Playlist Folders
