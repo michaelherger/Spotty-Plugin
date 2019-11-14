@@ -15,7 +15,7 @@ use Slim::Utils::Strings qw(string cstring);
 
 use constant IMG_TRACK => '/html/images/cover.png';
 use constant IMG_ALBUM => 'plugins/Spotty/html/images/album.png';
-use constant IMG_PODCAST => 'plugins/Spotty/html/images/podcast.png';
+use constant IMG_PODCAST => 'plugins/Spotty/html/images/podcasts.png';
 use constant IMG_PLAYLIST => 'plugins/Spotty/html/images/playlist.png';
 use constant IMG_COLLABORATIVE => 'plugins/Spotty/html/images/playlist-collab.png';
 use constant IMG_SEARCH => 'plugins/Spotty/html/images/search.png';
@@ -1045,11 +1045,11 @@ sub trackList {
 				$image = $i;
 			}
 
-			my $trackinfo = [];
-			push @$trackinfo, {
-				name => cstring($client, 'LENGTH') . cstring($client, 'COLON') . ' ' . sprintf('%s:%02s', int($track->{duration_ms} / 60_000), $track->{duration_ms} % 60_000),
-				type => 'text',
-			} if $track->{duration_ms};
+			# my $trackinfo = [];
+			# push @$trackinfo, {
+			# 	name => cstring($client, 'LENGTH') . cstring($client, 'COLON') . ' ' . sprintf('%s:%02s', int($track->{duration_ms} / 60_000), $track->{duration_ms} % 60_000),
+			# 	type => 'text',
+			# } if $track->{duration_ms};
 
 			my $item = {
 				name      => sprintf('%s %s %s %s %s', $title, cstring($client, 'BY'), $artist, cstring($client, 'FROM'), $album),
@@ -1249,11 +1249,11 @@ sub episodesList {
 				$image = $i;
 			}
 
-			my $episodeinfo = [];
-			push @$episodeinfo, {
-				name => cstring($client, 'LENGTH') . cstring($client, 'COLON') . ' ' . sprintf('%s:%02s', int($episode->{duration_ms} / 60_000), $episode->{duration_ms} % 60_000),
-				type => 'text',
-			} if $episode->{duration_ms};
+			# my $episodeinfo = [];
+			# push @$episodeinfo, {
+			# 	name => cstring($client, 'LENGTH') . cstring($client, 'COLON') . ' ' . sprintf('%s:%02s', int($episode->{duration_ms} / 60_000), $episode->{duration_ms} % 60_000),
+			# 	type => 'text',
+			# } if $episode->{duration_ms};
 
 			my $item = {
 				name  => join(' - ', $episode->{release_date}, $title),
