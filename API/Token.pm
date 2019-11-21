@@ -61,7 +61,10 @@ sub new {
 
 	$self->_tmpfile(File::Temp->new(UNLINK => 1)->filename);
 
-	my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s" > "%s" 2>&1',
+	my $cmd = sprintf(
+		Plugins::Spotty::Helper->getCapability('save-token')
+			? '%s -n Squeezebox -c "%s" -i %s --scope "%s" --save-token "%s"'
+			: '%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s" > "%s" 2>&1',
 		scalar Plugins::Spotty::Helper->get(),
 		$self->api->cache || Plugins::Spotty::Plugin->cacheFolder($account),
 		$prefs->get('iconCode'),
@@ -169,7 +172,7 @@ sub _killTokenHelper {
 sub get {
 	my ($class, $api, $cb) = @_;
 
-	if (CAN_ASYNC_GET_TOKEN) {
+	if (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) {
 		my $proc = $procs{$api};
 
 		if ( !($proc && $proc->_proc && $proc->_proc->alive()) ) {
