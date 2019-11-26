@@ -60,7 +60,8 @@ sub start {
 
 	my @helperArgs = (
 		'-c', $self->cache,
-		'-n', $self->name,
+		# Spotify can't handle long player names
+		'-n', substr($self->name, 0, 60),
 		'--disable-audio-cache',
 		'--bitrate', 96,
 		'--player-mac', $self->mac,
