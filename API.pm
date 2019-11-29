@@ -385,8 +385,8 @@ sub search {
 
 				if (main::INFOLOG) {
 				# if (main::INFOLOG && $log->is_info) {
-					if ($item->{is_externally_hosted} || ($item->{media_type} || 'audio') ne 'audio') {
-						$log->warn("This item needs inspection: " . Data::Dump::dump($item));
+					if ( $item->{is_externally_hosted} || ($item->{media_type} || 'audio') ne 'audio' ) {
+						$log->warn("This item might need inspection: " . Data::Dump::dump($item));
 					}
 				}
 

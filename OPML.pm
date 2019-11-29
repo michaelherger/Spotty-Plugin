@@ -1191,9 +1191,9 @@ sub podcastList {
 	my $count = 0;
 
 	for my $show ( @{$shows} ) {
-		if ( $show->{media_type} && $show->{media_type} ne 'audio' ) {
+		if ( $show->{is_externally_hosted} || ($show->{media_type} || 'audio') ne 'audio' ) {
 			main::INFOLOG && $log->warn("This show needs inspection: " . Data::Dump::dump($show));
-			main::INFOLOG && $log->is_info && $log->info('skip show, it is not of audio content: ' . $show->{uri});
+			# main::INFOLOG && $log->is_info && $log->info('skip show, it is not of audio content: ' . $show->{uri});
 		}
 
 		my $textkey = $noIndexList ? '' : uc(substr($show->{name} || '', 0, 1));
@@ -1236,8 +1236,12 @@ sub episodesList {
 	my $filterExplicitContent = $prefs->client($client->master)->get('filterExplicitContent') || 0;
 
 	for my $episode ( @{$episodes} ) {
+		if ( $episode->{is_externally_hosted} ) {
+			main::INFOLOG && $log->warn("This episode might need inspection: " . Data::Dump::dump($episode));
+		}
+
 		if ( $episode->{media_type} && $episode->{media_type} ne 'audio' ) {
-			main::INFOLOG && $log->warn("This item episode inspection: " . Data::Dump::dump($episode));
+			main::INFOLOG && $log->warn("This episode needs inspection: " . Data::Dump::dump($episode));
 			main::INFOLOG && $log->is_info && $log->info('skip episode, it is not of audio content: ' . $episode->{uri});
 		}
 		elsif ( $episode->{explicit} && $filterExplicitContent == 1) {
