@@ -205,7 +205,7 @@ sub checkAPIConnectPlayers {
 			my $spotifyId = $connectDevices{$helper->name};
 
 			if ( !$spotifyId && $helper->cache eq $cacheFolder ) {
-				$log->warn("Connect daemon is running, but not connected - shutting down to force restart: " . $helper->mac);
+				$log->warn("Connect daemon is running, but not connected - shutting down to force restart: " . $helper->mac . " " . $helper->name);
 				$class->stopHelper($helper->mac);
 
 				# flag this system as flaky if we have to restart and the user is relying on the server

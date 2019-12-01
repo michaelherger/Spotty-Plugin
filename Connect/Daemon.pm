@@ -53,15 +53,19 @@ sub start {
 	my $helperPath = Plugins::Spotty::Helper->get();
 	my $client = Slim::Player::Client::getClient($self->mac);
 
-	$self->name(($client->isSynced() && $client->model ne 'group') ? Slim::Player::Sync::syncname($client) : $client->name);
+	# Spotify can't handle long player names
+	$self->name(substr(
+		($client->isSynced() && $client->model ne 'group')
+			? Slim::Player::Sync::syncname($client)
+			: $client->name,
+		0, 60));
 	$self->cache(Plugins::Spotty::Connect->cacheFolder($self->mac));
 
 	$self->_checkStartTimes();
 
 	my @helperArgs = (
 		'-c', $self->cache,
-		# Spotify can't handle long player names
-		'-n', substr($self->name, 0, 60),
+		'-n', $self->name,
 		'--disable-audio-cache',
 		'--bitrate', 96,
 		'--player-mac', $self->mac,
