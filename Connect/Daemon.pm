@@ -58,7 +58,8 @@ sub start {
 		($client->isSynced() && $client->model ne 'group')
 			? Slim::Player::Sync::syncname($client)
 			: $client->name,
-		0, 60));
+	0, 60));
+
 	$self->cache(Plugins::Spotty::Connect->cacheFolder($self->mac));
 
 	$self->_checkStartTimes();
