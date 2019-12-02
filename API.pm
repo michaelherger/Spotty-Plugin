@@ -799,6 +799,11 @@ sub trackURIsFromURI {
 	elsif ( $uri =~ /:artist:/ ) {
 		$self->artistTracks($cb2, $params);
 	}
+	elsif ( $uri =~ /:show:/ ) {
+		$self->show(sub {
+			$cb2->(($_[0] || {})->{episodes});
+		}, $params);
+	}
 	elsif ( $uri =~ /:album:/ ) {
 		$self->album(sub {
 			$cb2->(($_[0] || {})->{tracks});
