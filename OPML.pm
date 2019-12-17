@@ -304,6 +304,22 @@ sub search {
 	my $type = $params->{type} || '';
 	$type = '' if $type eq 'context';
 
+	if (my $uriInfo = parseUri($params->{search})) {
+		$args->{uri} = $uriInfo->{uri};
+		if ($uriInfo->{type} eq 'playlist') {
+			return playlist($client, $cb, $params, $args);
+		}
+		elsif ($uriInfo->{type} eq 'album') {
+			return album($client, $cb, $params, $args);
+		}
+		elsif ($uriInfo->{type} eq 'artist') {
+			return artist($client, $cb, $params, $args);
+		}
+		elsif ($uriInfo->{type} eq 'show') {
+			return show($client, $cb, $params, $args);
+		}
+	}
+
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
 	# search for users is different...
@@ -381,6 +397,34 @@ sub search {
 		type  => $type || 'track',
 		limit => 50,
 	});
+}
+
+sub parseUri {
+	my ($uri) = @_;
+	my ($type, $id);
+
+	# https://open.spotify.com/playlist/3i6JdDL2IaDoIdrZCVngUv
+	if ($uri =~ m|open.spotify.com/(.+)/([a-z0-9]+)|i) {
+		$type = $1;
+		$id   = $2;
+		$uri  = "spotify:$type:$id";
+	}
+	elsif ($uri =~ /^spotify:(.+?):([a-z0-9]+)$/i) {
+		$type = $1;
+		$id   = $2;
+	}
+
+	main::INFOLOG && $log->is_info && $log->info("URI info: " . Data::Dump::dump({
+		type => $type,
+		id   => $id,
+		uri  => $uri
+	}));
+
+	return $type && $id && {
+		type => $type,
+		id   => $id,
+		uri  => $uri
+	};
 }
 
 sub _searchItems {
