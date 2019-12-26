@@ -36,6 +36,10 @@ use Slim::Utils::Strings qw(cstring string);
 
 my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
+
+use Plugins::Spotty::API::TrackCache;
+my $trackCache = Plugins::Spotty::API::TrackCache->new();
+
 my $prefs = preferences('plugin.spotty');
 my $error429;
 my %tokenHandlers;
@@ -610,9 +614,7 @@ sub playlist {
 			my $track = $item->{track} || next;
 
 			# if we set market => 'from_token', then we don't get available_markets back, but only a is_playable flag
-			next if defined $track->{is_playable} && !$track->{is_playable};
-
-			next if $track->{available_markets} && !(scalar grep /$cc/i, @{$track->{available_markets}});
+			next unless $self->_isPlayable($track, $cc);
 
 			push @$items, $self->_normalize($track);
 		}
@@ -688,7 +690,7 @@ sub trackCached {
 		return;
 	}
 
-	if ( my $cached = $cache->get($uri) ) {
+	if ( my $cached = $uri =~ /:episode:/ ? $cache->get($uri) : $trackCache->get($uri) ) {
 		$cb->($cached) if $cb;
 		return $cached;
 	}
@@ -1208,6 +1210,8 @@ sub _normalize {
 		my $minAlbum = {
 			name => $item->{name},
 			image => $item->{image},
+			id => $item->{id},
+			uri => $item->{uri}
 		};
 
 		$item->{tracks}  = [ map {
@@ -1275,18 +1279,38 @@ sub _normalize {
 	else {
 		$item->{album}  ||= {};
 		$item->{album}->{image} ||= _getLargestArtwork(delete $item->{album}->{images}) if $item->{album}->{images};
-		delete $item->{album}->{available_markets};
+		_removeUnused($item->{album});
+
+		foreach my $artist ( @{$item->{artists} || []} ) {
+			_removeUnused($artist);
+		}
+
+		foreach my $artist ( @{$item->{album}->{artists} || []} ) {
+			_removeUnused($artist);
+		}
+
+		_removeUnused($item, 'preview_url', 'is_local', 'is_playable', 'episode', 'external_ids');
+		_removeUnused($item->{linked_from});
 
 		# Cache all tracks for use in track_metadata
-		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri} && (!$fast || !$cache->get( $item->{uri} ));
+		$trackCache->set($item->{uri}, $item, $fast);
 
 		# sometimes we'd get metadata for an alternative track ID
-		if ( $item->{linked_from} && $item->{linked_from}->{uri} && (!$fast || !$cache->get( $item->{linked_from}->{uri} )) ) {
-			$cache->set( $item->{linked_from}->{uri}, $item, CACHE_TTL );
+		if ( $item->{linked_from} && $item->{linked_from}->{uri} ) {
+			$trackCache->set($item->{linked_from}->{uri}, $item, $fast);
 		}
 	}
 
 	delete $item->{available_markets};		# this is rather lengthy, repetitive and never used
+
+	return $item;
+}
+
+sub _removeUnused {
+	my $item = shift;
+	foreach ( qw(available_markets href external_urls type), @_ ) {
+		delete $item->{$_};
+	}
 
 	return $item;
 }
