@@ -4,9 +4,11 @@ use strict;
 
 use URI::Escape qw(uri_escape_utf8);
 
+use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::API;
 use Plugins::Spotty::PlaylistFolders;
 
+use Slim::Menu::BrowseLibrary;
 use Slim::Menu::GlobalSearch;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -82,6 +84,21 @@ sub init {
 		},
 	) );
 
+	Slim::Menu::BrowseLibrary->registerOnlineService( spotty => sub {
+		my ( $client, $id ) = @_;
+
+		if ($id =~ /^spotify:artist:/) {
+			return {
+				name => cstring($client, 'BROWSE_ON_SERVICE', 'Spotify'),
+				type => 'link',
+				icon => Plugins::Spotty::Plugin->_pluginDataFor('icon'),
+				url  => \&artist,
+				passthrough => [{ uri => $id }],
+			};
+		}
+	} );
+
+
 #                                                               |requires Client
 #                                                               |  |is a Query
 #                                                               |  |  |has Tags
@@ -118,7 +135,7 @@ sub handleFeed {
 
 		return;
 	}
-	elsif ( !Plugins::Spotty::Plugin->hasCredentials() || !Plugins::Spotty::Plugin->getAccount($client) ) {
+	elsif ( !Plugins::Spotty::AccountHelper->hasCredentials() || !Plugins::Spotty::AccountHelper->getAccount($client) ) {
 		$cb->({
 			items => [{
 				name => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED') . "\n" . cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
@@ -129,16 +146,16 @@ sub handleFeed {
 		return;
 	}
 	# if there's no account assigned to the player, just pick one - we should never get here...
-	elsif ( !Plugins::Spotty::Plugin->getCredentials($client) ) {
+	elsif ( !Plugins::Spotty::AccountHelper->getCredentials($client) ) {
 		selectAccount($client, $cb, $args);
 		return;
 	}
 
 	# update users' display names every now and then
-	if ( Plugins::Spotty::Plugin->hasMultipleAccounts() && $nextNameCheck < time ) {
-		foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
+	if ( Plugins::Spotty::AccountHelper->hasMultipleAccounts() && $nextNameCheck < time ) {
+		foreach ( @{ Plugins::Spotty::AccountHelper->getSortedCredentialTupels() } ) {
 			my ($name, $id) = each %{$_};
-			Plugins::Spotty::Plugin->getName($client, $name);
+			Plugins::Spotty::AccountHelper->getName($client, $name);
 		}
 
 		$nextNameCheck = time() + 3600;
@@ -235,8 +252,8 @@ sub handleFeed {
 			}
 		}
 
-		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
-			my $credentials = Plugins::Spotty::Plugin->getAllCredentials();
+		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
+			my $credentials = Plugins::Spotty::AccountHelper->getAllCredentials();
 
 			foreach my $name ( sort {
 				lc($a) cmp lc($b)
@@ -268,7 +285,7 @@ sub handleFeed {
 			url   => \&transferPlaylist
 		};
 
-		if ( $prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
+		if ( $prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
 			push @$items, {
 				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
 				items => [{
@@ -284,7 +301,7 @@ sub handleFeed {
 
 		$cb->({
 # XXX - how to refresh the title when the account has changed?
-#			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::Plugin->hasMultipleAccounts() ? sprintf(' (%s)', _getDisplayName($spotty->username)) : ''),
+#			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::AccountHelper->hasMultipleAccounts() ? sprintf(' (%s)', _getDisplayName($spotty->username)) : ''),
 			items => $items,
 		});
 	} );
@@ -766,7 +783,7 @@ sub album {
 
 		$cb->({ items => $items });
 	},{
-		uri => $params->{uri} || $args->{uri}
+		uri => $params->{uri} || $args->{uri} || $params->{extid} || $args->{extid}
 	});
 }
 
@@ -1715,7 +1732,7 @@ sub selectAccount {
 	my $items = [];
 	my $username = Plugins::Spotty::Plugin->getAPIHandler($client)->username;
 
-	foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
+	foreach ( @{ Plugins::Spotty::AccountHelper->getSortedCredentialTupels() } ) {
 		my ($name, $id) = each %{$_};
 
 		next if $name eq $username;
@@ -1738,9 +1755,9 @@ sub _selectAccount {
 
 	return unless $client;
 
-	Plugins::Spotty::Plugin->setAccount($client, $args->{id});
+	Plugins::Spotty::AccountHelper->setAccount($client, $args->{id});
 
-	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
+	Plugins::Spotty::AccountHelper->getAPIHandler($client)->me(sub {
 		$cb->({ items => [{
 			nextWindow => 'grandparent',
 		}] });
@@ -1750,7 +1767,7 @@ sub _selectAccount {
 sub _withAccount {
 	my ($client, $cb, $params, $args) = @_;
 
-	my $credentials = Plugins::Spotty::Plugin->getAllCredentials();
+	my $credentials = Plugins::Spotty::AccountHelper->getAllCredentials();
 	my $id = lc($credentials->{$args->{name}});
 
 	main::INFOLOG && $log->is_info && $log->info(sprintf('Running query for %s (%s)', $args->{name}, $id));
