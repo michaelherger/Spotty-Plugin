@@ -15,6 +15,7 @@ use Slim::Utils::Strings qw(string);
 use Slim::Utils::Timers;
 
 use Plugins::Spotty::Plugin;
+use Plugins::Spotty::AccountHelper;
 
 use constant AUTHENTICATE => '__AUTHENTICATE__';
 use constant HELPER_TIMEOUT => 60*15;		# kill the helper application after 15 minutes
@@ -77,11 +78,11 @@ sub handler {
 		}
 	}
 
-	if ( Plugins::Spotty::Plugin->hasCredentials(AUTHENTICATE) ) {
+	if ( Plugins::Spotty::AccountHelper->hasCredentials(AUTHENTICATE) ) {
 		$class->shutdownHelper;
 
 		$class->cleanup();
-		Plugins::Spotty::Plugin->getName($client, $paramRef->{username});
+		Plugins::Spotty::AccountHelper->getName($client, $paramRef->{username});
 
 		$response->code(RC_MOVED_TEMPORARILY);
 		$response->header('Location' => 'basic.html');
@@ -118,7 +119,7 @@ sub checkCredentials {
 	my $request = $response->request;
 
 	my $result = {
-		hasCredentials => Plugins::Spotty::Plugin->hasCredentials(AUTHENTICATE)
+		hasCredentials => Plugins::Spotty::AccountHelper->hasCredentials(AUTHENTICATE)
 	};
 
 	# make sure our authentication helper is running
@@ -170,8 +171,8 @@ sub startHelper {
 }
 
 sub cleanup {
-	Plugins::Spotty::Plugin->renameCacheFolder(AUTHENTICATE);
-	Plugins::Spotty::Plugin->deleteCacheFolder(AUTHENTICATE);
+	Plugins::Spotty::AccountHelper->renameCacheFolder(AUTHENTICATE);
+	Plugins::Spotty::AccountHelper->deleteCacheFolder(AUTHENTICATE);
 }
 
 sub shutdownHelper {

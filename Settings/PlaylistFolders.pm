@@ -33,7 +33,7 @@ sub page {
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
 
-	my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder('playlistFolders');
+	my $cacheFolder = Plugins::Spotty::AccountHelper->cacheFolder('playlistFolders');
 
 	if ($paramRef->{saveSettings}) {
 		foreach (grep /^delete_.*\.file$/, keys %$paramRef) {

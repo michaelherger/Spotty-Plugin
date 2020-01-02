@@ -14,6 +14,9 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Timers;
 
+use Plugins::Spotty::AccountHelper;
+use Plugins::Spotty::Helper;
+
 __PACKAGE__->mk_accessor( rw => qw(
 	api
 	_proc
@@ -53,11 +56,13 @@ my %procs;
 sub new {
 	my ($class, $api) = @_;
 
+	Plugins::Spotty::Helper->init();
+
 	my $self = $class->SUPER::new();
 	$self->api($api);
 	$self->_callbacks([]);
 
-	my $account = Plugins::Spotty::Plugin->getAccount($api->client);
+	my $account = Plugins::Spotty::AccountHelper->getAccount($api->client);
 
 	$self->_tmpfile(File::Temp->new(UNLINK => 1)->filename);
 
@@ -66,7 +71,7 @@ sub new {
 			? '%s -n Squeezebox -c "%s" -i %s --scope "%s" --save-token "%s"'
 			: '%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s" > "%s" 2>&1',
 		scalar Plugins::Spotty::Helper->get(),
-		$self->api->cache || Plugins::Spotty::Plugin->cacheFolder($account),
+		$self->api->cache || Plugins::Spotty::AccountHelper->cacheFolder($account),
 		$prefs->get('iconCode'),
 		SPOTIFY_SCOPE,
 		$self->_tmpfile
@@ -172,7 +177,19 @@ sub _killTokenHelper {
 sub get {
 	my ($class, $api, $cb) = @_;
 
-	if (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) {
+	if (main::SCANNER) {
+		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',
+			scalar Plugins::Spotty::Helper->get(),
+			Plugins::Spotty::AccountHelper->cacheFolder(),
+			$prefs->get('iconCode'),
+			SPOTIFY_SCOPE
+		);
+
+		_logCommand($cmd);
+
+		return $class->_gotTokenInfo(`$cmd 2>&1`, '_scanner');
+	}
+	elsif (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) {
 		my $proc = $procs{$api};
 
 		if ( !($proc && $proc->_proc && $proc->_proc->alive()) ) {
@@ -188,11 +205,11 @@ sub get {
 	else {
 		main::INFOLOG && $log->info("Can't do non-blocking getToken call. Good luck!");
 
-		my $account = Plugins::Spotty::Plugin->getAccount($api->client);
+		my $account = Plugins::Spotty::AccountHelper->getAccount($api->client);
 
 		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',
 			scalar Plugins::Spotty::Helper->get(),
-			$api->cache || Plugins::Spotty::Plugin->cacheFolder($account),
+			$api->cache || Plugins::Spotty::AccountHelper->cacheFolder($account),
 			$prefs->get('iconCode'),
 			SPOTIFY_SCOPE
 		);

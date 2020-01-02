@@ -532,7 +532,7 @@ sub cacheFolder {
 
 	$clientId = $clientId->id if $clientId && blessed $clientId;
 
-	my $cacheFolder = Plugins::Spotty::Plugin->cacheFolder( Plugins::Spotty::Plugin->getAccount($clientId) );
+	my $cacheFolder = Plugins::Spotty::AccountHelper->cacheFolder( Plugins::Spotty::AccountHelper->getAccount($clientId) );
 
 	# create a temporary account folder with the player's MAC address
 	if ( Plugins::Spotty::Plugin->canDiscovery() && !$prefs->get('disableDiscovery') ) {

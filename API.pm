@@ -4,7 +4,6 @@ use strict;
 use Exporter::Lite;
 
 BEGIN {
-	use constant CACHE_TTL  => 86400 * 7;
 	use constant LIBRARY_LIMIT => 500;
 	use constant RECOMMENDATION_LIMIT => 100;		# for whatever reason this call does support a maximum chunk size of 100
 	use constant DEFAULT_LIMIT => 200;
@@ -24,6 +23,7 @@ use POSIX qw(strftime);
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::Plugin;
+use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::Helper;
 use Plugins::Spotty::API::Pipeline;
 use Plugins::Spotty::API::AsyncRequest;
@@ -37,8 +37,8 @@ use Slim::Utils::Strings qw(cstring string);
 my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
 
-use Plugins::Spotty::API::TrackCache;
-my $trackCache = Plugins::Spotty::API::TrackCache->new();
+use Plugins::Spotty::API::Cache;
+my $libraryCache = Plugins::Spotty::API::Cache->new();
 
 my $prefs = preferences('plugin.spotty');
 my $error429;
@@ -108,7 +108,7 @@ sub me {
 			if ( $result && ref $result ) {
 				$self->country($result->{country});
 				$self->_username($result->{username}) if $result->{username};
-				Plugins::Spotty::Plugin->setName($self->username, $result);
+				Plugins::Spotty::AccountHelper->setName($self->username, $result);
 
 				$cb->($result) if $cb;
 			}
@@ -124,7 +124,7 @@ sub username {
 	return $self->_username if $self->_username;
 
 	# fall back to default account if no username was given
-	my $credentials = Plugins::Spotty::Plugin->getCredentials($self->client);
+	my $credentials = Plugins::Spotty::AccountHelper->getCredentials($self->client);
 	if ( $credentials && $credentials->{username} ) {
 		$self->_username($credentials->{username})
 	}
@@ -165,7 +165,7 @@ sub user {
 			my ($result) = @_;
 
 			if ( $result && ref $result ) {
-				$result->{image} = _getLargestArtwork(delete $result->{images});
+				$result->{image} = $libraryCache->getLargestArtwork(delete $result->{images});
 			}
 
 			$cb->($result || {});
@@ -184,7 +184,7 @@ sub player {
 				$result->{progress} = $result->{progress_ms} ? $result->{progress_ms} / 1000 : 0;
 
 				if ($result->{item} && $result->{item}->{type} eq 'track') {
-					$result->{track} = $self->_normalize($result->{item});
+					$result->{track} = $libraryCache->normalize($result->{item});
 				}
 
 				# keep track of MAC -> ID mapping
@@ -394,7 +394,7 @@ sub search {
 					}
 				}
 
-				$item = $self->_normalize($item);
+				$item = $libraryCache->normalize($item);
 
 				push @$items, $item;
 			}
@@ -419,7 +419,7 @@ sub album {
 
 			my $total = $album->{tracks}->{total} if $album->{tracks} && ref $album->{tracks};
 
-			$album = $self->_normalize($album);
+			$album = $libraryCache->normalize($album);
 
 			# we might need to grab more tracks: audio books can have hundreds of "tracks"
 			if ( $total && $total > SPOTIFY_LIMIT ) {
@@ -434,7 +434,7 @@ sub album {
 					for my $track ( @{ $_[0]->{items} } ) {
 						# Add missing album data to track
 						$track->{album} = $minAlbum;
-						push @$items, $self->_normalize($track);
+						push @$items, $libraryCache->normalize($track);
 					}
 
 					return $items, $_[0]->{total}, $_[0]->{'next'};
@@ -479,7 +479,7 @@ sub artist {
 
 	$self->_call('artists/' . $id,
 		sub {
-			my $artist = $self->_normalize($_[0]);
+			my $artist = $libraryCache->normalize($_[0]);
 			$cb->($artist);
 		},
 		GET => {
@@ -523,7 +523,7 @@ sub artists {
 			# null album info for invalid IDs is returned
 			next unless $_ && ref $_;
 
-			my $artist = $self->_normalize($_);
+			my $artist = $libraryCache->normalize($_);
 
 			push @artists, $artist;
 		}
@@ -542,7 +542,7 @@ sub relatedArtists {
 	Plugins::Spotty::API::Pipeline->new($self, 'artists/' . $id . '/related-artists', sub {
 		my $artists = $_[0] || {};
 		my $items = [ sort _artistSort map {
-			$self->_normalize($_)
+			$libraryCache->normalize($_)
 		} @{$artists->{artists} || []} ];
 
 		return $items, $artists->{total}, $artists->{'next'};
@@ -557,7 +557,7 @@ sub artistTracks {
 	$self->_call('artists/' . $id . '/top-tracks',
 		sub {
 			my $tracks = $_[0] || {};
-			$cb->([ map { $self->_normalize($_) } @{$tracks->{tracks} || []} ]);
+			$cb->([ map { $libraryCache->normalize($_) } @{$tracks->{tracks} || []} ]);
 		},
 		GET => {
 			# Why the heck would this call need country rather than market?!? And no "from_token"?!?
@@ -573,7 +573,7 @@ sub artistAlbums {
 
 	Plugins::Spotty::API::Pipeline->new($self, 'artists/' . $id . '/albums', sub {
 		my $albums = $_[0] || {};
-		my $items = [ map { $self->_normalize($_)} @{$albums->{items} || []} ];
+		my $items = [ map { $libraryCache->normalize($_)} @{$albums->{items} || []} ];
 
 		return $items, $albums->{total}, $albums->{'next'};
 	}, $cb, {
@@ -581,6 +581,7 @@ sub artistAlbums {
 		market => $self->country,
 		limit  => min($args->{limit} || _DEFAULT_LIMIT(), _DEFAULT_LIMIT()),
 		offset => $args->{offset} || 0,
+		include_groups => $args->{include} || 'album,single,appears_on,compilation',
 	})->get();
 }
 
@@ -616,7 +617,7 @@ sub playlist {
 			# if we set market => 'from_token', then we don't get available_markets back, but only a is_playable flag
 			next unless $self->_isPlayable($track, $cc);
 
-			push @$items, $self->_normalize($track);
+			push @$items, $libraryCache->normalize($track);
 		}
 
 		return $items, $_[0]->{total}, $_[0]->{'next'};
@@ -659,7 +660,7 @@ sub _track {
 	$id =~ s/(?:spotify|track)://g;
 
 	$self->_call('tracks/' . $id, sub {
-		my $track = $self->_normalize(shift);
+		my $track = $libraryCache->normalize(shift);
 		$cb->($track, @_) if $cb;
 	},
 	GET => {
@@ -674,7 +675,7 @@ sub episode {
 	$id =~ s/(?:spotify|episode)://g;
 
 	$self->_call('episodes/' . $id, sub {
-		my $episode = $self->_normalize(shift);
+		my $episode = $libraryCache->normalize(shift);
 		$cb->($episode, @_) if $cb;
 	},
 	GET => {
@@ -690,7 +691,7 @@ sub trackCached {
 		return;
 	}
 
-	if ( my $cached = $uri =~ /:episode:/ ? $cache->get($uri) : $trackCache->get($uri) ) {
+	if ( my $cached = $uri =~ /:episode:/ ? $cache->get($uri) : $libraryCache->get($uri) ) {
 		$cb->($cached) if $cb;
 		return $cached;
 	}
@@ -764,7 +765,7 @@ sub _tracks() {
 			# track info for invalid IDs is returned
 			next unless $_ && ref $_;
 
-			my $track = $self->_normalize($_);
+			my $track = $libraryCache->normalize($_);
 
 			push @tracks, $track if $self->_isPlayable($_);
 		}
@@ -825,7 +826,7 @@ sub mySongs {
 
 	Plugins::Spotty::API::Pipeline->new($self, 'me/tracks', sub {
 		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
-			return [ map { $self->_normalize($_->{track}, $fast) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+			return [ map { $libraryCache->normalize($_->{track}, $fast) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, sub {
 		my $results = shift;
@@ -842,7 +843,7 @@ sub myAlbums {
 
 	Plugins::Spotty::API::Pipeline->new($self, 'me/albums', sub {
 		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
-			return [ map { $self->_normalize($_->{album}, $fast) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+			return [ map { $libraryCache->normalize($_->{album}, $fast) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, sub {
 		my $results = shift;
@@ -911,7 +912,7 @@ sub myArtists {
 
 	Plugins::Spotty::API::Pipeline->new($self, 'me/following', sub {
 		if ( $_[0] && $_[0]->{artists} && $_[0]->{artists} && (my $artists = $_[0]->{artists}) ) {
-			return [ map { $self->_normalize($_, 'fast') } @{ $artists->{items} } ], $artists->{total}, $artists->{'next'};
+			return [ map { $libraryCache->normalize($_, 'fast') } @{ $artists->{items} } ], $artists->{total}, $artists->{'next'};
 		}
 	}, sub {
 		my $results = shift;
@@ -937,7 +938,7 @@ sub myArtists {
 
 				if ( my $artist = $_->{artists}->[0] ) {
 					if ( !$knownArtists{$artist->{id}}++ ) {
-						$artist = $self->_normalize($artist, 'fast');
+						$artist = $libraryCache->normalize($artist, 'fast');
 						push @$items, $artist;
 
 						if (!$artist->{image}) {
@@ -954,7 +955,7 @@ sub myArtists {
 				$self->artists(sub {
 					# now let's merge these new results with what we had already...
 					my %artists = map {
-						$_->{id} => $self->_normalize($_, 'fast')
+						$_->{id} => $libraryCache->normalize($_, 'fast')
 					} @{shift || []};
 
 					map {
@@ -983,7 +984,7 @@ sub myShows {
 
 	Plugins::Spotty::API::Pipeline->new($self, 'me/shows', sub {
 		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
-			return [ map { $self->_normalize($_->{show}) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+			return [ map { $libraryCache->normalize($_->{show}) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, sub {
 		my $results = shift;
@@ -1006,7 +1007,7 @@ sub show {
 
 			my $total = $show->{episodes}->{total} if $show->{episodes} && ref $show->{episodes};
 
-			$show = $self->_normalize($show);
+			$show = $libraryCache->normalize($show);
 			$cb->($show);
 		},
 		GET => {
@@ -1045,7 +1046,7 @@ sub playlists {
 
 	Plugins::Spotty::API::Pipeline->new($self, 'users/' . uri_escape_utf8($user) . '/playlists', sub {
 		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
-			return [ map { $self->_normalize($_) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+			return [ map { $libraryCache->normalize($_) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, $cb, {
 		limit  => $limit
@@ -1098,7 +1099,7 @@ sub browse {
 			my $cc = $self->country();
 
 			my $items = [ map {
-				$self->_normalize($_)
+				$libraryCache->normalize($_)
 			} grep {
 				(!$_->{available_markets} || scalar grep /$cc/i, @{$_->{available_markets}}) ? 1 : 0;
 			} @{$result->{$key}->{items} || []} ];
@@ -1125,7 +1126,7 @@ sub categories {
 			{
 				name  => $_->{name},
 				id    => $_->{id},
-				image => _getLargestArtwork($_->{icons})
+				image => $libraryCache->getLargestArtwork($_->{icons})
 			}
 		} @$result ];
 
@@ -1182,7 +1183,7 @@ sub recommendations {
 		my $result = shift;
 
  		if ($result && $result->{tracks}) {
-			my $items = [ map { $self->_normalize($_) } grep { $self->_isPlayable($_) } @{$result->{tracks}} ];
+			my $items = [ map { $libraryCache->normalize($_) } grep { $self->_isPlayable($_) } @{$result->{tracks}} ];
 
 			my $total = scalar @$items;
 
@@ -1198,137 +1199,8 @@ sub recommendations {
 	}, $cb, $params)->get();
 }
 
-sub _normalize {
-	my ( $self, $item, $fast ) = @_;
-
-	my $type = $item->{type} || '';
-
-	if ($type eq 'album') {
-		$item->{image}   = _getLargestArtwork(delete $item->{images});
-		$item->{artist}  ||= $item->{artists}->[0]->{name} if $item->{artists} && ref $item->{artists};
-
-		my $minAlbum = {
-			name => $item->{name},
-			image => $item->{image},
-			id => $item->{id},
-			uri => $item->{uri}
-		};
-
-		$item->{tracks}  = [ map {
-			$_->{album} = $minAlbum unless $_->{album} && $_->{album}->{name};
-
-			$self->_normalize($_, $fast)
-		} @{ $item->{tracks}->{items} } ] if $item->{tracks};
-	}
-	elsif ($type eq 'playlist') {
-		if ( $item->{owner} && ref $item->{owner} ) {
-			$item->{creator} = $item->{owner}->{id};
-			my $ownerId = Slim::Utils::Unicode::utf8off($item->{owner}->{id});
-			if ( ($cache->get('playlist_owner_' . $item->{id}) || '') ne $ownerId)  {
-				$cache->set('playlist_owner_' . $item->{id}, $ownerId, 86400*30);
-			}
-		}
-		$item->{image} = _getLargestArtwork(delete $item->{images});
-	}
-	elsif ($type eq 'artist') {
-		$item->{sortname} = Slim::Utils::Text::ignoreArticles($item->{name});
-		$item->{image} = _getLargestArtwork(delete $item->{images});
-
-		if (!$item->{image}) {
-			$item->{image} = $cache->get('spotify_artist_image_' . $item->{id});
-		}
-		elsif ( !$fast || !$cache->get('spotify_artist_image_' . $item->{id}) ) {
-			$cache->set('spotify_artist_image_' . $item->{id}, $item->{image}, CACHE_TTL);
-		}
-	}
-	elsif ($type eq 'show') {
-		$item->{image} = _getLargestArtwork(delete $item->{images});
-		$item->{artists} ||= [{ name => $item->{publisher} }] if $item->{publisher};
-		delete $item->{available_markets};
-
-		my $minShow = {
-			name => $item->{name},
-			artists => $item->{artists},
-			image => $item->{image},
-		};
-
-		$item->{episodes}  = [ map {
-			$_->{album} = $minShow unless $_->{show} && $_->{show}->{name};
-
-			$self->_normalize($_, $fast)
-		} @{ $item->{episodes}->{items} } ] if $item->{episodes};
-	}
-	elsif ($type eq 'episode') {
-		$item->{album}  ||= {};
-
-		$item->{album}->{name} ||= $item->{show}->{name} if $item->{show}->{name};
-
-		$item->{image} ||= _getLargestArtwork(delete $item->{images}) if $item->{images};
-		$item->{album}->{image} ||= _getLargestArtwork(delete $item->{show}->{images}) if $item->{show}->{images};
-		$item->{album}->{image} ||= _getLargestArtwork(delete $item->{album}->{images}) if $item->{album}->{images};
-
-		delete $item->{show}->{available_markets};
-		$item->{artists} ||= [{ name => $item->{publisher} }] if $item->{publisher};
-		$item->{artists} ||= [{ name => $item->{show}->{publisher} }] if $item->{show}->{publisher};
-		$item->{artists} ||= $item->{album}->{artists} if $item->{album}->{artists};
-
-		# Cache all tracks for use in track_metadata
-		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri} && (!$fast || !$cache->get( $item->{uri} ));
-	}
-	# track
-	else {
-		$item->{album}  ||= {};
-		$item->{album}->{image} ||= _getLargestArtwork(delete $item->{album}->{images}) if $item->{album}->{images};
-		_removeUnused($item->{album});
-
-		foreach my $artist ( @{$item->{artists} || []} ) {
-			_removeUnused($artist);
-		}
-
-		foreach my $artist ( @{$item->{album}->{artists} || []} ) {
-			_removeUnused($artist);
-		}
-
-		_removeUnused($item, 'preview_url', 'is_local', 'is_playable', 'episode', 'external_ids');
-		_removeUnused($item->{linked_from});
-
-		# Cache all tracks for use in track_metadata
-		$trackCache->set($item->{uri}, $item, $fast);
-
-		# sometimes we'd get metadata for an alternative track ID
-		if ( $item->{linked_from} && $item->{linked_from}->{uri} ) {
-			$trackCache->set($item->{linked_from}->{uri}, $item, $fast);
-		}
-	}
-
-	delete $item->{available_markets};		# this is rather lengthy, repetitive and never used
-
-	return $item;
-}
-
-sub _removeUnused {
-	my $item = shift;
-	foreach ( qw(available_markets href external_urls type), @_ ) {
-		delete $item->{$_};
-	}
-
-	return $item;
-}
-
 sub _artistSort {
 	lc($a->{sortname} || $a->{name}) cmp lc($b->{sortname} || $b->{name});
-}
-
-sub _getLargestArtwork {
-	my ( $images ) = @_;
-
-	if ( $images && ref $images && ref $images eq 'ARRAY' ) {
-		my ($image) = sort { $b->{height} <=> $a->{height} } @$images;
-
-		return $image->{url} if $image;
-	}
-
-	return '';
 }
 
 sub _isPlayable {

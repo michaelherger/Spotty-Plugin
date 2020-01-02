@@ -51,7 +51,7 @@ sub formatOverride {
 
 	# check if we want/need to purge the audio cache
 	# this needs to be done from whatever code being run once per track
-	Plugins::Spotty::Plugin->purgeAudioCacheAfterXTracks();
+	Plugins::Spotty::AccountHelper->purgeAudioCacheAfterXTracks();
 
 	return 'spt';
 }
@@ -128,7 +128,7 @@ sub getMetadataFor {
 
 	$meta->{type} = $meta->{originalType};
 
-	if ( !Plugins::Spotty::Plugin->hasCredentials() ) {
+	if ( !Plugins::Spotty::AccountHelper->hasCredentials() ) {
 		$meta->{artist} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
 		$meta->{title} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
 		return $meta;

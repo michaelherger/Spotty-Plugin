@@ -9,8 +9,6 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 
-use Plugins::Spotty::Connect;
-
 use constant HELPER => 'spotty';
 
 my $prefs = preferences('plugin.spotty');
@@ -32,7 +30,7 @@ sub init {
 			Plugins::Spotty::Connect->init();
 		});
 
-	}, 'helper');
+	}, 'helper') if !main::SCANNER;
 }
 
 sub get {
