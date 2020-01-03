@@ -18,6 +18,15 @@ my $cache = Slim::Utils::Cache->new();
 sub initPlugin {
 	my $class = shift;
 
+	eval {
+		require Plugins::Spotty::API::Sync;
+	};
+
+	if ($@) {
+		$log->warn("Please update your LMS to be able to use online library integration in My Music");
+		return;
+	}
+
 	# TODO - make integration optional
 	# return unless $prefs->get('runImporter') && ($serverprefs->get('precacheArtwork') || $prefs->get('lookupArtistPictures') || $prefs->get('lookupCoverArt'));
 

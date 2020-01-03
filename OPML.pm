@@ -84,20 +84,26 @@ sub init {
 		},
 	) );
 
-	Slim::Menu::BrowseLibrary->registerOnlineService( spotty => sub {
-		my ( $client, $id ) = @_;
+	if (Slim::Menu::BrowseLibrary->can('registerOnlineService')) {
+		Slim::Menu::BrowseLibrary->registerOnlineService( spotty => sub {
+			my ( $client, $id ) = @_;
 
-		if ($id =~ /^spotify:artist:/) {
-			return {
-				name => cstring($client, 'BROWSE_ON_SERVICE', 'Spotify'),
-				type => 'link',
-				icon => Plugins::Spotty::Plugin->_pluginDataFor('icon'),
-				url  => \&artist,
-				passthrough => [{ uri => $id }],
-			};
-		}
-	} );
+			if ($id =~ /^spotify:artist:/) {
+				return {
+					name => cstring($client, 'BROWSE_ON_SERVICE', 'Spotify'),
+					type => 'link',
+					icon => Plugins::Spotty::Plugin->_pluginDataFor('icon'),
+					url  => \&artist,
+					passthrough => [{ uri => $id }],
+				};
+			}
+		} );
 
+		main::INFOLOG && $log->is_info && $log->info("Successfully registered BrowseLibrary handler for Spotify");
+	}
+	else {
+		$log->warn("Please update your LMS to be able to use online library integration in My Music");
+	}
 
 #                                                               |requires Client
 #                                                               |  |is a Query
