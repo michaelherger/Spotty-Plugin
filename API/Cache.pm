@@ -103,7 +103,8 @@ sub normalize {
 			name => $item->{name},
 			image => $item->{image},
 			id => $item->{id},
-			uri => $item->{uri}
+			uri => $item->{uri},
+			release_date => $item->{release_date}
 		};
 
 		$item->{tracks}  = [ map {
