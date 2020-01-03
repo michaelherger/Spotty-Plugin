@@ -16,6 +16,10 @@ use Slim::Utils::Prefs;
 
 use Plugins::Spotty::API::Cache;
 
+use constant SPOTIFY_LIMIT => 50;
+use constant SPOTIFY_ALBUMS_LIMIT => 20;
+use constant SPOTIFY_PLAYLIST_TRACKS_LIMIT => 100;
+
 my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
 my $libraryCache = Plugins::Spotty::API::Cache->new();
@@ -85,10 +89,51 @@ sub mySongs {
 		$offset = 0;
 
 		if ( $response && $response->{items} && ref $response->{items} ) {
-			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 			push @$tracks, map { $libraryCache->normalize($_->{track}) } @{ $response->{items} };
+			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 		}
 	} while $offset;
+
+	return $tracks;
+}
+
+sub myPlaylists {
+	my ($self) = @_;
+
+	my $offset = 0;
+	my $playlists = [];
+
+	do {
+		my $response = $self->_call('me/playlists', {
+			offset => $offset
+		});
+
+		$offset = 0;
+
+		if ( $response && $response->{items} && ref $response->{items} ) {
+			push @$playlists, map { $libraryCache->normalize($_) } @{$response->{items}};
+			($offset) = $response->{'next'} =~ /offset=(\d+)/;
+		}
+	} while $offset;
+
+	return $playlists;
+}
+
+sub tracks {
+	my ($self, $ids) = @_;
+
+	my $tracks;
+	$ids = [ sort map { s/^spotify:track://; $_ } @$ids ];
+	while (my @ids = splice(@$ids, 0, SPOTIFY_LIMIT)) {
+		my $response = $self->_call('tracks', {
+			ids => join(',', @ids),
+			limit => SPOTIFY_LIMIT
+		});
+
+		if ( $response && $response->{tracks} && ref $response->{tracks} ) {
+			push @$tracks, map { $libraryCache->normalize($_) } @{ $response->{tracks} };
+		}
+	}
 
 	return $tracks;
 }
@@ -97,11 +142,11 @@ sub albums {
 	my ($self, $ids) = @_;
 
 	my $albums;
-	$ids = [ sort @$ids ];
-	while (my @ids = splice(@$ids, 0, 20)) {
+	$ids = [ sort map { s/^spotify:album://; $_ } @$ids ];
+	while (my @ids = splice(@$ids, 0, SPOTIFY_ALBUMS_LIMIT)) {
 		my $response = $self->_call('albums', {
 			ids => join(',', @ids),
-			limit => 20
+			limit => SPOTIFY_ALBUMS_LIMIT
 		});
 
 		if ( $response && $response->{albums} && ref $response->{albums} ) {
@@ -112,11 +157,36 @@ sub albums {
 	return $albums;
 }
 
+# attempt at creating the cheapest/fastest call to get the track IDs/URIs only
+sub playlistTrackIDs {
+	my ($self, $id) = @_;
+
+	my $offset = 0;
+	my $tracks;
+
+	do {
+		my $response = $self->_call("playlists/$id/tracks", {
+			offset => $offset,
+			limit => SPOTIFY_PLAYLIST_TRACKS_LIMIT,
+			fields => 'next,items(track(uri))'
+		});
+
+		$offset = 0;
+
+		if ( $response && $response->{items} && ref $response->{items} ) {
+			push @$tracks, map { $_->{track}->{uri} } grep { $_->{track} && ref $_->{track} && $_->{track}->{uri} } @{$response->{items}};
+			($offset) = $response->{tracks}->{'next'} =~ /offset=(\d+)/;
+		}
+	} while $offset;
+
+	return $tracks;
+}
+
 sub _call {
 	my ( $self, $url, $params ) = @_;
 
 	$params ||= {};
-	$params->{limit} ||= 50;
+	$params->{limit} ||= SPOTIFY_LIMIT;
 
 	my $token = $self->getToken();
 
@@ -185,6 +255,7 @@ sub _call {
 	if ($@) {
 		my $error = "Failed to parse JSON response from $url: $@";
 		$log->error($error);
+		main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
 		return {
 			error => $error
 		};

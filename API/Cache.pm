@@ -122,7 +122,9 @@ sub normalize {
 				$cache->set('playlist_owner_' . $item->{id}, $ownerId, 86400*30);
 			}
 		}
+
 		$item->{image} = $self->getLargestArtwork(delete $item->{images});
+		$item = _removeUnused($item, 'primary_color', 'snapshot_id');
 	}
 	elsif ($type eq 'artist') {
 		$item->{sortname} = Slim::Utils::Text::ignoreArticles($item->{name});
