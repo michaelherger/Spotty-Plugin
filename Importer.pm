@@ -50,24 +50,28 @@ sub startScan {
 	my $playlistsOnly = Slim::Music::Import->scanPlaylistsOnly();
 
 	my $accounts = Plugins::Spotty::AccountHelper->getAllCredentials();
+
 	while (my ($account, $accountId) = each %$accounts) {
+		main::INFOLOG && $log->is_info && $log->info("Starting import for user $account");
 		my $api = Plugins::Spotty::API::Sync->new($accountId);
 
 		my $progress = Slim::Utils::Progress->new({
 			'type'  => 'importer',
 			'name'  => 'plugin_spotty_albums',
 			'total' => 1,
-			# 'bar'   => 0
+			'every' => 1,
 		});
 
 		if (!$playlistsOnly) {
 			my @missingAlbums;
 
+			main::INFOLOG && $log->is_info && $log->info("Reading albums...");
 			$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS'));
 
 			my $albums = $api->myAlbums();
 			$progress->total(scalar @$albums + 2);
 
+			main::INFOLOG && $log->is_info && $log->info("Getting missing album information...");
 			foreach (@$albums) {
 				my $cached = $libraryCache->get($_->{album}->{uri});
 				if (!$cached || !$cached->{image}) {
@@ -78,33 +82,42 @@ sub startScan {
 			$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
 			$api->albums(\@missingAlbums);
 
+			main::INFOLOG && $log->is_info && $log->info("Importing album tracks...");
 			foreach (@$albums) {
 				$progress->update($_->{name});
+				main::SCANNER && Slim::Schema->forceCommit;
 				_storeTracks($_->{tracks});
 			}
 		}
 
 		$progress->final();
+		main::SCANNER && Slim::Schema->forceCommit;
 
 		$progress = Slim::Utils::Progress->new({
 			'type'  => 'importer',
 			'name'  => 'plugin_spotty_playlists',
 			'total' => 1,
-			# 'bar'   => 0
+			'every' => 1,
 		});
 
 		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS'));
 
+		main::INFOLOG && $log->is_info && $log->info("Reading playlists...");
 		my $playlists = $api->myPlaylists();
 
-		$progress->total(scalar @$playlists + 2);
+		$progress->total((scalar @$playlists)*2 + 1);
 
 		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
 		my %tracks;
 		my $c = 0;
 
+		main::INFOLOG && $log->is_info && $log->info("Getting playlist tracks...");
+
 		# we need to get the tracks first
 		foreach my $playlist (@{$playlists || []}) {
+			$progress->update($playlist->{name});
+			main::SCANNER && Slim::Schema->forceCommit;
+
 			my $tracks = $api->playlistTrackIDs($playlist->{id});
 			$cache->set('spotty_playlist_tracks_' . $playlist->{id}, $tracks);
 
@@ -117,6 +130,7 @@ sub startScan {
 		}
 
 		# pre-cache track information for playlist tracks
+		main::INFOLOG && $log->is_info && $log->info("Getting playlist track information...");
 		$api->tracks([grep { !$tracks{$_} } keys %tracks]);
 
 		# now store the playlists with the tracks
@@ -126,7 +140,6 @@ sub startScan {
 				url        => $playlist->{uri},
 				playlist   => 1,
 				integrateRemote => 1,
-				# new => 1,
 				attributes => {
 					TITLE        => $playlist->{name},
 					COVER        => $playlist->{image},
@@ -138,6 +151,8 @@ sub startScan {
 
 			$playlistObj->setTracks($cache->get('spotty_playlist_tracks_' . $playlist->{id}));
 		}
+
+		main::INFOLOG && $log->is_info && $log->info("Done, finally!");
 
 		$progress->final();
 	}

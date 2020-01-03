@@ -56,7 +56,7 @@ sub getToken {
 	}
 
 	my $userId = $self->userid || '_scanner';
-	my $token = $cache->get('spotty_access_token_' . $userId);
+	my $token = $cache->get('spotty_access_token' . $userId);
 
 	if (main::INFOLOG && $log->is_info) {
 		if ($token) {
