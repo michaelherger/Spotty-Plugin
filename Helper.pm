@@ -98,10 +98,8 @@ sub helperCheck {
 
 	$$check = '' unless $check && ref $check;
 
-	my $checkCmd = sprintf('%s -n "%s (%s)" --check',
-		$candidate,
-		string('PLUGIN_SPOTTY_AUTH_NAME'),
-		Slim::Utils::Misc::getLibraryName()
+	my $checkCmd = sprintf('%s -n "Spotty" --check',
+		$candidate
 	);
 
 	$$check = `$checkCmd 2>&1`;
