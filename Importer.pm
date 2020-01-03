@@ -4,6 +4,8 @@ use strict;
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
+use Slim::Utils::Progress;
+use Slim::Utils::Strings qw(string);
 
 use Plugins::Spotty::API::Cache;
 use Plugins::Spotty::API::Token;
@@ -14,7 +16,6 @@ my $libraryCache = Plugins::Spotty::API::Cache->new();
 my $cache = Slim::Utils::Cache->new();
 
 
-# TODO Progress
 sub initPlugin {
 	my $class = shift;
 
@@ -46,10 +47,21 @@ sub startScan {
 
 	my $playlistsOnly = main::SCANNER && Slim::Music::Import->scanPlaylistsOnly();
 
+	my $progress = Slim::Utils::Progress->new({
+		'type'  => 'importer',
+		'name'  => 'plugin_spotty_albums',
+		'total' => 1,
+		# 'bar'   => 0
+	});
+
 	if (!$playlistsOnly) {
 		my @missingAlbums;
 
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS'));
+
 		my $albums = Plugins::Spotty::API::Sync->myAlbums();
+		$progress->total(scalar @$albums + 2);
+
 		foreach (@$albums) {
 			my $cached = $libraryCache->get($_->{album}->{uri});
 			if (!$cached || !$cached->{image}) {
@@ -57,14 +69,31 @@ sub startScan {
 			}
 		}
 
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
 		Plugins::Spotty::API::Sync->albums(\@missingAlbums);
 
 		foreach (@$albums) {
+			$progress->update($_->{name});
 			_storeTracks($_->{tracks});
 		}
 	}
 
+	$progress->final();
+
+	$progress = Slim::Utils::Progress->new({
+		'type'  => 'importer',
+		'name'  => 'plugin_spotty_playlists',
+		'total' => 1,
+		# 'bar'   => 0
+	});
+
+	$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS'));
+
 	my $playlists = Plugins::Spotty::API::Sync->myPlaylists();
+
+	$progress->total(scalar @$playlists + 2);
+
+	$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
 	my %tracks;
 	my $c = 0;
 
@@ -93,6 +122,7 @@ sub startScan {
 
 	# now store the playlists with the tracks
 	foreach my $playlist (@{$playlists || []}) {
+		$progress->update($playlist->{name});
 		my $playlistObj = Slim::Schema->updateOrCreate({
 			url        => $playlist->{uri},
 			playlist   => 1,
@@ -109,6 +139,10 @@ sub startScan {
 
 		$playlistObj->setTracks($cache->get('spotty_playlist_tracks_' . $playlist->{id}));
 	}
+
+	$progress->final();
+
+	Slim::Music::Import->endImporter($class);
 }
 
 =pod
@@ -151,7 +185,7 @@ sub _storeTracks {
 				GENRE        => 'Spotify',
 				DISC        => $item->{disc_number},
 				SECS         => $item->{duration_ms}/1000,
-				YEAR         => substr($item->{release_date} || $item->{album}->{release_date}, 0, 4),			# TODO - verify
+				YEAR         => substr($item->{release_date} || $item->{album}->{release_date}, 0, 4),
 				COVER        => $item->{album}->{image},
 				AUDIO        => 1,
 				EXTID        => $item->{uri},
