@@ -7,6 +7,7 @@ use Slim::Utils::Prefs;
 use Slim::Utils::Progress;
 use Slim::Utils::Strings qw(string);
 
+use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::API::Cache;
 use Plugins::Spotty::API::Token;
 
@@ -24,6 +25,7 @@ sub initPlugin {
 	};
 
 	if ($@) {
+		$log->error($@);
 		$log->warn("Please update your LMS to be able to use online library integration in My Music");
 		return;
 	}
@@ -47,93 +49,98 @@ sub startScan {
 
 	my $playlistsOnly = Slim::Music::Import->scanPlaylistsOnly();
 
-	my $progress = Slim::Utils::Progress->new({
-		'type'  => 'importer',
-		'name'  => 'plugin_spotty_albums',
-		'total' => 1,
-		# 'bar'   => 0
-	});
+	my $accounts = Plugins::Spotty::AccountHelper->getAllCredentials();
+	while (my ($account, $accountId) = each %$accounts) {
+		my $api = Plugins::Spotty::API::Sync->new($accountId);
 
-	if (!$playlistsOnly) {
-		my @missingAlbums;
+		my $progress = Slim::Utils::Progress->new({
+			'type'  => 'importer',
+			'name'  => 'plugin_spotty_albums',
+			'total' => 1,
+			# 'bar'   => 0
+		});
 
-		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS'));
+		if (!$playlistsOnly) {
+			my @missingAlbums;
 
-		my $albums = Plugins::Spotty::API::Sync->myAlbums();
-		$progress->total(scalar @$albums + 2);
+			$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS'));
 
-		foreach (@$albums) {
-			my $cached = $libraryCache->get($_->{album}->{uri});
-			if (!$cached || !$cached->{image}) {
-				push @missingAlbums, $_->{id};
+			my $albums = $api->myAlbums();
+			$progress->total(scalar @$albums + 2);
+
+			foreach (@$albums) {
+				my $cached = $libraryCache->get($_->{album}->{uri});
+				if (!$cached || !$cached->{image}) {
+					push @missingAlbums, $_->{id};
+				}
+			}
+
+			$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
+			$api->albums(\@missingAlbums);
+
+			foreach (@$albums) {
+				$progress->update($_->{name});
+				_storeTracks($_->{tracks});
 			}
 		}
 
-		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
-		Plugins::Spotty::API::Sync->albums(\@missingAlbums);
+		$progress->final();
 
-		foreach (@$albums) {
-			$progress->update($_->{name});
-			_storeTracks($_->{tracks});
-		}
-	}
-
-	$progress->final();
-
-	$progress = Slim::Utils::Progress->new({
-		'type'  => 'importer',
-		'name'  => 'plugin_spotty_playlists',
-		'total' => 1,
-		# 'bar'   => 0
-	});
-
-	$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS'));
-
-	my $playlists = Plugins::Spotty::API::Sync->myPlaylists();
-
-	$progress->total(scalar @$playlists + 2);
-
-	$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
-	my %tracks;
-	my $c = 0;
-
-	# we need to get the tracks first
-	foreach my $playlist (@{$playlists || []}) {
-		my $tracks = Plugins::Spotty::API::Sync->playlistTrackIDs($playlist->{id});
-		$cache->set('spotty_playlist_tracks_' . $playlist->{id}, $tracks);
-
-		foreach (@$tracks) {
-			next if defined $tracks{$_};
-
-			my $cached = $libraryCache->get($_);
-			$tracks{$_} = $cached && $cached->{image} ? 1 : 0;
-		}
-	}
-
-	# pre-cache track information for playlist tracks
-	Plugins::Spotty::API::Sync->tracks([grep { !$tracks{$_} } keys %tracks]);
-
-	# now store the playlists with the tracks
-	foreach my $playlist (@{$playlists || []}) {
-		$progress->update($playlist->{name});
-		my $playlistObj = Slim::Schema->updateOrCreate({
-			url        => $playlist->{uri},
-			playlist   => 1,
-			integrateRemote => 1,
-			# new => 1,
-			attributes => {
-				TITLE        => $playlist->{name},
-				COVER        => $playlist->{image},
-				AUDIO        => 1,
-				EXTID        => $playlist->{uri},
-				CONTENT_TYPE => 'ssp'
-			},
+		$progress = Slim::Utils::Progress->new({
+			'type'  => 'importer',
+			'name'  => 'plugin_spotty_playlists',
+			'total' => 1,
+			# 'bar'   => 0
 		});
 
-		$playlistObj->setTracks($cache->get('spotty_playlist_tracks_' . $playlist->{id}));
-	}
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS'));
 
-	$progress->final();
+		my $playlists = $api->myPlaylists();
+
+		$progress->total(scalar @$playlists + 2);
+
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
+		my %tracks;
+		my $c = 0;
+
+		# we need to get the tracks first
+		foreach my $playlist (@{$playlists || []}) {
+			my $tracks = $api->playlistTrackIDs($playlist->{id});
+			$cache->set('spotty_playlist_tracks_' . $playlist->{id}, $tracks);
+
+			foreach (@$tracks) {
+				next if defined $tracks{$_};
+
+				my $cached = $libraryCache->get($_);
+				$tracks{$_} = $cached && $cached->{image} ? 1 : 0;
+			}
+		}
+
+		# pre-cache track information for playlist tracks
+		$api->tracks([grep { !$tracks{$_} } keys %tracks]);
+
+		# now store the playlists with the tracks
+		foreach my $playlist (@{$playlists || []}) {
+			$progress->update($playlist->{name});
+			my $playlistObj = Slim::Schema->updateOrCreate({
+				url        => $playlist->{uri},
+				playlist   => 1,
+				integrateRemote => 1,
+				# new => 1,
+				attributes => {
+					TITLE        => $playlist->{name},
+					COVER        => $playlist->{image},
+					AUDIO        => 1,
+					EXTID        => $playlist->{uri},
+					CONTENT_TYPE => 'ssp'
+				},
+			});
+
+			$playlistObj->setTracks($cache->get('spotty_playlist_tracks_' . $playlist->{id}));
+		}
+
+		$progress->final();
+	}
 
 	Slim::Music::Import->endImporter($class);
 }
@@ -166,7 +173,6 @@ sub _storeTracks {
 		Slim::Schema->updateOrCreate({
 			url        => $item->{uri},
 			integrateRemote => 1,
-			# new => 1,
 			attributes => {
 				TITLE        => $item->{name},
 				ARTIST       => $item->{artists}->[0]->{name},

@@ -2,11 +2,11 @@ package Plugins::Spotty::API::Sync;
 
 use strict;
 
+use base qw(Slim::Utils::Accessor);
+
 use Digest::MD5 qw(md5_hex);
 use IO::Socket::SSL;
 use JSON::XS::VersionOneAndTwo;
-use List::Util qw(min max);
-use POSIX qw(strftime);
 use URI::Escape qw(uri_escape_utf8);
 
 use Slim::Networking::SimpleSyncHTTP;
@@ -15,6 +15,13 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
 use Plugins::Spotty::API::Cache;
+
+{
+	__PACKAGE__->mk_accessor( rw => qw(
+		username
+		userid
+	) );
+}
 
 use constant SPOTIFY_LIMIT => 50;
 use constant SPOTIFY_ALBUMS_LIMIT => 20;
@@ -32,14 +39,24 @@ IO::Socket::SSL::set_defaults(
 
 use constant API_URL => 'https://api.spotify.com/v1/%s';
 
+sub new {
+	my ($class, $accountId) = @_;
+
+	my $self = $class->SUPER::new();
+	$self->userid($accountId);
+
+	return $self;
+}
+
 sub getToken {
-	my ( $self ) = @_;
+	my ($self) = @_;
 
 	if ($cache->get('spotty_rate_limit_exceeded')) {
 		return -429;
 	}
 
-	my $token = $cache->get('spotty_access_token_scanner');
+	my $userId = $self->userid || '_scanner';
+	my $token = $cache->get('spotty_access_token_' . $userId);
 
 	if (main::INFOLOG && $log->is_info) {
 		if ($token) {
@@ -50,7 +67,7 @@ sub getToken {
 		}
 	}
 
-	return $token || Plugins::Spotty::API::Token->get();
+	return $token || Plugins::Spotty::API::Token->get(undef, undef, $userId);
 }
 
 sub myAlbums {

@@ -175,19 +175,19 @@ sub _killTokenHelper {
 
 # singleton shortcut to the main class
 sub get {
-	my ($class, $api, $cb) = @_;
+	my ($class, $api, $cb, $accountId) = @_;
 
 	if (main::SCANNER) {
 		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',
 			scalar Plugins::Spotty::Helper->get(),
-			Plugins::Spotty::AccountHelper->cacheFolder(),
+			Plugins::Spotty::AccountHelper->cacheFolder($accountId),
 			$prefs->get('iconCode'),
 			SPOTIFY_SCOPE
 		);
 
 		_logCommand($cmd);
 
-		return $class->_gotTokenInfo(`$cmd 2>&1`, '_scanner');
+		return $class->_gotTokenInfo(`$cmd 2>&1`, $accountId || '_scanner');
 	}
 	elsif (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) {
 		my $proc = $procs{$api};
