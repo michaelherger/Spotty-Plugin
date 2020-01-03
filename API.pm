@@ -1294,7 +1294,7 @@ sub _call {
 					my $params   = $response->params('params');
 
 					if ($response->code =~ /429/) {
-						$self->error429($response);
+						$self->error429($response, $url);
 					}
 
 					my $result;
@@ -1379,7 +1379,7 @@ sub _call {
 					$log->warn("error: $error");
 
 					if ($error =~ /429/ || ($response && $response->code == 429)) {
-						$self->error429($response);
+						$self->error429($response, $url);
 
 						$cb->({
 							name => string('PLUGIN_SPOTTY_ERROR_429'),
@@ -1421,14 +1421,14 @@ sub _call {
 
 # if we get a "rate limit exceeded" error, pause for the given delay
 sub error429 {
-	my ($self, $response) = @_;
+	my ($self, $response, $url) = @_;
 
 	my $headers = $response->headers || {};
 
 	# set special token to tell _call not to proceed
 	$cache->set('spotty_rate_limit_exceeded', 1, $headers->{'retry-after'} || 5);
 
-	$error429 = sprintf(string('PLUGIN_SPOTTY_ERROR_429_DESC'), $response->url, $headers->{'retry-after'} || 5);
+	$error429 = sprintf(string('PLUGIN_SPOTTY_ERROR_429_DESC'), $url, $headers->{'retry-after'} || 5);
 
 	if ( main::DEBUGLOG && $log->is_debug ) {
 		$log->debug("Access rate exceeded: " . Data::Dump::dump($response));

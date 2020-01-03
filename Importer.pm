@@ -45,7 +45,7 @@ sub startScan {
 	my $class = shift;
 	require Plugins::Spotty::API::Sync;
 
-	my $playlistsOnly = main::SCANNER && Slim::Music::Import->scanPlaylistsOnly();
+	my $playlistsOnly = Slim::Music::Import->scanPlaylistsOnly();
 
 	my $progress = Slim::Utils::Progress->new({
 		'type'  => 'importer',
@@ -106,19 +106,12 @@ sub startScan {
 			next if defined $tracks{$_};
 
 			my $cached = $libraryCache->get($_);
-
-			if ($cached && $cached->{image}) {
-				$tracks{$_} = 1;
-				_storeTracks([$cached]);
-			}
-			else {
-				$tracks{$_} = 0;
-			}
+			$tracks{$_} = $cached && $cached->{image} ? 1 : 0;
 		}
 	}
 
-	my $tracks = Plugins::Spotty::API::Sync->tracks([grep { !$tracks{$_} } keys %tracks]);
-	_storeTracks($tracks);
+	# pre-cache track information for playlist tracks
+	Plugins::Spotty::API::Sync->tracks([grep { !$tracks{$_} } keys %tracks]);
 
 	# now store the playlists with the tracks
 	foreach my $playlist (@{$playlists || []}) {

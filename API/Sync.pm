@@ -175,7 +175,7 @@ sub playlistTrackIDs {
 
 		if ( $response && $response->{items} && ref $response->{items} ) {
 			push @$tracks, map { $_->{track}->{uri} } grep { $_->{track} && ref $_->{track} && $_->{track}->{uri} } @{$response->{items}};
-			($offset) = $response->{tracks}->{'next'} =~ /offset=(\d+)/;
+			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 		}
 	} while $offset;
 

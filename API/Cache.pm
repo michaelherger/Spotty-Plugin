@@ -177,6 +177,7 @@ sub normalize {
 	else {
 		$item->{album}  ||= {};
 		$item->{album}->{image} ||= $self->getLargestArtwork(delete $item->{album}->{images}) if $item->{album}->{images};
+		$item->{image} ||= $item->{album}->{image} if $item->{album}->{image};
 		_removeUnused($item->{album});
 
 		foreach my $artist ( @{$item->{artists} || []} ) {
