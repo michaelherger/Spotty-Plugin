@@ -114,6 +114,7 @@ sub initPlugin {
 
 	Plugins::Spotty::AccountHelper->purgeCache('init');
 	Plugins::Spotty::AccountHelper->purgeAudioCache(1);
+	Plugins::Spotty::AccountHelper->getAllCredentials();
 }
 
 sub postinitPlugin { if (main::TRANSCODING) {

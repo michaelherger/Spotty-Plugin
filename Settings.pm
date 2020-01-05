@@ -8,6 +8,7 @@ use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 use Plugins::Spotty::Plugin;
+use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::Settings::Auth;
 use Plugins::Spotty::Settings::Player;
 use Plugins::Spotty::Settings::PlaylistFolders;

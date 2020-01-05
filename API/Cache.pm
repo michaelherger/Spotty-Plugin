@@ -94,7 +94,7 @@ sub normalize {
 		$item->{image}  = $self->getLargestArtwork(delete $item->{images});
 		$item->{artist} ||= $item->{artists}->[0]->{name} if $item->{artists} && ref $item->{artists};
 
-		$item = _removeUnused($item, 'copyright', 'label');
+		$item = _removeUnused($item, 'copyright', 'copyrights', 'label');
 		foreach my $artist ( @{$item->{artists} || []} ) {
 			_removeUnused($artist);
 		}

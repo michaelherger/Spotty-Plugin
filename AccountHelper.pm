@@ -9,6 +9,7 @@ use File::Spec::Functions qw(catdir catfile tmpdir);
 use JSON::XS::VersionOneAndTwo;
 use Scalar::Util qw(blessed);
 
+use Slim::Music::VirtualLibraries;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
@@ -295,6 +296,20 @@ sub getAllCredentials {
 		}
 	}
 
+	if (!main::SCANNER && scalar keys %$credentials > 1) {
+		# this is just a stub to make LMS include the library - bit it's all created in the importer
+		# while (my ($account, $accountId) = each %$accounts) {
+		foreach my $account (keys %$credentials) {
+			my $accountId = $credentials->{$account};
+			Slim::Music::VirtualLibraries->unregisterLibrary($accountId);
+			Slim::Music::VirtualLibraries->registerLibrary({
+				id => $accountId,
+				name => $class->getDisplayName($account) . ' (Spotty)',
+				scannerCB => sub {}
+			});
+		}
+	}
+
 	$credsCache = $credentials if scalar keys %$credentials;
 	return $credentials;
 }
@@ -325,6 +340,11 @@ sub getName {
 	$class->getAPIHandler($client)->user(sub {
 		$class->setName($userId, shift);
 	}, $userId);
+}
+
+sub getDisplayName {
+	my ($class, $userId) = @_;
+	return $prefs->get('displayNames')->{$userId} || $userId;
 }
 
 sub setName {

@@ -265,7 +265,7 @@ sub handleFeed {
 				lc($a) cmp lc($b)
 			} keys %$credentials ) {
 				push @$items, {
-					name => cstring($client, 'PLUGIN_USERS_LIBRARY', _getDisplayName($name)),
+					name => cstring($client, 'PLUGIN_USERS_LIBRARY', Plugins::Spotty::AccountHelper->getDisplayName($name)),
 					items => [ map {{
 						name => $_->{name},
 						type => $_->{type},
@@ -295,7 +295,7 @@ sub handleFeed {
 			push @$items, {
 				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
 				items => [{
-					name => _getDisplayName($spotty->username),
+					name => Plugins::Spotty::AccountHelper->getDisplayName($spotty->username),
 					type => 'text'
 				},{
 					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
@@ -307,15 +307,10 @@ sub handleFeed {
 
 		$cb->({
 # XXX - how to refresh the title when the account has changed?
-#			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::AccountHelper->hasMultipleAccounts() ? sprintf(' (%s)', _getDisplayName($spotty->username)) : ''),
+#			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::AccountHelper->hasMultipleAccounts() ? sprintf(' (%s)', Plugins::Spotty::AccountHelper->getDisplayName($spotty->username)) : ''),
 			items => $items,
 		});
 	} );
-}
-
-sub _getDisplayName {
-	my ($userId) = @_;
-	return $prefs->get('displayNames')->{$userId} || $userId;
 }
 
 sub search {
@@ -1744,7 +1739,7 @@ sub selectAccount {
 		next if $name eq $username;
 
 		push @$items, {
-			name => _getDisplayName($name),
+			name => Plugins::Spotty::AccountHelper->getDisplayName($name),
 			url  => \&_selectAccount,
 			passthrough => [{
 				id => $id
