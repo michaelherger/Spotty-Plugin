@@ -1415,6 +1415,7 @@ sub trackInfoMenu {
 			artist => $track->remote ? $remoteMeta->{artist} : $track->artistName,
 			album  => $track->remote ? $remoteMeta->{album}  : ( $track->album ? $track->album->name : undef ),
 			title  => $track->remote ? $remoteMeta->{title}  : $track->title,
+			uri    => $track->extid,
 		};
 	}
 
@@ -1427,7 +1428,11 @@ sub artistInfoMenu {
 	$remoteMeta ||= {};
 
 	return _objInfoMenu($client, {
-		artist => $artist->name || $remoteMeta->{artist},
+		artist => {
+			name => $artist->name || $remoteMeta->{artist},
+			uri  => $artist->extid
+		},
+		uri => $artist->extid,
 	});
 }
 
@@ -1436,10 +1441,38 @@ sub albumInfoMenu {
 
 	$remoteMeta ||= {};
 
-	return _objInfoMenu($client, {
-		album => $album->title || $remoteMeta->{album},
-		artists => [ map { $_->name } $album->artistsForRoles('ARTIST'), $album->artistsForRoles('ALBUMARTIST') ],
+	my $albumInfo = {
+		name => $album->title || $remoteMeta->{album}
+	};
+
+	if ($album->extid) {
+		$albumInfo->{uri} = $album->extid;
+	}
+
+	my $artistsInfo = [ map {
+		my $artist = {
+			name => $_->name
+		};
+
+		if ($_->extid =~ /(spotify:artist:[0-9a-z]+)/i) {
+			$artist->{uri} = $1;
+		}
+
+		$artist;
+	} $album->artistsForRoles('ARTIST'), $album->artistsForRoles('ALBUMARTIST') ];
+
+	my $objInfoMenu = _objInfoMenu($client, {
+		album   => $albumInfo,
+		artists => $artistsInfo,
+		uri     => $album->extid
 	});
+
+	push @$objInfoMenu, {
+		type => 'text',
+		name => cstring($client, 'SOURCE') . cstring($client, 'COLON') . ' Spotify',
+	};
+
+	return $objInfoMenu;
 }
 
 sub _objInfoMenu {
@@ -1450,8 +1483,14 @@ sub _objInfoMenu {
 	my $items = [];
 	my $prefix = cstring($client, 'PLUGIN_SPOTTY_ON_SPOTIFY') . cstring($client, 'COLON') . ' ';
 
+	my $uri = $args->{uri};
+
 	# if we're dealing with a Spotify item we can use the URI to get more direct results
-	if ( my $uri = $args->{uri} ) {
+	if ($uri) {
+		if ($args->{artist} && !$args->{artists}) {
+			$args->{artists} = [ $args->{artist} ];
+		}
+
 		push @$items, {
 			type => 'playlist',
 			on_select => 'play',
@@ -1473,7 +1512,7 @@ sub _objInfoMenu {
 				passthrough => [{
 					uri => $artist->{uri},
 				}]
-			};
+			} if $artist->{uri};
 		}
 
 		push @$items, {
