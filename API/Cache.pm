@@ -175,7 +175,7 @@ sub normalize {
 		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri} && (!$fast || !$cache->get( $item->{uri} ));
 	}
 	# track
-	else {
+	elsif ($type eq 'track') {
 		$item->{album}  ||= {};
 		$item->{album}->{image} ||= $self->getLargestArtwork(delete $item->{album}->{images}) if $item->{album}->{images};
 		$item->{image} ||= $item->{album}->{image} if $item->{album}->{image};
