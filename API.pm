@@ -1210,6 +1210,7 @@ sub _isPlayable {
 
 	# if we set market => 'from_token', then we don't get available_markets back, but only a is_playable flag
 	return if defined $item->{is_playable} && !$item->{is_playable};
+	return if $item->{is_local};
 
 	return if $item->{available_markets} && !(scalar grep /$cc/i, @{$item->{available_markets}});
 

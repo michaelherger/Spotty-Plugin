@@ -148,7 +148,7 @@ sub tracks {
 		});
 
 		if ( $response && $response->{tracks} && ref $response->{tracks} ) {
-			push @$tracks, map { $libraryCache->normalize($_) } @{ $response->{tracks} };
+			push @$tracks, map { $libraryCache->normalize($_) } grep { $_->{uri} =~ /^spotify:track:/ } @{ $response->{tracks} };
 		}
 	}
 
@@ -191,7 +191,7 @@ sub playlistTrackIDs {
 		$offset = 0;
 
 		if ( $response && $response->{items} && ref $response->{items} ) {
-			push @$tracks, map { $_->{track}->{uri} } grep { $_->{track} && ref $_->{track} && $_->{track}->{uri} } @{$response->{items}};
+			push @$tracks, map { $_->{track}->{uri} } grep { $_->{track} && ref $_->{track} && $_->{track}->{uri} && $_->{track}->{uri} =~ /^spotify:track:/ } @{$response->{items}};
 			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 		}
 	} while $offset;
