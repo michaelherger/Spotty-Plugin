@@ -1470,7 +1470,7 @@ sub albumInfoMenu {
 	push @$objInfoMenu, {
 		type => 'text',
 		name => cstring($client, 'SOURCE') . cstring($client, 'COLON') . ' Spotify',
-	};
+	} if $album->extid && $album->extid =~ /^spotify:album:/;
 
 	return $objInfoMenu;
 }
