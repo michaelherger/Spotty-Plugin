@@ -1535,20 +1535,20 @@ sub _objInfoMenu {
 
 		foreach my $artist (@$artists) {
 			push @$items, {
-				name  => $prefix . $artist,
+				name  => $prefix . $artist->{name},
 				url   => \&search,
 				passthrough => [{
-					query => 'artist:"' . $artist . '"',
+					query => 'artist:"' . $artist->{name} . '"',
 					type  => 'context',
 				}]
 			};
 		}
 
 		push @$items, {
-			name  => $prefix . $album,
+			name  => $prefix . $album->{name},
 			url   => \&search,
 			passthrough => [{
-				query => 'album:"' . $album . '"',
+				query => 'album:"' . $album->{name} . '"',
 				type  => 'context',
 			}]
 		} if $album;

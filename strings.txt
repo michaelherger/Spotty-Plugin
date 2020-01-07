@@ -56,6 +56,10 @@ PLUGIN_USERS_LIBRARY
 	DE	Sammlung von %s
 	EN	%s's Library
 
+PLUGIN_USERS_AND_LOCAL_LIBRARY
+	DE	Lokale Musik und %s
+	EN	Local Music and %s's
+
 PLUGIN_SPOTTY_ACCOUNT
 	CS	Účet
 	DA	Konto

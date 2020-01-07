@@ -18,8 +18,6 @@ my $log = logger('plugin.spotty');
 my $libraryCache = Plugins::Spotty::API::Cache->new();
 my $cache = Slim::Utils::Cache->new();
 
-my $dbh = Slim::Schema->dbh();
-
 sub initPlugin {
 	my $class = shift;
 
@@ -97,14 +95,31 @@ sub startScan {
 			}
 
 			if ($libraryId) {
-				# only a stub to trigger creation of library helper tables
+				Slim::Music::VirtualLibraries->unregisterLibrary($accountId . 'AndLocal');
+				Slim::Music::VirtualLibraries->registerLibrary({
+					id => $accountId . 'AndLocal',
+					name => Plugins::Spotty::AccountHelper->getDisplayName($account),
+					priority => 10,
+					sql => qq{
+						SELECT tracks.id
+						FROM tracks
+						WHERE tracks.url like 'file://%' OR tracks.id IN (
+							SELECT library_track.track
+							FROM library_track
+							WHERE library_track.library = '$libraryId'
+						)
+					},
+				});
+
 				Slim::Music::VirtualLibraries->unregisterLibrary($accountId);
 				Slim::Music::VirtualLibraries->registerLibrary({
 					id => $accountId,
 					name => Plugins::Spotty::AccountHelper->getDisplayName($account) . ' (Spotty)',
+					priority => 20,
 					scannerCB => sub {
 						my ($id) = @_;
 
+						my $dbh = Slim::Schema->dbh();
 						my $sth = $dbh->prepare_cached("UPDATE library_track SET library = ? WHERE library = ?");
 						$sth->execute($id, $libraryId);
 					}
@@ -202,6 +217,7 @@ sub _storeTracks {
 
 	return unless $tracks && ref $tracks;
 
+	my $dbh = Slim::Schema->dbh();
 	my $sth = $dbh->prepare_cached("INSERT OR IGNORE INTO library_track (library, track) VALUES (?, ?)") if $libraryId;
 	my $c = 0;
 
