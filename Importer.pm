@@ -236,6 +236,7 @@ sub _storeTracks {
 				TITLE        => $item->{name},
 				ARTIST       => $artist,
 				ARTIST_EXTID => $extId,
+				TRACKARTIST  => join($splitChar, map { $_->{name} } @{ $item->{artists} }),
 				ALBUM        => $item->{album}->{name},
 				ALBUM_EXTID  => $item->{album}->{uri},
 				TRACKNUM     => $item->{track_number},
@@ -246,6 +247,7 @@ sub _storeTracks {
 				COVER        => $item->{album}->{image},
 				AUDIO        => 1,
 				EXTID        => $item->{uri},
+				COMPILATION  => $item->{album}->{album_type} eq 'compilation',
 				CONTENT_TYPE => 'spt'
 			},
 		});
