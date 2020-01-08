@@ -60,6 +60,7 @@ sub initPlugin {
 		checkDaemonConnected => 0,
 		displayNames => {},
 		helper => '',
+		integrateWithMyMusic => 1,
 	});
 
 	$prefs->setValidate({ 'validator' => sub { $_[1] =~ /^[a-f0-9]{32}$/i } }, 'iconCode');
@@ -87,6 +88,10 @@ sub initPlugin {
 		$prefs->set('checkDaemonConnected', 0);
 		return 1;
 	});
+
+	$prefs->setChange( sub {
+		Slim::Control::Request::executeRequest( undef, [ 'rescan' ] );
+	}, 'integrateWithMyMusic');
 
 	Plugins::Spotty::Helper->init();
 
@@ -258,6 +263,18 @@ sub getAPIHandler {
 
 sub canDiscovery { 1 }
 
+my $canMergeWithMyMusic;
+sub canMergeWithMyMusic {
+	return $canMergeWithMyMusic if defined $canMergeWithMyMusic;
+
+	$canMergeWithMyMusic = 0;
+	eval {
+		require Slim::Networking::SimpleSyncHTTP;
+		$canMergeWithMyMusic = 1;
+	};
+
+	return $canMergeWithMyMusic;
+}
 
 # we only run when transcoding is enabled, but shutdown would be called no matter what
 sub shutdownPlugin { if (main::TRANSCODING) {

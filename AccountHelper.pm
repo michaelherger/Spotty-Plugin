@@ -311,7 +311,7 @@ sub getAllCredentials {
 			Slim::Music::VirtualLibraries->unregisterLibrary($accountId . 'AndLocal');
 			Slim::Music::VirtualLibraries->registerLibrary({
 				id => $accountId . 'AndLocal',
-				name => Slim::Utils::Strings::string('PLUGIN_USERS_AND_LOCAL_LIBRARY', $class->getDisplayName($account)),
+				name => Slim::Utils::Strings::string('PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY', $class->getDisplayName($account)),
 				scannerCB => sub {}
 			});
 		}

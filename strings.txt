@@ -52,13 +52,29 @@ PLUGIN_SPOTTY_AUTH_FAILED
 	DE	Anmeldung fehlgeschlagen
 	EN	Authorization failed
 
-PLUGIN_USERS_LIBRARY
+PLUGIN_SPOTTY_USERS_LIBRARY
 	DE	Sammlung von %s
 	EN	%s's Library
 
-PLUGIN_USERS_AND_LOCAL_LIBRARY
+PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY
 	DE	Lokale Musik und %s
 	EN	Local Music and %s's
+
+PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY
+	DE	In "Meine Musik" anzeigen
+	EN	Merge with "My Music"
+
+PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_DESC
+	DE	Die Integration ihrer Spotify Sammlung mit der lokalen Musik gibt ihnen Zugriff auf alle ihre Musik in einem Menü. Auch erlaubt dies die Verwendung von Zufallswiedergabe mit Spotify Titeln, schnelle und Volltext-Suche etc.
+	EN	Integrating the Spotify library with your local library allows you to browse all your music from one place, allows you to use Random Play with Spotify music etc. PLEASE NOTE that changing this preference will trigger a rescan of your library.
+
+PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_0
+	DE	Die Spotify Musiksammlung nicht mit der lokalen Musik vermischen
+	EN	Do not merge your Spotify collection with the local music library
+
+PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_1
+	DE	Integriere die Spotify Musiksammlung mit der lokalen Musik
+	EN	Merge your Spotify collection with your local music library
 
 PLUGIN_SPOTTY_ACCOUNT
 	CS	Účet
