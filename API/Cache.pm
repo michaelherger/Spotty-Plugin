@@ -21,7 +21,7 @@ sub new {
 	return $self if $self;
 
 	$self = {
-		cache => Slim::Utils::Cache->new('spotty', 0),
+		cache => Slim::Utils::Cache->new('spotty', 1),
 	};
 
 	# right precedence, don't add duplicates to lists
@@ -101,6 +101,7 @@ sub normalize {
 
 		my $minAlbum = {
 			name => $item->{name},
+			artists => $item->{artists},
 			image => $item->{image},
 			id => $item->{id},
 			uri => $item->{uri},

@@ -221,22 +221,26 @@ sub _storeTracks {
 	my $sth = $dbh->prepare_cached("INSERT OR IGNORE INTO library_track (library, track) VALUES (?, ?)") if $libraryId;
 	my $c = 0;
 
-	foreach (@$tracks) {
-		my $item = $libraryCache->get($_->{uri}) || $_;
+	my $splitChar = substr(preferences('server')->get('splitList'), 0, 1) || ' ';
 
-		my $track = Slim::Schema->updateOrCreate({
+	foreach my $track (@$tracks) {
+		my $item = $libraryCache->get($track->{uri}) || $track;
+
+		my $artist = join($splitChar, map { $_->{name} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
+		my $extId = join(',', map { $_->{uri} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
+
+		my $trackObj = Slim::Schema->updateOrCreate({
 			url        => $item->{uri},
 			integrateRemote => 1,
 			attributes => {
 				TITLE        => $item->{name},
-				ARTIST       => $item->{artists}->[0]->{name},
-				ARTIST_EXTID => $item->{artists}->[0]->{uri},
-				ALBUMARTIST  => $item->{album}->{artists}->[0]->{name} || $item->{artists}->[0]->{name},
+				ARTIST       => $artist,
+				ARTIST_EXTID => $extId,
 				ALBUM        => $item->{album}->{name},
 				ALBUM_EXTID  => $item->{album}->{uri},
 				TRACKNUM     => $item->{track_number},
 				GENRE        => 'Spotify',
-				DISC        => $item->{disc_number},
+				DISC         => $item->{disc_number},
 				SECS         => $item->{duration_ms}/1000,
 				YEAR         => substr($item->{release_date} || $item->{album}->{release_date}, 0, 4),
 				COVER        => $item->{album}->{image},
@@ -247,7 +251,7 @@ sub _storeTracks {
 		});
 
 		if ($libraryId) {
-			$sth->execute($libraryId, $track->id);
+			$sth->execute($libraryId, $trackObj->id);
 		}
 
 		if (!main::SCANNER && ++$c % 20 == 0) {
