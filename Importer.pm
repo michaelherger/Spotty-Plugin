@@ -28,7 +28,7 @@ sub initPlugin {
 	};
 
 	if ($@) {
-		$log->error($@);
+		main::INFOLOG && $log->is_info && $log->info($@);
 		$log->warn("Please update your LMS to be able to use online library integration in My Music");
 		return;
 	}
@@ -38,6 +38,7 @@ sub initPlugin {
 		'weight'       => 200,
 		'use'          => 1,
 		'playlistOnly' => 1,
+		'onlineLibraryOnly' => 1,
 	});
 
 	return 1;
@@ -52,6 +53,7 @@ sub startScan {
 
 	foreach my $account (keys %$accounts) {
 		my $accountId = $accounts->{$account};
+
 		main::INFOLOG && $log->is_info && $log->info("Starting import for user $account");
 		my $api = Plugins::Spotty::API::Sync->new($accountId);
 
@@ -68,8 +70,10 @@ sub startScan {
 			main::INFOLOG && $log->is_info && $log->info("Reading albums...");
 			$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS'));
 
-			my $albums = $api->myAlbums();
+			my ($albums, $libraryMeta) = $api->myAlbums();
 			$progress->total(scalar @$albums + 2);
+
+			$cache->set('spotty_latest_album_update' . $accountId, _libraryMetaId($libraryMeta), 86400);
 
 			main::INFOLOG && $log->is_info && $log->info("Getting missing album information...");
 			foreach (@$albums) {
@@ -188,6 +192,13 @@ sub startScan {
 			$playlistObj->setTracks($cache->get('spotty_playlist_tracks_' . $playlist->{id}));
 		}
 
+		my $timestamp = time() + 86400;
+		my $snapshotIds = { map {
+			$_->{id} => ($_->{creator} eq 'spotify' ? $timestamp : $_->{snapshot_id})
+		} @$playlists };
+
+		$cache->set('spotty_snapshot_ids' . $accountId, $snapshotIds, 86400);
+
 		main::INFOLOG && $log->is_info && $log->info("Done, finally!");
 
 		$progress->final();
@@ -196,20 +207,82 @@ sub startScan {
 	Slim::Music::Import->endImporter($class);
 }
 
-=pod
-sub startAsyncScan {
+# This code is not run in the scanner, but in LMS
+sub needsUpdate {
+	my ($class, $cb) = @_;
+
+	require Async::Util;
 	require Plugins::Spotty::API;
-	my $spotty = Plugins::Spotty::API->new();
 
-	$spotty->myAlbums(sub {
-		my ($albums) = @_;
+	my $timestamp = time();
 
-		foreach (@$albums) {
-			_storeTracks($_->{tracks});
-		}
-	});
+	my @workers;
+	foreach my $client (Slim::Player::Client::clients()) {
+		my $accountId = Plugins::Spotty::AccountHelper->getAccount($client);
+
+		push @workers, sub {
+			my ($result, $acb) = @_;
+
+			# don't run any further test in the queue if we already have a result
+			return $acb->($result) if $result;
+
+			my $snapshotIds = $cache->get('spotty_snapshot_ids' . $accountId);
+
+			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
+			$api->playlists(sub {
+				my ($playlists) = @_;
+
+				my $needUpdate;
+				for my $playlist (@$playlists) {
+					my $snapshotId = $snapshotIds->{$playlist->{id}};
+					# we need an update if
+					# - we haven't a snapshot ID for this playlist, OR
+					# - the snapshot ID doesn't match, OR
+					# - the playlist is Spotify generated and older than a day
+					if ( !$snapshotId || ($snapshotId =~ /^\d{10}$/ ? $snapshotId < $timestamp : $snapshotId ne $playlist->{snapshot_id}) ) {
+						$needUpdate = 1;
+						last;
+					}
+				}
+
+				$acb->($needUpdate);
+			});
+		};
+
+		push @workers, sub {
+			my ($result, $acb) = @_;
+
+			# don't run any further test in the queue if we already have a result
+			return $acb->($result) if $result;
+
+			my $lastUpdateData = $cache->get('spotty_latest_album_update' . $accountId) || '';
+
+			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
+			$api->myAlbumsMeta(sub {
+				$acb->(_libraryMetaId($_[0]) eq $lastUpdateData ? 0 : 1);
+			});
+		};
+	}
+
+	if (scalar @workers) {
+		Async::Util::achain(
+			input => undef,
+			steps => \@workers,
+			cb    => sub {
+				my ($result, $error) = @_;
+				$cb->( ($result && !$error) ? 1 : 0 );
+			}
+		);
+	}
+	else {
+		$cb->();
+	}
 }
-=cut
+
+sub _libraryMetaId {
+	my $libraryMeta = $_[0];
+	return ($libraryMeta->{total} || '') . '|' . ($libraryMeta->{lastAdded} || '');
+}
 
 sub _storeTracks {
 	my ($tracks, $libraryId) = @_;

@@ -175,6 +175,12 @@ sub postinitPlugin { if (main::TRANSCODING) {
 	$class->updateTranscodingTable();
 } }
 
+sub onlineLibraryNeedsUpdate {
+	my $class = shift;
+	require Plugins::Spotty::Importer;
+	return Plugins::Spotty::Importer->needsUpdate(@_);
+}
+
 sub updateTranscodingTable {
 	my $class = shift || __PACKAGE__;
 	my $client = shift;

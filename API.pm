@@ -855,6 +855,28 @@ sub myAlbums {
 	})->get();
 }
 
+sub myAlbumsMeta {
+	my ( $self, $cb ) = @_;
+
+	$self->_call('me/albums', sub {
+		my ($response) = @_;
+
+		my $libraryMeta = {};
+		if ( $response && $response->{items} && ref $response->{items} ) {
+			# keep track of some meta-information about the
+			$libraryMeta = {
+				total => $response->{total} || 0,
+				lastAdded => $response->{items}->[0]->{added_at} || ''
+			};
+		}
+
+		$cb->($libraryMeta);
+	},
+	GET => {
+		limit => 1
+	});
+}
+
 sub isInMyAlbums {
 	my ( $self, $cb, $ids ) = @_;
 

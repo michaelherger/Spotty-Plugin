@@ -71,25 +71,33 @@ sub getToken {
 }
 
 sub myAlbums {
-	my ($self) = @_;
+	my ($self, $args) = @_;
+	$args ||= {};
 
 	my $offset = 0;
 	my $albums = [];
+	my $libraryMeta;
 
 	do {
-		my $response = $self->_call('me/albums', {
-			offset => $offset
-		});
+		$args->{offset} = $offset;
+
+		my $response = $self->_call('me/albums', $args);
 
 		$offset = 0;
 
 		if ( $response && $response->{items} && ref $response->{items} ) {
+			# keep track of some meta-information about the
+			$libraryMeta ||= {
+				total => $response->{total} || 0,
+				lastAdded => $response->{items}->[0]->{added_at} || ''
+			};
+
 			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 			push @$albums, map { $libraryCache->normalize($_->{album}) } @{ $response->{items} };
 		}
 	} while $offset;
 
-	return $albums;
+	return wantarray ? ($albums, $libraryMeta) : $albums;
 }
 
 sub mySongs {

@@ -127,7 +127,7 @@ sub normalize {
 		}
 
 		$item->{image} = $self->getLargestArtwork(delete $item->{images});
-		$item = _removeUnused($item, 'primary_color', 'snapshot_id');
+		$item = _removeUnused($item, 'primary_color');
 	}
 	elsif ($type eq 'artist') {
 		$item->{sortname} = Slim::Utils::Text::ignoreArticles($item->{name});
