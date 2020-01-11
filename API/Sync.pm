@@ -93,7 +93,10 @@ sub myAlbums {
 			};
 
 			($offset) = $response->{'next'} =~ /offset=(\d+)/;
-			push @$albums, map { $libraryCache->normalize($_->{album}) } @{ $response->{items} };
+			push @$albums, map {
+				$_->{album}->{added_at} = $_->{added_at} if $_->{added_at};
+				$libraryCache->normalize($_->{album});
+			} @{ $response->{items} };
 		}
 	} while $offset;
 

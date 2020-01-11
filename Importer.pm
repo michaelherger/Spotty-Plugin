@@ -2,6 +2,7 @@ package Plugins::Spotty::Importer;
 
 use strict;
 
+use Date::Parse qw(str2time);
 use Digest::MD5 qw(md5_hex);
 
 use Slim::Utils::Log;
@@ -77,7 +78,7 @@ sub startScan {
 
 			main::INFOLOG && $log->is_info && $log->info("Getting missing album information...");
 			foreach (@$albums) {
-				my $cached = $libraryCache->get($_->{album}->{uri});
+				my $cached = $libraryCache->get($_->{uri});
 				if (!$cached || !$cached->{image}) {
 					push @missingAlbums, $_->{id};
 				}
@@ -320,6 +321,7 @@ sub _storeTracks {
 				AUDIO        => 1,
 				EXTID        => $item->{uri},
 				COMPILATION  => $item->{album}->{album_type} eq 'compilation',
+				TIMESTAMP    => str2time($item->{album}->{added_at} || 0),
 				CONTENT_TYPE => 'spt'
 			},
 		});
