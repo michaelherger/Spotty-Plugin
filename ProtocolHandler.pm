@@ -146,7 +146,7 @@ sub getMetadataFor {
 		$url = $song->streamUrl;
 	}
 
-	if ( $song ||= $client->currentSongForUrl($url) ) {
+	if ( $client && ($song ||= $client->currentSongForUrl($url)) ) {
 		# we store a copy of the metadata in the song object - no need to read from the disk cache
 		my $info = $song->pluginData('info');
 		if ( $info->{title} && $info->{duration} && ($info->{url} eq $url) ) {
@@ -178,7 +178,7 @@ sub getMetadataFor {
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
-	if ( my $cached = $spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
+	if ( my $cached = Plugins::Spotty::API->trackCached(undef, $uri, { noLookup => 1 }) ) {
 		$meta = {
 			artist    => join( ', ', map { $_->{name} } @{ $cached->{artists} } ),
 			album     => $cached->{album}->{name},
@@ -233,7 +233,7 @@ sub getBulkMetadata {
 		# Go fetch metadata for all tracks on the playlist without metadata
 		my @need;
 
-		my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
+		my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client) || return;
 
 		for my $track ( @uris ) {
 			my $uri = blessed($track) ? $track->url : $track;

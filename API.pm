@@ -20,6 +20,7 @@ use Digest::MD5 qw(md5_hex);
 use JSON::XS::VersionOneAndTwo;
 use List::Util qw(min max);
 use POSIX qw(strftime);
+use Scalar::Util qw(blessed);
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::Plugin;
@@ -697,7 +698,7 @@ sub trackCached {
 	}
 
 	# look up track information unless told not to do so
-	$self->track($cb, $uri) if !$args->{noLookup};
+	$self->track($cb, $uri) if blessed $self && !$args->{noLookup};
 	return;
 }
 
