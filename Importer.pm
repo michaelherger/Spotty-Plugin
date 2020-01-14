@@ -14,6 +14,8 @@ use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::API::Cache;
 use Plugins::Spotty::API::Token;
 
+use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
+
 my $prefs = preferences('plugin.spotty');
 my $log = logger('plugin.spotty');
 my $libraryCache = Plugins::Spotty::API::Cache->new();
@@ -22,17 +24,12 @@ my $cache = Slim::Utils::Cache->new();
 sub initPlugin {
 	my $class = shift;
 
-	return unless $prefs->get('integrateWithMyMusic');
-
-	eval {
-		require Plugins::Spotty::API::Sync;
-	};
-
-	if ($@) {
-		main::INFOLOG && $log->is_info && $log->info($@);
-		$log->warn("Please update your LMS to be able to use online library integration in My Music");
+	if (!CAN_IMPORTER) {
+		$log->warn('The library importer feature requires at least Logitech Media Server 8.');
 		return;
 	}
+
+	return unless $prefs->get('integrateWithMyMusic');
 
 	Slim::Music::Import->addImporter($class, {
 		'type'         => 'file',

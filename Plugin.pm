@@ -19,6 +19,8 @@ use Plugins::Spotty::Helper;
 use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
+use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
+
 my $prefs = preferences('plugin.spotty');
 my $serverPrefs = preferences('server');
 
@@ -176,9 +178,14 @@ sub postinitPlugin { if (main::TRANSCODING) {
 } }
 
 sub onlineLibraryNeedsUpdate {
-	my $class = shift;
-	require Plugins::Spotty::Importer;
-	return Plugins::Spotty::Importer->needsUpdate(@_);
+	if (CAN_IMPORTER) {
+		my $class = shift;
+		require Plugins::Spotty::Importer;
+		return Plugins::Spotty::Importer->needsUpdate(@_);
+	}
+	else {
+		$log->warn('The library importer feature requires at least Logitech Media Server 8');
+	}
 }
 
 sub updateTranscodingTable {
