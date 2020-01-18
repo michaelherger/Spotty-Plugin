@@ -344,7 +344,7 @@ sub getName {
 
 	return unless $client;
 
-	$class->getAPIHandler($client)->user(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->user(sub {
 		$class->setName($userId, shift);
 	}, $userId);
 }
