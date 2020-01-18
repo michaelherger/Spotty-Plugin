@@ -179,13 +179,18 @@ sub postinitPlugin { if (main::TRANSCODING) {
 
 sub onlineLibraryNeedsUpdate {
 	if (CAN_IMPORTER) {
-		my $class = shift;
-		require Plugins::Spotty::Importer;
-		return Plugins::Spotty::Importer->needsUpdate(@_);
+		if ($prefs->get('integrateWithMyMusic')) {
+			my $class = shift;
+			require Plugins::Spotty::Importer;
+			return Plugins::Spotty::Importer->needsUpdate(@_);
+		}
 	}
 	else {
 		$log->warn('The library importer feature requires at least Logitech Media Server 8');
 	}
+
+	my $cb = $_[1];
+	$cb->() if $cb && ref $cb && ref $cb eq 'CODE';
 }
 
 sub updateTranscodingTable {

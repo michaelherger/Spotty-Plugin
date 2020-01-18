@@ -69,7 +69,7 @@ PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_DESC
 	EN	Integrating the Spotify library with your local library allows you to browse all your music from one place, allows you to use Random Play with Spotify music etc. PLEASE NOTE that changing this preference will trigger a rescan of your library.
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_0
-	DE	Die Spotify Musiksammlung nicht mit der lokalen Musik vermischen
+	DE	Die Spotify Musiksammlung nicht in die lokale Musiksammlung integrieren
 	EN	Do not merge your Spotify collection with the local music library
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_1
