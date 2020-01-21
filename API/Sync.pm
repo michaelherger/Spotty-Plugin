@@ -26,6 +26,7 @@ use Plugins::Spotty::API::Cache;
 use constant SPOTIFY_LIMIT => 50;
 use constant SPOTIFY_ALBUMS_LIMIT => 20;
 use constant SPOTIFY_PLAYLIST_TRACKS_LIMIT => 100;
+use constant SPOTIFY_MAX_LIMIT => 10_000;
 
 my $log = logger('plugin.spotty');
 my $cache = Slim::Utils::Cache->new();
@@ -205,7 +206,7 @@ sub playlistTrackIDs {
 			push @$tracks, map { $_->{track}->{uri} } grep { $_->{track} && ref $_->{track} && $_->{track}->{uri} && $_->{track}->{uri} =~ /^spotify:track:/ } @{$response->{items}};
 			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 		}
-	} while $offset;
+	} while $offset && $offset < SPOTIFY_MAX_LIMIT;
 
 	return $tracks;
 }
