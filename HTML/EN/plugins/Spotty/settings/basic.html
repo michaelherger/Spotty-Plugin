@@ -45,19 +45,6 @@
 		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
 	[% END %]
 
-	[% IF canIntegrateWithMyMusic; WRAPPER setting title="PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY" desc="PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_DESC" %]
-		<select class="stdedit" name="pref_integrateWithMyMusic" id="pref_integrateWithMyMusic">
-
-		[% FOREACH option = {
-			'PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_1' => 1,
-			'PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_0' => 0
-		} %]
-			<option [% IF prefs.pref_integrateWithMyMusic == option.value %]selected [% END %]value="[% option.value %]">[% option.key | string %]</option>
-		[%- END -%]
-
-		</select>
-	[% END; END %]
-
 	[% WRAPPER setting title="PLUGIN_SPOTTY_AUDIO_SETTINGS" desc="" %]
 		<select class="stdedit" name="pref_bitrate" id="pref_bitrate">
 

@@ -46,7 +46,6 @@ sub page {
 sub prefs {
 	my @prefs = qw(myAlbumsOnly bitrate iconCode accountSwitcherMenu helper optimizePreBuffer);
 	push @prefs, 'disableDiscovery', 'checkDaemonConnected' if Plugins::Spotty::Plugin->canDiscovery();
-	push @prefs, 'integrateWithMyMusic' if Plugins::Spotty::Plugin->canMergeWithMyMusic();
 	return ($prefs, @prefs);
 }
 
@@ -126,7 +125,6 @@ sub handler {
 
 	$paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
 	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
-	$paramRef->{canIntegrateWithMyMusic} = Plugins::Spotty::Plugin->canMergeWithMyMusic();
 	$paramRef->{error429}     = Plugins::Spotty::API->hasError429();
 	$paramRef->{isLowCaloriesPi} = Plugins::Spotty::Helper->isLowCaloriesPi();
 

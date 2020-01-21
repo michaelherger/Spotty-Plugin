@@ -6,6 +6,7 @@ use Date::Parse qw(str2time);
 use Digest::MD5 qw(md5_hex);
 
 use Slim::Utils::Log;
+use Slim::Music::OnlineLibraryScan;
 use Slim::Utils::Prefs;
 use Slim::Utils::Progress;
 use Slim::Utils::Strings qw(string);
@@ -29,7 +30,7 @@ sub initPlugin {
 		return;
 	}
 
-	return unless $prefs->get('integrateWithMyMusic');
+	return if !Slim::Music::OnlineLibraryScan->isImportEnabled($class);
 
 	Slim::Music::Import->addImporter($class, {
 		'type'         => 'file',
@@ -312,6 +313,7 @@ sub _storeTracks {
 				TRACKNUM     => $item->{track_number},
 				GENRE        => 'Spotify',
 				DISC         => $item->{disc_number},
+				# ??? DISCC?
 				SECS         => $item->{duration_ms}/1000,
 				YEAR         => substr($item->{release_date} || $item->{album}->{release_date}, 0, 4),
 				COVER        => $item->{album}->{image},

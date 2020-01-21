@@ -91,10 +91,6 @@ sub initPlugin {
 		return 1;
 	});
 
-	$prefs->setChange( sub {
-		Slim::Control::Request::executeRequest( undef, [ 'rescan' ] );
-	}, 'integrateWithMyMusic');
-
 	Plugins::Spotty::Helper->init();
 
 	$VERSION = $class->_pluginDataFor('version');
@@ -179,11 +175,9 @@ sub postinitPlugin { if (main::TRANSCODING) {
 
 sub onlineLibraryNeedsUpdate {
 	if (CAN_IMPORTER) {
-		if ($prefs->get('integrateWithMyMusic')) {
-			my $class = shift;
-			require Plugins::Spotty::Importer;
-			return Plugins::Spotty::Importer->needsUpdate(@_);
-		}
+		my $class = shift;
+		require Plugins::Spotty::Importer;
+		return Plugins::Spotty::Importer->needsUpdate(@_);
 	}
 	else {
 		$log->warn('The library importer feature requires at least Logitech Media Server 8');
@@ -280,19 +274,6 @@ sub getAPIHandler {
 }
 
 sub canDiscovery { 1 }
-
-my $canMergeWithMyMusic;
-sub canMergeWithMyMusic {
-	return $canMergeWithMyMusic if defined $canMergeWithMyMusic;
-
-	$canMergeWithMyMusic = 0;
-	eval {
-		require Slim::Networking::SimpleSyncHTTP;
-		$canMergeWithMyMusic = 1;
-	};
-
-	return $canMergeWithMyMusic;
-}
 
 # we only run when transcoding is enabled, but shutdown would be called no matter what
 sub shutdownPlugin { if (main::TRANSCODING) {

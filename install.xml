@@ -8,6 +8,7 @@
 	<id>21cbb80e-67b8-44a8-a662-21c6c7ae5260</id>
 	<module>Plugins::Spotty::Plugin</module>
 	<importmodule>Plugins::Spotty::Importer</importmodule>
+	<onlineLibrary>true</onlineLibrary>
 	<optionsURL>plugins/Spotty/settings/basic.html</optionsURL>
 	<icon>plugins/Spotty/html/images/93aac68fb06348598c1e67734dfaceee.png</icon>
 	<targetApplication>
