@@ -2,11 +2,12 @@ package Plugins::Spotty::Importer;
 
 use strict;
 
+use base qw(Slim::Plugin::OnlineLibraryBase);
+
 use Date::Parse qw(str2time);
 use Digest::MD5 qw(md5_hex);
 
 use Slim::Utils::Log;
-use Slim::Music::OnlineLibraryScan;
 use Slim::Utils::Prefs;
 use Slim::Utils::Progress;
 use Slim::Utils::Strings qw(string);
@@ -30,17 +31,7 @@ sub initPlugin {
 		return;
 	}
 
-	return if !Slim::Music::OnlineLibraryScan->isImportEnabled($class);
-
-	Slim::Music::Import->addImporter($class, {
-		'type'         => 'file',
-		'weight'       => 200,
-		'use'          => 1,
-		'playlistOnly' => 1,
-		'onlineLibraryOnly' => 1,
-	});
-
-	return 1;
+	$class->SUPER::initPlugin(@_)
 }
 
 sub startScan {
@@ -49,6 +40,12 @@ sub startScan {
 
 	my $playlistsOnly = Slim::Music::Import->scanPlaylistsOnly();
 	my $accounts = Plugins::Spotty::AccountHelper->getAllCredentials();
+
+	my $dbh = Slim::Schema->dbh();
+	$class->initOnlineTracksTable();
+
+	my $deleteLibrary_sth   = $dbh->prepare_cached("DELETE FROM library_track WHERE library = ?");
+	my $deletePlaylists_sth = $dbh->prepare_cached("DELETE FROM tracks WHERE url LIKE 'spotify:playlist:%'");
 
 	foreach my $account (keys %$accounts) {
 		my $accountId = $accounts->{$account};
@@ -63,6 +60,13 @@ sub startScan {
 				'total' => 1,
 				'every' => 1,
 			});
+
+			# if we've got more than one user, then create a virtual library per user
+			my $libraryId;
+			if (scalar keys %$accounts > 1) {
+				$libraryId = md5_hex($accountId);
+				$deleteLibrary_sth->execute($libraryId);
+			}
 
 			my @missingAlbums;
 
@@ -84,9 +88,6 @@ sub startScan {
 
 			$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
 			$api->albums(\@missingAlbums);
-
-			# if we've got more than one user, then create a virtual library per user
-			my $libraryId = md5_hex($accountId) if scalar keys %$accounts > 1;
 
 			main::INFOLOG && $log->is_info && $log->info("Importing album tracks...");
 			foreach (@$albums) {
@@ -121,9 +122,10 @@ sub startScan {
 					scannerCB => sub {
 						my ($id) = @_;
 
+						# needs to be declared locally as it's called in this callback
 						my $dbh = Slim::Schema->dbh();
-						my $sth = $dbh->prepare_cached("UPDATE library_track SET library = ? WHERE library = ?");
-						$sth->execute($id, $libraryId);
+						my $insertTrackInLibrary_sth = $dbh->prepare_cached("UPDATE library_track SET library = ? WHERE library = ?");
+						$insertTrackInLibrary_sth->execute($id, $libraryId);
 					}
 				});
 			}
@@ -135,9 +137,13 @@ sub startScan {
 		my $progress = Slim::Utils::Progress->new({
 			'type'  => 'importer',
 			'name'  => 'plugin_spotty_playlists',
-			'total' => 1,
+			'total' => 2,
 			'every' => 1,
 		});
+
+		main::INFOLOG && $log->is_info && $log->info("Removing playlists...");
+		$progress->update(string('PLAYLIST_DELETED_PROGRESS'));
+		$deletePlaylists_sth->execute();
 
 		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS'));
 
@@ -203,8 +209,12 @@ sub startScan {
 		$progress->final();
 	}
 
+	$class->deleteRemovedTracks();
+
 	Slim::Music::Import->endImporter($class);
 }
+
+sub trackUriPrefix { 'spotify:track:' }
 
 # This code is not run in the scanner, but in LMS
 sub needsUpdate {
@@ -289,7 +299,9 @@ sub _storeTracks {
 	return unless $tracks && ref $tracks;
 
 	my $dbh = Slim::Schema->dbh();
-	my $sth = $dbh->prepare_cached("INSERT OR IGNORE INTO library_track (library, track) VALUES (?, ?)") if $libraryId;
+	my $insertTrackInLibrary_sth   = $dbh->prepare_cached("INSERT OR IGNORE INTO library_track (library, track) VALUES (?, ?)") if $libraryId;
+	my $insertTrackInTempTable_sth = $dbh->prepare_cached("INSERT OR IGNORE INTO online_tracks (url) VALUES (?)") if main::SCANNER && !$main::wipe;
+
 	my $c = 0;
 
 	my $splitChar = substr(preferences('server')->get('splitList'), 0, 1) || ' ';
@@ -325,8 +337,12 @@ sub _storeTracks {
 			},
 		});
 
-		if ($libraryId) {
-			$sth->execute($libraryId, $trackObj->id);
+		if ($insertTrackInLibrary_sth) {
+			$insertTrackInLibrary_sth->execute($libraryId, $trackObj->id);
+		}
+
+		if ($insertTrackInTempTable_sth) {
+			$insertTrackInTempTable_sth->execute($item->{uri});
 		}
 
 		if (!main::SCANNER && ++$c % 20 == 0) {
