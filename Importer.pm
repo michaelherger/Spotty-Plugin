@@ -23,6 +23,8 @@ my $log = logger('plugin.spotty');
 my $libraryCache = Plugins::Spotty::API::Cache->new();
 my $cache = Slim::Utils::Cache->new();
 
+my $splitChar;
+
 sub initPlugin {
 	my $class = shift;
 
@@ -43,6 +45,7 @@ sub startScan {
 
 	my $dbh = Slim::Schema->dbh();
 	$class->initOnlineTracksTable();
+	$splitChar = substr(preferences('server')->get('splitList'), 0, 1) || ' ';
 
 	my $deleteLibrary_sth   = $dbh->prepare_cached("DELETE FROM library_track WHERE library = ?");
 	my $deletePlaylists_sth = $dbh->prepare_cached("DELETE FROM tracks WHERE url LIKE 'spotify:playlist:%'");
@@ -76,7 +79,7 @@ sub startScan {
 			my ($albums, $libraryMeta) = $api->myAlbums();
 			$progress->total(scalar @$albums + 2);
 
-			$cache->set('spotty_latest_album_update' . $accountId, _libraryMetaId($libraryMeta), 86400);
+			$cache->set('spotty_latest_album_update' . $accountId, $class->libraryMetaId($libraryMeta), 86400);
 
 			main::INFOLOG && $log->is_info && $log->info("Getting missing album information...");
 			foreach (@$albums) {
@@ -94,7 +97,9 @@ sub startScan {
 				$progress->update($_->{name});
 				main::SCANNER && Slim::Schema->forceCommit;
 
-				_storeTracks($_->{tracks}, $libraryId);
+				$class->storeTracks([
+					map { _prepareTrack($_) } @{$_->{tracks}}
+				], $libraryId);
 			}
 
 			if ($libraryId) {
@@ -150,7 +155,7 @@ sub startScan {
 		main::INFOLOG && $log->is_info && $log->info("Reading playlists...");
 		my $playlists = $api->myPlaylists();
 
-		$progress->total((scalar @$playlists)*2 + 1);
+		$progress->total((scalar @$playlists)*2 + 2);
 
 		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
 		my %tracks;
@@ -178,6 +183,7 @@ sub startScan {
 		main::INFOLOG && $log->is_info && $log->info("Getting playlist track information...");
 		$api->tracks([grep { !$tracks{$_} } keys %tracks]);
 
+		my $prefix = 'Spotify' . string('COLON') . ' ';
 		# now store the playlists with the tracks
 		foreach my $playlist (@{$playlists || []}) {
 			$progress->update($playlist->{name});
@@ -186,7 +192,7 @@ sub startScan {
 				playlist   => 1,
 				integrateRemote => 1,
 				attributes => {
-					TITLE        => $playlist->{name},
+					TITLE        => $prefix . $playlist->{name},
 					COVER        => $playlist->{image},
 					AUDIO        => 1,
 					EXTID        => $playlist->{uri},
@@ -268,7 +274,7 @@ sub needsUpdate {
 
 			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
 			$api->myAlbumsMeta(sub {
-				$acb->(_libraryMetaId($_[0]) eq $lastUpdateData ? 0 : 1);
+				$acb->($class->libraryMetaId($_[0]) eq $lastUpdateData ? 0 : 1);
 			});
 		};
 	}
@@ -288,69 +294,37 @@ sub needsUpdate {
 	}
 }
 
-sub _libraryMetaId {
-	my $libraryMeta = $_[0];
-	return ($libraryMeta->{total} || '') . '|' . ($libraryMeta->{lastAdded} || '');
-}
-
-sub _storeTracks {
-	my ($tracks, $libraryId) = @_;
-
-	return unless $tracks && ref $tracks;
-
-	my $dbh = Slim::Schema->dbh();
-	my $insertTrackInLibrary_sth   = $dbh->prepare_cached("INSERT OR IGNORE INTO library_track (library, track) VALUES (?, ?)") if $libraryId;
-	my $insertTrackInTempTable_sth = $dbh->prepare_cached("INSERT OR IGNORE INTO online_tracks (url) VALUES (?)") if main::SCANNER && !$main::wipe;
-
-	my $c = 0;
+sub _prepareTrack {
+	my ($track) = @_;
 
 	my $splitChar = substr(preferences('server')->get('splitList'), 0, 1) || ' ';
 
-	foreach my $track (@$tracks) {
-		my $item = $libraryCache->get($track->{uri}) || $track;
+	my $item = $libraryCache->get($track->{uri}) || $track;
 
-		my $artist = join($splitChar, map { $_->{name} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
-		my $extId = join(',', map { $_->{uri} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
+	my $artist = join($splitChar, map { $_->{name} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
+	my $extId = join(',', map { $_->{uri} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
 
-		my $trackObj = Slim::Schema->updateOrCreate({
-			url        => $item->{uri},
-			integrateRemote => 1,
-			attributes => {
-				TITLE        => $item->{name},
-				ARTIST       => $artist,
-				ARTIST_EXTID => $extId,
-				TRACKARTIST  => join($splitChar, map { $_->{name} } @{ $item->{artists} }),
-				ALBUM        => $item->{album}->{name},
-				ALBUM_EXTID  => $item->{album}->{uri},
-				TRACKNUM     => $item->{track_number},
-				GENRE        => 'Spotify',
-				DISC         => $item->{disc_number},
-				# ??? DISCC?
-				SECS         => $item->{duration_ms}/1000,
-				YEAR         => substr($item->{release_date} || $item->{album}->{release_date}, 0, 4),
-				COVER        => $item->{album}->{image},
-				AUDIO        => 1,
-				EXTID        => $item->{uri},
-				COMPILATION  => $item->{album}->{album_type} eq 'compilation',
-				TIMESTAMP    => str2time($item->{album}->{added_at} || 0),
-				CONTENT_TYPE => 'spt'
-			},
-		});
-
-		if ($insertTrackInLibrary_sth) {
-			$insertTrackInLibrary_sth->execute($libraryId, $trackObj->id);
-		}
-
-		if ($insertTrackInTempTable_sth) {
-			$insertTrackInTempTable_sth->execute($item->{uri});
-		}
-
-		if (!main::SCANNER && ++$c % 20 == 0) {
-			main::idle();
-		}
-	}
-
-	main::idle() if !main::SCANNER;
+	return {
+		url          => $item->{uri},
+		TITLE        => $item->{name},
+		ARTIST       => $artist,
+		ARTIST_EXTID => $extId,
+		TRACKARTIST  => join($splitChar, map { $_->{name} } @{ $item->{artists} }),
+		ALBUM        => $item->{album}->{name},
+		ALBUM_EXTID  => $item->{album}->{uri},
+		TRACKNUM     => $item->{track_number},
+		GENRE        => 'Spotify',
+		DISC         => $item->{disc_number},
+		# ??? DISCC?
+		SECS         => $item->{duration_ms}/1000,
+		YEAR         => substr($item->{release_date} || $item->{album}->{release_date}, 0, 4),
+		COVER        => $item->{album}->{image},
+		AUDIO        => 1,
+		EXTID        => $item->{uri},
+		COMPILATION  => $item->{album}->{album_type} eq 'compilation',
+		TIMESTAMP    => str2time($item->{album}->{added_at} || 0),
+		CONTENT_TYPE => 'spt'
+	};
 }
 
 1;
