@@ -1412,9 +1412,13 @@ sub trackInfoMenu {
 	}
 	else {
 		$args = {
-			artist => $track->remote ? $remoteMeta->{artist} : $track->artistName,
-			album  => $track->remote ? $remoteMeta->{album}  : ( $track->album ? $track->album->name : undef ),
-			title  => $track->remote ? $remoteMeta->{title}  : $track->title,
+			artist => {
+				name => $track->remote ? $remoteMeta->{artist} : $track->artistName
+			},
+			album  => {
+				name => $track->remote ? $remoteMeta->{album} : ( $track->album ? $track->album->name : undef )
+			},
+			title  => $track->remote ? $remoteMeta->{title} : $track->title,
 			uri    => $track->extid,
 		};
 	}
