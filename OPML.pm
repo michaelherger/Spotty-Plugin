@@ -1449,7 +1449,7 @@ sub albumInfoMenu {
 		name => $album->title || $remoteMeta->{album}
 	};
 
-	if ($album->extid) {
+	if ($album->extid && $album->extid =~ /^spotify:/) {
 		$albumInfo->{uri} = $album->extid;
 	}
 
@@ -1490,7 +1490,7 @@ sub _objInfoMenu {
 	my $uri = $args->{uri};
 
 	# if we're dealing with a Spotify item we can use the URI to get more direct results
-	if ($uri) {
+	if ($uri && $uri =~ /^spotify:/) {
 		if ($args->{artist} && !$args->{artists}) {
 			$args->{artists} = [ $args->{artist} ];
 		}
