@@ -297,12 +297,12 @@ sub needsUpdate {
 sub _prepareTrack {
 	my ($track) = @_;
 
-	my $splitChar = substr(preferences('server')->get('splitList'), 0, 1) || ' ';
+	my $splitChar = substr(preferences('server')->get('splitList'), 0, 1);
 
 	my $item = $libraryCache->get($track->{uri}) || $track;
 
 	my $artist = join($splitChar, map { $_->{name} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
-	my $extId = join(',', map { $_->{uri} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
+	my $extId  = join($splitChar, map { $_->{uri} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
 
 	return {
 		url          => $item->{uri},
