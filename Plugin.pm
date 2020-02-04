@@ -149,6 +149,10 @@ sub postinitPlugin { if (main::TRANSCODING) {
 		}
 	}
 
+	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::OnlineLibrary::Plugin') ) {
+		Slim::Plugin::OnlineLibrary::Plugin->addLibraryIconProvider('spotify', '/plugins/Spotty/html/images/icon.png');
+	}
+
 	if ( main::WEBUI && Plugins::Spotty::AccountHelper->getTmpDir() ) {
 		# LMS Settings/File Types is expecting the conversion table entry to start with "[..]".
 		# If we've added a TMPDIR=... prefix, we'll need to remove it for the settings to work.
