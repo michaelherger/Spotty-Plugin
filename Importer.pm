@@ -29,7 +29,7 @@ my $log = logger('plugin.spotty');
 my $libraryCache = Plugins::Spotty::API::Cache->new();
 my $cache = Slim::Utils::Cache->new();
 
-my $splitChar;
+my ($splitChar, $api);
 
 sub initPlugin {
 	my $class = shift;
@@ -42,7 +42,7 @@ sub initPlugin {
 	$class->SUPER::initPlugin(@_)
 }
 
-sub startScan {
+sub startScan { if (main::SCANNER) {
 	my $class = shift;
 	require Plugins::Spotty::API::Sync;
 
@@ -60,7 +60,7 @@ sub startScan {
 		my $accountId = $accounts->{$account};
 
 		main::INFOLOG && $log->is_info && $log->info("Starting import for user $account");
-		my $api = Plugins::Spotty::API::Sync->new($accountId);
+		$api = Plugins::Spotty::API::Sync->new($accountId);
 
 		if (!$playlistsOnly) {
 			my $progress = Slim::Utils::Progress->new({
@@ -224,9 +224,16 @@ sub startScan {
 	$class->deleteRemovedTracks();
 
 	Slim::Music::Import->endImporter($class);
-}
+} }
 
 sub trackUriPrefix { 'spotify:track:' }
+
+sub getArtistPicture { if (main::SCANNER) {
+	my ($class, $id) = @_;
+
+	my $artist = $api->artist($id);
+	return ($artist && ref $artist) ? $artist->{image} : '';
+} }
 
 # This code is not run in the scanner, but in LMS
 sub needsUpdate {

@@ -186,6 +186,16 @@ sub albums {
 	return $albums;
 }
 
+sub artist {
+	my ($self, $id) = @_;
+
+	$id =~ s/spotify:artist://;
+
+	my $response = $self->_call('artists/' . $id);
+
+	return $libraryCache->normalize($response) if $response && ref $response;
+}
+
 # attempt at creating the cheapest/fastest call to get the track IDs/URIs only
 sub playlistTrackIDs {
 	my ($self, $id) = @_;
