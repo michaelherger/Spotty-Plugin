@@ -115,6 +115,11 @@ sub initPlugin {
 		$log->error('Please update to Logitech Media Server 7.9.1 if you want to use seeking in Spotify tracks.');
 	}
 
+	if (CAN_IMPORTER) {
+		# tell LMS that we need to run the external scanner
+		Slim::Music::Import->addImporter('Plugins::Spotty::Importer', { use => 1 });
+	}
+
 	Plugins::Spotty::AccountHelper->purgeCache('init');
 	Plugins::Spotty::AccountHelper->purgeAudioCache(1);
 	Plugins::Spotty::AccountHelper->getAllCredentials();
