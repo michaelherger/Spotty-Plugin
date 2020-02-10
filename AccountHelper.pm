@@ -9,7 +9,6 @@ use File::Spec::Functions qw(catdir catfile tmpdir);
 use JSON::XS::VersionOneAndTwo;
 use Scalar::Util qw(blessed);
 
-use Slim::Music::VirtualLibraries;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
@@ -296,7 +295,9 @@ sub getAllCredentials {
 		}
 	}
 
-	if (!main::SCANNER && scalar keys %$credentials > 1) {
+	if (!main::SCANNER && Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 && scalar keys %$credentials > 1) {
+		require Slim::Music::VirtualLibraries;
+
 		# this is just a stub to make LMS include the library - bit it's all created in the importer
 		# while (my ($account, $accountId) = each %$accounts) {
 		foreach my $account (keys %$credentials) {
