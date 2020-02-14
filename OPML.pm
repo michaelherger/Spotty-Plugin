@@ -1816,9 +1816,9 @@ sub _withAccount {
 
 	main::INFOLOG && $log->is_info && $log->info(sprintf('Running query for %s (%s)', $args->{name}, $id));
 
-	Plugins::Spotty::Plugin->setAccount($client, $id);
+	Plugins::Spotty::AccountHelper->setAccount($client, $id);
 
-	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
+	Plugins::Spotty::AccountHelper->getAPIHandler($client)->me(sub {
 		$args->{cb}->($client, $cb, $params);
 	});
 }
