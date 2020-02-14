@@ -66,6 +66,15 @@ sub getAccount {
 	return $id;
 }
 
+sub getSomeAccount {
+	my ($class) = @_;
+
+	if (my $accounts = $class->getAllCredentials()) {
+		my ($account) = keys %$accounts;
+		return $accounts->{$account} if $account;
+	}
+}
+
 sub getTmpDir {
 	if ( !main::ISWINDOWS && !main::ISMAC ) {
 		return catdir($serverPrefs->get('cachedir'), 'spotty');
@@ -298,7 +307,7 @@ sub getAllCredentials {
 	if (!main::SCANNER && Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 && scalar keys %$credentials > 1) {
 		require Slim::Music::VirtualLibraries;
 
-		# this is just a stub to make LMS include the library - bit it's all created in the importer
+		# this is just a stub to make LMS include the library - but it's all created in the importer
 		# while (my ($account, $accountId) = each %$accounts) {
 		foreach my $account (keys %$credentials) {
 			my $accountId = $credentials->{$account};

@@ -43,6 +43,8 @@ use constant API_URL => 'https://api.spotify.com/v1/%s';
 sub new {
 	my ($class, $accountId) = @_;
 
+	$accountId ||= Plugins::Spotty::AccountHelper->getSomeAccount();
+
 	my $self = $class->SUPER::new();
 	$self->userid($accountId);
 

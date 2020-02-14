@@ -29,7 +29,7 @@ my $log = logger('plugin.spotty');
 my $libraryCache = Plugins::Spotty::API::Cache->new();
 my $cache = Slim::Utils::Cache->new();
 
-my ($splitChar, $api);
+my $dbh;
 
 sub initPlugin {
 	my $class = shift;
@@ -46,124 +46,152 @@ sub startScan { if (main::SCANNER) {
 	my $class = shift;
 	require Plugins::Spotty::API::Sync;
 
-	my $playlistsOnly = Slim::Music::Import->scanPlaylistsOnly();
 	my $accounts = Plugins::Spotty::AccountHelper->getAllCredentials();
 
-	my $dbh = Slim::Schema->dbh();
-	$class->initOnlineTracksTable();
-	$splitChar = substr(preferences('server')->get('splitList'), 0, 1) || ' ';
+	if (ref $accounts && scalar keys %$accounts) {
+		$dbh ||= Slim::Schema->dbh();
+		$class->initOnlineTracksTable();
 
-	my $deleteLibrary_sth   = $dbh->prepare_cached("DELETE FROM library_track WHERE library = ?");
-	my $deletePlaylists_sth = $dbh->prepare_cached("DELETE FROM tracks WHERE url LIKE 'spotify:playlist:%'");
+		my $newMetadata = {};
+		$class->scanArtists($accounts, $newMetadata);
+		$class->scanPlaylists($accounts, $newMetadata);
+
+		$class->deleteRemovedTracks();
+	}
+
+	Slim::Music::Import->endImporter($class);
+} }
+
+sub scanArtists { if (main::SCANNER) {
+	my ($class, $accounts, $newMetadata) = @_;
+
+	my $progress;
+	# my $deleteLibrary_sth   = $dbh->prepare_cached("DELETE FROM library_track WHERE library = ?");
 
 	foreach my $account (keys %$accounts) {
 		my $accountId = $accounts->{$account};
+		my $api = Plugins::Spotty::API::Sync->new($accountId);
 
-		main::INFOLOG && $log->is_info && $log->info("Starting import for user $account");
-		$api = Plugins::Spotty::API::Sync->new($accountId);
-
-		if (!$playlistsOnly) {
-			my $progress = Slim::Utils::Progress->new({
+		if ($progress) {
+			$progress->total($progress->total + 1);
+		}
+		else {
+			$progress = Slim::Utils::Progress->new({
 				'type'  => 'importer',
 				'name'  => 'plugin_spotty_albums',
 				'total' => 1,
 				'every' => 1,
 			});
-
-			# if we've got more than one user, then create a virtual library per user
-			my $libraryId;
-			if (scalar keys %$accounts > 1) {
-				$libraryId = md5_hex($accountId);
-				$deleteLibrary_sth->execute($libraryId);
-			}
-
-			my @missingAlbums;
-
-			main::INFOLOG && $log->is_info && $log->info("Reading albums...");
-			$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS'));
-
-			my ($albums, $libraryMeta) = $api->myAlbums();
-			$progress->total(scalar @$albums + 2);
-
-			$cache->set('spotty_latest_album_update' . $accountId, $class->libraryMetaId($libraryMeta), 86400);
-
-			main::INFOLOG && $log->is_info && $log->info("Getting missing album information...");
-			foreach (@$albums) {
-				my $cached = $libraryCache->get($_->{uri});
-				if (!$cached || !$cached->{image}) {
-					push @missingAlbums, $_->{id};
-				}
-			}
-
-			$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
-			$api->albums(\@missingAlbums);
-
-			main::INFOLOG && $log->is_info && $log->info("Importing album tracks...");
-			foreach (@$albums) {
-				$progress->update($_->{name});
-				main::SCANNER && Slim::Schema->forceCommit;
-
-				$class->storeTracks([
-					map { _prepareTrack($_) } @{$_->{tracks}}
-				], $libraryId);
-			}
-
-			if ($libraryId) {
-				Slim::Music::VirtualLibraries->unregisterLibrary($accountId . 'AndLocal');
-				Slim::Music::VirtualLibraries->registerLibrary({
-					id => $accountId . 'AndLocal',
-					name => Plugins::Spotty::AccountHelper->getDisplayName($account),
-					priority => 10,
-					sql => qq{
-						SELECT tracks.id
-						FROM tracks
-						WHERE tracks.url like 'file://%' OR tracks.id IN (
-							SELECT library_track.track
-							FROM library_track
-							WHERE library_track.library = '$libraryId'
-						)
-					},
-				});
-
-				Slim::Music::VirtualLibraries->unregisterLibrary($accountId);
-				Slim::Music::VirtualLibraries->registerLibrary({
-					id => $accountId,
-					name => Plugins::Spotty::AccountHelper->getDisplayName($account) . ' (Spotty)',
-					priority => 20,
-					scannerCB => sub {
-						my ($id) = @_;
-
-						# needs to be declared locally as it's called in this callback
-						my $dbh = Slim::Schema->dbh();
-						my $insertTrackInLibrary_sth = $dbh->prepare_cached("UPDATE library_track SET library = ? WHERE library = ?");
-						$insertTrackInLibrary_sth->execute($id, $libraryId);
-					}
-				});
-			}
-
-			$progress->final();
-			main::SCANNER && Slim::Schema->forceCommit;
 		}
 
-		my $progress = Slim::Utils::Progress->new({
-			'type'  => 'importer',
-			'name'  => 'plugin_spotty_playlists',
-			'total' => 2,
-			'every' => 1,
-		});
+		# if we've got more than one user, then create a virtual library per user
+		# TODO - library support doesn't really work yet. Needs more investigation.
+		my $libraryId;
+		# if (scalar keys %$accounts > 1) {
+		# 	$libraryId = md5_hex($accountId);
+		# 	$deleteLibrary_sth->execute($libraryId);
+		# }
 
-		main::INFOLOG && $log->is_info && $log->info("Removing playlists...");
-		$progress->update(string('PLAYLIST_DELETED_PROGRESS'));
-		$deletePlaylists_sth->execute();
+		my @missingAlbums;
 
-		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS'));
+		main::INFOLOG && $log->is_info && $log->info("Reading albums...");
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS', $account));
+
+		my ($albums, $libraryMeta) = $api->myAlbums();
+		$progress->total($progress->total + scalar @$albums + 1);
+
+		$cache->set('spotty_latest_album_update' . $accountId, $class->libraryMetaId($libraryMeta), 86400);
+
+		main::INFOLOG && $log->is_info && $log->info("Getting missing album information...");
+		foreach (@$albums) {
+			my $cached = $libraryCache->get($_->{uri});
+			if (!$cached || !$cached->{image}) {
+				push @missingAlbums, $_->{id};
+			}
+		}
+
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS', $account));
+		$api->albums(\@missingAlbums);
+
+		main::INFOLOG && $log->is_info && $log->info("Importing album tracks...");
+		foreach (@$albums) {
+			$progress->update($account . string('COLON') . ' ' . $_->{name});
+			main::SCANNER && Slim::Schema->forceCommit;
+
+			$class->storeTracks([
+				map { _prepareTrack($_) } @{$_->{tracks}}
+			], $libraryId);
+		}
+
+		# if ($libraryId) {
+		# 	Slim::Music::VirtualLibraries->unregisterLibrary($accountId . 'AndLocal');
+		# 	Slim::Music::VirtualLibraries->registerLibrary({
+		# 		id => $accountId . 'AndLocal',
+		# 		name => Plugins::Spotty::AccountHelper->getDisplayName($account),
+		# 		priority => 10,
+		# 		sql => qq{
+		# 			SELECT tracks.id
+		# 			FROM tracks
+		# 			WHERE tracks.url like 'file://%' OR tracks.id IN (
+		# 				SELECT library_track.track
+		# 				FROM library_track
+		# 				WHERE library_track.library = '$libraryId'
+		# 			)
+		# 		},
+		# 	});
+
+		# 	Slim::Music::VirtualLibraries->unregisterLibrary($accountId);
+		# 	Slim::Music::VirtualLibraries->registerLibrary({
+		# 		id => $accountId,
+		# 		name => Plugins::Spotty::AccountHelper->getDisplayName($account) . ' (Spotty)',
+		# 		priority => 20,
+		# 		scannerCB => sub {
+		# 			my ($id) = @_;
+
+		# 			# needs to be declared locally as it's called in this callback
+		# 			my $dbh = Slim::Schema->dbh();
+		# 			my $insertTrackInLibrary_sth = $dbh->prepare_cached("UPDATE library_track SET library = ? WHERE library = ?");
+		# 			$insertTrackInLibrary_sth->execute($id, $libraryId);
+		# 		}
+		# 	});
+		# }
+
+		main::SCANNER && Slim::Schema->forceCommit;
+	}
+
+	$progress->final() if $progress;
+	main::SCANNER && Slim::Schema->forceCommit;
+
+	return $newMetadata;
+} }
+
+sub scanPlaylists { if (main::SCANNER) {
+	my ($class, $accounts, $newMetadata) = @_;
+
+	my $progress = Slim::Utils::Progress->new({
+		'type'  => 'importer',
+		'name'  => 'plugin_spotty_playlists',
+		'total' => 1,
+		'every' => 1,
+	});
+
+	main::INFOLOG && $log->is_info && $log->info("Removing playlists...");
+	$progress->update(string('PLAYLIST_DELETED_PROGRESS'));
+	my $deletePlaylists_sth = $dbh->prepare_cached("DELETE FROM tracks WHERE url LIKE 'spotify:playlist:%'");
+	$deletePlaylists_sth->execute();
+
+	foreach my $account (keys %$accounts) {
+		my $accountId = $accounts->{$account};
+		my $api = Plugins::Spotty::API::Sync->new($accountId);
+
+		$progress->total($progress->total + 1);
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS', $account));
 
 		main::INFOLOG && $log->is_info && $log->info("Reading playlists...");
 		my $playlists = $api->myPlaylists();
 
-		$progress->total((scalar @$playlists)*2 + 2);
+		$progress->total($progress->total + (scalar @$playlists)*2);
 
-		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS'));
 		my %tracks;
 		my $c = 0;
 
@@ -171,8 +199,8 @@ sub startScan { if (main::SCANNER) {
 
 		# we need to get the tracks first
 		foreach my $playlist (@{$playlists || []}) {
-			$progress->update($playlist->{name});
-			main::SCANNER && Slim::Schema->forceCommit;
+			$progress->update($account . string('COLON') . ' ' . $playlist->{name});
+			Slim::Schema->forceCommit;
 
 			my $tracks = $api->playlistTrackIDs($playlist->{id});
 			$cache->set('spotty_playlist_tracks_' . $playlist->{id}, $tracks);
@@ -192,7 +220,7 @@ sub startScan { if (main::SCANNER) {
 		my $prefix = 'Spotify' . string('COLON') . ' ';
 		# now store the playlists with the tracks
 		foreach my $playlist (@{$playlists || []}) {
-			$progress->update($playlist->{name});
+			$progress->update($account . string('COLON') . ' ' . $playlist->{name});
 			my $playlistObj = Slim::Schema->updateOrCreate({
 				url        => $playlist->{uri},
 				playlist   => 1,
@@ -207,6 +235,7 @@ sub startScan { if (main::SCANNER) {
 			});
 
 			$playlistObj->setTracks($cache->get('spotty_playlist_tracks_' . $playlist->{id}));
+			Slim::Schema->forceCommit;
 		}
 
 		my $timestamp = time() + 86400;
@@ -217,13 +246,13 @@ sub startScan { if (main::SCANNER) {
 		$cache->set('spotty_snapshot_ids' . $accountId, $snapshotIds, 86400);
 
 		main::INFOLOG && $log->is_info && $log->info("Done, finally!");
-
-		$progress->final();
+		Slim::Schema->forceCommit;
 	}
 
-	$class->deleteRemovedTracks();
+	$progress->final() if $progress;
+	Slim::Schema->forceCommit;
 
-	Slim::Music::Import->endImporter($class);
+	return $newMetadata
 } }
 
 sub trackUriPrefix { 'spotify:track:' }
@@ -231,6 +260,7 @@ sub trackUriPrefix { 'spotify:track:' }
 sub getArtistPicture { if (main::SCANNER) {
 	my ($class, $id) = @_;
 
+	my $api = Plugins::Spotty::API::Sync->new() || return '';
 	my $artist = $api->artist($id);
 	return ($artist && ref $artist) ? $artist->{image} : '';
 } }
