@@ -1801,7 +1801,7 @@ sub _selectAccount {
 
 	Plugins::Spotty::AccountHelper->setAccount($client, $args->{id});
 
-	Plugins::Spotty::AccountHelper->getAPIHandler($client)->me(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$cb->({ items => [{
 			nextWindow => 'grandparent',
 		}] });
@@ -1818,7 +1818,7 @@ sub _withAccount {
 
 	Plugins::Spotty::AccountHelper->setAccount($client, $id);
 
-	Plugins::Spotty::AccountHelper->getAPIHandler($client)->me(sub {
+	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$args->{cb}->($client, $cb, $params);
 	});
 }
