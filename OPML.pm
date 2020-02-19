@@ -86,17 +86,14 @@ sub init {
 
 	if (Slim::Menu::BrowseLibrary->can('registerOnlineService')) {
 		Slim::Menu::BrowseLibrary->registerOnlineService( spotty => sub {
-			my ( $client, $id ) = @_;
+			my ( $client ) = @_;
 
-			if ($id =~ /^spotify:artist:/) {
-				return {
-					name => cstring($client, 'BROWSE_ON_SERVICE', 'Spotify'),
-					type => 'link',
-					icon => Plugins::Spotty::Plugin->_pluginDataFor('icon'),
-					url  => \&artist,
-					passthrough => [{ uri => $id }],
-				};
-			}
+			return {
+				name => cstring($client, 'BROWSE_ON_SERVICE', 'Spotify'),
+				type => 'link',
+				icon => Plugins::Spotty::Plugin->_pluginDataFor('icon'),
+				url  => \&browseArtistMenu,
+			};
 		} );
 
 		main::INFOLOG && $log->is_info && $log->info("Successfully registered BrowseLibrary handler for Spotify");
@@ -1438,6 +1435,59 @@ sub artistInfoMenu {
 		},
 		uri => $artist->extid,
 	});
+}
+
+sub browseArtistMenu {
+	my ($client, $cb, $params, $args) = @_;
+
+	my $items = [];
+
+	my $artistId = $params->{artist_id} || $args->{artist_id};
+	if ( defined($artistId) && $artistId =~ /^\d+$/ && (my $artistObj = Slim::Schema->resultset("Contributor")->find($artistId))) {
+		if (my ($extId) = grep /spotify:artist:/, $artistObj->extIds) {
+			$params->{uri} = $extId;
+			return artist($client, $cb, $params, $args);
+		}
+		else {
+			$args->{query} = 'artist:"' . $artistObj->name . '"';
+			$args->{type} = 'artist';
+			return search($client, sub {
+				my $items = shift || { items => [] };
+
+				my $uri;
+				if (scalar @{$items->{items}} == 1) {
+					$uri = $items->{items}->[0]->{playlist};
+				}
+				else {
+					my @uris = map {
+						$_->{playlist}
+					} grep {
+						Slim::Utils::Text::ignoreCase($_->{name} ) eq $artistObj->namesearch
+					} @{$items->{items}};
+
+					if (scalar @uris == 1) {
+						$uri = shift @uris;
+					}
+				}
+
+				if ($uri) {
+					$params->{uri} = $uri;
+					return artist($client, $cb, $params, $args);
+				}
+
+				$cb->($items);
+			}, $params, $args);
+		}
+	}
+
+	if (!scalar @$items) {
+		push @$items, {
+			type  => 'text',
+			title => cstring($client, 'EMPTY'),
+		};
+	}
+
+	$cb->($items);
 }
 
 sub albumInfoMenu {
