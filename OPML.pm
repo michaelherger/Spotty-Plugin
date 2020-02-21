@@ -84,8 +84,9 @@ sub init {
 		},
 	) );
 
-	if (Slim::Menu::BrowseLibrary->can('registerOnlineService')) {
-		Slim::Menu::BrowseLibrary->registerOnlineService( spotty => sub {
+	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::OnlineLibrary::Plugin') ) {
+		require Slim::Plugin::OnlineLibrary::BrowseArtist;
+		Slim::Plugin::OnlineLibrary::BrowseArtist->registerBrowseArtistItem( spotty => sub {
 			my ( $client ) = @_;
 
 			return {
@@ -96,10 +97,7 @@ sub init {
 			};
 		} );
 
-		main::INFOLOG && $log->is_info && $log->info("Successfully registered BrowseLibrary handler for Spotify");
-	}
-	else {
-		$log->warn("Please update your LMS to be able to use online library integration in My Music");
+		main::INFOLOG && $log->is_info && $log->info("Successfully registered BrowseArtist handler for Spotify");
 	}
 
 #                                                               |requires Client
@@ -1440,11 +1438,10 @@ sub artistInfoMenu {
 sub browseArtistMenu {
 	my ($client, $cb, $params, $args) = @_;
 
-	my $items = [];
-
 	my $artistId = $params->{artist_id} || $args->{artist_id};
+
 	if ( defined($artistId) && $artistId =~ /^\d+$/ && (my $artistObj = Slim::Schema->resultset("Contributor")->find($artistId))) {
-		if (my ($extId) = grep /spotify:artist:/, $artistObj->extIds) {
+		if (my ($extId) = grep /spotify:artist:/, @{$artistObj->extIds}) {
 			$params->{uri} = $extId;
 			return artist($client, $cb, $params, $args);
 		}
@@ -1480,14 +1477,10 @@ sub browseArtistMenu {
 		}
 	}
 
-	if (!scalar @$items) {
-		push @$items, {
-			type  => 'text',
-			title => cstring($client, 'EMPTY'),
-		};
-	}
-
-	$cb->($items);
+	$cb->([{
+		type  => 'text',
+		title => cstring($client, 'EMPTY'),
+	}]);
 }
 
 sub albumInfoMenu {

@@ -109,8 +109,6 @@ sub initPlugin {
 		weight => 1,
 	);
 
-	Plugins::Spotty::OPML->init();
-
 	if ( Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') < 0 ) {
 		$log->error('Please update to Logitech Media Server 7.9.1 if you want to use seeking in Spotify tracks.');
 	}
@@ -127,6 +125,8 @@ sub initPlugin {
 
 sub postinitPlugin { if (main::TRANSCODING) {
 	my $class = shift;
+
+	Plugins::Spotty::OPML->init();
 
 	# we're going to hijack the Spotify URI schema
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
