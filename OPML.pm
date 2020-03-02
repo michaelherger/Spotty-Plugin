@@ -1465,6 +1465,11 @@ sub browseArtistMenu {
 					if (scalar @uris == 1) {
 						$uri = shift @uris;
 					}
+					else {
+						$items->{items} = [ grep {
+							Slim::Utils::Text::ignoreCase($_->{name} ) eq $artistObj->namesearch
+						} @{$items->{items}} ];
+					}
 				}
 
 				if ($uri) {
