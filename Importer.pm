@@ -52,9 +52,9 @@ sub startScan { if (main::SCANNER) {
 		$dbh ||= Slim::Schema->dbh();
 		$class->initOnlineTracksTable();
 
-		my $newMetadata = {};
-		$class->scanArtists($accounts, $newMetadata);
-		$class->scanPlaylists($accounts, $newMetadata);
+		$class->scanAlbums($accounts);
+		$class->scanArtists($accounts);
+		$class->scanPlaylists($accounts);
 
 		$class->deleteRemovedTracks();
 	}
@@ -62,8 +62,8 @@ sub startScan { if (main::SCANNER) {
 	Slim::Music::Import->endImporter($class);
 } }
 
-sub scanArtists { if (main::SCANNER) {
-	my ($class, $accounts, $newMetadata) = @_;
+sub scanAlbums { if (main::SCANNER) {
+	my ($class, $accounts) = @_;
 
 	my $progress;
 	# my $deleteLibrary_sth   = $dbh->prepare_cached("DELETE FROM library_track WHERE library = ?");
@@ -100,7 +100,7 @@ sub scanArtists { if (main::SCANNER) {
 		my ($albums, $libraryMeta) = $api->myAlbums();
 		$progress->total($progress->total + scalar @$albums + 1);
 
-		$cache->set('spotty_latest_album_update' . $accountId, $class->libraryMetaId($libraryMeta), 86400);
+		$cache->set('spotty_latest_album_update' . $accountId, $class->libraryMetaId($libraryMeta), 86400 * 7);
 
 		main::INFOLOG && $log->is_info && $log->info("Getting missing album information...");
 		foreach (@$albums) {
@@ -161,12 +161,61 @@ sub scanArtists { if (main::SCANNER) {
 
 	$progress->final() if $progress;
 	main::SCANNER && Slim::Schema->forceCommit;
+} }
 
-	return $newMetadata;
+sub scanArtists { if (main::SCANNER) {
+	my ($class, $accounts) = @_;
+
+	my $progress;
+
+	foreach my $account (keys %$accounts) {
+		my $accountId = $accounts->{$account};
+		my $api = Plugins::Spotty::API::Sync->new($accountId);
+
+		if ($progress) {
+			$progress->total($progress->total + 1);
+		}
+		else {
+			$progress = Slim::Utils::Progress->new({
+				'type'  => 'importer',
+				'name'  => 'plugin_spotty_artists',
+				'total' => 1,
+				'every' => 1,
+			});
+		}
+
+		main::INFOLOG && $log->is_info && $log->info("Reading artists...");
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ARTISTS', $account));
+
+		my ($artists, $libraryMeta) = $api->myArtists();
+
+		$cache->set('spotty_latest_artists_update' . $accountId, $class->libraryMetaId($libraryMeta), 86400 * 7);
+
+		$progress->total($progress->total + scalar @$artists + 1);
+
+		foreach my $artist (@$artists) {
+			my $name = $artist->{name};
+
+			$progress->update($account . string('COLON') . ' ' . $name);
+			main::SCANNER && Slim::Schema->forceCommit;
+
+			my $_unknownArtist = Slim::Schema->rs('Contributor')->update_or_create({
+				'name'       => $name,
+				'namesort'   => Slim::Utils::Text::ignoreCaseArticles($name),
+				'namesearch' => Slim::Utils::Text::ignoreCase($name, 1),
+				'extid'      => $artist->{uri},
+			}, { 'key' => 'namesearch' });
+		}
+
+		main::SCANNER && Slim::Schema->forceCommit;
+	}
+
+	$progress->final() if $progress;
+	main::SCANNER && Slim::Schema->forceCommit;
 } }
 
 sub scanPlaylists { if (main::SCANNER) {
-	my ($class, $accounts, $newMetadata) = @_;
+	my ($class, $accounts) = @_;
 
 	my $progress = Slim::Utils::Progress->new({
 		'type'  => 'importer',
@@ -243,7 +292,7 @@ sub scanPlaylists { if (main::SCANNER) {
 			$_->{id} => ($_->{creator} eq 'spotify' ? $timestamp : $_->{snapshot_id})
 		} @$playlists };
 
-		$cache->set('spotty_snapshot_ids' . $accountId, $snapshotIds, 86400);
+		$cache->set('spotty_snapshot_ids' . $accountId, $snapshotIds, 86400 * 7);
 
 		main::INFOLOG && $log->is_info && $log->info("Done, finally!");
 		Slim::Schema->forceCommit;
@@ -251,8 +300,6 @@ sub scanPlaylists { if (main::SCANNER) {
 
 	$progress->final() if $progress;
 	Slim::Schema->forceCommit;
-
-	return $newMetadata
 } }
 
 sub trackUriPrefix { 'spotify:track:' }
@@ -319,6 +366,27 @@ sub needsUpdate {
 			$api->myAlbumsMeta(sub {
 				$acb->($class->libraryMetaId($_[0]) eq $lastUpdateData ? 0 : 1);
 			});
+		};
+
+		push @workers, sub {
+			my ($result, $acb) = @_;
+
+			# don't run any further test in the queue if we already have a result
+			return $acb->($result) if $result;
+
+			my $lastUpdateData = $cache->get('spotty_latest_artists_update' . $accountId) || '';
+
+			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
+			$api->myArtists(sub {
+				my $artists = shift;
+
+				my $libraryMeta = {
+					total => scalar @$artists,
+					hash  => md5_hex(join('|', sort map { $_->{id} } @$artists)),
+				};
+
+				$acb->($class->libraryMetaId($libraryMeta) eq $lastUpdateData ? 0 : 1);
+			}, 1);
 		};
 	}
 

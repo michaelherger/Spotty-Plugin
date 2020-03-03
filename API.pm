@@ -922,7 +922,7 @@ sub isInMyAlbums {
 }
 
 sub myArtists {
-	my ( $self, $cb ) = @_;
+	my ( $self, $cb, $noAlbumArtists ) = @_;
 
 	# Getting the artists list is such a pain. Even when fetching every single request from cache,
 	# this would be slow on some systems. Let's just cache the full result...
@@ -942,6 +942,11 @@ sub myArtists {
 
 		# sometimes we get invalid list items back?!?
 		my $items = [ grep { $_->{id} } @{$results || []} ];
+
+		if ($noAlbumArtists) {
+			$cb->($items);
+			return;
+		}
 
 		my %knownArtists = map {
 			my $id = $_->{id};
@@ -995,7 +1000,7 @@ sub myArtists {
 				$cache->set($cacheKey, $items, 60);
 				$cb->($items);
 			}
-		}, 'fast')
+		}, 'fast');
 	}, {
 		type  => 'artist',
 		limit => max(LIBRARY_LIMIT, _DEFAULT_LIMIT()),

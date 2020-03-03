@@ -33,11 +33,6 @@ my $cache = Slim::Utils::Cache->new();
 my $libraryCache = Plugins::Spotty::API::Cache->new();
 my $prefs = preferences('plugin.spotty');
 
-# our old LWP::UserAgent doesn't support ssl_opts yet
-IO::Socket::SSL::set_defaults(
-	SSL_verify_mode => 0
-);
-
 use constant API_URL => 'https://api.spotify.com/v1/%s';
 
 sub new {
@@ -89,7 +84,7 @@ sub myAlbums {
 		$offset = 0;
 
 		if ( $response && $response->{items} && ref $response->{items} ) {
-			# keep track of some meta-information about the
+			# keep track of some meta-information about the albums
 			$libraryMeta ||= {
 				total => $response->{total} || 0,
 				lastAdded => $response->{items}->[0]->{added_at} || ''
@@ -104,6 +99,45 @@ sub myAlbums {
 	} while $offset;
 
 	return wantarray ? ($albums, $libraryMeta) : $albums;
+}
+
+sub myArtists {
+	my ($self, $args) = @_;
+	$args ||= {};
+
+	my $offset = '';
+	my $artists = [];
+	my $libraryMeta;
+	$args->{type} = 'artist';
+
+	do {
+		$args->{after} = $offset if $offset;
+
+		my $response = $self->_call('me/following', $args);
+
+		$response = $response && ref $response && $response->{artists};
+
+		$offset = '';
+
+		if ( $response && $response->{items} && ref $response->{items} ) {
+			# keep track of some meta-information about the artists
+			$libraryMeta ||= {
+				total => $response->{total} || 0,
+			};
+
+			$offset = $response->{'cursors'}->{'after'};
+			push @$artists, map {
+				$libraryCache->normalize($_);
+			} @{ $response->{items} };
+		}
+	} while $offset;
+
+	if (wantarray) {
+		$libraryMeta->{hash} = md5_hex(join('|', sort map { $_->{id} } @$artists));
+		return ($artists, $libraryMeta);
+	}
+
+	return $artists;
 }
 
 sub mySongs {
