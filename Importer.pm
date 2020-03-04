@@ -52,8 +52,11 @@ sub startScan { if (main::SCANNER) {
 		$dbh ||= Slim::Schema->dbh();
 		$class->initOnlineTracksTable();
 
-		$class->scanAlbums($accounts);
-		$class->scanArtists($accounts);
+		if (!Slim::Music::Import->scanPlaylistsOnly()) {
+			$class->scanAlbums($accounts);
+			$class->scanArtists($accounts);
+		}
+
 		$class->scanPlaylists($accounts);
 
 		$class->deleteRemovedTracks();
