@@ -199,7 +199,7 @@ sub scanArtists { if (main::SCANNER) {
 			$progress->update($account . string('COLON') . ' ' . $name);
 			main::SCANNER && Slim::Schema->forceCommit;
 
-			my $_unknownArtist = Slim::Schema->rs('Contributor')->update_or_create({
+			Slim::Schema->rs('Contributor')->update_or_create({
 				'name'       => $name,
 				'namesort'   => Slim::Utils::Text::ignoreCaseArticles($name),
 				'namesearch' => Slim::Utils::Text::ignoreCase($name, 1),
