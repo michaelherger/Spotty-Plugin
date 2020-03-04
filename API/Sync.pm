@@ -33,6 +33,11 @@ my $cache = Slim::Utils::Cache->new();
 my $libraryCache = Plugins::Spotty::API::Cache->new();
 my $prefs = preferences('plugin.spotty');
 
+# our old LWP::UserAgent doesn't support ssl_opts yet
+IO::Socket::SSL::set_defaults(
+	SSL_verify_mode => 0
+);
+
 use constant API_URL => 'https://api.spotify.com/v1/%s';
 
 sub new {
