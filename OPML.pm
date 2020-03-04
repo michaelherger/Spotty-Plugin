@@ -86,7 +86,7 @@ sub init {
 
 	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::OnlineLibrary::Plugin') ) {
 		require Slim::Plugin::OnlineLibrary::BrowseArtist;
-		Slim::Plugin::OnlineLibrary::BrowseArtist->registerBrowseArtistItem( spotty => sub {
+		Slim::Plugin::OnlineLibrary::BrowseArtist->registerBrowseArtistItem( spotify => sub {
 			my ( $client ) = @_;
 
 			return {
