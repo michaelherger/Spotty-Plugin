@@ -280,8 +280,9 @@ sub getCredentials {
 			from_json(read_file($credentialsFile));
 		};
 
-		if ( $@ && !$credentials || !ref $credentials ) {
-			$log->warn("Corrupted credentials file discovered. Removing configuration.");
+		if ( ($@ && !$credentials) || !ref $credentials ) {
+			$log->error("Corrupted credentials file discovered. Removing configuration. " . ($@ || ''));
+			$log->error(read_file($credentialsFile, err_mode => 'carp'));
 			$class->deleteCacheFolder($id);
 		}
 
