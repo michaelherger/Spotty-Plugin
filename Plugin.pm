@@ -62,7 +62,6 @@ sub initPlugin {
 		checkDaemonConnected => 0,
 		displayNames => {},
 		helper => '',
-		integrateWithMyMusic => 1,
 	});
 
 	$prefs->setValidate({ 'validator' => sub { $_[1] =~ /^[a-f0-9]{32}$/i } }, 'iconCode');
