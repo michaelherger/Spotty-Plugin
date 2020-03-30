@@ -192,7 +192,7 @@ sub normalize {
 			_removeUnused($artist);
 		}
 
-		_removeUnused($item, 'preview_url', 'is_local', 'is_playable', 'episode', 'external_ids');
+		_removeUnused($item, 'preview_url', 'is_local', 'episode', 'external_ids');
 		_removeUnused($item->{linked_from});
 
 		# Cache all tracks for use in track_metadata

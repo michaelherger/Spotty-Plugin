@@ -122,7 +122,9 @@ sub scanAlbums { if (main::SCANNER) {
 			main::SCANNER && Slim::Schema->forceCommit;
 
 			$class->storeTracks([
-				map { _prepareTrack($_) } @{$_->{tracks}}
+				map { _prepareTrack($_) } grep {
+					!defined $_->{is_playable} || $_->{is_playable}
+				} @{$_->{tracks}}
 			], $libraryId);
 		}
 
