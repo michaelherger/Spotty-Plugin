@@ -276,17 +276,30 @@ sub getCredentials {
 	}
 
 	if ( my $credentialsFile = $class->hasCredentials($id) ) {
-		my $credentials = eval {
-			from_json(read_file($credentialsFile));
-		};
+		my $credentialsFileContent = read_file($credentialsFile);
 
-		if ( ($@ && !$credentials) || !ref $credentials ) {
-			$log->error("Corrupted credentials file discovered. Removing configuration. " . ($@ || ''));
-			$log->error(read_file($credentialsFile, err_mode => 'carp'));
-			$class->deleteCacheFolder($id);
+		if (!$credentialsFileContent) {
+			$log->error("Failed to read credentials file, or credentials file was empty");
 		}
+		else {
+			my $credentials = eval { from_json($credentialsFileContent) };
 
-		return $credentials || {};
+			if ( ($@ && !$credentials) || !ref $credentials ) {
+				$log->error("Corrupted credentials file, or invalid credentials information discovered. Removing configuration. " . ($@ || ''));
+				$log->error($credentialsFileContent);
+				main::INFOLOG && $log->error(Data::Dump::dump($credentials));
+
+				my $cacheDir = catdir($serverPrefs->get('cachedir'), 'spotty');
+				my $backupName = catfile($serverPrefs->get('cachedir'), 'spotty', 'credentials-' . time() . '.json');
+
+				require File::Copy;
+				File::Copy::copy($credentialsFile, $backupName);
+
+				$class->deleteCacheFolder($id);
+			}
+
+			return $credentials || {};
+		}
 	}
 }
 
