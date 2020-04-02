@@ -51,7 +51,7 @@ sub formatOverride {
 
 	# check if we want/need to purge the audio cache
 	# this needs to be done from whatever code being run once per track
-	Plugins::Spotty::Plugin->purgeAudioCacheAfterXTracks();
+	Plugins::Spotty::AccountHelper->purgeAudioCacheAfterXTracks();
 
 	return 'spt';
 }
@@ -128,7 +128,7 @@ sub getMetadataFor {
 
 	$meta->{type} = $meta->{originalType};
 
-	if ( !Plugins::Spotty::Plugin->hasCredentials() ) {
+	if ( !Plugins::Spotty::AccountHelper->hasCredentials() ) {
 		$meta->{artist} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
 		$meta->{title} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
 		return $meta;
@@ -146,7 +146,7 @@ sub getMetadataFor {
 		$url = $song->streamUrl;
 	}
 
-	if ( $song ||= $client->currentSongForUrl($url) ) {
+	if ( $client && ($song ||= $client->currentSongForUrl($url)) ) {
 		# we store a copy of the metadata in the song object - no need to read from the disk cache
 		my $info = $song->pluginData('info');
 		if ( $info->{title} && $info->{duration} && ($info->{url} eq $url) ) {
@@ -178,7 +178,7 @@ sub getMetadataFor {
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
-	if ( my $cached = $spotty->trackCached(undef, $uri, { noLookup => 1 }) ) {
+	if ( my $cached = Plugins::Spotty::API->trackCached(undef, $uri, { noLookup => 1 }) ) {
 		$meta = {
 			artist    => join( ', ', map { $_->{name} } @{ $cached->{artists} } ),
 			album     => $cached->{album}->{name},
@@ -233,7 +233,7 @@ sub getBulkMetadata {
 		# Go fetch metadata for all tracks on the playlist without metadata
 		my @need;
 
-		my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
+		my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client) || return;
 
 		for my $track ( @uris ) {
 			my $uri = blessed($track) ? $track->url : $track;

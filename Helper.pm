@@ -9,8 +9,6 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 
-use Plugins::Spotty::Connect;
-
 use constant HELPER => 'spotty';
 
 my $prefs = preferences('plugin.spotty');
@@ -32,7 +30,7 @@ sub init {
 			Plugins::Spotty::Connect->init();
 		});
 
-	}, 'helper');
+	}, 'helper') if !main::SCANNER;
 }
 
 sub get {
@@ -100,10 +98,8 @@ sub helperCheck {
 
 	$$check = '' unless $check && ref $check;
 
-	my $checkCmd = sprintf('%s -n "%s (%s)" --check',
-		$candidate,
-		string('PLUGIN_SPOTTY_AUTH_NAME'),
-		Slim::Utils::Misc::getLibraryName()
+	my $checkCmd = sprintf('%s -n "Spotty" --check',
+		$candidate
 	);
 
 	$$check = `$checkCmd 2>&1`;

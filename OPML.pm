@@ -4,9 +4,11 @@ use strict;
 
 use URI::Escape qw(uri_escape_utf8);
 
+use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::API;
 use Plugins::Spotty::PlaylistFolders;
 
+use Slim::Menu::BrowseLibrary;
 use Slim::Menu::GlobalSearch;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -82,6 +84,22 @@ sub init {
 		},
 	) );
 
+	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::OnlineLibrary::Plugin') ) {
+		require Slim::Plugin::OnlineLibrary::BrowseArtist;
+		Slim::Plugin::OnlineLibrary::BrowseArtist->registerBrowseArtistItem( spotify => sub {
+			my ( $client ) = @_;
+
+			return {
+				name => cstring($client, 'BROWSE_ON_SERVICE', 'Spotify'),
+				type => 'link',
+				icon => Plugins::Spotty::Plugin->_pluginDataFor('icon'),
+				url  => \&browseArtistMenu,
+			};
+		} );
+
+		main::INFOLOG && $log->is_info && $log->info("Successfully registered BrowseArtist handler for Spotify");
+	}
+
 #                                                               |requires Client
 #                                                               |  |is a Query
 #                                                               |  |  |has Tags
@@ -118,7 +136,7 @@ sub handleFeed {
 
 		return;
 	}
-	elsif ( !Plugins::Spotty::Plugin->hasCredentials() || !Plugins::Spotty::Plugin->getAccount($client) ) {
+	elsif ( !Plugins::Spotty::AccountHelper->hasCredentials() || !Plugins::Spotty::AccountHelper->getAccount($client) ) {
 		$cb->({
 			items => [{
 				name => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED') . "\n" . cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
@@ -129,16 +147,16 @@ sub handleFeed {
 		return;
 	}
 	# if there's no account assigned to the player, just pick one - we should never get here...
-	elsif ( !Plugins::Spotty::Plugin->getCredentials($client) ) {
+	elsif ( !Plugins::Spotty::AccountHelper->getCredentials($client) ) {
 		selectAccount($client, $cb, $args);
 		return;
 	}
 
 	# update users' display names every now and then
-	if ( Plugins::Spotty::Plugin->hasMultipleAccounts() && $nextNameCheck < time ) {
-		foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
+	if ( Plugins::Spotty::AccountHelper->hasMultipleAccounts() && $nextNameCheck < time ) {
+		foreach ( @{ Plugins::Spotty::AccountHelper->getSortedCredentialTupels() } ) {
 			my ($name, $id) = each %{$_};
-			Plugins::Spotty::Plugin->getName($client, $name);
+			Plugins::Spotty::AccountHelper->getName($client, $name);
 		}
 
 		$nextNameCheck = time() + 3600;
@@ -235,14 +253,14 @@ sub handleFeed {
 			}
 		}
 
-		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
-			my $credentials = Plugins::Spotty::Plugin->getAllCredentials();
+		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
+			my $credentials = Plugins::Spotty::AccountHelper->getAllCredentials();
 
 			foreach my $name ( sort {
 				lc($a) cmp lc($b)
 			} keys %$credentials ) {
 				push @$items, {
-					name => cstring($client, 'PLUGIN_USERS_LIBRARY', _getDisplayName($name)),
+					name => cstring($client, 'PLUGIN_SPOTTY_USERS_LIBRARY', Plugins::Spotty::AccountHelper->getDisplayName($name)),
 					items => [ map {{
 						name => $_->{name},
 						type => $_->{type},
@@ -268,11 +286,11 @@ sub handleFeed {
 			url   => \&transferPlaylist
 		};
 
-		if ( $prefs->get('accountSwitcherMenu') && Plugins::Spotty::Plugin->hasMultipleAccounts() ) {
+		if ( $prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
 			push @$items, {
 				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
 				items => [{
-					name => _getDisplayName($spotty->username),
+					name => Plugins::Spotty::AccountHelper->getDisplayName($spotty->username),
 					type => 'text'
 				},{
 					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
@@ -284,15 +302,10 @@ sub handleFeed {
 
 		$cb->({
 # XXX - how to refresh the title when the account has changed?
-#			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::Plugin->hasMultipleAccounts() ? sprintf(' (%s)', _getDisplayName($spotty->username)) : ''),
+#			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::AccountHelper->hasMultipleAccounts() ? sprintf(' (%s)', Plugins::Spotty::AccountHelper->getDisplayName($spotty->username)) : ''),
 			items => $items,
 		});
 	} );
-}
-
-sub _getDisplayName {
-	my ($userId) = @_;
-	return $prefs->get('displayNames')->{$userId} || $userId;
 }
 
 sub search {
@@ -766,7 +779,7 @@ sub album {
 
 		$cb->({ items => $items });
 	},{
-		uri => $params->{uri} || $args->{uri}
+		uri => $params->{uri} || $args->{uri} || $params->{extid} || $args->{extid}
 	});
 }
 
@@ -1394,9 +1407,14 @@ sub trackInfoMenu {
 	}
 	else {
 		$args = {
-			artist => $track->remote ? $remoteMeta->{artist} : $track->artistName,
-			album  => $track->remote ? $remoteMeta->{album}  : ( $track->album ? $track->album->name : undef ),
-			title  => $track->remote ? $remoteMeta->{title}  : $track->title,
+			artist => {
+				name => $track->remote ? $remoteMeta->{artist} : $track->artistName
+			},
+			album  => {
+				name => $track->remote ? $remoteMeta->{album} : ( $track->album ? $track->album->name : undef )
+			},
+			title  => $track->remote ? $remoteMeta->{title} : $track->title,
+			uri    => $track->extid,
 		};
 	}
 
@@ -1409,8 +1427,65 @@ sub artistInfoMenu {
 	$remoteMeta ||= {};
 
 	return _objInfoMenu($client, {
-		artist => $artist->name || $remoteMeta->{artist},
+		artist => {
+			name => $artist->name || $remoteMeta->{artist},
+			uri  => $artist->extid
+		},
+		uri => $artist->extid,
 	});
+}
+
+sub browseArtistMenu {
+	my ($client, $cb, $params, $args) = @_;
+
+	my $artistId = $params->{artist_id} || $args->{artist_id};
+
+	if ( defined($artistId) && $artistId =~ /^\d+$/ && (my $artistObj = Slim::Schema->resultset("Contributor")->find($artistId))) {
+		if (my ($extId) = grep /spotify:artist:/, @{$artistObj->extIds}) {
+			$params->{uri} = $extId;
+			return artist($client, $cb, $params, $args);
+		}
+		else {
+			$args->{query} = 'artist:"' . $artistObj->name . '"';
+			$args->{type} = 'artist';
+			return search($client, sub {
+				my $items = shift || { items => [] };
+
+				my $uri;
+				if (scalar @{$items->{items}} == 1) {
+					$uri = $items->{items}->[0]->{playlist};
+				}
+				else {
+					my @uris = map {
+						$_->{playlist}
+					} grep {
+						Slim::Utils::Text::ignoreCase($_->{name} ) eq $artistObj->namesearch
+					} @{$items->{items}};
+
+					if (scalar @uris == 1) {
+						$uri = shift @uris;
+					}
+					else {
+						$items->{items} = [ grep {
+							Slim::Utils::Text::ignoreCase($_->{name} ) eq $artistObj->namesearch
+						} @{$items->{items}} ];
+					}
+				}
+
+				if ($uri) {
+					$params->{uri} = $uri;
+					return artist($client, $cb, $params, $args);
+				}
+
+				$cb->($items);
+			}, $params, $args);
+		}
+	}
+
+	$cb->([{
+		type  => 'text',
+		title => cstring($client, 'EMPTY'),
+	}]);
 }
 
 sub albumInfoMenu {
@@ -1418,10 +1493,38 @@ sub albumInfoMenu {
 
 	$remoteMeta ||= {};
 
-	return _objInfoMenu($client, {
-		album => $album->title || $remoteMeta->{album},
-		artists => [ map { $_->name } $album->artistsForRoles('ARTIST'), $album->artistsForRoles('ALBUMARTIST') ],
+	my $albumInfo = {
+		name => $album->title || $remoteMeta->{album}
+	};
+
+	if ($album->extid && $album->extid =~ /^spotify:/) {
+		$albumInfo->{uri} = $album->extid;
+	}
+
+	my $artistsInfo = [ map {
+		my $artist = {
+			name => $_->name
+		};
+
+		if ($_->extid =~ /(spotify:artist:[0-9a-z]+)/i) {
+			$artist->{uri} = $1;
+		}
+
+		$artist;
+	} $album->artistsForRoles('ARTIST'), $album->artistsForRoles('ALBUMARTIST') ];
+
+	my $objInfoMenu = _objInfoMenu($client, {
+		album   => $albumInfo,
+		artists => $artistsInfo,
+		uri     => $album->extid
 	});
+
+	push @$objInfoMenu, {
+		type => 'text',
+		name => cstring($client, 'SOURCE') . cstring($client, 'COLON') . ' Spotify',
+	} if $album->extid && $album->extid =~ /^spotify:album:/;
+
+	return $objInfoMenu;
 }
 
 sub _objInfoMenu {
@@ -1432,8 +1535,14 @@ sub _objInfoMenu {
 	my $items = [];
 	my $prefix = cstring($client, 'PLUGIN_SPOTTY_ON_SPOTIFY') . cstring($client, 'COLON') . ' ';
 
+	my $uri = $args->{uri};
+
 	# if we're dealing with a Spotify item we can use the URI to get more direct results
-	if ( my $uri = $args->{uri} ) {
+	if ($uri && $uri =~ /^spotify:/) {
+		if ($args->{artist} && !$args->{artists}) {
+			$args->{artists} = [ $args->{artist} ];
+		}
+
 		push @$items, {
 			type => 'playlist',
 			on_select => 'play',
@@ -1455,7 +1564,7 @@ sub _objInfoMenu {
 				passthrough => [{
 					uri => $artist->{uri},
 				}]
-			};
+			} if $artist->{uri};
 		}
 
 		push @$items, {
@@ -1478,20 +1587,20 @@ sub _objInfoMenu {
 
 		foreach my $artist (@$artists) {
 			push @$items, {
-				name  => $prefix . $artist,
+				name  => $prefix . $artist->{name},
 				url   => \&search,
 				passthrough => [{
-					query => 'artist:"' . $artist . '"',
+					query => 'artist:"' . $artist->{name} . '"',
 					type  => 'context',
 				}]
 			};
 		}
 
 		push @$items, {
-			name  => $prefix . $album,
+			name  => $prefix . $album->{name},
 			url   => \&search,
 			passthrough => [{
-				query => 'album:"' . $album . '"',
+				query => 'album:"' . $album->{name} . '"',
 				type  => 'context',
 			}]
 		} if $album;
@@ -1715,13 +1824,13 @@ sub selectAccount {
 	my $items = [];
 	my $username = Plugins::Spotty::Plugin->getAPIHandler($client)->username;
 
-	foreach ( @{ Plugins::Spotty::Plugin->getSortedCredentialTupels() } ) {
+	foreach ( @{ Plugins::Spotty::AccountHelper->getSortedCredentialTupels() } ) {
 		my ($name, $id) = each %{$_};
 
 		next if $name eq $username;
 
 		push @$items, {
-			name => _getDisplayName($name),
+			name => Plugins::Spotty::AccountHelper->getDisplayName($name),
 			url  => \&_selectAccount,
 			passthrough => [{
 				id => $id
@@ -1738,7 +1847,7 @@ sub _selectAccount {
 
 	return unless $client;
 
-	Plugins::Spotty::Plugin->setAccount($client, $args->{id});
+	Plugins::Spotty::AccountHelper->setAccount($client, $args->{id});
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$cb->({ items => [{
@@ -1750,12 +1859,12 @@ sub _selectAccount {
 sub _withAccount {
 	my ($client, $cb, $params, $args) = @_;
 
-	my $credentials = Plugins::Spotty::Plugin->getAllCredentials();
+	my $credentials = Plugins::Spotty::AccountHelper->getAllCredentials();
 	my $id = lc($credentials->{$args->{name}});
 
 	main::INFOLOG && $log->is_info && $log->info(sprintf('Running query for %s (%s)', $args->{name}, $id));
 
-	Plugins::Spotty::Plugin->setAccount($client, $id);
+	Plugins::Spotty::AccountHelper->setAccount($client, $id);
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->me(sub {
 		$args->{cb}->($client, $cb, $params);

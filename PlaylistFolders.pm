@@ -138,7 +138,7 @@ sub findAllCachedFiles {
 	my $i = 0;
 	my $candidates = [];
 
-	for my $folder (Plugins::Spotty::Plugin->cacheFolder('playlistFolders'), $cacheFolder) {
+	for my $folder (Plugins::Spotty::AccountHelper->cacheFolder('playlistFolders'), $cacheFolder) {
 		next unless -d $folder && -r _;
 
 		my $files = File::Next::files({
@@ -262,7 +262,7 @@ sub handleUpload {
 		my ($boundary) = $ct =~ /boundary=(.*)/;
 
 		my ($filename, $fh, $uploadedFile);
-		my $folder = Plugins::Spotty::Plugin->cacheFolder('playlistFolders');
+		my $folder = Plugins::Spotty::AccountHelper->cacheFolder('playlistFolders');
 
 		# open a pseudo-filehandle to the uploaded data ref for further processing
 		open TEMP, '<', $request->content_ref;
@@ -348,7 +348,7 @@ sub handleUpload {
 sub purgeCache {
 	my ($class, $delete) = @_;
 
-	my $folder = Plugins::Spotty::Plugin->cacheFolder('playlistFolders');
+	my $folder = Plugins::Spotty::AccountHelper->cacheFolder('playlistFolders');
 
 	if ( $folder && -d $folder && opendir(DIR, $folder) ) {
 		foreach my $file ( grep { -f $_ && -r _ } map { catfile($folder, $_) } readdir(DIR) ) {

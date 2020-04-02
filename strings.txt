@@ -52,9 +52,29 @@ PLUGIN_SPOTTY_AUTH_FAILED
 	DE	Anmeldung fehlgeschlagen
 	EN	Authorization failed
 
-PLUGIN_USERS_LIBRARY
+PLUGIN_SPOTTY_USERS_LIBRARY
 	DE	Sammlung von %s
 	EN	%s's Library
+
+PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY
+	DE	Lokale Musik und %s
+	EN	Local Music and %s's
+
+PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY
+	DE	In "Meine Musik" anzeigen
+	EN	Merge with "My Music"
+
+PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_DESC
+	DE	Die Integration ihrer Spotify Sammlung mit der lokalen Musik gibt ihnen Zugriff auf alle ihre Musik in einem Menü. Auch erlaubt dies die Verwendung von Zufallswiedergabe mit Spotify Titeln, schnelle und Volltext-Suche etc.
+	EN	Integrating the Spotify library with your local library allows you to browse all your music from one place, allows you to use Random Play with Spotify music etc. PLEASE NOTE that changing this preference will trigger a rescan of your library.
+
+PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_0
+	DE	Die Spotify Musiksammlung nicht in die lokale Musiksammlung integrieren
+	EN	Do not merge your Spotify collection with the local music library
+
+PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_1
+	DE	Integriere die Spotify Musiksammlung mit der lokalen Musik
+	EN	Merge your Spotify collection with your local music library
 
 PLUGIN_SPOTTY_ACCOUNT
 	CS	Účet
@@ -584,3 +604,30 @@ PLUGIN_SPOTTY_EPISODES
 	NO	Podcast-episoder
 	SV	Podcastavsnitt
 
+PLUGIN_SPOTTY_ALBUMS_PROGRESS
+	DE	Spotty Alben
+	EN	Spotty Albums
+
+PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS
+	DE	Lese Alben für %s...
+	EN	Fetching Albums for %s...
+
+PLUGIN_SPOTTY_ARTISTS_PROGRESS
+	DE	Spotty Interpreten
+	EN	Spotty Artists
+
+PLUGIN_SPOTTY_PROGRESS_READ_ARTISTS
+	DE	Lese Interpreten für %s...
+	EN	Fetching Artists for %s...
+
+PLUGIN_SPOTTY_PROGRESS_READ_TRACKS
+	DE	Lese Titel-Informationen für %s...
+	EN	Fetching Title Information for %s...
+
+PLUGIN_SPOTTY_PLAYLISTS_PROGRESS
+	DE	Spotty Wiedergabelisten
+	EN	Spotty Playlists
+
+PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS
+	DE	Lese Wiedergabelisten für %s...
+	EN	Fetching Playlists for %s...

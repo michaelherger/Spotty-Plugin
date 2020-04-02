@@ -8,6 +8,7 @@ use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 use Plugins::Spotty::Plugin;
+use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::Settings::Auth;
 use Plugins::Spotty::Settings::Player;
 use Plugins::Spotty::Settings::PlaylistFolders;
@@ -94,7 +95,7 @@ sub handler {
 	}
 
 	if ( my ($deleteAccount) = map { /delete_(.*)/; $1 } grep /^delete_/, keys %$paramRef ) {
-		Plugins::Spotty::Plugin->deleteCacheFolder($deleteAccount);
+		Plugins::Spotty::AccountHelper->deleteCacheFolder($deleteAccount);
 	}
 
 	if ($paramRef->{saveSettings}) {
@@ -113,7 +114,7 @@ sub handler {
 		}
 	}
 
-	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::Plugin->hasCredentials()) ) {
+	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::AccountHelper->hasCredentials()) ) {
 		$response->code(RC_MOVED_TEMPORARILY);
 		$response->header('Location' => 'authentication.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
@@ -122,7 +123,7 @@ sub handler {
 	# make sure our authentication helper isn't running
 	Plugins::Spotty::Settings::Auth->shutdownHelper();
 
-	$paramRef->{credentials}  = Plugins::Spotty::Plugin->getSortedCredentialTupels();
+	$paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
 	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
 	$paramRef->{error429}     = Plugins::Spotty::API->hasError429();
 	$paramRef->{isLowCaloriesPi} = Plugins::Spotty::Helper->isLowCaloriesPi();

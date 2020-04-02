@@ -12,24 +12,24 @@ my $prefs = preferences('plugin.spotty');
 
 sub isEnabled {
 	my ($class, $client) = @_;
-	
+
 	return unless $client;
-	
+
 	return unless Slim::Utils::PluginManager->isEnabled('Plugins::Spotty::Plugin');
-	
-	return Plugins::Spotty::Plugin->getCredentials($client) ? 'Spotty' : undef;
-} 
+
+	return Plugins::Spotty::AccountHelper->getCredentials($client) ? 'Spotty' : undef;
+}
 
 sub lookup {
 	my ($class, $client, $cb, $args) = @_;
-	
+
 	$class->client($client) if $client;
 	$class->cb($cb) if $cb;
 	$class->args($args) if $args;
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->search(sub {
 		my $searchResult = shift;
-		
+
 		if (!$searchResult) {
 			$class->cb->();
 		}
@@ -42,7 +42,7 @@ sub lookup {
 
 			# might want to investigate them all?
 			my $artist = $track->{artists}->[0]->{name} || next;
-			
+
 			push @$candidates, {
 				title  => $track->{name},
 				artist => $artist,
