@@ -1237,7 +1237,8 @@ sub _isPlayable {
 	$cc ||= $self->country;
 
 	# if we set market => 'from_token', then we don't get available_markets back, but only a is_playable flag
-	return if defined $item->{is_playable} && !$item->{is_playable};
+	# podcast episodes in playsts a flagged with is_playable=false and episode=false despite being perfectly playable...
+	return if defined $item->{is_playable} && !$item->{is_playable} && !(defined $item->{episode} && !$item->{episode} && $item->{uri} =~ /^spotify:episode:/);
 	return if $item->{is_local};
 
 	return if $item->{available_markets} && !(scalar grep /$cc/i, @{$item->{available_markets}});
