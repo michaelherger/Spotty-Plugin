@@ -204,12 +204,10 @@ sub scanArtists { if (main::SCANNER) {
 			$progress->update($account . string('COLON') . ' ' . $name);
 			main::SCANNER && Slim::Schema->forceCommit;
 
-			Slim::Schema->rs('Contributor')->update_or_create({
-				'name'       => $name,
-				'namesort'   => Slim::Utils::Text::ignoreCaseArticles($name),
-				'namesearch' => Slim::Utils::Text::ignoreCase($name, 1),
-				'extid'      => $artist->{uri},
-			}, { 'key' => 'namesearch' });
+			Slim::Schema::Contributor->add({
+				'artist' => $name,
+				'extid'  => $artist->{uri},
+			});
 		}
 
 		main::SCANNER && Slim::Schema->forceCommit;

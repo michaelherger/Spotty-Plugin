@@ -733,7 +733,7 @@ sub tracks {
 	});
 }
 
-sub _tracks() {
+sub _tracks {
 	my ($self, $cb, undef, $type ) = @_;
 
 	$type ||= 'track';
