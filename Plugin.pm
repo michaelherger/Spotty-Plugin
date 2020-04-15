@@ -28,6 +28,7 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.spotty',
 	defaultLevel => 'WARN',
 	description  => 'PLUGIN_SPOTTY',
+	logGroups    => 'SCANNER',
 } );
 
 
