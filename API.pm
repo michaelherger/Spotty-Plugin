@@ -1326,6 +1326,9 @@ sub _call {
 					if ($response->code =~ /429/) {
 						$self->error429($response, $url);
 					}
+					else {
+						$error429 = '';
+					}
 
 					my $result;
 
