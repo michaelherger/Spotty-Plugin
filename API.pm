@@ -1363,13 +1363,16 @@ sub _call {
 										$ttl = 300;
 									}
 								}
+								# call to /me is super popular, and content changes rarely - cache for a while
+								elsif ( !$ttl && $response->url =~ m|/me$| ) {
+									$ttl = 15 * 60;
+								}
 
 								$ttl ||= 60;		# we're going to always cache for a minute, as we often do follow up calls while navigating
 
 								if ($ttl) {
-									main::INFOLOG && $log->is_info && $log->info("Caching result for $ttl using max-age (" . $response->url . ")");
+									main::INFOLOG && $log->is_info && $log->info("Caching result for $ttl (" . $response->url . ")");
 									$cache->set($cache_key, $result, $ttl);
-									main::INFOLOG && $log->is_info && $log->info("Data cached (" . $response->url . ")");
 								}
 							}
 						}
