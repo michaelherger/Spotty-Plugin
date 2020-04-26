@@ -15,6 +15,8 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string cstring);
 
+use constant CAN_EXTID => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
+
 use constant IMG_TRACK => '/html/images/cover.png';
 use constant IMG_ALBUM => 'plugins/Spotty/html/images/album.png';
 use constant IMG_PODCAST => 'plugins/Spotty/html/images/podcasts.png';
@@ -1414,7 +1416,7 @@ sub trackInfoMenu {
 				name => $track->remote ? $remoteMeta->{album} : ( $track->album ? $track->album->name : undef )
 			},
 			title  => $track->remote ? $remoteMeta->{title} : $track->title,
-			uri    => $track->extid,
+			uri    => CAN_EXTID && $track->extid,
 		};
 	}
 
@@ -1429,9 +1431,9 @@ sub artistInfoMenu {
 	return _objInfoMenu($client, {
 		artist => {
 			name => $artist->name || $remoteMeta->{artist},
-			uri  => $artist->extid
+			uri  => CAN_EXTID && $artist->extid
 		},
-		uri => $artist->extid,
+		uri => CAN_EXTID && $artist->extid,
 	});
 }
 
@@ -1441,7 +1443,7 @@ sub browseArtistMenu {
 	my $artistId = $params->{artist_id} || $args->{artist_id};
 
 	if ( defined($artistId) && $artistId =~ /^\d+$/ && (my $artistObj = Slim::Schema->resultset("Contributor")->find($artistId))) {
-		if (my ($extId) = grep /spotify:artist:/, @{$artistObj->extIds}) {
+		if ( CAN_EXTID && (my ($extId) = grep /spotify:artist:/, @{$artistObj->extIds}) ) {
 			$params->{uri} = $extId;
 			return artist($client, $cb, $params, $args);
 		}
@@ -1497,7 +1499,7 @@ sub albumInfoMenu {
 		name => $album->title || $remoteMeta->{album}
 	};
 
-	if ($album->extid && $album->extid =~ /^spotify:/) {
+	if (CAN_EXTID && $album->extid && $album->extid =~ /^spotify:/) {
 		$albumInfo->{uri} = $album->extid;
 	}
 
@@ -1506,7 +1508,7 @@ sub albumInfoMenu {
 			name => $_->name
 		};
 
-		if ($_->extid =~ /(spotify:artist:[0-9a-z]+)/i) {
+		if (CAN_EXTID && $_->extid =~ /(spotify:artist:[0-9a-z]+)/i) {
 			$artist->{uri} = $1;
 		}
 
@@ -1516,13 +1518,13 @@ sub albumInfoMenu {
 	my $objInfoMenu = _objInfoMenu($client, {
 		album   => $albumInfo,
 		artists => $artistsInfo,
-		uri     => $album->extid
+		uri     => CAN_EXTID && $album->extid
 	});
 
 	push @$objInfoMenu, {
 		type => 'text',
 		name => cstring($client, 'SOURCE') . cstring($client, 'COLON') . ' Spotify',
-	} if $album->extid && $album->extid =~ /^spotify:album:/;
+	} if CAN_EXTID && $album->extid && $album->extid =~ /^spotify:album:/;
 
 	return $objInfoMenu;
 }
