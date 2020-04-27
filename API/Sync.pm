@@ -239,22 +239,30 @@ sub artist {
 
 # attempt at creating the cheapest/fastest call to get the track IDs/URIs only
 sub playlistTrackIDs {
-	my ($self, $id) = @_;
+	my ($self, $id, $getFullData) = @_;
 
 	my $offset = 0;
 	my $tracks;
 
 	do {
-		my $response = $self->_call("playlists/$id/tracks", {
+		my $params = {
 			offset => $offset,
 			limit => SPOTIFY_PLAYLIST_TRACKS_LIMIT,
-			fields => 'next,items(track(uri))'
-		});
+		};
+
+		$params->{fields} = 'next,items(track(uri))' if !$getFullData;
+
+		my $response = $self->_call("playlists/$id/tracks", $params);
 
 		$offset = 0;
 
 		if ( $response && $response->{items} && ref $response->{items} ) {
-			push @$tracks, map { $_->{track}->{uri} } grep { $_->{track} && ref $_->{track} && $_->{track}->{uri} && $_->{track}->{uri} =~ /^spotify:track:/ } @{$response->{items}};
+			push @$tracks, map {
+				$libraryCache->normalize($_->{track}) if $getFullData;
+				$_->{track}->{uri};
+			} grep {
+				$_->{track} && ref $_->{track} && $_->{track}->{uri} && $_->{track}->{uri} =~ /^spotify:track:/
+			} @{$response->{items}};
 			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 		}
 	} while $offset && $offset < SPOTIFY_MAX_LIMIT;

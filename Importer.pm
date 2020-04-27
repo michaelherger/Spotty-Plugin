@@ -249,12 +249,15 @@ sub scanPlaylists { if (main::SCANNER) {
 
 		main::INFOLOG && $log->is_info && $log->info("Getting playlist tracks...");
 
+		# if this is the first scan, then get the full metadata, not only IDs, as the cache will be empty
+		my $getFullData = $libraryCache->get('spotty_initialized_' . $accountId) ? 0 : 1;
+
 		# we need to get the tracks first
 		foreach my $playlist (@{$playlists || []}) {
 			$progress->update($account . string('COLON') . ' ' . $playlist->{name});
 			Slim::Schema->forceCommit;
 
-			my $tracks = $api->playlistTrackIDs($playlist->{id});
+			my $tracks = $api->playlistTrackIDs($playlist->{id}, $getFullData);
 			$cache->set('spotty_playlist_tracks_' . $playlist->{id}, $tracks);
 
 			foreach (@$tracks) {
@@ -266,7 +269,7 @@ sub scanPlaylists { if (main::SCANNER) {
 		}
 
 		# pre-cache track information for playlist tracks
-		main::INFOLOG && $log->is_info && $log->info("Getting playlist track information...");
+		main::INFOLOG && $log->is_info && $log->info("Getting playlist track information for " . (scalar grep { !$tracks{$_} } keys %tracks) . " tracks...");
 		$api->tracks([grep { !$tracks{$_} } keys %tracks]);
 
 		my $prefix = 'Spotify' . string('COLON') . ' ';
@@ -296,6 +299,7 @@ sub scanPlaylists { if (main::SCANNER) {
 		} @$playlists };
 
 		$cache->set('spotty_snapshot_ids' . $accountId, $snapshotIds, 86400 * 7);
+		$libraryCache->set('spotty_initialized_' . $accountId, 1);
 
 		main::INFOLOG && $log->is_info && $log->info("Done, finally!");
 		Slim::Schema->forceCommit;
