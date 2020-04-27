@@ -217,16 +217,18 @@ sub getMetadataFor {
 	return $meta;
 }
 
+my $fetchingMeta;
 sub getBulkMetadata {
 	my ($class, $client, $uri) = @_;
+
+	return if $fetchingMeta;
 
 	my @uris;
 
 	if ($uri) {
 		@uris = ($uri);
 	}
-	elsif ( !$client->master->pluginData('fetchingMeta') ) {
-		$client->master->pluginData( fetchingMeta => 1 );
+	else {
 		@uris = @{ Slim::Player::Playlist::playList($client) };
 	}
 
@@ -247,7 +249,9 @@ sub getBulkMetadata {
 			}
 		}
 
-		if (scalar @need) {
+		if (scalar @need && !$fetchingMeta) {
+			$fetchingMeta = 1;
+
 			if ( main::INFOLOG && $log->is_info ) {
 				$log->info( "Need to fetch metadata for: " . Data::Dump::dump(@need) );
 			}
@@ -258,7 +262,7 @@ sub getBulkMetadata {
 
 				Slim::Control::Request::notifyFromArray( $client, [ 'newmetadata' ] );
 
-				$client->master->pluginData( fetchingMeta => 0 );
+				$fetchingMeta = 0;
 			}, \@need);
 		}
 	}

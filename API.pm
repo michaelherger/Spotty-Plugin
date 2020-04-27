@@ -740,7 +740,7 @@ sub _tracks {
 
 	my $chunks = {};
 
-	my $ids = Storable::dclone($_[2]);
+	my $ids = [ sort @{Storable::dclone($_[2])} ];
 
 	# build list of chunks we can query in one go
 	while ( my @ids = splice @$ids, 0, SPOTIFY_LIMIT) {
