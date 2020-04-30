@@ -1354,21 +1354,20 @@ sub _call {
 								my ($ttl) = $cache_control =~ /max-age=(\d+)/;
 
 								# cache some items even if max-age is zero. We're navigating them often
-								# TODO - verify once usernames are being removed from the playlist ID
 								if ( !$ttl && $response->url =~ m|/playlists/([A-Za-z0-9]{22})/tracks| ) {
 									my ($user) = $self->getPlaylistUserAndId("spotify:playlist:$1");
 									$user ||= '';
 
 									if ( $user eq 'spotify' || $user eq 'spotifycharts' ) {
-										$ttl = 3600;
+										$ttl = _PLAYLIST_CACHE_TTL();
 									}
 									elsif ( $user ne $self->username ) {
-										$ttl = 300;
+										$ttl = 3600;
 									}
 								}
 								# call to /me is super popular, and content changes rarely - cache for a while
 								elsif ( !$ttl && $response->url =~ m|/me$| ) {
-									$ttl = 15 * 60;
+									$ttl = 60 * 60;
 								}
 
 								$ttl ||= 60;		# we're going to always cache for a minute, as we often do follow up calls while navigating
@@ -1495,5 +1494,9 @@ sub canPodcast {
 sub _DEFAULT_LIMIT {
 	Plugins::Spotty::Plugin->hasDefaultIcon() ? DEFAULT_LIMIT : MAX_LIMIT;
 };
+
+sub _PLAYLIST_CACHE_TTL {
+	Plugins::Spotty::Plugin->hasDefaultIcon() ? 8*3600 : 3600;
+}
 
 1;
