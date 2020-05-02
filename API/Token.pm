@@ -105,15 +105,23 @@ sub _pollTokenHelper {
 		unlink $self->_tmpfile;
 
 		my $token = $self->_gotTokenInfo($response, $self->api->username || 'generic');
-
-		my $cbs = $self->_callbacks();
-		$self->_callbacks([]);
-		foreach (@$cbs) {
-			$_->($token);
-		}
+		$self->_callCallbacks($token);
+	}
+	elsif ($self && $self->_proc && $self->_proc->alive) {
+		Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper);
 	}
 	else {
-		Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper);
+		$self->_killTokenHelper(0, 'Token refresh call helper has closed unexpectedly? - Please consider re-setting your Spotify credentials.');
+	}
+}
+
+sub _callCallbacks {
+	my ($self, $token) = @_;
+
+	my $cbs = $self->_callbacks();
+	$self->_callbacks([]);
+	foreach (@$cbs) {
+		$_->($token);
 	}
 }
 
@@ -161,12 +169,14 @@ sub _gotTokenInfo {
 }
 
 sub _killTokenHelper {
-	my ($self, $active) = @_;
+	my ($self, $active, $msg) = @_;
 
 	Slim::Utils::Timers::killTimers($self, \&_pollTokenHelper);
 	Slim::Utils::Timers::killTimers($self, \&_killTokenHelper);
 
-	$log->warn('Timed out waiting for a token') unless $active;
+	$log->error($msg || 'Timed out waiting for a token') unless $active;
+
+	$self->_callCallbacks() if $self && !$active;
 
 	if ($self && $self->_proc && $self->_proc->alive) {
 		$self->_proc->die();
