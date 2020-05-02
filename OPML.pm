@@ -169,6 +169,19 @@ sub handleFeed {
 	$spotty->featuredPlaylists( sub {
 		my ($lists, $message) = @_;
 
+		# if we didn't get any playlists nor token, then something's wrong
+		if ( !($lists && ref $lists && scalar @$lists && $message) && !$spotty->getTokenFromCache ) {
+			$log->warn('Failed to get featured playlists and/or token - do not continue');
+			$cb->({
+				items => [{
+					name => cstring($client, 'PLUGIN_SPOTTY_ERROR_NO_ACCESS_TOKEN') . "\n" . cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
+					type => 'textarea'
+				}]
+			});
+
+			return;
+		}
+
 		# Build main menu structure
 		my $items = [];
 

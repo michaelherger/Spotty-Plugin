@@ -79,9 +79,7 @@ sub getToken {
 		return $cb->(-429) ;
 	}
 
-	my $username = $self->username || 'generic';
-
-	my $token = $cache->get('spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($username));
+	my $token = $self->getTokenFromCache;
 
 	if (main::DEBUGLOG && $log->is_debug) {
 		if ($token) {
@@ -98,6 +96,13 @@ sub getToken {
 	else {
 		Plugins::Spotty::API::Token->get($self, $cb);
 	}
+}
+
+sub getTokenFromCache {
+	my ($self) = @_;
+
+	my $username = $self->username || 'generic';
+	return $cache->get('spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($username));
 }
 
 sub me {
