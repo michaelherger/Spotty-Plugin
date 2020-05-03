@@ -199,7 +199,7 @@ sub get {
 
 		return $class->_gotTokenInfo(`$cmd 2>&1`, $accountId || '_scanner');
 	}
-	elsif (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) {
+	elsif ( (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) && !$prefs->get('disableAsyncTokenRefresh') ) {
 		my $proc = $procs{$api};
 
 		if ( !($proc && $proc->_proc && $proc->_proc->alive()) ) {

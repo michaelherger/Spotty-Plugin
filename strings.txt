@@ -176,6 +176,10 @@ PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED
 	DE	Überwache die Verbindung der Spotty Connect Helferanwendung mit den Spotify Servern. Dies kann helfen, wenn Spotty Connect aktivierte Geräte regelmässig aus den Spotify-Anwendungen verschwinden.
 	EN	Monitor the connection of the Spotty Connect helper with the Spotify servers. This can be useful if your Spotty Connect enabled devices regularly disappear from the Spotify apps.
 
+PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH
+	DE	Deaktiviere asynchronen Token Refresh. Bitte beachten Sie, dass dies ihr Logitech Media Server System u.U. für ein paar Sekunden blockieren kann.
+	EN	Disable asynchronous token refresh call. Please note that this can potentially block your Logitech Media Server for a few seconds.
+
 PLUGIN_SPOTTY_ADVANCED_SETTING
 	DE	Erweiterte Einstellungen
 	EN	Advanced Settings

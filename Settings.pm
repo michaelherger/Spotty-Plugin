@@ -46,6 +46,7 @@ sub page {
 sub prefs {
 	my @prefs = qw(myAlbumsOnly bitrate iconCode accountSwitcherMenu helper optimizePreBuffer);
 	push @prefs, 'disableDiscovery', 'checkDaemonConnected' if Plugins::Spotty::Plugin->canDiscovery();
+	push @prefs, 'disableAsyncTokenRefresh' if Plugins::Spotty::Helper->getCapability('save-token');
 	return ($prefs, @prefs);
 }
 
@@ -154,6 +155,7 @@ sub beforeRender {
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
 	$paramRef->{canConnect}     = Plugins::Spotty::Connect->canSpotifyConnect();
+	$paramRef->{canAsyncTokenRefresh} = Plugins::Spotty::Helper->getCapability('save-token');
 
 	$paramRef->{hasDefaultIcon} = Plugins::Spotty::Plugin->hasDefaultIcon();
 
