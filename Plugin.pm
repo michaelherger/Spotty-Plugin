@@ -196,6 +196,12 @@ sub onlineLibraryNeedsUpdate {
 	$cb->() if $cb && ref $cb && ref $cb eq 'CODE';
 }
 
+sub getLibraryStats { if (CAN_IMPORTER) {
+	require Plugins::Spotty::Importer;
+	my $totals = Plugins::Spotty::Importer->getLibraryStats();
+	return wantarray ? ('PLUGIN_SPOTTY_NAME', $totals) : $totals;
+} }
+
 sub updateTranscodingTable {
 	my $class = shift || __PACKAGE__;
 	my $client = shift;
