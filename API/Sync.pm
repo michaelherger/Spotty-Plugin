@@ -326,7 +326,23 @@ sub _call {
 		@headers
 	);
 
+	# try again in x seconds
 	if ($response->code =~ /429/) {
+		my $retryAfter = ($response->headers->{'retry-after'} || 5) + 1;
+		main::INFOLOG && $log->is_info && $log->info("Got rate limited - try again in $retryAfter seconds...");
+		sleep $retryAfter;
+
+		$response = Slim::Networking::SimpleSyncHTTP->new()->get(
+			sprintf(API_URL, $url),
+			@headers
+		);
+	}
+
+	if ($response->code =~ /429/) {
+		my $retryAfter = ($response->headers->{'retry-after'} || 5) + 1;
+		$log->warn("Got rate limited - waiting $retryAfter seconds before continuing...");
+		sleep $retryAfter;
+
 		return {
 			error => 429
 		};
