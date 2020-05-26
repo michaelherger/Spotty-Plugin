@@ -193,7 +193,7 @@ sub getMetadataFor {
 
 	if (!$meta && $uri !~ /^spotify:connect-/) {
 		# grab missing metadata asynchronously
-		main::INFOLOG && $log->is_info && $log->info("No metadata found - need to look online");
+		main::INFOLOG && $log->is_info && $log->info("No metadata found - need to look online: $uri");
 		$class->getBulkMetadata($client, $song ? undef : $url);
 		$meta = {};
 	}

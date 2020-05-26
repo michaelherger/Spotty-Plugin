@@ -168,6 +168,7 @@ sub normalize {
 		$item->{image} ||= $self->getLargestArtwork(delete $item->{images}) if $item->{images};
 		$item->{album}->{image} ||= $self->getLargestArtwork(delete $item->{show}->{images}) if $item->{show}->{images};
 		$item->{album}->{image} ||= $self->getLargestArtwork(delete $item->{album}->{images}) if $item->{album}->{images};
+		_removeUnused($item->{album});
 
 		delete $item->{show}->{available_markets};
 		$item->{artists} ||= [{ name => $item->{publisher} }] if $item->{publisher};
@@ -175,6 +176,7 @@ sub normalize {
 		$item->{artists} ||= $item->{album}->{artists} if $item->{album}->{artists};
 
 		# Cache all tracks for use in track_metadata
+		_removeUnused($item);
 		$cache->set( $item->{uri}, $item, CACHE_TTL ) if $item->{uri} && (!$fast || !$cache->get( $item->{uri} ));
 	}
 	# track

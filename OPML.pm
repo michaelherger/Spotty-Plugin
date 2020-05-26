@@ -1115,7 +1115,7 @@ sub trackList {
 			my $artist = join( ', ', map { $_->{name} } @{ $track->{artists} } );
 			my $album  = $track->{album}->{name};
 
-			my ($track_uri) = $track->{uri} =~ /^spotify:(track:.+)/;
+			my ($track_uri) = $track->{uri} =~ /^spotify:((?:track|episode):.+)/;
 
 			if ( my $i = $track->{album}->{image} ) {
 				$image = $i;
