@@ -193,7 +193,7 @@ sub tracks {
 	my ($self, $ids) = @_;
 
 	my $tracks;
-	$ids = [ sort map { s/^spotify:track://; $_ } @$ids ];
+	$ids = [ sort map { s/^spotify:(episode|track)://; $_ } @$ids ];
 	while (my @ids = splice(@$ids, 0, SPOTIFY_LIMIT)) {
 		my $response = $self->_call('tracks', {
 			ids => join(',', @ids),
@@ -201,7 +201,7 @@ sub tracks {
 		});
 
 		if ( $response && $response->{tracks} && ref $response->{tracks} ) {
-			push @$tracks, map { $libraryCache->normalize($_) } grep { $_->{uri} =~ /^spotify:track:/ } @{ $response->{tracks} };
+			push @$tracks, map { $libraryCache->normalize($_) } grep { $_->{uri} =~ /^spotify:(episode|track):/ } @{ $response->{tracks} };
 		}
 	}
 
@@ -261,7 +261,7 @@ sub playlistTrackIDs {
 				$libraryCache->normalize($_->{track}) if $getFullData;
 				$_->{track}->{uri};
 			} grep {
-				$_->{track} && ref $_->{track} && $_->{track}->{uri} && $_->{track}->{uri} =~ /^spotify:track:/
+				$_->{track} && ref $_->{track} && $_->{track}->{uri} && $_->{track}->{uri} =~ /^spotify:(episode|track):/
 			} @{$response->{items}};
 			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 		}
