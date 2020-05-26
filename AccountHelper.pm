@@ -318,28 +318,28 @@ sub getAllCredentials {
 		}
 	}
 
-	if (!main::SCANNER && Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 && scalar keys %$credentials > 1) {
-		require Slim::Music::VirtualLibraries;
+	# if (!main::SCANNER && Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 && scalar keys %$credentials > 1) {
+	# 	require Slim::Music::VirtualLibraries;
 
-		# this is just a stub to make LMS include the library - but it's all created in the importer
-		# while (my ($account, $accountId) = each %$accounts) {
-		foreach my $account (keys %$credentials) {
-			my $accountId = $credentials->{$account};
-			Slim::Music::VirtualLibraries->unregisterLibrary($accountId);
-			Slim::Music::VirtualLibraries->registerLibrary({
-				id => $accountId,
-				name => $class->getDisplayName($account) . ' (Spotty)',
-				scannerCB => sub {}
-			});
+	# 	# this is just a stub to make LMS include the library - but it's all created in the importer
+	# 	# while (my ($account, $accountId) = each %$accounts) {
+	# 	foreach my $account (keys %$credentials) {
+	# 		my $accountId = $credentials->{$account};
+	# 		Slim::Music::VirtualLibraries->unregisterLibrary($accountId);
+	# 		Slim::Music::VirtualLibraries->registerLibrary({
+	# 			id => $accountId,
+	# 			name => $class->getDisplayName($account) . ' (Spotty)',
+	# 			scannerCB => sub {}
+	# 		});
 
-			Slim::Music::VirtualLibraries->unregisterLibrary($accountId . 'AndLocal');
-			Slim::Music::VirtualLibraries->registerLibrary({
-				id => $accountId . 'AndLocal',
-				name => Slim::Utils::Strings::string('PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY', $class->getDisplayName($account)),
-				scannerCB => sub {}
-			});
-		}
-	}
+	# 		Slim::Music::VirtualLibraries->unregisterLibrary($accountId . 'AndLocal');
+	# 		Slim::Music::VirtualLibraries->registerLibrary({
+	# 			id => $accountId . 'AndLocal',
+	# 			name => Slim::Utils::Strings::string('PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY', $class->getDisplayName($account)),
+	# 			scannerCB => sub {}
+	# 		});
+	# 	}
+	# }
 
 	$credsCache = $credentials if scalar keys %$credentials;
 	return $credentials;
