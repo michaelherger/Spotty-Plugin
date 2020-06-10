@@ -1051,6 +1051,22 @@ sub show {
 	);
 }
 
+sub episodes {
+	my ( $self, $cb, $args ) = @_;
+
+	my ($id) = $args->{id};
+
+	Plugins::Spotty::API::Pipeline->new($self, "shows/$id/episodes", sub {
+		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
+			return [ map { $libraryCache->normalize($_) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
+		}
+	}, $cb, {
+		market => 'from_token',
+		limit  => min($args->{limit} || DEFAULT_LIMIT, DEFAULT_LIMIT),
+		offset => $args->{offset} || 0,
+	})->get();
+}
+
 sub addShowToLibrary {
 	my ( $self, $cb, $showIds ) = @_;
 

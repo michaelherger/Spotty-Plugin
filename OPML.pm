@@ -611,34 +611,34 @@ sub shows {
 sub show {
 	my ($client, $cb, $params, $args) = @_;
 
-	Plugins::Spotty::Plugin->getAPIHandler($client)->show(sub {
-		my ($show) = @_;
+	Plugins::Spotty::Plugin->getAPIHandler($client)->episodes(sub {
+		my ($episodes) = @_;
 
 		if ($prefs->client($client)->get('reversePodcastOrder')) {
-			$show->{episodes} = [ reverse @{$show->{episodes}}];
+			$episodes = [ reverse @$episodes ];
 		}
 
-		my $items = episodesList($client, $show->{episodes});
+		my $items = episodesList($client, $episodes);
 
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_SHOW_TO_LIBRARY'),
 			url  => \&addShowToLibrary,
-			passthrough => [{ id => $show->{id}, name => $show->{name} }],
+			passthrough => [{ id => $args->{id}, name => $args->{name} }],
 			nextWindow => 'parent'
 		};
 
-		if ($show->{description}) {
+		if ($args->{description}) {
 			push @$items, {
 				name => cstring($client, 'DESCRIPTION'),
 				items => [{
-					name => $show->{description},
+					name => $args->{description},
 					type => 'textarea'
 				}]
 			};
 		}
 
-		if ($show->{languages}) {
-			my $lang = ref $show->{languages} ? join(', ', map { uc } @{$show->{languages}}) : uc($show->{languages});
+		if ($args->{languages}) {
+			my $lang = ref $args->{languages} ? join(', ', map { uc } @{$args->{languages}}) : uc($args->{languages});
 			push @$items, {
 				name => cstring($client, 'LANGUAGE') . cstring($client, 'COLON') . " $lang",
 				type => 'text'
@@ -647,7 +647,7 @@ sub show {
 
 		$cb->({ items => $items });
 	}, {
-		uri => $params->{uri} || $args->{uri}
+		id => $args->{id}
 	});
 }
 
@@ -1288,7 +1288,11 @@ sub podcastList {
 			favorites_url => $show->{uri},
 			image => $show->{image} || IMG_PODCAST,
 			passthrough => [{
-				uri => $show->{uri}
+				uri => $show->{uri},
+				id  => $show->{id},
+				name => $show->{name},
+				description => $show->{description},
+				languages   => $show->{languages},
 			}]
 		};
 	}
