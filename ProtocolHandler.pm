@@ -19,6 +19,10 @@ my $serverPrefs = preferences('server');
 
 use constant IMG_TRACK => '/html/images/cover.png';
 
+# https://open.spotify.com/album/4qpB1EXFCmq0a209JGCsZt
+use constant PAGE_URL_REGEXP => qr{open.spotify.com/(.+)/([a-z0-9]+)};
+Slim::Player::ProtocolHandlers->registerURLHandler(PAGE_URL_REGEXP, __PACKAGE__) if Slim::Player::ProtocolHandlers->can('registerURLHandler');
+
 sub contentType { 'spt' }
 
 # transcoding needs a fix only available in 7.9.1
@@ -63,6 +67,13 @@ sub audioScrobblerSource { 'P' }
 
 sub explodePlaylist {
 	my ( $class, $client, $uri, $cb ) = @_;
+
+	if ($uri =~ PAGE_URL_REGEXP) {
+		my $uriInfo = Plugins::Spotty::OPML::parseUri($uri);
+		if ($uriInfo && ref $uriInfo && $uriInfo->{uri}) {
+			$uri = $uriInfo->{uri};
+		}
+	}
 
 	main::INFOLOG && $log->is_info && $log->info("Explode URI: $uri");
 	if ($uri =~ m|/connect-\d+|) {
