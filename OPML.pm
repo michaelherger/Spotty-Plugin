@@ -346,6 +346,11 @@ sub search {
 		elsif ($uriInfo->{type} eq 'show') {
 			return show($client, $cb, $params, $args);
 		}
+		elsif ($uriInfo->{type} =~ /^(track|episode)$/) {
+			return Plugins::Spotty::Plugin->getAPIHandler($client)->trackCached(sub {
+				$cb->({ items => trackList($client, [shift]) });
+			}, $args->{uri});
+		}
 	}
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
