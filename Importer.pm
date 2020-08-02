@@ -31,6 +31,10 @@ my $cache = Slim::Utils::Cache->new();
 
 my $dbh;
 
+my $_cleanupTags = $prefs->get('cleanupTags')
+	? sub { Plugins::Spotty::API::Cache->cleanupTags($_[0]) }
+	: sub { $_[0] };
+
 sub initPlugin {
 	my $class = shift;
 
@@ -424,11 +428,11 @@ sub _prepareTrack {
 
 	return {
 		url          => $item->{uri},
-		TITLE        => $item->{name},
+		TITLE        => $_cleanupTags->($item->{name}),
 		ARTIST       => $artist,
 		ARTIST_EXTID => $extId,
 		TRACKARTIST  => join($splitChar, map { $_->{name} } @{ $item->{artists} }),
-		ALBUM        => $item->{album}->{name},
+		ALBUM        => $_cleanupTags->($item->{album}->{name}),
 		ALBUM_EXTID  => $item->{album}->{uri},
 		TRACKNUM     => $item->{track_number},
 		GENRE        => 'Spotify',

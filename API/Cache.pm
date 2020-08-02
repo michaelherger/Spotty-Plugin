@@ -85,6 +85,19 @@ sub getLargestArtwork {
 	return '';
 }
 
+sub cleanupTags {
+	my ($class, $text) = @_;
+	# remove additions like "remaster", "Deluxe edition" etc.
+	# $text =~ s/(?<!^)[\(\[].*?[\)\]]//g if $text !~ /Peter Gabriel .*\b[1-4]\b/i;
+	$text =~ s/[([][^)\]]*?(deluxe|edition|remaster|live|anniversary)[^)\]]*?[)\]]//ig;
+	$text =~ s/ -[^-]*(deluxe|edition|remaster|live|anniversary).*//ig;
+
+	$text =~ s/\s*$//;
+	$text =~ s/^\s*//;
+
+	return $text;
+}
+
 sub normalize {
 	my ($self, $item, $fast) = @_;
 

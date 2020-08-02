@@ -217,8 +217,8 @@ sub getMetadataFor {
 	$meta->{icon}    ||= IMG_TRACK;
 
 	if ($prefs->get('cleanupTags')) {
-		$meta->{title} = _cleanupTags($meta->{title});
-		$meta->{album} = _cleanupTags($meta->{album});
+		$meta->{title} = Plugins::Spotty::API::Cache->cleanupTags($meta->{title});
+		$meta->{album} = Plugins::Spotty::API::Cache->cleanupTags($meta->{album});
 	}
 
 	if ($song) {
@@ -231,19 +231,6 @@ sub getMetadataFor {
 	}
 
 	return $meta;
-}
-
-sub _cleanupTags {
-	my ($text) = @_;
-	# remove additions like "remaster", "Deluxe edition" etc.
-	# $text =~ s/(?<!^)[\(\[].*?[\)\]]//g if $text !~ /Peter Gabriel .*\b[1-4]\b/i;
-	$text =~ s/[([][^)\]]*?(deluxe|edition|remaster|live|anniversary)[^)\]]*?[)\]]//ig;
-	$text =~ s/ -[^-]*(deluxe|edition|remaster|live|anniversary).*//ig;
-
-	$text =~ s/\s*$//;
-	$text =~ s/^\s*//;
-
-	return $text;
 }
 
 my $fetchingMeta;
