@@ -55,6 +55,7 @@ sub initPlugin {
 
 	$prefs->init({
 		country => 'US',
+		cleanupTags => 1,
 		bitrate => 320,
 		iconCode => \&_initIcon,
 		tracksSincePurge => 0,

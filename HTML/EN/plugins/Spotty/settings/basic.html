@@ -45,6 +45,11 @@
 		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
 	[% END %]
 
+	[% WRAPPER setting title="" desc="" %]
+		<input name="pref_cleanupTags" id="pref_cleanupTags" type="checkbox" [% IF prefs.pref_cleanupTags %] checked [% END %]>
+		<label for="pref_cleanupTags">[% "PLUGIN_SPOTTY_CLEANUP_TAGS" | string %]</label>
+	[% END %]
+
 	[% WRAPPER setting title="PLUGIN_SPOTTY_AUDIO_SETTINGS" desc="" %]
 		<select class="stdedit" name="pref_bitrate" id="pref_bitrate">
 
