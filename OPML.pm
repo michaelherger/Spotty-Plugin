@@ -183,7 +183,12 @@ sub handleFeed {
 		}
 
 		# Build main menu structure
-		my $items = [];
+		my $items = [{
+			name  => cstring($client, 'HOME'),
+			type  => 'link',
+			image => IMG_WHATSNEW,
+			url   => \&home,
+		}];
 
 		if ( hasRecentSearches() ) {
 			push @{$items}, {
@@ -321,6 +326,34 @@ sub handleFeed {
 			items => $items,
 		});
 	} );
+}
+
+sub home {
+	my ($client, $cb, $params) = @_;
+
+	Plugins::Spotty::Plugin->getAPIHandler($client)->home(sub {
+		my ($homeItems) = @_;
+
+warn Data::Dump::dump($homeItems);
+		my $items = [];
+
+		foreach my $group (@$homeItems) {
+			if ($group->{name} && $group->{content} && $group->{content}->{items} && scalar @{$group->{content}->{items}}) {
+				my $item = {
+					type => 'outline',
+					name => $group->{name},
+				};
+
+				$item->{name2} = $group->{tag_line} if $group->{tag_line};
+
+				$item->{items} = [];
+
+				push @$items, $item;
+			}
+		}
+
+		$cb->({ items => $items });
+	});
 }
 
 sub search {

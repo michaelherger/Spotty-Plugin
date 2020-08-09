@@ -122,6 +122,34 @@ sub me {
 	);
 }
 
+sub home {
+	my ( $self, $cb ) = @_;
+
+	$self->_call('views/desktop-home', sub {
+		my ($result) = @_;
+
+warn Data::Dump::dump($result);
+		my $items = [ map {
+			{
+				name  => $_->{name},
+				id    => $_->{id},
+				image => $libraryCache->getLargestArtwork($_->{icons})
+			}
+		} @{$result->{content}->{items}} ];
+
+		$cb->($items);
+	}, GET => {
+		content_limit => 10,
+		locale => $self->locale,
+		# platform => 'web',
+		country => $self->country,
+		timestamp => _getTimestamp(),
+		types => 'album,playlist,artist,show,station',
+		# limit => 20,
+		# offset => 0,
+	})
+}
+
 # get the username - keep it simple. Shouldn't change, don't want nested async calls...
 sub username {
 	my ($self, $username) = @_;
@@ -1193,13 +1221,9 @@ sub categoryPlaylists {
 sub featuredPlaylists {
 	my ( $self, $cb ) = @_;
 
-	# let's manipulate the timestamp so we only pull updates every few minutes
-	my $timestamp = strftime("%Y-%m-%dT%H:%M:00", localtime(time()));
-	$timestamp =~ s/\d(:00)$/0$1/;
-
 	my $params = {
 		locale => $self->locale,
-		timestamp => $timestamp
+		timestamp => _getTimestamp(),
 	};
 
 	$self->browse($cb, 'featured-playlists', 'playlists', $params);
@@ -1267,12 +1291,20 @@ sub _isPlayable {
 	return 1;
 }
 
+sub _getTimestamp {
+	# let's manipulate the timestamp so we only pull updates every few minutes
+	my $timestamp = strftime("%Y-%m-%dT%H:%M:00", localtime(time()));
+	$timestamp =~ s/\d(:00)$/0$1/;
+	return $timestamp;
+}
+
 sub _call {
 	my ( $self, $url, $cb, $type, $params ) = @_;
 
 	$self->getToken(sub {
 		my ($token) = @_;
 
+warn $token;
 		if ( !$token || $token =~ /^-(\d+)$/ ) {
 			my $error = $1 || 'NO_ACCESS_TOKEN';
 			$error = 'NO_ACCESS_TOKEN' if $error !~ /429/;
