@@ -14,13 +14,17 @@
 		<div style="color: red">[% error429 %]</div>
 	[% END; END %]
 
-	[% IF credentials; WRAPPER setting desc="" %]
+	[% IF credentials; WRAPPER setting desc="PLUGIN_SPOTTY_WEB_TOKEN_DESC" %]
 		<table>
 		[% FOREACH creds = credentials %]
+			[% accountName = creds.keys.0; accountId = creds.values.0 %]
 			<tr>
-				<td style="vertical-align: middle; padding-right: 10px">[% creds.keys.0 %]</td>
+				<td style="vertical-align: middle; padding-right: 20px">[% accountName %]</td>
+				<td style="vertical-align: middle; padding-right: 10px">
+					[% "PLUGIN_SPOTTY_WEB_TOKEN" | string %]: <input type="text" name="pref_webtoken_[% accountId %]" value="[% spottyWebTokens.$accountId %]" class="stdedit" size="80">
+				</td>
 				<td>
-					<input name="delete_[% creds.values.0 %]" type="submit" value="[% "DELETE" | string %]" class="stdclick" />
+					<input name="delete_[% accountId %]" type="submit" value="[% "DELETE" | string %]" class="stdclick" />
 				</td>
 			</tr>
 		[% END %]

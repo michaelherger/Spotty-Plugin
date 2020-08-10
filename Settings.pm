@@ -113,6 +113,15 @@ sub handler {
 		if ($paramRef->{clearSearchHistory}) {
 			$prefs->set('spotify_recent_search', []);
 		}
+
+		my $webTokens = $prefs->get('webTokens') || {};
+		foreach my $prefName (keys %$paramRef) {
+			if ($prefName =~ /^pref_webtoken_(.*)/) {
+				$webTokens->{$1} = $paramRef->{$prefName};
+				$webTokens->{$1} =~ s/^sp_dc=//;
+			}
+		}
+		$prefs->set('webTokens', $webTokens);
 	}
 
 	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::AccountHelper->hasCredentials()) ) {
@@ -152,6 +161,7 @@ sub beforeRender {
 
 	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
 
+	$paramRef->{spottyWebTokens}= $prefs->get('webTokens') || {};
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
 	$paramRef->{canConnect}     = Plugins::Spotty::Connect->canSpotifyConnect();

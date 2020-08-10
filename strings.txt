@@ -8,6 +8,11 @@ PLUGIN_SPOTTY_NAME
 SPT
 	EN	Spotty
 
+PLUGIN_SPOTTY_HOME
+	DE	Start
+	EN	Home
+	FR	Accueil
+
 PLUGIN_SPOTTY_NOT_AUTHORIZED
 	DE	Spotify Anmeldedaten fehlen
 	EN	Spotify Credentials missing
@@ -31,6 +36,14 @@ PLUGIN_SPOTTY_AUTH_RESET
 PLUGIN_SPOTTY_ADD_ACCOUNT
 	DE	Konto hinzufügen
 	EN	Add Account
+
+PLUGIN_SPOTTY_WEB_TOKEN
+	DE	Web Token
+	EN	Web token
+
+PLUGIN_SPOTTY_WEB_TOKEN_DESC
+	DE	Das Web Token erlaubt es, auf Inhalte Zugriffe zu erhalten, die sonst nicht verfügbar sind. Es muss im Browser, in welchem du dich bei <a href="https://open.spotify.com" target="_blank">open.spotify.com</a> angemeldet hast, exportiert werden. Es ist ein Cookie mit Namen "sp_dc" und besteht aus einer langen Zeichenkette.
+	EN	The Web Token gives you access to resources which otherwise would not be available to you. You have to export it from your browser's cookies for <a href="https://open.spotify.com" target="_blank">open.spotify.com</a>. It's called "sp_dc" and has a large number of characters.
 
 PLUGIN_SPOTTY_USERNAME
 	DE	Spotify Benutzername

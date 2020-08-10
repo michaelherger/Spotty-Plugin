@@ -123,31 +123,8 @@ sub me {
 }
 
 sub home {
-	my ( $self, $cb ) = @_;
-
-	$self->_call('views/desktop-home', sub {
-		my ($result) = @_;
-
-warn Data::Dump::dump($result);
-		my $items = [ map {
-			{
-				name  => $_->{name},
-				id    => $_->{id},
-				image => $libraryCache->getLargestArtwork($_->{icons})
-			}
-		} @{$result->{content}->{items}} ];
-
-		$cb->($items);
-	}, GET => {
-		content_limit => 10,
-		locale => $self->locale,
-		# platform => 'web',
-		country => $self->country,
-		timestamp => _getTimestamp(),
-		types => 'album,playlist,artist,show,station',
-		# limit => 20,
-		# offset => 0,
-	})
+	require Plugins::Spotty::API::Web;
+	Plugins::Spotty::API::Web->home(@_);
 }
 
 # get the username - keep it simple. Shouldn't change, don't want nested async calls...
@@ -1304,7 +1281,6 @@ sub _call {
 	$self->getToken(sub {
 		my ($token) = @_;
 
-warn $token;
 		if ( !$token || $token =~ /^-(\d+)$/ ) {
 			my $error = $1 || 'NO_ACCESS_TOKEN';
 			$error = 'NO_ACCESS_TOKEN' if $error !~ /429/;
