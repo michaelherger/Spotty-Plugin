@@ -25,7 +25,10 @@ sub getToken {
 
 	$user ||= 'generic';
 
+	main::INFOLOG && $log->is_info && $log->info("Getting web token for $user: " . Slim::Utils::DbCache::_key('spotty_access_token_web' . $user));
+
 	if (my $cached = $cache->get('spotty_access_token_web' . $user)) {
+		main::INFOLOG && $log->is_info && $log->info("Found cached web access token for $user: $cached");
 		$cb->($cached);
 		return;
 	}
@@ -36,10 +39,12 @@ sub getToken {
 		my $response = shift || {};
 
 		if ($response && ref $response && $response->{accessToken}) {
-			$cache->set('spotty_access_token_web' . $user, $response->{accessToken}, $response->{accessTokenExpirationTimestampMs} / 1000);
+			$cache->set('spotty_access_token_web' . $user, $response->{accessToken}, 1800);
 			$cb->($response->{accessToken});
 		}
 		else {
+			$log->warn("Failed to get web token for $user");
+			main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response)) if $response;
 			$cb->();
 		}
 	},{
@@ -55,6 +60,8 @@ sub home {
 	my $username = $api->username || 'generic';
 
 	if (my $cached = $cache->get("spotty_webhome_$username")) {
+		main::INFOLOG && $log->is_info && $log->info(sprintf('Returning cached Home menu structure for %s (%s)', $username, Slim::Utils::DbCache::_key("spotty_webhome_$username")));
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
 		$cb->($cached);
 		return;
 	}
@@ -79,6 +86,8 @@ sub home {
 		} @{$result->{content}->{items}} ];
 
 		$cache->set("spotty_webhome_$username", $items, 3600);
+
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
 		$cb->($items);
 	},{
 		content_limit => 20,
@@ -123,7 +132,13 @@ sub _call {
 
 				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
 
-				$cb->($result, $response);
+				$cb->($result);
+			}
+			else {
+				$log->warn("Failed to get web page");
+
+				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
+				$cb->();
 			}
 		},
 		sub {
@@ -138,19 +153,23 @@ sub _call {
 
 			main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
 			$cb->({
-				name => 'Unknown error: ' . $error,
-				type => 'text'
-			}, $response);
+				error => 'Unexpected error: ' . $error,
+			});
 		}
 	);
 
 	if ($url =~ /get_access_token/) {
+		main::INFOLOG && $log->is_info && $log->info("Get Web Token call: $url");
+		warn Data::Dump::dump(\@headers);
 		$http->get($url, @headers);
 	}
 	else {
 		$class->getToken(sub {
 			my $token = shift;
 			push @headers, 'Authorization' => 'Bearer ' . $token;
+
+			main::INFOLOG && $log->is_info && $log->info("Web API call: $url");
+			warn Data::Dump::dump(\@headers);
 
 			$http->get($url, @headers);
 		}, $params->{_user});
