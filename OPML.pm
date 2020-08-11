@@ -377,6 +377,16 @@ sub home {
 					$innerItem;
 				} @{$group->{items}} ];
 
+				if ($group->{id} =~ /podcast/) {
+					$item->{image} = IMG_PODCAST;
+				}
+				elsif ($group->{id} =~ /favorite-albums|NMF-NRFY|inspired-by-recent-albums/) {
+					$item->{image} = IMG_ALBUM;
+				}
+				else {
+					$item->{image} = IMG_PLAYLIST;
+				}
+
 				push @$items, $item;
 			}
 		}
