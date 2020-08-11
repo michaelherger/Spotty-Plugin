@@ -35,6 +35,11 @@ sub getToken {
 
 	my $webTokens = $prefs->get('webTokens') || {};
 
+	my $cookieJar = Slim::Networking::Async::HTTP::cookie_jar();
+	$cookieJar->set_cookie(0, 'sp_dc', $webTokens->{$user} || '', '/', 'open.spotify.com');
+	$cookieJar->set_cookie(0, 'sp_dc', $webTokens->{$user} || '', '/', '.spotify.com');
+	$cookieJar->save();
+
 	$class->_call('https://open.spotify.com/get_access_token', sub {
 		my $response = shift || {};
 
@@ -50,7 +55,6 @@ sub getToken {
 	},{
 		reason => 'transport',
 		productType => 'web_player',
-		_headers => ['Cookie' => 'sp_dc=' . $webTokens->{$user}],
 	});
 }
 
@@ -160,7 +164,7 @@ sub _call {
 
 	if ($url =~ /get_access_token/) {
 		main::INFOLOG && $log->is_info && $log->info("Get Web Token call: $url");
-		warn Data::Dump::dump(\@headers);
+		# warn Data::Dump::dump(\@headers);
 		$http->get($url, @headers);
 	}
 	else {
@@ -169,7 +173,7 @@ sub _call {
 			push @headers, 'Authorization' => 'Bearer ' . $token;
 
 			main::INFOLOG && $log->is_info && $log->info("Web API call: $url");
-			warn Data::Dump::dump(\@headers);
+			# warn Data::Dump::dump(\@headers);
 
 			$http->get($url, @headers);
 		}, $params->{_user});
