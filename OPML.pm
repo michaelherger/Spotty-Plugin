@@ -18,14 +18,17 @@ use Slim::Utils::Strings qw(string cstring);
 use constant CAN_EXTID => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 
 use constant IMG_TRACK => '/html/images/cover.png';
+use constant IMG_HOME => 'plugins/Spotty/html/images/home.png';
 use constant IMG_ALBUM => 'plugins/Spotty/html/images/album.png';
 use constant IMG_PODCAST => 'plugins/Spotty/html/images/podcasts.png';
 use constant IMG_PLAYLIST => 'plugins/Spotty/html/images/playlist.png';
 use constant IMG_COLLABORATIVE => 'plugins/Spotty/html/images/playlist-collab.png';
 use constant IMG_SEARCH => 'plugins/Spotty/html/images/search.png';
-use constant IMG_HOME => 'plugins/Spotty/html/images/home.png';
 use constant IMG_ACCOUNT => 'plugins/Spotty/html/images/account.png';
+use constant IMG_ARTIST => 'plugins/Spotty/html/images/artist.png';
 use constant IMG_TOPTRACKS => 'plugins/Spotty/html/images/toptracks.png';
+use constant IMG_NEWS => 'plugins/Spotty/html/images/news.png';
+use constant IMG_GENRES => 'plugins/Spotty/html/images/genres.png';
 use constant IMG_INBOX => 'plugins/Spotty/html/images/inbox.png';
 
 use constant MAX_RECENT => 50;
@@ -215,7 +218,7 @@ sub handleFeed {
 		push @{$items}, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_WHATS_NEW'),
 			type  => 'link',
-			image => IMG_TOPTRACKS,
+			image => IMG_NEWS,
 			url   => \&whatsNew
 		},
 		{
@@ -230,7 +233,7 @@ sub handleFeed {
 		{
 			name  => cstring($client, 'PLUGIN_SPOTTY_GENRES_MOODS'),
 			type  => 'link',
-			image => IMG_INBOX,
+			image => IMG_GENRES,
 			url   => \&categories
 		};
 
@@ -250,7 +253,7 @@ sub handleFeed {
 		},{
 			name  => cstring($client, 'ARTISTS'),
 			type  => 'link',
-			image => IMG_ACCOUNT,
+			image => IMG_ARTIST,
 			url   => \&myArtists
 		},{
 			name  => cstring($client, 'PLAYLISTS'),
@@ -548,7 +551,7 @@ sub _searchItems {
 	} grep {
 		Plugins::Spotty::Helper->getCapability('podcasts') || $_->[1] !~ /^(?:show|episode)_/;
 	} (
-		[ 'ARTISTS', 'artist', IMG_ACCOUNT ],
+		[ 'ARTISTS', 'artist', IMG_ARTIST ],
 		[ 'ALBUMS', 'album', IMG_ALBUM ],
 		[ 'PLAYLISTS', 'playlist', IMG_PLAYLIST ],
 		[ 'SONGS', 'track', IMG_TRACK ],
@@ -858,7 +861,7 @@ sub album {
 				name  => $prefix . $artist,
 				url   => \&artist,
 				passthrough => [{ uri => $artists{$artist} }],
-				image => IMG_ACCOUNT,
+				image => IMG_ARTIST,
 			};
 		}
 
@@ -1317,7 +1320,7 @@ sub artistList {
 		my $item = {
 			name => $artist->{name},
 			textkey => $textkey,
-			image => $artist->{image} || IMG_ACCOUNT,
+			image => $artist->{image} || IMG_ARTIST,
 			url  => \&artist,
 			playlist => $artist->{uri},
 			favorites_url => $artist->{uri},
