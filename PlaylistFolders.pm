@@ -55,7 +55,7 @@ sub parse {
 	# don't continue if there are no groups - we're not interested in flat lists
 	return {} unless $data && $data =~ /\bstart-group\b/;
 
-	my @items = split /spotify:[use]/, $data;
+	my @items = split /spotify:[pse]/, $data;
 
 	my @stack = ();
 	my $parent = '/';
@@ -68,11 +68,9 @@ sub parse {
 		# the number of repeats coded into the protobuf file.
 		$item =~ s/(.*?)\r.*/$1/s;
 
-		if ($item =~ /^ser:/) {
-			# the last part of the URI is an ID which must be no longer than 22 characters
-			$item =~ s/^ser(?::[^:]*){0,1}(:playlist:[a-z0-9]{22}).*$/$1/i;
-
-			$map->{'spotify' . $item} = {
+		# the last part of the URI is an ID which must be no longer than 22 characters
+		if ($item =~ /^(laylist:[a-z0-9]{22}).*$/) {
+			$map->{"spotify:p$1"} = {
 				parent => $parent,
 				order => $i++
 			};
