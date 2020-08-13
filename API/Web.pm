@@ -3,7 +3,7 @@ package Plugins::Spotty::API::Web;
 use strict;
 
 use JSON::XS::VersionOneAndTwo;
-use URI::Escape qw(uri_escape_utf8);
+use URI::Escape qw(uri_escape_utf8 uri_unescape);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -13,6 +13,7 @@ require Plugins::Spotty::AccountHelper;
 require Plugins::Spotty::API::Cache;
 
 use constant API_URL => 'https://api.spotify.com/v1/%s';
+use constant PLAYLIST_TREE_URL => 'https://spclient.wg.spotify.com/playlist/v2/user/%s/rootlist';
 
 my $libraryCache = Plugins::Spotty::API::Cache->new();
 
@@ -21,34 +22,36 @@ my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
 
 sub getToken {
-	my ($class, $cb, $user) = @_;
+	my ($class, $api, $cb) = @_;
 
-	$user ||= 'generic';
+	my $webToken = Plugins::Spotty::AccountHelper->getWebToken($api->client);
+	my $username = $api->username || 'generic';
 
-	main::INFOLOG && $log->is_info && $log->info("Getting web token for $user: " . Slim::Utils::DbCache::_key('spotty_access_token_web' . $user));
+	main::INFOLOG && $log->is_info && $log->info("Getting web token for $username: " . Slim::Utils::DbCache::_key('spotty_access_token_web' . $username));
 
-	if (my $cached = $cache->get('spotty_access_token_web' . $user)) {
-		main::INFOLOG && $log->is_info && $log->info("Found cached web access token for $user: $cached");
+	if (my $cached = $cache->get('spotty_access_token_web' . $webToken)) {
+		main::INFOLOG && $log->is_info && $log->info("Found cached web access token for $username");
+		main::DEBUGLOG && $log->is_debug && $log->debug($cached);
 		$cb->($cached);
 		return;
 	}
 
-	my $webTokens = $prefs->get('webTokens') || {};
-
 	my $cookieJar = Slim::Networking::Async::HTTP::cookie_jar();
-	$cookieJar->set_cookie(0, 'sp_dc', $webTokens->{$user} || '', '/', 'open.spotify.com');
-	$cookieJar->set_cookie(0, 'sp_dc', $webTokens->{$user} || '', '/', '.spotify.com');
+	$cookieJar->set_cookie(0, 'sp_dc', $webToken || '', '/', 'open.spotify.com');
+	$cookieJar->set_cookie(0, 'sp_dc', $webToken || '', '/', '.spotify.com');
 	$cookieJar->save();
 
 	$class->_call('https://open.spotify.com/get_access_token', sub {
 		my $response = shift || {};
 
 		if ($response && ref $response && $response->{accessToken}) {
-			$cache->set('spotty_access_token_web' . $user, $response->{accessToken}, 1800);
+			$cache->set('spotty_access_token_web' . $username, $response->{accessToken}, 1800);
+			main::INFOLOG && $log->is_info && $log->info("Received web access token for $username");
+			main::DEBUGLOG && $log->is_debug && $log->debug($response->{accessToken});
 			$cb->($response->{accessToken});
 		}
 		else {
-			$log->warn("Failed to get web token for $user");
+			$log->warn("Failed to get web token for $username");
 			main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response)) if $response;
 			$cb->();
 		}
@@ -102,7 +105,75 @@ sub home {
 		types => 'album,playlist,artist,show,station',
 		limit => 20,
 		# offset => 0,
-		_user => Plugins::Spotty::AccountHelper->getAccount($api->client),
+		_api => $api,
+	});
+}
+
+sub getPlaylistHierarchy {
+	my ( $class, $api, $cb ) = @_;
+
+	my $username = $api->username || 'generic';
+	my $key = "spotty_playlisttree_$username";
+
+	if (my $cached = $cache->get($key)) {
+		main::INFOLOG && $log->is_info && $log->info("Returning cached playlist menu structure for $username");
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
+		$cb->($cached);
+		return;
+	}
+
+	$class->_call(sprintf(PLAYLIST_TREE_URL, $username), sub {
+		my ($data) = @_;
+
+		my $map;
+
+		if ($data && ref $data && $data->{contents} && ref $data->{contents} && $data->{contents}->{items} && ref $data->{contents}->{items}) {
+			$map = {};
+			my $i = 0;
+
+			my @stack = ();
+			my $parent = '/';
+
+			foreach my $playlistItem (@{$data->{contents}->{items}}) {
+				if (my ($name) = $playlistItem->{uri} =~ /^spotify:start-group:(.*)/) {
+					my @tags = split ':', $playlistItem->{uri};
+					my $name = uri_unescape($tags[-1]);
+					$name =~ s/\+/ /g;
+					$name = Slim::Utils::Unicode::utf8decode($name);
+
+					main::INFOLOG && $log->is_info && $log->info("Start Group $name : $parent ($i)");
+
+					$map->{$tags[-2]} = {
+						name => $name,
+						order => $i++,
+						isFolder => 1,
+						parent => $parent
+					};
+
+					push @stack, $parent;
+					$parent = $tags[-2];
+					main::INFOLOG && $log->is_info && $log->info("Start Group Push : $parent ($i)");
+				}
+				elsif ($playlistItem->{uri} =~ /^spotify:end-group/) {
+					$parent = pop @stack;
+					main::INFOLOG && $log->is_info && $log->info("End Group : $parent ($i)");
+				}
+				else {
+					$map->{$playlistItem->{uri}} = {
+						order => $i++,
+						parent => $parent
+					};
+				}
+			}
+		}
+
+		$cache->set($key, $map, 3600);
+
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($map));
+		$cb->($map);
+	},{
+		market => "from_token",
+		_api => $api,
 	});
 }
 
@@ -168,7 +239,7 @@ sub _call {
 		$http->get($url, @headers);
 	}
 	else {
-		$class->getToken(sub {
+		$class->getToken($params->{_api}, sub {
 			my $token = shift;
 			push @headers, 'Authorization' => 'Bearer ' . $token;
 
@@ -176,7 +247,7 @@ sub _call {
 			# warn Data::Dump::dump(\@headers);
 
 			$http->get($url, @headers);
-		}, $params->{_user});
+		});
 	}
 }
 

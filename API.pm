@@ -123,8 +123,14 @@ sub me {
 }
 
 sub home {
-	require Plugins::Spotty::API::Web;
-	Plugins::Spotty::API::Web->home(@_);
+	my ( $self, $cb ) = @_;
+
+	if ($self->_hasWebToken()) {
+		Plugins::Spotty::API::Web->home(@_);
+	}
+	else {
+		$cb->([]);
+	}
 }
 
 # get the username - keep it simple. Shouldn't change, don't want nested async calls...
@@ -1107,6 +1113,17 @@ sub playlists {
 	})->get();
 }
 
+sub getPlaylistHierarchy {
+	my ( $self, $cb ) = @_;
+
+	if ($self->_hasWebToken()) {
+		Plugins::Spotty::API::Web->getPlaylistHierarchy(@_);
+	}
+	else {
+		$cb->();
+	}
+}
+
 sub addTracksToPlaylist {
 	my ( $self, $cb, $playlist, $trackIds ) = @_;
 
@@ -1273,6 +1290,15 @@ sub _getTimestamp {
 	my $timestamp = strftime("%Y-%m-%dT%H:%M:00", localtime(time()));
 	$timestamp =~ s/\d(:00)$/0$1/;
 	return $timestamp;
+}
+
+sub _hasWebToken {
+	my ($self) = @_;
+
+	if (Plugins::Spotty::AccountHelper->getWebToken($self->client)) {
+		require Plugins::Spotty::API::Web;
+		return 1;
+	}
 }
 
 sub _call {

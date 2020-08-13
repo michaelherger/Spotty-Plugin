@@ -754,79 +754,81 @@ sub playlists {
 
 		my $items;
 
-		my $hierarchy = Plugins::Spotty::PlaylistFolders->getTree([ map {
+		Plugins::Spotty::PlaylistFolders->getTree($spotty, [ map {
 			$_->{uri};
-		} @$result ]);
+		} @$result ], sub {
+			my $hierarchy = shift;
 
-		if ($hierarchy) {
-			main::INFOLOG && $log->is_info && $log->info("Found playlist folder hierarchy! Let's use it: " . Data::Dump::dump($hierarchy));
+			if ($hierarchy) {
+				main::INFOLOG && $log->is_info && $log->info("Found playlist folder hierarchy! Let's use it: " . Data::Dump::dump($hierarchy));
 
-			my %tree;
-			foreach my $playlist (@$result) {
-				my $parent = '/';
-				my $node = $hierarchy->{$playlist->{uri}};
-				if ($node && ref $node) {
-					$parent = $node->{parent} || '/';
-				}
+				my %tree;
+				foreach my $playlist (@$result) {
+					my $parent = '/';
+					my $node = $hierarchy->{$playlist->{uri}};
+					if ($node && ref $node) {
+						$parent = $node->{parent} || '/';
+					}
 
-				$tree{$parent} ||= [];
-				push @{$tree{$parent}}, @{playlistList($client, [$playlist])};
-			}
-
-			foreach my $data (map {
-				$hierarchy->{$_}->{id} = $_;
-				$hierarchy->{$_};
-			} sort {
-				$hierarchy->{$a}->{order} <=> $hierarchy->{$b}->{order}
-			} grep {
-				ref $hierarchy->{$_} && $hierarchy->{$_}->{isFolder} && $tree{$_}
-			} keys %$hierarchy) {
-				if (my $parent = $data->{parent}) {
 					$tree{$parent} ||= [];
-					push @{$tree{$parent}}, {
-						type  => 'outline',
-						name  => $data->{name},
-						image => IMG_PLAYLIST,
-						id    => $data->{id}
-					};
+					push @{$tree{$parent}}, @{playlistList($client, [$playlist])};
 				}
-			}
 
-			# now let's try to bring the order back in...
-			foreach my $parent (keys %tree) {
-				main::INFOLOG && $log->is_info && $log->info("Sort items in $parent");
-				$tree{$parent} = [ sort {
-					my $aId = $a->{favorites_url} || $a->{id};
-					my $bId = $b->{favorites_url} || $b->{id};
-
-					my $aOrder = eval { $hierarchy->{$aId}->{order} } || 0;
-					my $bOrder = eval { $hierarchy->{$bId}->{order} } || 0;
-
-					$aOrder <=> $bOrder;
-				} @{$tree{$parent}} ];
-			}
-
-			# now add ordered sub trees
-			foreach my $parent (keys %tree) {
-				main::INFOLOG && $log->is_info && $log->info("Add items to $parent");
-				foreach my $item (@{$tree{$parent}}) {
-					$item->{items} = $tree{$item->{id}} if $item->{id};
+				foreach my $data (map {
+					$hierarchy->{$_}->{id} = $_;
+					$hierarchy->{$_};
+				} sort {
+					$hierarchy->{$a}->{order} <=> $hierarchy->{$b}->{order}
+				} grep {
+					ref $hierarchy->{$_} && $hierarchy->{$_}->{isFolder} && $tree{$_}
+				} keys %$hierarchy) {
+					if (my $parent = $data->{parent}) {
+						$tree{$parent} ||= [];
+						push @{$tree{$parent}}, {
+							type  => 'outline',
+							name  => $data->{name},
+							image => IMG_PLAYLIST,
+							id    => $data->{id}
+						};
+					}
 				}
+
+				# now let's try to bring the order back in...
+				foreach my $parent (keys %tree) {
+					main::INFOLOG && $log->is_info && $log->info("Sort items in $parent");
+					$tree{$parent} = [ sort {
+						my $aId = $a->{favorites_url} || $a->{id};
+						my $bId = $b->{favorites_url} || $b->{id};
+
+						my $aOrder = eval { $hierarchy->{$aId}->{order} } || 0;
+						my $bOrder = eval { $hierarchy->{$bId}->{order} } || 0;
+
+						$aOrder <=> $bOrder;
+					} @{$tree{$parent}} ];
+				}
+
+				# now add ordered sub trees
+				foreach my $parent (keys %tree) {
+					main::INFOLOG && $log->is_info && $log->info("Add items to $parent");
+					foreach my $item (@{$tree{$parent}}) {
+						$item->{items} = $tree{$item->{id}} if $item->{id};
+					}
+				}
+
+				main::DEBUGLOG && $log->is_debug && $log->debug("Final playlist folder order " . Data::Dump::dump($tree{'/'}));
+				$items = $tree{'/'};
+			}
+			else {
+				$items = playlistList($client, $result);
+
+				push @$items, {
+					name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
+					type => 'text',
+				} unless scalar @$items;
 			}
 
-			main::DEBUGLOG && $log->is_debug && $log->debug("Final playlist folder order " . Data::Dump::dump($tree{'/'}));
-			$items = $tree{'/'};
-		}
-		else {
-			$items = playlistList($client, $result);
-
-			push @$items, {
-				name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
-				type => 'text',
-			} unless scalar @$items;
-		}
-
-		$cb->({ items => $items });
+			$cb->({ items => $items });
+		});
 	},{
 		user => $params->{user} || $args->{user}
 	});

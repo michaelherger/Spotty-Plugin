@@ -157,6 +157,7 @@ sub findAllCachedFiles {
 			else {
 				my $data = read_file($file, scalar_ref => 1);
 				if ($$data =~ /\bstart-group\b/) {
+					main::DEBUGLOG && $log->is_debug && $log->debug("Found candidate: $file");
 					$cache->set($key, 1, 86400 * 7);
 					push @$candidates, $file;
 				}
@@ -180,14 +181,29 @@ sub _cacheKey {
 }
 
 sub getTree {
-	my ($class, $uris) = @_;
+	my ($class, $api, $uris, $cb) = @_;
 
-	return unless $uris && ref $uris && scalar @$uris;
+	$api->getPlaylistHierarchy(sub {
+		my $playlistHierarchy = shift;
+
+		if ($playlistHierarchy && keys %$playlistHierarchy) {
+			$cb->($playlistHierarchy);
+		}
+		else {
+			$class->getTreeFromCache($uris, $cb);
+		}
+	});
+}
+
+sub getTreeFromCache {
+	my ($class, $uris, $cb) = @_;
+
+	return $cb->() unless $uris && ref $uris && scalar @$uris;
 
 	my $key = md5_hex(join('||', sort @$uris));
 
 	if (my $cached = $treeCache{$key}) {
-		return $cached;
+		return $cb->($cached);
 	}
 
 	my $max = scalar @$uris;
@@ -223,13 +239,14 @@ sub getTree {
 
 	if ($winner && ref $winner && $winner->{ratio} > ASSUMED_HIT_THRESHOLD) {
 		main::INFOLOG && $log->is_info && $log->info(sprintf('Found a hierarchy which has %s%% of the playlist\'s tracks', int($winner->{ratio} * 100)));
-		return $treeCache{$key} = $winner->{data};
+		$treeCache{$key} = $winner->{data};
+		return $cb->($winner->{data});
 	}
 	elsif (main::INFOLOG && $log->is_info) {
 		$log->info("Didn't find any likely matching hierarchy: best ratio is $winner->{ratio}");
 	}
 
-	return;
+	$cb->();
 }
 
 sub handlePage {
