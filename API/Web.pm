@@ -3,6 +3,7 @@ package Plugins::Spotty::API::Web;
 use strict;
 
 use JSON::XS::VersionOneAndTwo;
+use List::Util qw(shuffle);
 use URI;
 use URI::Escape qw(uri_escape_utf8 uri_unescape);
 use URI::QueryParam;
@@ -16,6 +17,7 @@ require Plugins::Spotty::API::Cache;
 
 use constant API_URL => 'https://api.spotify.com/v1/%s';
 use constant PLAYLIST_TREE_URL => 'https://spclient.wg.spotify.com/playlist/v2/user/%s/rootlist';
+use constant IMAGE_MOSAIC_URL => 'https://mosaic.scdn.co/640/%s%s%s%s';
 
 my $libraryCache = Plugins::Spotty::API::Cache->new();
 
@@ -82,12 +84,27 @@ sub home {
 		my ($result) = @_;
 
 		my $items = [ map {
-			{
+			my $item = {
 				name  => $_->{name},
 				tag_line => $_->{tag_line},
 				id    => $_->{id},
 				href  => $_->{content}->{href},
 			};
+
+			# try to get four images to create a mosaic
+			my @imageIds = grep { $_ } map {
+				my $url = $_->{images}->[0]->{url};
+				$url =~ m|/([a-f0-9]{40})(?:/.*?)?$|;
+				$1;
+			} grep {
+				$_->{images} && (ref $_->{images} || '') eq 'ARRAY'
+			} @{$_->{content}->{items}};
+
+			if (@imageIds >= 4) {
+				$item->{image} = sprintf(IMAGE_MOSAIC_URL, shuffle @imageIds);
+			}
+
+			$item;
 		} grep {
 			$_->{name} && $_->{content} && $_->{content}->{items} && (ref $_->{content}->{items} || '') eq 'ARRAY' && scalar @{$_->{content}->{items}}
 		} @{$result->{content}->{items}} ];
@@ -97,7 +114,7 @@ sub home {
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
 		$cb->($items);
 	},{
-		content_limit => 1,
+		content_limit => 20,
 		locale => $api->locale,
 		# platform => 'web',
 		country => $api->country,

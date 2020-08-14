@@ -345,26 +345,27 @@ sub home {
 		my $items = [];
 
 		foreach my $group (@$homeItems) {
-			if ($group->{name} && $group->{href} && $group->{id} !~ /^recently-updated-playlists/) {
+			if ($group->{name} && $group->{href} && $group->{id} !~ /^recently-updated-playlists|^recently-played/) {
 				my $item = {
 					type => 'link',
 					name => $group->{name},
 					url  => \&browseWebUrl,
 					passthrough => [{
 						href => $group->{href}
-					}]
+					}],
+					image => $group->{image}
 				};
 
 				$item->{name2} = $group->{tag_line} if $group->{tag_line};
 
 				if ($group->{id} =~ /podcast/) {
-					$item->{image} = IMG_PODCAST;
+					$item->{image} ||= IMG_PODCAST;
 				}
 				elsif ($group->{id} =~ /favorite-albums|NMF-NRFY|inspired-by-recent-albums/) {
-					$item->{image} = IMG_ALBUM;
+					$item->{image} ||= IMG_ALBUM;
 				}
 				else {
-					$item->{image} = IMG_PLAYLIST;
+					$item->{image} ||= IMG_PLAYLIST;
 				}
 
 				push @$items, $item;
