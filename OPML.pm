@@ -345,40 +345,17 @@ sub home {
 		my $items = [];
 
 		foreach my $group (@$homeItems) {
-			if ($group->{name} && $group->{items} && $group->{id} !~ /^recently-updated-playlists/) {
+			if ($group->{name} && $group->{href} && $group->{id} !~ /^recently-updated-playlists/) {
 				my $item = {
-					type => 'outline',
+					type => 'link',
 					name => $group->{name},
+					url  => \&browseWebUrl,
+					passthrough => [{
+						href => $group->{href}
+					}]
 				};
 
 				$item->{name2} = $group->{tag_line} if $group->{tag_line};
-
-				$item->{items} = [ grep { $_ } map {
-					my $type = $_->{type} || '';
-
-					my $innerItem;
-					if ($type eq 'album') {
-						$innerItem = _albumItem($client, $_);
-					}
-					elsif ($type eq 'playlist') {
-						$innerItem = _playlistItem($client, $_);
-						if ($_->{description}) {
-							$innerItem->{name2} = $_->{description};
-							$innerItem->{name} .= ' - ' . $_->{description} if $params->{isWeb};
-						}
-					}
-					elsif ($type eq 'show') {
-						$innerItem = _showItem($_);
-					}
-					elsif ($_->{uri} eq 'spotify:collection:tracks') {
-						# "favorite tracks"? /me/tracks
-					}
-					else {
-						$log->warn("Unexpected content type found in home menu structure: $type " . main::INFOLOG ? Data::Dump::dump($_) : '');
-					}
-
-					$innerItem;
-				} @{$group->{items}} ];
 
 				if ($group->{id} =~ /podcast/) {
 					$item->{image} = IMG_PODCAST;
@@ -396,6 +373,51 @@ sub home {
 
 		$cb->({ items => $items });
 	});
+}
+
+sub browseWebUrl {
+	my ($client, $cb, $params, $args) = @_;
+
+	if ($args && $args->{href}) {
+		Plugins::Spotty::Plugin->getAPIHandler($client)->browseWebUrl(sub {
+			my $results = shift;
+
+			my $items = [ grep { $_ } map {
+				my $type = $_->{type} || '';
+
+				my $innerItem;
+				if ($type eq 'album') {
+					$innerItem = _albumItem($client, $_);
+				}
+				elsif ($type eq 'playlist') {
+					$innerItem = _playlistItem($client, $_);
+					if ($_->{description}) {
+						$innerItem->{name2} = $_->{description};
+						$innerItem->{name} .= ' - ' . $_->{description} if $params->{isWeb};
+					}
+				}
+				elsif ($type eq 'show') {
+					$innerItem = _showItem($_);
+				}
+				elsif ($_->{uri} eq 'spotify:collection:tracks') {
+					# "favorite tracks"? /me/tracks
+				}
+				else {
+					$log->warn("Unexpected content type found in home menu structure: $type " . main::INFOLOG ? Data::Dump::dump($_) : '');
+				}
+
+				$innerItem;
+			} @$results ];
+
+			$cb->({ items => $items });
+		}, $args->{href});
+	}
+	else {
+		$cb->([{
+			type  => 'text',
+			title => cstring($client, 'EMPTY'),
+		}]);
+	}
 }
 
 sub search {

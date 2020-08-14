@@ -3,7 +3,9 @@ package Plugins::Spotty::API::Web;
 use strict;
 
 use JSON::XS::VersionOneAndTwo;
+use URI;
 use URI::Escape qw(uri_escape_utf8 uri_unescape);
+use URI::QueryParam;
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -29,7 +31,9 @@ sub getToken {
 
 	main::INFOLOG && $log->is_info && $log->info("Getting web token for $username: " . Slim::Utils::DbCache::_key('spotty_access_token_web' . $username));
 
-	if (my $cached = $cache->get('spotty_access_token_web' . $webToken)) {
+	my $cacheKey = 'spotty_access_token_web' . $webToken;
+
+	if (my $cached = $cache->get($cacheKey)) {
 		main::INFOLOG && $log->is_info && $log->info("Found cached web access token for $username");
 		main::DEBUGLOG && $log->is_debug && $log->debug($cached);
 		$cb->($cached);
@@ -45,7 +49,7 @@ sub getToken {
 		my $response = shift || {};
 
 		if ($response && ref $response && $response->{accessToken}) {
-			$cache->set('spotty_access_token_web' . $username, $response->{accessToken}, 1800);
+			$cache->set($cacheKey, $response->{accessToken}, 1800);
 			main::INFOLOG && $log->is_info && $log->info("Received web access token for $username");
 			main::DEBUGLOG && $log->is_debug && $log->debug($response->{accessToken});
 			$cb->($response->{accessToken});
@@ -65,9 +69,10 @@ sub home {
 	my ( $class, $api, $cb ) = @_;
 
 	my $username = $api->username || 'generic';
+	my $cacheKey = "spotty_webhome_$username";
 
-	if (my $cached = $cache->get("spotty_webhome_$username")) {
-		main::INFOLOG && $log->is_info && $log->info(sprintf('Returning cached Home menu structure for %s (%s)', $username, Slim::Utils::DbCache::_key("spotty_webhome_$username")));
+	if (my $cached = $cache->get($cacheKey)) {
+		main::INFOLOG && $log->is_info && $log->info(sprintf('Returning cached Home menu structure for %s (%s)', $username, Slim::Utils::DbCache::_key($cacheKey)));
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
 		$cb->($cached);
 		return;
@@ -81,23 +86,18 @@ sub home {
 				name  => $_->{name},
 				tag_line => $_->{tag_line},
 				id    => $_->{id},
-				items => [ map {
-					my $type = $_->{type};
-					$libraryCache->normalize($_);
-					$_->{type} = $type;
-					$_;
-				} @{$_->{content}->{items}} ]
+				href  => $_->{content}->{href},
 			};
 		} grep {
 			$_->{name} && $_->{content} && $_->{content}->{items} && (ref $_->{content}->{items} || '') eq 'ARRAY' && scalar @{$_->{content}->{items}}
 		} @{$result->{content}->{items}} ];
 
-		$cache->set("spotty_webhome_$username", $items, 3600);
+		$cache->set($cacheKey, $items, 3600);
 
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
 		$cb->($items);
 	},{
-		content_limit => 20,
+		content_limit => 1,
 		locale => $api->locale,
 		# platform => 'web',
 		country => $api->country,
@@ -113,9 +113,9 @@ sub getPlaylistHierarchy {
 	my ( $class, $api, $cb ) = @_;
 
 	my $username = $api->username || 'generic';
-	my $key = "spotty_playlisttree_$username";
+	my $cacheKey = "spotty_playlisttree_$username";
 
-	if (my $cached = $cache->get($key)) {
+	if (my $cached = $cache->get($cacheKey)) {
 		main::INFOLOG && $log->is_info && $log->info("Returning cached playlist menu structure for $username");
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
 		$cb->($cached);
@@ -167,7 +167,7 @@ sub getPlaylistHierarchy {
 			}
 		}
 
-		$cache->set($key, $map, 3600);
+		$cache->set($cacheKey, $map, 3600);
 
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($map));
 		$cb->($map);
@@ -177,6 +177,45 @@ sub getPlaylistHierarchy {
 	});
 }
 
+sub browseWebUrl {
+	my ( $class, $api, $cb, $url ) = @_;
+
+	my $uri   = URI->new($url);
+	my $query = $uri->query_form_hash;
+
+	my $username = $api->username || 'generic';
+	my $cacheKey = "spotty_$username" . $uri->as_string;
+
+	if (my $cached = $cache->get($cacheKey)) {
+		main::INFOLOG && $log->is_info && $log->info("Returning cached playlist menu structure for $username");
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
+		$cb->($cached);
+		return;
+	}
+
+	$query->{limit} = Plugins::Spotty::API::SPOTIFY_LIMIT;
+	$query->{timestamp} = $api->_getTimestamp();
+	$query->{_api} = $api;
+
+	$url =~ s/\?.*//;
+
+	$class->_call($url, sub {
+		my ($result) = @_;
+
+		my $items = [ map {
+			my $type = $_->{type};
+			$libraryCache->normalize($_);
+			$_->{type} = $type;
+			$_;
+		} @{$result->{content}->{items}} ];
+
+		$cache->set($cacheKey, $items, 3600);
+
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
+		$cb->($items);
+	}, $query);
+}
+
 sub _call {
 	my ($class, $url, $cb, $params) = @_;
 
@@ -184,13 +223,13 @@ sub _call {
 
 	if ( my @keys = sort keys %{$params}) {
 		my @params;
-		foreach my $key ( sort @keys ) {
-			if ($key eq '_headers') {
-				push @headers, @{$params->{$key}};
+		foreach my $cacheKey ( sort @keys ) {
+			if ($cacheKey eq '_headers') {
+				push @headers, @{$params->{$cacheKey}};
 			}
 
-			next if $key =~ /^_/;
-			push @params, $key . '=' . uri_escape_utf8( $params->{$key} );
+			next if $cacheKey =~ /^_/;
+			push @params, $cacheKey . '=' . uri_escape_utf8( $params->{$cacheKey} );
 		}
 
 		$url .= '?' . join( '&', sort @params ) if scalar @params;

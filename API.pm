@@ -133,6 +133,17 @@ sub home {
 	}
 }
 
+sub browseWebUrl {
+	my ( $self, $cb, $url ) = @_;
+
+	if ($self->_hasWebToken()) {
+		Plugins::Spotty::API::Web->browseWebUrl(@_);
+	}
+	else {
+		$cb->();
+	}
+}
+
 # get the username - keep it simple. Shouldn't change, don't want nested async calls...
 sub username {
 	my ($self, $username) = @_;
