@@ -117,8 +117,10 @@ sub handler {
 		my $webTokens = $prefs->get('webTokens') || {};
 		foreach my $prefName (keys %$paramRef) {
 			if ($prefName =~ /^pref_webtoken_(.*)/) {
-				$webTokens->{$1} = $paramRef->{$prefName};
-				$webTokens->{$1} =~ s/^sp_dc=//;
+				my $i = $1;
+				$webTokens->{$i} = $paramRef->{$prefName};
+				$webTokens->{$i} =~ s/^sp_dc\W+//;
+				$webTokens->{$i} =~ s/\s.*//;
 			}
 		}
 		$prefs->set('webTokens', $webTokens);
