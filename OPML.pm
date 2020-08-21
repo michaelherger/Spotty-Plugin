@@ -60,6 +60,20 @@ my %topuri = (
 	XX => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbMDoHDwVN2tF',	# fallback "Top 100 on Spotify"
 );
 
+# sort order for home menu items - -1 means hide item
+my %homeItems = (
+	'made-for-x' => 1,
+	'podcast-recs-show-affinity-wrapper' => 5,
+	'NMF-NRFY' => 10,
+	'home-personalized[favorite-albums]' => 20,
+	'recently-updated-playlists[0]' => 30,
+	'home-personalized[recommended-stations]' => 40,
+	'home-personalized[more-of-what-you-like]' => 100,
+	'uniquely-yours-shelf' => 200,
+	'recently-updated-playlists' => -1,
+	'recently-played' => -1,
+);
+
 my $nextNameCheck = 0;
 
 sub init {
@@ -344,8 +358,10 @@ sub home {
 
 		my $items = [];
 
-		foreach my $group (@$homeItems) {
-			if ($group->{name} && $group->{href} && $group->{id} !~ /^recently-updated-playlists|^recently-played/) {
+		foreach my $group ( sort {
+			($homeItems{$a->{id}} || 999) <=> ($homeItems{$b->{id}} || 999);
+		} @$homeItems ) {
+			if ($group->{name} && $group->{href} && ($homeItems{$group->{id}} || 0) > -1) {
 				my $item = {
 					type => 'link',
 					name => $group->{name},
