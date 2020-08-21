@@ -109,7 +109,7 @@ sub home {
 			$_->{name} && $_->{content} && $_->{content}->{items} && (ref $_->{content}->{items} || '') eq 'ARRAY' && scalar @{$_->{content}->{items}}
 		} @{$result->{content}->{items}} ];
 
-		$cache->set($cacheKey, $items, 3600);
+		$cache->set($cacheKey, $items, 900);
 
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
 		$cb->($items);
