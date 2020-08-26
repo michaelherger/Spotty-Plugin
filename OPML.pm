@@ -66,10 +66,10 @@ my %homeItems = (
 	'podcast-recs-show-affinity-wrapper' => 5,
 	'NMF-NRFY' => 10,
 	'home-personalized[favorite-albums]' => 20,
-	'recently-updated-playlists[0]' => 30,
 	'home-personalized[recommended-stations]' => 40,
 	'home-personalized[more-of-what-you-like]' => 100,
 	'uniquely-yours-shelf' => 200,
+	'recently-updated-playlists[0]' => -1,
 	'recently-updated-playlists' => -1,
 	'recently-played' => -1,
 );
