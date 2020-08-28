@@ -298,6 +298,8 @@ sub canDiscovery { 1 }
 
 # we only run when transcoding is enabled, but shutdown would be called no matter what
 sub shutdownPlugin { if (main::TRANSCODING) {
+	Plugins::Spotty::AccountHelper->purgeAudioCache(1);
+
 	# make sure we don't leave our helper app running
 	if (main::WEBUI) {
 		Plugins::Spotty::Settings::Auth->shutdownHelper();
