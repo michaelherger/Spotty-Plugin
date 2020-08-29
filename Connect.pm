@@ -115,12 +115,12 @@ sub setSpotifyConnect {
 	return unless $client;
 
 	$client = $client->master;
-	my $song = $client->playingSong();
-
-	# state on song: need to know whether we're currently in Connect mode. Is lost when new track plays.
-	$song->pluginData('context') || $song->pluginData( context => Plugins::Spotty::Connect::Context->new($class->getAPIHandler($client)) );
-	$song->pluginData('context')->update($context);
-	$song->pluginData('context')->time(time());
+	if (my $song = $client->playingSong()) {
+		# state on song: need to know whether we're currently in Connect mode. Is lost when new track plays.
+		$song->pluginData('context') || $song->pluginData( context => Plugins::Spotty::Connect::Context->new($class->getAPIHandler($client)) );
+		$song->pluginData('context')->update($context);
+		$song->pluginData('context')->time(time());
+	}
 
 	# state on client: need to know whether we've been in Connect mode. If this is set, then we've been playing from Connect, but are no more.
 	$client->pluginData( SpotifyConnect => 1 );
