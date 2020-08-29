@@ -229,24 +229,29 @@ sub purgeAudioCache {
 	Slim::Utils::Timers::killTimers($class, \&purgeAudioCache);
 
 	# clean up temporary files the spotty helper (librespot) is leaving behind on skips
-	my $tmpFolder = __PACKAGE__->getTmpDir() || tmpdir();
+	for my $tmpFolder (__PACKAGE__->getTmpDir(), tmpdir()) {
+		if ( $tmpFolder && -d $tmpFolder && opendir(DIR, $tmpFolder) ) {
+			main::INFOLOG && $log->is_info && $log->info("Starting temporary file cleanup... ($tmpFolder - uid: $>)");
 
-	if ( $tmpFolder && -d $tmpFolder && opendir(DIR, $tmpFolder) ) {
-		main::INFOLOG && $log->is_info && $log->info("Starting temporary file cleanup... ($tmpFolder)");
+			foreach my $tmp ( grep /^\.tmp[a-z0-9]{6}$/i, readdir(DIR) ) {
+				main::idleStreams();
 
-		foreach my $tmp ( grep { /^\.tmp[a-z0-9]{6}$/i && -f catfile($tmpFolder, $_) } readdir(DIR) ) {
-			my $tmpFile = catfile($tmpFolder, $tmp);
-			my (undef, undef, undef, undef, $uid, undef, undef, undef, undef, $mtime) = stat($tmpFile);
+				my $tmpFile = catfile($tmpFolder, $tmp);
 
-			# delete file if it matches our name, user ID, and is of a certain age
-			if ( $uid == $> ) {
+				next unless -f $tmpFile;
+
+				my (undef, undef, undef, undef, $uid, undef, undef, undef, undef, $mtime) = stat(_);
+
+				main::INFOLOG && $log->is_info && $log->info("Checking: $tmp, uid: $uid, age: " . (time() - $mtime));
+
+				# delete file if it matches our name, user ID, and is of a certain age
+				next if $uid != $>;
+
 				unlink $tmpFile if $ignoreTimeStamp || (time() - $mtime > CACHE_PURGE_MAX_AGE);
 			}
 
-			main::idleStreams();
+			main::INFOLOG && $log->is_info && $log->info("Audio cache cleanup done!");
 		}
-
-		main::INFOLOG && $log->is_info && $log->info("Audio cache cleanup done!");
 	}
 
 	# only purge the audio cache if it's enabled
