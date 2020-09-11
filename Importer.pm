@@ -318,9 +318,15 @@ sub trackUriPrefix { 'spotify:track:' }
 sub getArtistPicture { if (main::SCANNER) {
 	my ($class, $id) = @_;
 
+	require Plugins::Spotty::API::Sync;
 	my $api = Plugins::Spotty::API::Sync->new() || return '';
-	my $artist = $api->artist($id);
-	return ($artist && ref $artist) ? $artist->{image} : '';
+
+	foreach (split(',', $id)) {
+		my $artist = $api->artist($_);
+		return $artist->{image} if $artist && ref $artist && $artist->{image};
+	}
+
+	return '';
 } }
 
 # This code is not run in the scanner, but in LMS
