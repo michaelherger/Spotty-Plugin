@@ -145,7 +145,7 @@ sub handler {
 
 	$paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
 	$paramRef->{displayNames} = { map {
-		my ($id) = each $_;
+		my ($id) = each %$_;
 		$id => Plugins::Spotty::AccountHelper->getDisplayName($id);
 	} @{$paramRef->{credentials}} };
 
