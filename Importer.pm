@@ -50,9 +50,13 @@ sub startScan { if (main::SCANNER) {
 	my $class = shift;
 	require Plugins::Spotty::API::Sync;
 
-	my $accounts = Plugins::Spotty::AccountHelper->getAllCredentials();
+	my $accounts = Plugins::Spotty::AccountHelper->getAllCredentials() || {};
+	my $dontImportAccounts = $prefs->get('dontImportAccounts');
+	foreach (keys %$accounts) {
+		delete $accounts->{$_} if $dontImportAccounts->{$accounts->{$_}};
+	}
 
-	if (ref $accounts && scalar keys %$accounts) {
+	if (scalar keys %$accounts) {
 		$dbh ||= Slim::Schema->dbh();
 		$class->initOnlineTracksTable();
 

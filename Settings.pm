@@ -113,6 +113,14 @@ sub handler {
 		if ($paramRef->{clearSearchHistory}) {
 			$prefs->set('spotify_recent_search', []);
 		}
+
+		my $dontImportAccounts = $prefs->get('dontImportAccounts') || {};
+		foreach my $prefName (keys %$paramRef) {
+			if ($prefName =~ /^pref_dontimport_(.*)/) {
+				$dontImportAccounts->{$1} = $paramRef->{$prefName};
+			}
+		}
+		$prefs->set('dontImportAccounts', $dontImportAccounts);
 	}
 
 	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::AccountHelper->hasCredentials()) ) {
@@ -158,6 +166,8 @@ sub beforeRender {
 	$paramRef->{canAsyncTokenRefresh} = Plugins::Spotty::API::Token::CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token');
 
 	$paramRef->{hasDefaultIcon} = Plugins::Spotty::Plugin->hasDefaultIcon();
+
+	$paramRef->{dontImportAccounts} = $prefs->get('dontImportAccounts') || {};
 
 	$paramRef->{warning} && $paramRef->{warning} =~ s/iconCode/Client ID/i;
 }
