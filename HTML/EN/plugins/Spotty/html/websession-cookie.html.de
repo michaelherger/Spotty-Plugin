@@ -1,0 +1,40 @@
+[% pagetitle = 'Spotty Web Session Cookie' %]
+[% lefttoright = '1' %]
+[% PROCESS helpheader.html %]
+	<h4>Wir brauchen ein Websessioncookie</h4>
+	<p>
+		Leider braucht es etwas Handarbeit, um ein Cookie aus einem Browser heraus zu bringen. Ich zeige hier exemplarisch,
+		wie das mit Google Chrome oder seinen zahlreichen Cousins geht. Das Prinzip ist in allen aktuellen Browsern das gleiche.
+	</p>
+
+	<h4></h4>
+	<p>
+		Zuerst einmal meldest du dich auf <a href="https://open.spotify.com" target="_blank">open.spotify.com</a> an.
+		Nachdem du angemeldet bist öffnest du die "Entwicklertools" aus dem "Weitere Tools" Men&uuml;.
+	</p>
+	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-menu-de.png"></p>
+
+	<p>
+		Wenn die Entwicklertools auf der Seite angezeigt werden statt unten, dann empfehle ich, diese mit Hilfe des
+		"Punkt-Punkt-Punkt" Men&uuml;s nach unten zu verschieben:
+	</p>
+	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-dock.png"></p>
+
+	<h4>Pack den Keks!</h4>
+	<p>
+		In den Entwicklertools:
+		<ol style="list-style-type: decimal; padding: revert;">
+			<li>w&auml;hle den "Application" Tab</li>
+			<li>links &ouml;ffnest du den "Cookies" Ast und w&auml;hlst open.spotify.com</li>
+			<li>in der Cookie Liste klickst du "sp_dc" and und kopierst dann dessen Wert ("Value")</li>
+		</ol>
+	</p>
+	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-cookies.png"></p>
+
+	<p>Diesen Wert kannst du nun in den Spotty Einstellungen einfügen. Viel Glück!</p>
+
+	<h4>Und j&auml;hrlich gr&uuml;sst das Murmeltier...</h4>
+
+	<p>Leider hat das Cookie nur einen beschr&auml;nkte Lebenserwartung. Sp&auml;testens nach einem Jahr musst du das ganze Prozedere wiederholen.</p>
+
+[% PROCESS helpfooter.html %]

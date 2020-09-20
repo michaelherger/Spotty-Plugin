@@ -18,14 +18,17 @@ use Slim::Utils::Strings qw(string cstring);
 use constant CAN_EXTID => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 
 use constant IMG_TRACK => '/html/images/cover.png';
+use constant IMG_HOME => 'plugins/Spotty/html/images/home.png';
 use constant IMG_ALBUM => 'plugins/Spotty/html/images/album.png';
 use constant IMG_PODCAST => 'plugins/Spotty/html/images/podcasts.png';
 use constant IMG_PLAYLIST => 'plugins/Spotty/html/images/playlist.png';
 use constant IMG_COLLABORATIVE => 'plugins/Spotty/html/images/playlist-collab.png';
 use constant IMG_SEARCH => 'plugins/Spotty/html/images/search.png';
-use constant IMG_WHATSNEW => 'plugins/Spotty/html/images/whatsnew.png';
 use constant IMG_ACCOUNT => 'plugins/Spotty/html/images/account.png';
+use constant IMG_ARTIST => 'plugins/Spotty/html/images/artist.png';
 use constant IMG_TOPTRACKS => 'plugins/Spotty/html/images/toptracks.png';
+use constant IMG_NEWS => 'plugins/Spotty/html/images/news.png';
+use constant IMG_GENRES => 'plugins/Spotty/html/images/genres.png';
 use constant IMG_INBOX => 'plugins/Spotty/html/images/inbox.png';
 
 use constant MAX_RECENT => 50;
@@ -55,6 +58,20 @@ my %topuri = (
 	US => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbLRQDuF5jeBp',
 
 	XX => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbMDoHDwVN2tF',	# fallback "Top 100 on Spotify"
+);
+
+# sort order for home menu items - -1 means hide item
+my %homeItems = (
+	'made-for-x' => 1,
+	'podcast-recs-show-affinity-wrapper' => 5,
+	'NMF-NRFY' => 10,
+	'home-personalized[favorite-albums]' => 20,
+	'home-personalized[recommended-stations]' => 40,
+	'home-personalized[more-of-what-you-like]' => 100,
+	'uniquely-yours-shelf' => 200,
+	'recently-updated-playlists[0]' => -1,
+	'recently-updated-playlists' => -1,
+	'recently-played' => -1,
 );
 
 my $nextNameCheck = 0;
@@ -184,6 +201,16 @@ sub handleFeed {
 
 		# Build main menu structure
 		my $items = [];
+		my $webTokens = $prefs->get('webTokens') || {};
+
+		if ( $webTokens->{Plugins::Spotty::AccountHelper->getAccount($client)} ) {
+			push @{$items}, {
+				name  => cstring($client, 'PLUGIN_SPOTTY_HOME'),
+				type  => 'link',
+				image => IMG_HOME,
+				url   => \&home,
+			};
+		}
 
 		if ( hasRecentSearches() ) {
 			push @{$items}, {
@@ -205,7 +232,7 @@ sub handleFeed {
 		push @{$items}, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_WHATS_NEW'),
 			type  => 'link',
-			image => IMG_WHATSNEW,
+			image => IMG_NEWS,
 			url   => \&whatsNew
 		},
 		{
@@ -220,7 +247,7 @@ sub handleFeed {
 		{
 			name  => cstring($client, 'PLUGIN_SPOTTY_GENRES_MOODS'),
 			type  => 'link',
-			image => IMG_INBOX,
+			image => IMG_GENRES,
 			url   => \&categories
 		};
 
@@ -240,7 +267,7 @@ sub handleFeed {
 		},{
 			name  => cstring($client, 'ARTISTS'),
 			type  => 'link',
-			image => IMG_ACCOUNT,
+			image => IMG_ARTIST,
 			url   => \&myArtists
 		},{
 			name  => cstring($client, 'PLAYLISTS'),
@@ -321,6 +348,93 @@ sub handleFeed {
 			items => $items,
 		});
 	} );
+}
+
+sub home {
+	my ($client, $cb, $params) = @_;
+
+	Plugins::Spotty::Plugin->getAPIHandler($client)->home(sub {
+		my ($homeItems) = @_;
+
+		my $items = [];
+
+		foreach my $group ( sort {
+			($homeItems{$a->{id}} || 999) <=> ($homeItems{$b->{id}} || 999);
+		} @$homeItems ) {
+			if ($group->{name} && $group->{href} && ($homeItems{$group->{id}} || 0) > -1) {
+				my $item = {
+					type => 'link',
+					name => $group->{name},
+					url  => \&browseWebUrl,
+					passthrough => [{
+						href => $group->{href}
+					}],
+					image => $group->{image}
+				};
+
+				$item->{name2} = $group->{tag_line} if $group->{tag_line};
+
+				if ($group->{id} =~ /podcast/) {
+					$item->{image} ||= IMG_PODCAST;
+				}
+				elsif ($group->{id} =~ /favorite-albums|NMF-NRFY|inspired-by-recent-albums/) {
+					$item->{image} ||= IMG_ALBUM;
+				}
+				else {
+					$item->{image} ||= IMG_PLAYLIST;
+				}
+
+				push @$items, $item;
+			}
+		}
+
+		$cb->({ items => $items });
+	});
+}
+
+sub browseWebUrl {
+	my ($client, $cb, $params, $args) = @_;
+
+	if ($args && $args->{href}) {
+		Plugins::Spotty::Plugin->getAPIHandler($client)->browseWebUrl(sub {
+			my $results = shift;
+
+			my $items = [ grep { $_ } map {
+				my $type = $_->{type} || '';
+
+				my $innerItem;
+				if ($type eq 'album') {
+					$innerItem = _albumItem($client, $_);
+				}
+				elsif ($type eq 'playlist') {
+					$innerItem = _playlistItem($client, $_);
+					if ($_->{description}) {
+						$innerItem->{name2} = $_->{description};
+						$innerItem->{name} .= ' - ' . $_->{description} if $params->{isWeb};
+					}
+				}
+				elsif ($type eq 'show') {
+					$innerItem = _showItem($_);
+				}
+				elsif ($_->{uri} eq 'spotify:collection:tracks') {
+					# "favorite tracks"? /me/tracks
+				}
+				else {
+					$log->warn("Unexpected content type found in home menu structure: $type " . main::INFOLOG ? Data::Dump::dump($_) : '');
+				}
+
+				$innerItem;
+			} @$results ];
+
+			$cb->({ items => $items });
+		}, $args->{href});
+	}
+	else {
+		$cb->([{
+			type  => 'text',
+			title => cstring($client, 'EMPTY'),
+		}]);
+	}
 }
 
 sub search {
@@ -476,7 +590,7 @@ sub _searchItems {
 	} grep {
 		Plugins::Spotty::Helper->getCapability('podcasts') || $_->[1] !~ /^(?:show|episode)_/;
 	} (
-		[ 'ARTISTS', 'artist', IMG_ACCOUNT ],
+		[ 'ARTISTS', 'artist', IMG_ARTIST ],
 		[ 'ALBUMS', 'album', IMG_ALBUM ],
 		[ 'PLAYLISTS', 'playlist', IMG_PLAYLIST ],
 		[ 'SONGS', 'track', IMG_TRACK ],
@@ -679,79 +793,81 @@ sub playlists {
 
 		my $items;
 
-		my $hierarchy = Plugins::Spotty::PlaylistFolders->getTree([ map {
+		Plugins::Spotty::PlaylistFolders->getTree($spotty, [ map {
 			$_->{uri};
-		} @$result ]);
+		} @$result ], sub {
+			my $hierarchy = shift;
 
-		if ($hierarchy) {
-			main::INFOLOG && $log->is_info && $log->info("Found playlist folder hierarchy! Let's use it: " . Data::Dump::dump($hierarchy));
+			if ($hierarchy) {
+				main::INFOLOG && $log->is_info && $log->info("Found playlist folder hierarchy! Let's use it: " . Data::Dump::dump($hierarchy));
 
-			my %tree;
-			foreach my $playlist (@$result) {
-				my $parent = '/';
-				my $node = $hierarchy->{$playlist->{uri}};
-				if ($node && ref $node) {
-					$parent = $node->{parent} || '/';
-				}
+				my %tree;
+				foreach my $playlist (@$result) {
+					my $parent = '/';
+					my $node = $hierarchy->{$playlist->{uri}};
+					if ($node && ref $node) {
+						$parent = $node->{parent} || '/';
+					}
 
-				$tree{$parent} ||= [];
-				push @{$tree{$parent}}, @{playlistList($client, [$playlist])};
-			}
-
-			foreach my $data (map {
-				$hierarchy->{$_}->{id} = $_;
-				$hierarchy->{$_};
-			} sort {
-				$hierarchy->{$a}->{order} <=> $hierarchy->{$b}->{order}
-			} grep {
-				ref $hierarchy->{$_} && $hierarchy->{$_}->{isFolder} && $tree{$_}
-			} keys %$hierarchy) {
-				if (my $parent = $data->{parent}) {
 					$tree{$parent} ||= [];
-					push @{$tree{$parent}}, {
-						type  => 'outline',
-						name  => $data->{name},
-						image => IMG_PLAYLIST,
-						id    => $data->{id}
-					};
+					push @{$tree{$parent}}, @{playlistList($client, [$playlist])};
 				}
-			}
 
-			# now let's try to bring the order back in...
-			foreach my $parent (keys %tree) {
-				main::INFOLOG && $log->is_info && $log->info("Sort items in $parent");
-				$tree{$parent} = [ sort {
-					my $aId = $a->{favorites_url} || $a->{id};
-					my $bId = $b->{favorites_url} || $b->{id};
-
-					my $aOrder = eval { $hierarchy->{$aId}->{order} } || 0;
-					my $bOrder = eval { $hierarchy->{$bId}->{order} } || 0;
-
-					$aOrder <=> $bOrder;
-				} @{$tree{$parent}} ];
-			}
-
-			# now add ordered sub trees
-			foreach my $parent (keys %tree) {
-				main::INFOLOG && $log->is_info && $log->info("Add items to $parent");
-				foreach my $item (@{$tree{$parent}}) {
-					$item->{items} = $tree{$item->{id}} if $item->{id};
+				foreach my $data (map {
+					$hierarchy->{$_}->{id} = $_;
+					$hierarchy->{$_};
+				} sort {
+					$hierarchy->{$a}->{order} <=> $hierarchy->{$b}->{order}
+				} grep {
+					ref $hierarchy->{$_} && $hierarchy->{$_}->{isFolder} && $tree{$_}
+				} keys %$hierarchy) {
+					if (my $parent = $data->{parent}) {
+						$tree{$parent} ||= [];
+						push @{$tree{$parent}}, {
+							type  => 'outline',
+							name  => $data->{name},
+							image => IMG_PLAYLIST,
+							id    => $data->{id}
+						};
+					}
 				}
+
+				# now let's try to bring the order back in...
+				foreach my $parent (keys %tree) {
+					main::INFOLOG && $log->is_info && $log->info("Sort items in $parent");
+					$tree{$parent} = [ sort {
+						my $aId = $a->{favorites_url} || $a->{id};
+						my $bId = $b->{favorites_url} || $b->{id};
+
+						my $aOrder = eval { $hierarchy->{$aId}->{order} } || 0;
+						my $bOrder = eval { $hierarchy->{$bId}->{order} } || 0;
+
+						$aOrder <=> $bOrder;
+					} @{$tree{$parent}} ];
+				}
+
+				# now add ordered sub trees
+				foreach my $parent (keys %tree) {
+					main::INFOLOG && $log->is_info && $log->info("Add items to $parent");
+					foreach my $item (@{$tree{$parent}}) {
+						$item->{items} = $tree{$item->{id}} if $item->{id};
+					}
+				}
+
+				main::DEBUGLOG && $log->is_debug && $log->debug("Final playlist folder order " . Data::Dump::dump($tree{'/'}));
+				$items = $tree{'/'};
+			}
+			else {
+				$items = playlistList($client, $result);
+
+				push @$items, {
+					name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
+					type => 'text',
+				} unless scalar @$items;
 			}
 
-			main::DEBUGLOG && $log->is_debug && $log->debug("Final playlist folder order " . Data::Dump::dump($tree{'/'}));
-			$items = $tree{'/'};
-		}
-		else {
-			$items = playlistList($client, $result);
-
-			push @$items, {
-				name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
-				type => 'text',
-			} unless scalar @$items;
-		}
-
-		$cb->({ items => $items });
+			$cb->({ items => $items });
+		});
 	},{
 		user => $params->{user} || $args->{user}
 	});
@@ -786,7 +902,7 @@ sub album {
 				name  => $prefix . $artist,
 				url   => \&artist,
 				passthrough => [{ uri => $artists{$artist} }],
-				image => IMG_ACCOUNT,
+				image => IMG_ARTIST,
 			};
 		}
 
@@ -1175,8 +1291,6 @@ sub albumList {
 	my $count = 0;
 
 	for my $album ( @{$albums} ) {
-		my $artists = join( ', ', map { $_->{name} } @{ $album->{artists} } );
-
 		my $textkey = $noIndexList ? '' : uc(substr($album->{name} || '', 0, 1));
 
 		if ( defined $indexLetter && $indexLetter ne ($textkey || '') ) {
@@ -1187,30 +1301,41 @@ sub albumList {
 		$count++;
 		$indexLetter = $textkey;
 
-		my $year = $serverPrefs->get('showYear') && $album->{release_date};
-		if ($year) {
-			$year =~ s/.*(\d{4}).*/$1/;
-			$year = " ($year)"
-		}
-
-		push @{$items}, {
-			type  => 'playlist',
-			name  => $album->{name} . ($year || '') . ($artists ? (' ' . cstring($client, 'BY') . ' ' . $artists) : ''),
-			line1 => $album->{name},
-			line2 => $artists,
-			textkey => $textkey,
-			url   => \&album,
-			favorites_url => $album->{uri},
-			image => $album->{image} || IMG_ALBUM,
-			passthrough => [{
-				uri => $album->{uri}
-			}]
-		};
+		push @$items, _albumItem($client, $album, $textkey);
 	}
 
 	push @$indexList, [$indexLetter, $count];
 
 	return wantarray ? ($items, $indexList) : $items;
+}
+
+sub _albumItem {
+	my ($client, $album, $textkey) = @_;
+
+	my $artists = join( ', ', map { $_->{name} } @{ $album->{artists} } );
+
+	my $year = $serverPrefs->get('showYear') && $album->{release_date};
+	if ($year) {
+		$year =~ s/.*(\d{4}).*/$1/;
+		$year = " ($year)"
+	}
+
+	my $item = {
+		type  => 'playlist',
+		name  => $album->{name} . ($year || '') . ($artists ? (' ' . cstring($client, 'BY') . ' ' . $artists) : ''),
+		line1 => $album->{name},
+		line2 => $artists,
+		url   => \&album,
+		favorites_url => $album->{uri},
+		image => $album->{image} || IMG_ALBUM,
+		passthrough => [{
+			uri => $album->{uri}
+		}]
+	};
+
+	$item->{textkey} = $textkey if $textkey;
+
+	return $item;
 }
 
 sub artistList {
@@ -1236,7 +1361,7 @@ sub artistList {
 		my $item = {
 			name => $artist->{name},
 			textkey => $textkey,
-			image => $artist->{image} || IMG_ACCOUNT,
+			image => $artist->{image} || IMG_ARTIST,
 			url  => \&artist,
 			playlist => $artist->{uri},
 			favorites_url => $artist->{uri},
@@ -1283,28 +1408,38 @@ sub podcastList {
 		$count++;
 		$indexLetter = $textkey;
 
-		push @{$items}, {
-			type  => 'playlist',
-			name  => $show->{name},
-			line1 => $show->{name},
-			line2 => $show->{description},
-			textkey => $textkey,
-			url   => \&show,
-			favorites_url => $show->{uri},
-			image => $show->{image} || IMG_PODCAST,
-			passthrough => [{
-				uri => $show->{uri},
-				id  => $show->{id},
-				name => $show->{name},
-				description => $show->{description},
-				languages   => $show->{languages},
-			}]
-		};
+		push @{$items}, _showItem($show, $textkey);
 	}
 
 	push @$indexList, [$indexLetter, $count];
 
 	return wantarray ? ($items, $indexList) : $items;
+}
+
+sub _showItem {
+	my ($show, $textkey) = @_;
+
+	my $item = {
+		type  => 'playlist',
+		name  => $show->{name},
+		line1 => $show->{name},
+		line2 => $show->{description},
+		textkey => $textkey,
+		url   => \&show,
+		favorites_url => $show->{uri},
+		image => $show->{image} || IMG_PODCAST,
+		passthrough => [{
+			uri => $show->{uri},
+			id  => $show->{id},
+			name => $show->{name},
+			description => $show->{description},
+			languages   => $show->{languages},
+		}]
+	};
+
+	$item->{textkey} = $textkey if $textkey;
+
+	return $item;
 }
 
 sub episodesList {
@@ -1382,32 +1517,37 @@ sub playlistList {
 
 	$lists ||= [];
 
-	my $items = [];
 	my $username = Plugins::Spotty::Plugin->getAPIHandler($client)->username;
 
-	for my $list ( @{$lists} ) {
-		my $item = {
-			name  => $list->{name} || $list->{title},
-			type  => 'playlist',
-			image => $list->{image} || ($list->{collaborative} ? IMG_COLLABORATIVE : IMG_PLAYLIST),
-			url   => \&playlist,
-			favorites_url => $list->{uri},
-			passthrough => [{
-				uri => $list->{uri}
-			}]
-		};
+	return [ map {
+		_playlistItem($client, $_, $username);
+	} @$lists ];
+}
 
-		my $creator = $list->{creator};
-		$creator ||= $list->{owner}->{id} if $list->{owner};
+sub _playlistItem {
+	my ($client, $list, $username) = @_;
 
-		if ( $creator && $creator ne $username ) {
-			$item->{line2} = cstring($client, 'BY') . ' ' . $creator;
-		}
+	$username ||= '';
 
-		push @{$items}, $item;
+	my $item = {
+		name  => $list->{name} || $list->{title},
+		type  => 'playlist',
+		image => $list->{image} || ($list->{collaborative} ? IMG_COLLABORATIVE : IMG_PLAYLIST),
+		url   => \&playlist,
+		favorites_url => $list->{uri},
+		passthrough => [{
+			uri => $list->{uri}
+		}]
+	};
+
+	my $creator = $list->{creator};
+	$creator ||= $list->{owner}->{id} if $list->{owner};
+
+	if ( $creator && $creator ne $username ) {
+		$item->{line2} = cstring($client, 'BY') . ' ' . $creator;
 	}
 
-	return $items;
+	return $item;
 }
 
 sub trackInfoMenu {

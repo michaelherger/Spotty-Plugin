@@ -219,6 +219,7 @@ sub normalize {
 		}
 	}
 
+	$item->{description} =~ s/<.+?>//g if $item->{description};
 	delete $item->{available_markets};		# this is rather lengthy, repetitive and never used
 
 	return $item;

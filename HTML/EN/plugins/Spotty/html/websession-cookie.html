@@ -1,0 +1,41 @@
+[% pagetitle = 'Spotty Web Session Cookie' %]
+[% lefttoright = '1' %]
+[% PROCESS helpheader.html %]
+	<h4>We need a web session cookie</h4>
+	<p>
+		Unfortunately getting a cookie out of a browser is a bit of manual work. But we'll get you there. Here's how you do this,
+		using Google Chrome or one of his siblings. The principle is the same on any decent browser.
+	</p>
+
+	<h4>Get to the Development Tools</h4>
+	<p>
+		First of all you'll have to sign in to <a href="https://open.spotify.com" target="_blank">open.spotify.com</a> with your account.
+		Once you've signed in, go to the Browser's Tools menu and select "Developers Tools".
+	</p>
+	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-menu.png"></p>
+
+	<p>
+		Now you should have the Developer Tools open. They can be at the bottom of the Window, or on the side. If it's on the side,
+		I'd suggest you use the "dot dot dot" menu on the far right to put the panel at the bottom:
+	</p>
+	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-dock.png"></p>
+
+	<h4>Grab that cookie!</h4>
+
+	<p>
+		Now in the Dev Tools panel:
+		<ol style="list-style-type: decimal; padding: revert;">
+			<li>select the "Application" tab</li>
+			<li>on the left, open the Cookies item and select the Cookies for open.spotify.com</li>
+			<li>in the list of cookies, select "sp_dc" and copy its value</li>
+		</ol>
+	</p>
+	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-cookies.png"></p>
+
+	<p>Now you're ready to paste that value in Spotty's settings. Good luck!</p>
+
+	<h4>Groundhog Day</h4>
+
+	<p>Unfortunately the web session cookie has a limited lifespan. It will expire after about a year. Just go through the above procedure once again.</p>
+
+[% PROCESS helpfooter.html %]

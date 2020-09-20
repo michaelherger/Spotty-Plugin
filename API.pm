@@ -122,6 +122,28 @@ sub me {
 	);
 }
 
+sub home {
+	my ( $self, $cb ) = @_;
+
+	if ($self->_hasWebToken()) {
+		Plugins::Spotty::API::Web->home(@_);
+	}
+	else {
+		$cb->([]);
+	}
+}
+
+sub browseWebUrl {
+	my ( $self, $cb, $url ) = @_;
+
+	if ($self->_hasWebToken()) {
+		Plugins::Spotty::API::Web->browseWebUrl(@_);
+	}
+	else {
+		$cb->();
+	}
+}
+
 # get the username - keep it simple. Shouldn't change, don't want nested async calls...
 sub username {
 	my ($self, $username) = @_;
@@ -1102,6 +1124,17 @@ sub playlists {
 	})->get();
 }
 
+sub getPlaylistHierarchy {
+	my ( $self, $cb ) = @_;
+
+	if ($self->_hasWebToken()) {
+		Plugins::Spotty::API::Web->getPlaylistHierarchy(@_);
+	}
+	else {
+		$cb->();
+	}
+}
+
 sub addTracksToPlaylist {
 	my ( $self, $cb, $playlist, $trackIds ) = @_;
 
@@ -1193,13 +1226,9 @@ sub categoryPlaylists {
 sub featuredPlaylists {
 	my ( $self, $cb ) = @_;
 
-	# let's manipulate the timestamp so we only pull updates every few minutes
-	my $timestamp = strftime("%Y-%m-%dT%H:%M:00", localtime(time()));
-	$timestamp =~ s/\d(:00)$/0$1/;
-
 	my $params = {
 		locale => $self->locale,
-		timestamp => $timestamp
+		timestamp => _getTimestamp(),
 	};
 
 	$self->browse($cb, 'featured-playlists', 'playlists', $params);
@@ -1265,6 +1294,22 @@ sub _isPlayable {
 	return if $item->{available_markets} && !(scalar grep /$cc/i, @{$item->{available_markets}});
 
 	return 1;
+}
+
+sub _getTimestamp {
+	# let's manipulate the timestamp so we only pull updates every few minutes
+	my $timestamp = strftime("%Y-%m-%dT%H:%M:00", localtime(time()));
+	$timestamp =~ s/\d(:00)$/0$1/;
+	return $timestamp;
+}
+
+sub _hasWebToken {
+	my ($self) = @_;
+
+	if (Plugins::Spotty::AccountHelper->getWebToken($self->client)) {
+		require Plugins::Spotty::API::Web;
+		return 1;
+	}
 }
 
 sub _call {
