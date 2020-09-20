@@ -201,16 +201,6 @@ sub handleFeed {
 
 		# Build main menu structure
 		my $items = [];
-		my $webTokens = $prefs->get('webTokens') || {};
-
-		if ( $webTokens->{Plugins::Spotty::AccountHelper->getAccount($client)} ) {
-			push @{$items}, {
-				name  => cstring($client, 'PLUGIN_SPOTTY_HOME'),
-				type  => 'link',
-				image => IMG_HOME,
-				url   => \&home,
-			};
-		}
 
 		if ( hasRecentSearches() ) {
 			push @{$items}, {
@@ -295,6 +285,14 @@ sub handleFeed {
 			}
 		}
 
+		my $webTokens = $prefs->get('webTokens') || {};
+		my $homeItem = {
+			name  => cstring($client, 'PLUGIN_SPOTTY_HOME'),
+			type  => 'link',
+			image => IMG_HOME,
+			url   => \&home,
+		};
+
 		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
 			my $credentials = Plugins::Spotty::AccountHelper->getAllCredentials();
 
@@ -312,12 +310,15 @@ sub handleFeed {
 							name => $name,
 							cb => $_->{url}
 						}]
-					}} @$personalItems ],
+					}} grep {
+						$_->{name} ne cstring($client, 'PLUGIN_SPOTTY_HOME') || $webTokens->{$credentials->{$name}}
+					} $homeItem, @$personalItems ],
 					image => IMG_ACCOUNT,
 				};
 			}
 		}
 		else {
+			unshift @$items, $homeItem if $webTokens->{Plugins::Spotty::AccountHelper->getAccount($client)};
 			push @$items, @$personalItems;
 		}
 
