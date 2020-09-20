@@ -97,11 +97,12 @@ sub scanAlbums { if (main::SCANNER) {
 
 		# if we've got more than one user, then create a virtual library per user
 		# TODO - library support doesn't really work yet. Needs more investigation.
-		my $libraryId;
-		# if (scalar keys %$accounts > 1) {
+		my ($libraryId, $accountName);
+		if (scalar keys %$accounts > 1) {
+			$accountName = "spotify:$account";
 		# 	$libraryId = md5_hex($accountId);
 		# 	$deleteLibrary_sth->execute($libraryId);
-		# }
+		}
 
 		my @missingAlbums;
 
@@ -133,7 +134,7 @@ sub scanAlbums { if (main::SCANNER) {
 				map { _prepareTrack($_) } grep {
 					!defined $_->{is_playable} || $_->{is_playable}
 				} @{$_->{tracks}}
-			], $libraryId);
+			], $libraryId, $accountName);
 		}
 
 		# if ($libraryId) {
