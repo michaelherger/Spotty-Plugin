@@ -144,6 +144,11 @@ sub handler {
 	Plugins::Spotty::Settings::Auth->shutdownHelper();
 
 	$paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
+	$paramRef->{displayNames} = { map {
+		my ($id) = each $_;
+		$id => Plugins::Spotty::AccountHelper->getDisplayName($id);
+	} @{$paramRef->{credentials}} };
+
 	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
 	$paramRef->{error429}     = Plugins::Spotty::API->hasError429();
 	$paramRef->{isLowCaloriesPi} = Plugins::Spotty::Helper->isLowCaloriesPi();
