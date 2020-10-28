@@ -356,6 +356,9 @@ sub needsUpdate {
 			my $snapshotIds = $cache->get('spotty_snapshot_ids' . $accountId);
 
 			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
+
+			return $acb->() unless $api;
+
 			$api->playlists(sub {
 				my ($playlists) = @_;
 
@@ -385,6 +388,9 @@ sub needsUpdate {
 			my $lastUpdateData = $cache->get('spotty_latest_album_update' . $accountId) || '';
 
 			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
+
+			return $acb->() unless $api;
+
 			$api->myAlbumsMeta(sub {
 				$acb->($class->libraryMetaId($_[0]) eq $lastUpdateData ? 0 : 1);
 			});
@@ -399,6 +405,9 @@ sub needsUpdate {
 			my $lastUpdateData = $cache->get('spotty_latest_artists_update' . $accountId) || '';
 
 			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
+
+			return $acb->() unless $api;
+
 			$api->myArtists(sub {
 				my $artists = shift;
 
