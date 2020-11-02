@@ -42,8 +42,13 @@ PLUGIN_SPOTTY_WEB_TOKEN
 	EN	Web token
 
 PLUGIN_SPOTTY_WEB_TOKEN_DESC
-	DE	Das Web Token erlaubt es, auf Inhalte Zugriffe zu erhalten, die sonst nicht verfügbar sind. Es muss im Browser, in welchem du dich bei <a href="https://open.spotify.com" target="_blank">open.spotify.com</a> angemeldet hast, exportiert werden. Es ist ein Cookie mit Namen "sp_dc" und besteht aus einer langen Zeichenkette. Siehe <a href="/plugins/Spotty/html/websession-cookie.html" target="_blank">die Anleitung hier</a>.
-	EN	The Web Token gives you access to resources which otherwise would not be available to you. You have to export it from your browser's cookies for <a href="https://open.spotify.com" target="_blank">open.spotify.com</a>. It's called "sp_dc" and has a large number of characters. See <a href="/plugins/Spotty/html/websession-cookie.html" target="_blank">these instructions</a>.
+	DE	Das Web Token erlaubt es unter Umständen, auf Inhalte Zugriffe zu erhalten, die sonst nicht verfügbar sind. Es ist normalerweise nicht notwendig.
+	DE	Sollten jedoch Inhalte im "Start" Menü nicht verfügbar sein, so kann die Angabe eines Web Tokens helfen.
+	DE	Das Web Token muss im Browser, in welchem du dich bei <a href="https://open.spotify.com" target="_blank">open.spotify.com</a> angemeldet hast, exportiert werden.
+	DE	Es ist ein Cookie mit Namen "sp_dc" und besteht aus einer langen Zeichenkette. Siehe <a href="/plugins/Spotty/html/websession-cookie.html" target="_blank">die Anleitung hier</a>.
+	EN	Under certain circumstances a Web Token can help to get access to resources which otherwise would not be available to you. It's usually not required.
+	EN	Should you miss the "Home" menu or some of its items, adding a Web Token can help. You have to export it from your browser's cookies for <a href="https://open.spotify.com" target="_blank">open.spotify.com</a>.
+	EN	It's called "sp_dc" and has a large number of characters. See <a href="/plugins/Spotty/html/websession-cookie.html" target="_blank">these instructions</a>.
 
 PLUGIN_SPOTTY_USERNAME
 	DE	Spotify Benutzername
