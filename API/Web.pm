@@ -111,7 +111,8 @@ sub home {
 			};
 
 			# try to get four images to create a mosaic
-			my @imageIds = grep { $_ } map {
+			my %seen;
+			my @imageIds = grep { $_ && !$seen{$_}++ } map {
 				my $url = $_->{images}->[0]->{url};
 				$url =~ m|/([a-f0-9]{40})(?:/.*?)?$|;
 				$1;
