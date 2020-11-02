@@ -413,7 +413,7 @@ sub search {
 
 			for my $item ( @{ $_[0]->{$type}->{items} } ) {
 				# sometimes we'd get empty list items...
-				next unless $item;
+				next unless $item && $self->_isPlayable($item);
 
 				if (main::INFOLOG) {
 				# if (main::INFOLOG && $log->is_info) {
