@@ -346,6 +346,8 @@ sub handleFeed {
 			items => $items,
 		});
 	} );
+
+	return;
 }
 
 sub home {
