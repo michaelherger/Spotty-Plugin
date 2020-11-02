@@ -80,30 +80,7 @@ sub getToken {
 		return $cb->(-429) ;
 	}
 
-	my $token = $self->getTokenFromCache;
-
-	if (main::DEBUGLOG && $log->is_debug) {
-		if ($token) {
-			$log->debug("Found cached token: $token");
-		}
-		else {
-			$log->debug("Didn't find cached token. Need to refresh.");
-		}
-	}
-
-	if ($token) {
-		$cb->($token);
-	}
-	else {
-		Plugins::Spotty::API::Token->get($self, $cb);
-	}
-}
-
-sub getTokenFromCache {
-	my ($self) = @_;
-
-	my $username = $self->username || 'generic';
-	return $cache->get('spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($username));
+	Plugins::Spotty::API::Token->get($self, $cb);
 }
 
 sub me {

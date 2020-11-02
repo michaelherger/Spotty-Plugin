@@ -29,12 +29,6 @@ my $prefs = preferences('plugin.spotty');
 sub getToken {
 	my ($class, $api, $cb) = @_;
 
-	my $username = $api->username || 'generic';
-	my $cacheKey = 'spotty_access_token' . _code() . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
-
-	my $cached = $cache->get($cacheKey);
-	return $cb->($cached) if $cached;
-
 	Plugins::Spotty::API::Token->get($api, sub {
 		my $webToken = shift;
 

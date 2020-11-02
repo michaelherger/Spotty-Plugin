@@ -58,19 +58,7 @@ sub getToken {
 		return -429;
 	}
 
-	my $userId = $self->userid || '_scanner';
-	my $token = $cache->get('spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($userId));
-
-	if (main::INFOLOG && $log->is_info) {
-		if ($token) {
-			$log->info("Found cached token: $token");
-		}
-		else {
-			$log->info("Didn't find cached token. Need to refresh.");
-		}
-	}
-
-	return $token || Plugins::Spotty::API::Token->get(undef, undef, { accountId => $userId });
+	return Plugins::Spotty::API::Token->get(undef, undef, { accountId => $self->userid });
 }
 
 sub myAlbums {

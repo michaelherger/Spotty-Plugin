@@ -138,7 +138,7 @@ sub _gotTokenInfo {
 	my ($class, $response, $username, $args) = @_;
 	$args ||= {};
 
-	my $cacheKey = 'spotty_access_token' . ($args->{code} || '') . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
+	my $cacheKey = _getCacheKey($args->{code}, $username);
 
 	my $token;
 
@@ -185,10 +185,23 @@ sub _killTokenHelper {
 	}
 }
 
+sub _getCacheKey {
+	my ($code, $username) = @_;
+	return 'spotty_access_token' . ($code || '') . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
+}
+
 # singleton shortcut to the main class
 sub get {
 	my ($class, $api, $cb, $args) = @_;
 	$args ||= {};
+
+	if (my $token = $cache->get(_getCacheKey($args->{code}, $args->{accountId} || ($api && $api->username) || (main::SCANNER ? '_scanner' : 'generic')))) {
+		main::DEBUGLOG && $log->is_debug && $log->debug("Found cached token: $token");
+		return $cb ? $cb->($token) : $token;
+	}
+	else {
+		main::DEBUGLOG && $log->is_debug && $log->debug("Didn't find cached token. Need to refresh.");
+	}
 
 	if (main::SCANNER) {
 		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',

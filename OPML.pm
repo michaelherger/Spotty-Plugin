@@ -187,7 +187,7 @@ sub handleFeed {
 		my ($lists, $message) = @_;
 
 		# if we didn't get any playlists nor token, then something's wrong
-		if ( !($lists && ref $lists && scalar @$lists && $message) && !$spotty->getTokenFromCache ) {
+		if ( !($lists && ref $lists && scalar @$lists && $message) ) {
 			$log->warn('Failed to get featured playlists and/or token - do not continue');
 			$cb->({
 				items => [{
