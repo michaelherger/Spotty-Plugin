@@ -54,7 +54,8 @@ my $prefs = preferences('plugin.spotty');
 my %procs;
 
 sub new {
-	my ($class, $api) = @_;
+	my ($class, $api, $args) = @_;
+	$args ||= {};
 
 	Plugins::Spotty::Helper->init();
 
@@ -72,8 +73,8 @@ sub new {
 			: '%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s" > "%s" 2>&1',
 		scalar Plugins::Spotty::Helper->get(),
 		$self->api->cache || Plugins::Spotty::AccountHelper->cacheFolder($account),
-		$prefs->get('iconCode'),
-		SPOTIFY_SCOPE,
+		$args->{code} || $prefs->get('iconCode'),
+		$args->{scope} || SPOTIFY_SCOPE,
 		$self->_tmpfile
 	);
 
@@ -88,13 +89,13 @@ sub new {
 	}
 
 	Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + TIMEOUT, \&_killTokenHelper);
-	Slim::Utils::Timers::setHighTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper);
+	Slim::Utils::Timers::setHighTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper, $args);
 
 	return $self;
 }
 
 sub _pollTokenHelper {
-	my ($self) = @_;
+	my ($self, $args) = @_;
 	Slim::Utils::Timers::killTimers($self, \&_pollTokenHelper);
 
 	if ($self && $self->_tmpfile && -f $self->_tmpfile && -s _) {
@@ -104,11 +105,11 @@ sub _pollTokenHelper {
 		my $response = read_file($self->_tmpfile);
 		unlink $self->_tmpfile;
 
-		my $token = $self->_gotTokenInfo($response, $self->api->username || 'generic');
+		my $token = $self->_gotTokenInfo($response, $self->api->username || 'generic', $args);
 		$self->_callCallbacks($token);
 	}
 	elsif ($self && $self->_proc && $self->_proc->alive) {
-		Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper);
+		Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper, $args);
 	}
 	else {
 		$self->_killTokenHelper(0, 'Token refresh call helper has closed unexpectedly? - Please consider re-setting your Spotify credentials should this happen all the time.');
@@ -134,9 +135,10 @@ sub _logCommand {
 }
 
 sub _gotTokenInfo {
-	my ($class, $response, $username) = @_;
+	my ($class, $response, $username, $args) = @_;
+	$args ||= {};
 
-	my $cacheKey = 'spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
+	my $cacheKey = 'spotty_access_token' . ($args->{code} || '') . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
 
 	my $token;
 
@@ -185,25 +187,28 @@ sub _killTokenHelper {
 
 # singleton shortcut to the main class
 sub get {
-	my ($class, $api, $cb, $accountId) = @_;
+	my ($class, $api, $cb, $args) = @_;
+	$args ||= {};
 
 	if (main::SCANNER) {
 		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',
 			scalar Plugins::Spotty::Helper->get(),
-			Plugins::Spotty::AccountHelper->cacheFolder($accountId),
+			Plugins::Spotty::AccountHelper->cacheFolder($args->{accountId}),
 			$prefs->get('iconCode'),
 			SPOTIFY_SCOPE
 		);
 
 		_logCommand($cmd);
 
-		return $class->_gotTokenInfo(`$cmd 2>&1`, $accountId || '_scanner');
+		return $class->_gotTokenInfo(`$cmd 2>&1`, $args->{accountId} || '_scanner');
 	}
 	elsif ( (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) && !$prefs->get('disableAsyncTokenRefresh') ) {
-		my $proc = $procs{$api};
+		my $proc = $procs{$api} unless $args->{code};
 
 		if ( !($proc && $proc->_proc && $proc->_proc->alive()) ) {
-			$proc = $procs{$api} = $class->new($api);
+			$proc = $class->new($api, $args);
+			# we don't keep a connection around if this is the web token code
+			$procs{$api} = $proc unless $args->{code};
 		}
 
 		if ($cb) {
@@ -220,13 +225,13 @@ sub get {
 		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',
 			scalar Plugins::Spotty::Helper->get(),
 			$api->cache || Plugins::Spotty::AccountHelper->cacheFolder($account),
-			$prefs->get('iconCode'),
-			SPOTIFY_SCOPE
+			$args->{code} || $prefs->get('iconCode'),
+			$args->{scope} || SPOTIFY_SCOPE
 		);
 
 		_logCommand($cmd);
 
-		$cb->($class->_gotTokenInfo(`$cmd 2>&1`, $api->username || 'generic'));
+		$cb->($class->_gotTokenInfo(`$cmd 2>&1`, $api->username || 'generic', $args));
 	}
 }
 

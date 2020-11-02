@@ -59,7 +59,7 @@ sub getToken {
 	}
 
 	my $userId = $self->userid || '_scanner';
-	my $token = $cache->get('spotty_access_token' . $userId);
+	my $token = $cache->get('spotty_access_token' . Slim::Utils::Unicode::utf8toLatin1Transliterate($userId));
 
 	if (main::INFOLOG && $log->is_info) {
 		if ($token) {
@@ -70,7 +70,7 @@ sub getToken {
 		}
 	}
 
-	return $token || Plugins::Spotty::API::Token->get(undef, undef, $userId);
+	return $token || Plugins::Spotty::API::Token->get(undef, undef, { accountId => $userId });
 }
 
 sub myAlbums {

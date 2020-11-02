@@ -29,6 +29,7 @@ use Plugins::Spotty::Helper;
 use Plugins::Spotty::API::Pipeline;
 use Plugins::Spotty::API::AsyncRequest;
 use Plugins::Spotty::API::Token;
+use Plugins::Spotty::API::Web;
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -123,25 +124,11 @@ sub me {
 }
 
 sub home {
-	my ( $self, $cb ) = @_;
-
-	if ($self->_hasWebToken()) {
-		Plugins::Spotty::API::Web->home(@_);
-	}
-	else {
-		$cb->([]);
-	}
+	Plugins::Spotty::API::Web->home(@_);
 }
 
 sub browseWebUrl {
-	my ( $self, $cb, $url ) = @_;
-
-	if ($self->_hasWebToken()) {
-		Plugins::Spotty::API::Web->browseWebUrl(@_);
-	}
-	else {
-		$cb->();
-	}
+	Plugins::Spotty::API::Web->browseWebUrl(@_);
 }
 
 # get the username - keep it simple. Shouldn't change, don't want nested async calls...
@@ -1125,14 +1112,7 @@ sub playlists {
 }
 
 sub getPlaylistHierarchy {
-	my ( $self, $cb ) = @_;
-
-	if ($self->_hasWebToken()) {
-		Plugins::Spotty::API::Web->getPlaylistHierarchy(@_);
-	}
-	else {
-		$cb->();
-	}
+	Plugins::Spotty::API::Web->getPlaylistHierarchy(@_);
 }
 
 sub addTracksToPlaylist {
@@ -1301,15 +1281,6 @@ sub _getTimestamp {
 	my $timestamp = strftime("%Y-%m-%dT%H:%M:00", localtime(time()));
 	$timestamp =~ s/\d(:00)$/0$1/;
 	return $timestamp;
-}
-
-sub _hasWebToken {
-	my ($self) = @_;
-
-	if (Plugins::Spotty::AccountHelper->getWebToken($self->client)) {
-		require Plugins::Spotty::API::Web;
-		return 1;
-	}
 }
 
 sub _call {
@@ -1566,3 +1537,6 @@ sub _PLAYLIST_CACHE_TTL {
 }
 
 1;
+
+__DATA__
+3635623730383037336663303438306561393261303737323333636138376264

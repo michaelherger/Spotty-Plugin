@@ -285,7 +285,6 @@ sub handleFeed {
 			}
 		}
 
-		my $webTokens = $prefs->get('webTokens') || {};
 		my $homeItem = {
 			name  => cstring($client, 'PLUGIN_SPOTTY_HOME'),
 			type  => 'link',
@@ -310,15 +309,13 @@ sub handleFeed {
 							name => $name,
 							cb => $_->{url}
 						}]
-					}} grep {
-						$_->{name} ne cstring($client, 'PLUGIN_SPOTTY_HOME') || $webTokens->{$credentials->{$name}}
-					} $homeItem, @$personalItems ],
+					}} $homeItem, @$personalItems ],
 					image => IMG_ACCOUNT,
 				};
 			}
 		}
 		else {
-			unshift @$items, $homeItem if $webTokens->{Plugins::Spotty::AccountHelper->getAccount($client)};
+			unshift @$items, $homeItem;
 			push @$items, @$personalItems;
 		}
 

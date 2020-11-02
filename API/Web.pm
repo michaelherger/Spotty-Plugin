@@ -14,6 +14,7 @@ use Slim::Utils::Prefs;
 
 require Plugins::Spotty::AccountHelper;
 require Plugins::Spotty::API::Cache;
+require Plugins::Spotty::API::Token;
 
 use constant API_URL => 'https://api.spotify.com/v1/%s';
 use constant PLAYLIST_TREE_URL => 'https://spclient.wg.spotify.com/playlist/v2/user/%s/rootlist';
@@ -26,6 +27,30 @@ my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
 
 sub getToken {
+	my ($class, $api, $cb) = @_;
+
+	my $username = $api->username || 'generic';
+	my $cacheKey = 'spotty_access_token' . _code() . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
+
+	my $cached = $cache->get($cacheKey);
+	return $cb->($cached) if $cached;
+
+	Plugins::Spotty::API::Token->get($api, sub {
+		my $webToken = shift;
+
+		if ($webToken) {
+			$cb->($webToken);
+		}
+		else {
+			$class->_getTokenFromWebCookie($api, $cb);
+		}
+	},{
+		code => _code(),
+		scope => 'playlist-read'
+	});
+}
+
+sub _getTokenFromWebCookie {
 	my ($class, $api, $cb) = @_;
 
 	my $webToken = Plugins::Spotty::AccountHelper->getWebToken($api->client);
@@ -232,6 +257,9 @@ sub browseWebUrl {
 		$cb->($items);
 	}, $query);
 }
+
+my $_CODE;
+sub _code { $_CODE ||= pack "H*",<Plugins::Spotty::API::DATA> }
 
 sub _call {
 	my ($class, $url, $cb, $params) = @_;
