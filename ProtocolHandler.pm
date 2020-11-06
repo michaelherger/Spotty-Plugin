@@ -153,7 +153,7 @@ sub getMetadataFor {
 	$meta = undef;
 
 	# sometimes we wouldn't get a song object, and an outdated url. Get latest data instead!
-	if (!$song && Plugins::Spotty::Connect->isSpotifyConnect($client) && ($song = $client->playingSong)) {
+	if ((!$url || $url =~ /connect-/) && !$song && Plugins::Spotty::Connect->isSpotifyConnect($client) && ($song = $client->playingSong)) {
 		$url = $song->streamUrl;
 	}
 
