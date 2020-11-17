@@ -1248,7 +1248,7 @@ sub _isPlayable {
 	return if defined $item->{is_playable} && !$item->{is_playable} && !(defined $item->{episode} && !$item->{episode} && $item->{uri} =~ /^spotify:episode:/);
 	return if $item->{is_local};
 
-	return if $item->{available_markets} && !(scalar grep /$cc/i, @{$item->{available_markets}});
+	return if $item->{available_markets} && scalar @{$item->{available_markets}} && !(scalar grep /$cc/i, @{$item->{available_markets}});
 
 	return 1;
 }
