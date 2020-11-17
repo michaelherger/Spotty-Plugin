@@ -12,6 +12,7 @@
 
 	[% IF error429; WRAPPER setting title="" desc="" %]
 		<div style="color: red">[% error429 %]</div>
+		<div>[% "PLUGIN_SPOTTY_CLIENT_ID_DESC" | string %]</div>
 	[% END; END %]
 
 	[% IF credentials; WRAPPER setting desc="PLUGIN_SPOTTY_WEB_TOKEN_DESC" %]

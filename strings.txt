@@ -509,8 +509,20 @@ PLUGIN_SPOTTY_CLIENT_ID
 	EN	Spotify Client ID
 
 PLUGIN_SPOTTY_CLIENT_ID_DESC
-	DE	Sehr wahrscheinlich braucht dich diese Einstellung nicht zu interessieren. Falls doch, dann weisst du hoffentlich was das sein soll. Lass es einfach leer, falls dem nicht so ist. Weitere Informationen braucht es nicht 😀.
-	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀.
+	DE	<div>Die Verwendung einer eigenen Client ID kann helfen, falls Sie Probleme mit dem "Rate Limiting" haven (Fehler 429). Um eine solche Client ID zu erhalten, befolgen Sie diese einfachen Schritte:</div>
+	DE	<ul style="list-style:initial">
+	DE	<li>Besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an.</li>
+	DE	<li>Klicken Sie "Create An App", und folgen Sie den Anweisungen.</li>
+	DE	<li>Kopieren Sie die neu erstellte Client ID, und fügen Sie sie in den Spotty Einstellungen ein.</li>
+	DE	</ul>
+	EN	<div>Using a custom Client ID can help if you hit issues with rate limiting ("error 429"). In order to get your own Client ID please follow these simple steps:</div>
+	EN	<ul style="list-style:initial">
+	EN	<li>Go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed.</li>
+	EN	<li>Click "Create An App", follow the instructions.</li>
+	EN	<li>Copy the newly created Client ID to your Spotty Settings.</li>
+	EN	</ul>
+#	DE	Sehr wahrscheinlich braucht dich diese Einstellung nicht zu interessieren. Falls doch, dann weisst du hoffentlich was das sein soll. Lass es einfach leer, falls dem nicht so ist. Weitere Informationen braucht es nicht 😀.
+#	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀.
 
 # this is a duplicate of INFORMATION_BINDIRS - which is not available in 7.7.5
 PLUGIN_SPOTTY_INFORMATION_BINDIRS
