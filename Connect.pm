@@ -259,12 +259,19 @@ sub _delayedStop {
 	my $remaining = $client->controller()->playingSongDuration() - Slim::Player::Source::songTime($client);
 	main::INFOLOG && $log->is_info && $log->info("Stopping playback in ${remaining}s, as we have likely reached the end of our context (playlist, album, ...)");
 
-	Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining, sub {
-		$client->pluginData( newTrack => 0 );
-		$class->getAPIHandler($client)->playerPause(sub {
-			$client->execute(['stop']);
-		}, $client->id);
-	});
+	Slim::Utils::Timers::killTimers($client, \&_sendPause);
+	Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining, \&_sendPause, $class);
+}
+
+sub _sendPause {
+	my $client = shift || return;
+	my $class = shift;
+
+	Slim::Utils::Timers::killTimers($client, \&_sendPause);
+	$client->pluginData( newTrack => 0 );
+	$class->getAPIHandler($client)->playerPause(sub {
+		$client->execute(['stop']);
+	}, $client->id);
 }
 
 sub _onNewSong {
