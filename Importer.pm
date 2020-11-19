@@ -331,6 +331,7 @@ sub getArtistPicture { if (main::SCANNER) {
 } }
 
 # This code is not run in the scanner, but in LMS
+my %apis;
 sub needsUpdate {
 	my ($class, $cb) = @_;
 
@@ -338,10 +339,15 @@ sub needsUpdate {
 	require Plugins::Spotty::API;
 
 	my $timestamp = time();
-
 	my @workers;
-	foreach my $accountId (keys %{_enabledAccounts()}) {
-		my $api = Plugins::Spotty::API->new({ username => $accountId });
+	my $accounts = _enabledAccounts();
+
+	foreach my $account (keys %$accounts) {
+		my $accountId = $accounts->{$account};
+		my $api = $apis{$account} ||= Plugins::Spotty::API->new({
+			username => $account,
+			cache => Plugins::Spotty::AccountHelper->cacheFolder($accountId)
+		}) || next;
 
 		push @workers, sub {
 			my ($result, $acb) = @_;
@@ -350,8 +356,6 @@ sub needsUpdate {
 			return $acb->($result) if $result;
 
 			my $snapshotIds = $cache->get('spotty_snapshot_ids' . $accountId);
-
-			return $acb->() unless $api;
 
 			$api->playlists(sub {
 				my ($playlists) = @_;
@@ -381,8 +385,6 @@ sub needsUpdate {
 
 			my $lastUpdateData = $cache->get('spotty_latest_album_update' . $accountId) || '';
 
-			return $acb->() unless $api;
-
 			$api->myAlbumsMeta(sub {
 				$acb->($class->libraryMetaId($_[0]) eq $lastUpdateData ? 0 : 1);
 			});
@@ -395,8 +397,6 @@ sub needsUpdate {
 			return $acb->($result) if $result;
 
 			my $lastUpdateData = $cache->get('spotty_latest_artists_update' . $accountId) || '';
-
-			return $acb->() unless $api;
 
 			$api->myArtists(sub {
 				my $artists = shift;
