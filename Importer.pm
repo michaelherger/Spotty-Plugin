@@ -50,11 +50,7 @@ sub startScan { if (main::SCANNER) {
 	my $class = shift;
 	require Plugins::Spotty::API::Sync;
 
-	my $accounts = Plugins::Spotty::AccountHelper->getAllCredentials() || {};
-	my $dontImportAccounts = $prefs->get('dontImportAccounts');
-	foreach (keys %$accounts) {
-		delete $accounts->{$_} if $dontImportAccounts->{$accounts->{$_}};
-	}
+	my $accounts = _enabledAccounts();
 
 	if (scalar keys %$accounts) {
 		$dbh ||= Slim::Schema->dbh();
@@ -344,8 +340,8 @@ sub needsUpdate {
 	my $timestamp = time();
 
 	my @workers;
-	foreach my $client (Slim::Player::Client::clients()) {
-		my $accountId = Plugins::Spotty::AccountHelper->getAccount($client);
+	foreach my $accountId (keys %{_enabledAccounts()}) {
+		my $api = Plugins::Spotty::API->new({ username => $accountId });
 
 		push @workers, sub {
 			my ($result, $acb) = @_;
@@ -354,8 +350,6 @@ sub needsUpdate {
 			return $acb->($result) if $result;
 
 			my $snapshotIds = $cache->get('spotty_snapshot_ids' . $accountId);
-
-			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
 
 			return $acb->() unless $api;
 
@@ -387,8 +381,6 @@ sub needsUpdate {
 
 			my $lastUpdateData = $cache->get('spotty_latest_album_update' . $accountId) || '';
 
-			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
-
 			return $acb->() unless $api;
 
 			$api->myAlbumsMeta(sub {
@@ -403,8 +395,6 @@ sub needsUpdate {
 			return $acb->($result) if $result;
 
 			my $lastUpdateData = $cache->get('spotty_latest_artists_update' . $accountId) || '';
-
-			my $api = Plugins::Spotty::Plugin->getAPIHandler($client);
 
 			return $acb->() unless $api;
 
@@ -434,6 +424,19 @@ sub needsUpdate {
 	else {
 		$cb->();
 	}
+}
+
+sub _enabledAccounts {
+	my $accounts = Plugins::Spotty::AccountHelper->getAllCredentials() || {};
+	my $dontImportAccounts = $prefs->get('dontImportAccounts');
+
+	my $enabledAccounts = {};
+
+	while (my ($name, $id) = each %$accounts) {
+		$enabledAccounts->{$name} = $id unless $dontImportAccounts->{$id}
+	}
+
+	return $enabledAccounts;
 }
 
 sub _prepareTrack {
