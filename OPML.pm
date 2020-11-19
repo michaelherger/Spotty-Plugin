@@ -406,6 +406,9 @@ sub browseWebUrl {
 				if ($type eq 'album') {
 					$innerItem = _albumItem($client, $_);
 				}
+				elsif ($type eq 'artist') {
+					$innerItem = _artistItem($client, $_);
+				}
 				elsif ($type eq 'playlist') {
 					$innerItem = _playlistItem($client, $_);
 					if ($_->{description}) {
@@ -420,7 +423,7 @@ sub browseWebUrl {
 					# "favorite tracks"? /me/tracks
 				}
 				else {
-					$log->warn("Unexpected content type found in home menu structure: $type " . main::INFOLOG ? Data::Dump::dump($_) : '');
+					$log->warn("Unexpected content type found in home menu structure: $type " . (main::INFOLOG ? Data::Dump::dump($_) : ''));
 				}
 
 				$innerItem;
@@ -1358,30 +1361,38 @@ sub artistList {
 		$count++;
 		$indexLetter = $textkey;
 
-		my $item = {
-			name => $artist->{name},
-			textkey => $textkey,
-			image => $artist->{image} || IMG_ARTIST,
-			url  => \&artist,
-			playlist => $artist->{uri},
-			favorites_url => $artist->{uri},
-			passthrough => [{
-				uri => $artist->{uri},
-				myAlbumsOnly => $myAlbumsOnly ? 1 : 0,
-			}]
-		};
-
-		if ($artist->{followers} && $artist->{followers}->{total}) {
-			$item->{line2} = cstring($client, 'PLUGIN_SPOTTY_FOLLOWERS') . ' ' . $artist->{followers}->{total};
-		}
-
-		push @{$items}, $item;
+		push @{$items}, _artistItem($client, $artist, $textkey, $myAlbumsOnly);
 	}
 
 	push @$indexList, [$indexLetter, $count];
 
 	return wantarray ? ($items, $indexList) : $items;
 }
+
+sub _artistItem {
+	my ($client, $artist, $textkey, $myAlbumsOnly) = @_;
+
+	my $item = {
+		name => $artist->{name},
+		image => $artist->{image} || IMG_ARTIST,
+		url  => \&artist,
+		playlist => $artist->{uri},
+		favorites_url => $artist->{uri},
+		passthrough => [{
+			uri => $artist->{uri},
+			myAlbumsOnly => $myAlbumsOnly ? 1 : 0,
+		}]
+	};
+
+	if ($artist->{followers} && $artist->{followers}->{total}) {
+		$item->{line2} = cstring($client, 'PLUGIN_SPOTTY_FOLLOWERS') . ' ' . $artist->{followers}->{total};
+	}
+
+	$item->{textkey} = $textkey if $textkey;
+
+	return $item;
+}
+
 
 sub podcastList {
 	my ( $client, $shows, $noIndexList ) = @_;
