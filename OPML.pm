@@ -819,7 +819,7 @@ sub playlists {
 				} sort {
 					$hierarchy->{$a}->{order} <=> $hierarchy->{$b}->{order}
 				} grep {
-					ref $hierarchy->{$_} && $hierarchy->{$_}->{isFolder} && $tree{$_}
+					ref $hierarchy->{$_} && $hierarchy->{$_}->{isFolder};
 				} keys %$hierarchy) {
 					if (my $parent = $data->{parent}) {
 						$tree{$parent} ||= [];
