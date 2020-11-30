@@ -509,7 +509,7 @@ PLUGIN_SPOTTY_CLIENT_ID
 	EN	Spotify Client ID
 
 PLUGIN_SPOTTY_CLIENT_ID_DESC
-	DE	<div>Die Verwendung einer eigenen Client ID kann helfen, falls Sie Probleme mit dem "Rate Limiting" haven (Fehler 429). Um eine solche Client ID zu erhalten, befolgen Sie diese einfachen Schritte:</div>
+	DE	<div>Die Verwendung einer eigenen Client ID kann helfen, falls Sie Probleme mit dem "Rate Limiting" haben (Fehler 429). Um eine solche Client ID zu erhalten, befolgen Sie diese einfachen Schritte:</div>
 	DE	<ul style="list-style:initial">
 	DE	<li>Besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an.</li>
 	DE	<li>Klicken Sie "Create An App", und folgen Sie den Anweisungen.</li>
