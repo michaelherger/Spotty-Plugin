@@ -12,6 +12,7 @@ BEGIN {
 
 use Date::Parse qw(str2time);
 use Digest::MD5 qw(md5_hex);
+use List::Util qw(max);
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
@@ -126,8 +127,14 @@ sub scanAlbums { if (main::SCANNER) {
 			$progress->update($account . string('COLON') . ' ' . $_->{name});
 			main::SCANNER && Slim::Schema->forceCommit;
 
+			# Spotify doesn't provide the disc count for an album - use the largest disc number
+			my $discc = 1;
+			foreach (@{$_->{tracks}}) {
+				$discc = max($discc, $_->{disc_number})
+			};
+
 			$class->storeTracks([
-				map { _prepareTrack($_) } grep {
+				map { _prepareTrack($_, $discc) } grep {
 					!defined $_->{is_playable} || $_->{is_playable}
 				} @{$_->{tracks}}
 			], $libraryId, $accountName);
@@ -440,7 +447,7 @@ sub _enabledAccounts {
 }
 
 sub _prepareTrack {
-	my ($track) = @_;
+	my ($track, $discc) = @_;
 
 	my $splitChar = substr(preferences('server')->get('splitList'), 0, 1);
 
@@ -460,7 +467,7 @@ sub _prepareTrack {
 		TRACKNUM     => $item->{track_number},
 		GENRE        => 'Spotify',
 		DISC         => $item->{disc_number},
-		# ??? DISCC?
+		DISCC        => $discc || 1,
 		SECS         => $item->{duration_ms}/1000,
 		YEAR         => substr($item->{release_date} || $item->{album}->{release_date}, 0, 4),
 		COVER        => $item->{album}->{image},
