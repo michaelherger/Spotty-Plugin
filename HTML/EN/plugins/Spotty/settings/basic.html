@@ -20,7 +20,7 @@
 			<tr>
 				<th>[% "PLUGIN_SPOTTY_ACCOUNT" | string %][% "COLON" | string %]</th>
 				<th>[% "PLUGIN_SPOTTY_IMPORT_LIBRARY"| string %][% "COLON" | string %]</th>
-				<th>[% "PLUGIN_SPOTTY_WEB_TOKEN" | string %][% "COLON" | string %]</th>
+				[% IF webTokens %]<th>[% "PLUGIN_SPOTTY_WEB_TOKEN" | string %][% "COLON" | string %]</th>[% END %]
 				<th></th>
 			</tr>
 		[% FOREACH creds = credentials %]
@@ -33,9 +33,9 @@
 						<option [% IF dontImportAccounts.$accountId %]selected [% END %]value="1">[% "NO" | string %]</option>
 					</select>
 				</td>
-				<td style="vertical-align: middle; padding-right: 10px">
+				[% IF webTokens %]<td style="vertical-align: middle; padding-right: 10px">
 					<input type="text" name="pref_webtoken_[% accountId %]" value="[% spottyWebTokens.$accountId %]" class="stdedit" size="80">
-				</td>
+				</td>[% END %]
 				<td style="vertical-align: middle">
 					<input name="delete_[% accountId %]" type="submit" value="[% "DELETE" | string %]" class="stdclick" />
 				</td>
