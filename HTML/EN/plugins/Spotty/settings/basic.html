@@ -15,7 +15,8 @@
 		<div>[% "PLUGIN_SPOTTY_CLIENT_ID_DESC" | string %]</div>
 	[% END; END %]
 
-	[% IF credentials; WRAPPER setting desc="PLUGIN_SPOTTY_WEB_TOKEN_DESC" %]
+	[% IF webTokens; webTokensDesc = 'PLUGIN_SPOTTY_WEB_TOKEN_DESC'; END %]
+	[% IF credentials; WRAPPER setting desc=webTokensDesc %]
 		<table>
 			<tr>
 				<th>[% "PLUGIN_SPOTTY_ACCOUNT" | string %][% "COLON" | string %]</th>
