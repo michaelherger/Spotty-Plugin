@@ -9,7 +9,6 @@ use File::Spec::Functions qw(catdir catfile tmpdir);
 use JSON::XS::VersionOneAndTwo;
 use Scalar::Util qw(blessed);
 
-use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
@@ -17,7 +16,6 @@ use constant CACHE_PURGE_INTERVAL => 86400;
 use constant CACHE_PURGE_MAX_AGE => 60 * 60;
 use constant CACHE_PURGE_INTERVAL_COUNT => 15;
 
-my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
 my $serverPrefs = preferences('server');
