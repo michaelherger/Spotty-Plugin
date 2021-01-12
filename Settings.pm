@@ -132,6 +132,9 @@ sub handler {
 			}
 		}
 #		$prefs->set('webTokens', $webTokens);
+
+		# make sure value is not undefined, or it might get re-initialized
+		$paramRef->{pref_cleanupTags} ||= 0;
 	}
 
 	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::AccountHelper->hasCredentials()) ) {
