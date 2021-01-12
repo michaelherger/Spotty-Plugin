@@ -117,7 +117,7 @@ sub username {
 
 	# fall back to default account if no username was given
 	my $credentials = Plugins::Spotty::AccountHelper->getCredentials($self->client);
-	if ( $credentials && $credentials->{username} ) {
+	if ( $credentials && ref $credentials && $credentials->{username} ) {
 		$self->_username($credentials->{username})
 	}
 

@@ -139,7 +139,7 @@ sub renameCacheFolder {
 	my ($class, $oldId, $newId) = @_;
 
 	if ( !$newId && (my $credentials = $class->getCredentials($oldId)) ) {
-		$newId = substr( md5_hex(Slim::Utils::Unicode::utf8toLatin1Transliterate($credentials->{username})), 0, 8 );
+		$newId = substr( md5_hex(Slim::Utils::Unicode::utf8toLatin1Transliterate($credentials->{username} || '')), 0, 8 );
 	}
 
 	main::INFOLOG && $log->info("Trying to rename $oldId to $newId");
@@ -314,9 +314,11 @@ sub getCredentials {
 				$class->deleteCacheFolder($id);
 			}
 
-			return $credentials || {};
+			return $credentials;
 		}
 	}
+
+	return;
 }
 
 sub getAllCredentials {
@@ -333,29 +335,6 @@ sub getAllCredentials {
 			$credentials->{$username} = $_;
 		}
 	}
-
-	# if (!main::SCANNER && Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') >= 0 && scalar keys %$credentials > 1) {
-	# 	require Slim::Music::VirtualLibraries;
-
-	# 	# this is just a stub to make LMS include the library - but it's all created in the importer
-	# 	# while (my ($account, $accountId) = each %$accounts) {
-	# 	foreach my $account (keys %$credentials) {
-	# 		my $accountId = $credentials->{$account};
-	# 		Slim::Music::VirtualLibraries->unregisterLibrary($accountId);
-	# 		Slim::Music::VirtualLibraries->registerLibrary({
-	# 			id => $accountId,
-	# 			name => $class->getDisplayName($account) . ' (Spotty)',
-	# 			scannerCB => sub {}
-	# 		});
-
-	# 		Slim::Music::VirtualLibraries->unregisterLibrary($accountId . 'AndLocal');
-	# 		Slim::Music::VirtualLibraries->registerLibrary({
-	# 			id => $accountId . 'AndLocal',
-	# 			name => Slim::Utils::Strings::string('PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY', $class->getDisplayName($account)),
-	# 			scannerCB => sub {}
-	# 		});
-	# 	}
-	# }
 
 	$credsCache = $credentials if scalar keys %$credentials;
 	return $credentials;
