@@ -299,7 +299,7 @@ sub handleFeed {
 				lc($a) cmp lc($b)
 			} keys %$credentials ) {
 				push @$items, {
-					name => cstring($client, 'PLUGIN_SPOTTY_USERS_LIBRARY', Plugins::Spotty::AccountHelper->getDisplayName($name)),
+					name => Plugins::Spotty::AccountHelper->getDisplayName($name),
 					items => [ map {{
 						name => $_->{name},
 						type => $_->{type},

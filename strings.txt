@@ -78,10 +78,6 @@ PLUGIN_SPOTTY_DONT_IMPORT_LIBRARY
 	DE	Nicht importieren
 	EN	Don't import
 
-PLUGIN_SPOTTY_USERS_LIBRARY
-	DE	Sammlung von %s
-	EN	%s's Library
-
 PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY
 	DE	Lokale Musik und %s
 	EN	Local Music and %s's
