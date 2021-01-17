@@ -185,6 +185,17 @@ sub scanArtists { if (main::SCANNER) {
 
 	my $progress;
 
+	# backwards compatibility for 8.1 and older...
+	my $contributorNameNormalizer;
+	if ($class->can('normalizeContributorName')) {
+		$contributorNameNormalizer = sub {
+			$class->normalizeContributorName($_[0]);
+		};
+	}
+	else {
+		$contributorNameNormalizer = sub { $_[0] };
+	}
+
 	foreach my $account (keys %$accounts) {
 		my $accountId = $accounts->{$account};
 		my $api = Plugins::Spotty::API::Sync->new($accountId);
@@ -217,7 +228,7 @@ sub scanArtists { if (main::SCANNER) {
 			main::SCANNER && Slim::Schema->forceCommit;
 
 			Slim::Schema::Contributor->add({
-				'artist' => $name,
+				'artist' => $contributorNameNormalizer->($name),
 				'extid'  => $artist->{uri},
 			});
 		}
