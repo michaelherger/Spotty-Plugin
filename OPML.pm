@@ -1022,14 +1022,14 @@ sub _gotArtistData {
 		type  => 'outline',
 		name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
 		items => trackList($client, $artistInfo->{tracks}),
-	},{
-		type => 'playlist',
-		name => cstring($client, 'SONGS'),
-		url => \&search,
-		passthrough => [{
-			query => 'artist:"' . $artist->{name} . '"',
-			type  => 'track'
-		}]
+	# },{
+	# 	type => 'playlist',
+	# 	name => cstring($client, 'SONGS'),
+	# 	url => \&search,
+	# 	passthrough => [{
+	# 		query => 'artist:"' . $artist->{name} . '"',
+	# 		type  => 'track'
+	# 	}]
 	} if @{$artistInfo->{tracks}};
 
 	push @$items, {
