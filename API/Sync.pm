@@ -85,6 +85,24 @@ sub myAlbums {
 
 			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 			push @$albums, map {
+				my $totalTracks = $_->{album}->{total_tracks};
+				if ($totalTracks > SPOTIFY_LIMIT) {
+					my $trackOffset = scalar @{$_->{album}->{tracks}->{items}} || 0;
+
+					while ($trackOffset < $totalTracks) {
+						my $tracksResponse = $self->_call('albums/' . $_->{album}->{id} . '/tracks', {
+							offset => $trackOffset,
+							limit => SPOTIFY_LIMIT
+						});
+
+						if ( $tracksResponse && $tracksResponse->{items} && ref $tracksResponse->{items} && ref $tracksResponse->{items} eq 'ARRAY' ) {
+							push @{$_->{album}->{tracks}->{items}}, @{$tracksResponse->{items}};
+						}
+
+						$trackOffset += SPOTIFY_LIMIT;
+					}
+				}
+
 				$_->{album}->{added_at} = $_->{added_at} if $_->{added_at};
 				$libraryCache->normalize($_->{album});
 			} @{ $response->{items} };
@@ -93,6 +111,22 @@ sub myAlbums {
 
 	return wantarray ? ($albums, $libraryMeta) : $albums;
 }
+
+# sub _albumTracks {
+# 	my ($self, $id, $offset) = @_;
+
+# 	my $response = $self->_call("albums/$id/tracks", {
+# 		offset => $offset || 0,
+# 		limit => SPOTIFY_LIMIT
+# 	});
+
+# 	my $tracks = [];
+# 	if ( $response && $response->{items} && ref $response->{items} ) {
+# 		push @$tracks, @{ $response->{items} };
+# 	}
+
+# 	return $tracks;
+# }
 
 sub myArtists {
 	my ($self, $args) = @_;
