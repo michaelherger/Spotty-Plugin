@@ -2,11 +2,15 @@ package Plugins::Spotty::OPML;
 
 use strict;
 
+BEGIN {
+	use Exporter::Lite;
+	our @EXPORT_OK = qw(IMG_PLAYLIST);
+}
+
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::API;
-use Plugins::Spotty::PlaylistFolders;
 
 use Slim::Menu::BrowseLibrary;
 use Slim::Menu::GlobalSearch;
@@ -30,6 +34,9 @@ use constant IMG_TOPTRACKS => 'plugins/Spotty/html/images/toptracks.png';
 use constant IMG_NEWS => 'plugins/Spotty/html/images/news.png';
 use constant IMG_GENRES => 'plugins/Spotty/html/images/genres.png';
 use constant IMG_INBOX => 'plugins/Spotty/html/images/inbox.png';
+
+# must delay this import, as it's using above export
+use Plugins::Spotty::PlaylistFolders;
 
 use constant MAX_RECENT => 50;
 
@@ -804,61 +811,9 @@ sub playlists {
 			if ($hierarchy) {
 				main::INFOLOG && $log->is_info && $log->info("Found playlist folder hierarchy! Let's use it: " . Data::Dump::dump($hierarchy));
 
-				my %tree;
-				foreach my $playlist (@$result) {
-					my $parent = '/';
-					my $node = $hierarchy->{$playlist->{uri}};
-					if ($node && ref $node) {
-						$parent = $node->{parent} || '/';
-					}
-
-					$tree{$parent} ||= [];
-					push @{$tree{$parent}}, @{playlistList($client, [$playlist])};
-				}
-
-				foreach my $data (map {
-					$hierarchy->{$_}->{id} = $_;
-					$hierarchy->{$_};
-				} sort {
-					$hierarchy->{$a}->{order} <=> $hierarchy->{$b}->{order}
-				} grep {
-					ref $hierarchy->{$_} && $hierarchy->{$_}->{isFolder};
-				} keys %$hierarchy) {
-					if (my $parent = $data->{parent}) {
-						$tree{$parent} ||= [];
-						push @{$tree{$parent}}, {
-							type  => 'outline',
-							name  => $data->{name},
-							image => IMG_PLAYLIST,
-							id    => $data->{id}
-						};
-					}
-				}
-
-				# now let's try to bring the order back in...
-				foreach my $parent (keys %tree) {
-					main::INFOLOG && $log->is_info && $log->info("Sort items in $parent");
-					$tree{$parent} = [ sort {
-						my $aId = $a->{favorites_url} || $a->{id};
-						my $bId = $b->{favorites_url} || $b->{id};
-
-						my $aOrder = eval { $hierarchy->{$aId}->{order} } || 0;
-						my $bOrder = eval { $hierarchy->{$bId}->{order} } || 0;
-
-						$aOrder <=> $bOrder;
-					} @{$tree{$parent}} ];
-				}
-
-				# now add ordered sub trees
-				foreach my $parent (keys %tree) {
-					main::INFOLOG && $log->is_info && $log->info("Add items to $parent");
-					foreach my $item (@{$tree{$parent}}) {
-						$item->{items} = $tree{$item->{id}} if $item->{id};
-					}
-				}
-
-				main::DEBUGLOG && $log->is_debug && $log->debug("Final playlist folder order " . Data::Dump::dump($tree{'/'}));
-				$items = $tree{'/'};
+				$items = Plugins::Spotty::PlaylistFolders->render($result, $hierarchy, sub {
+					playlistList($client, [shift]);
+				});
 			}
 			else {
 				$items = playlistList($client, $result);
@@ -1804,31 +1759,51 @@ sub addTrackToPlaylist {
 
 		my $items = [];
 
-		for my $list ( @{$playlists} ) {
-			my $creator = $list->{creator};
-			$creator ||= $list->{owner}->{id} if $list->{owner};
+		Plugins::Spotty::PlaylistFolders->getTree($spotty, [ map {
+			$_->{uri};
+		} @$playlists ], sub {
+			my $hierarchy = shift;
 
-			# ignore other user's playlists we're following
-			if ( $creator && $creator ne $username ) {
-				next;
+			my $listItem = sub {
+				my $list = shift;
+
+				my $creator = $list->{creator};
+				$creator ||= $list->{owner}->{id} if $list->{owner};
+
+				# ignore other user's playlists we're following
+				if ( $creator && $creator ne $username ) {
+					return;
+				}
+
+				return {
+					name  => $list->{name} || $list->{title},
+					type  => 'link',
+					image => $list->{image} || ($list->{collaborative} ? IMG_COLLABORATIVE : IMG_PLAYLIST),
+					url   => \&_addTrackToPlaylist,
+					nextWindow => 'parent',
+					passthrough => [{
+						track => $params->{uri} || $args->{uri},
+						playlist => $list->{uri}
+					}]
+				};
+			};
+
+			if ($hierarchy) {
+				$items = Plugins::Spotty::PlaylistFolders->render($playlists, $hierarchy, sub {
+					[$listItem->(shift)];
+				});
+			}
+			else {
+				for my $list ( @{$playlists} ) {
+					my $item = $listItem->($list);
+					push @$items, $item if $item;
+				}
 			}
 
-			push @{$items}, {
-				name  => $list->{name} || $list->{title},
-				type  => 'link',
-				image => $list->{image} || ($list->{collaborative} ? IMG_COLLABORATIVE : IMG_PLAYLIST),
-				url   => \&_addTrackToPlaylist,
-				nextWindow => 'parent',
-				passthrough => [{
-					track => $params->{uri} || $args->{uri},
-					playlist => $list->{uri}
-				}]
-			};
-		}
-
-		$cb->({
-			items => $items,
-			isContextMenu => 1,
+			$cb->({
+				items => $items,
+				isContextMenu => 1,
+			});
 		});
 	},{
 		user => $username

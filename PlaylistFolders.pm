@@ -110,6 +110,75 @@ sub parse {
 	return $map;
 }
 
+sub render {
+	my ($class, $playlists, $hierarchy, $renderCb) = @_;
+	my %tree;
+
+	if ($playlists && $hierarchy) {
+		foreach my $playlist (@$playlists) {
+			my $parent = '/';
+			my $node = $hierarchy->{$playlist->{uri}};
+			if ($node && ref $node) {
+				$parent = $node->{parent} || '/';
+			}
+
+			$tree{$parent} ||= [];
+			push @{$tree{$parent}}, @{$renderCb->($playlist) || []};
+		}
+
+		foreach my $data (map {
+			$hierarchy->{$_}->{id} = $_;
+			$hierarchy->{$_};
+		} sort {
+			$hierarchy->{$a}->{order} <=> $hierarchy->{$b}->{order}
+		} grep {
+			ref $hierarchy->{$_} && $hierarchy->{$_}->{isFolder};
+		} keys %$hierarchy) {
+			if (my $parent = $data->{parent}) {
+				$tree{$parent} ||= [];
+				push @{$tree{$parent}}, {
+					type  => 'outline',
+					name  => $data->{name},
+					image => Plugins::Spotty::OPML::IMG_PLAYLIST,
+					id    => $data->{id}
+				};
+			}
+		}
+
+		# now let's try to bring the order back in...
+		foreach my $parent (keys %tree) {
+			main::INFOLOG && $log->is_info && $log->info("Sort items in $parent");
+			$tree{$parent} = [ sort {
+				my $aId = $a->{favorites_url} || $a->{id};
+				my $bId = $b->{favorites_url} || $b->{id};
+
+				my $aOrder = eval { $hierarchy->{$aId}->{order} } || 0;
+				my $bOrder = eval { $hierarchy->{$bId}->{order} } || 0;
+
+				$aOrder <=> $bOrder;
+			} @{$tree{$parent}} ];
+		}
+
+		# we have to iterate once more, as in the previous step we'd only populate some of the folders
+		foreach my $parent (keys %tree) {
+			$tree{$parent} = [ grep {
+				$_->{type} ne 'outline' || scalar @{$tree{$_->{id}} || []}
+			} @{$tree{$parent}} ];
+		}
+
+		# now add ordered sub trees
+		foreach my $parent (keys %tree) {
+			main::INFOLOG && $log->is_info && $log->info("Add items to $parent");
+			foreach my $item (@{$tree{$parent}}) {
+				$item->{items} = $tree{$item->{id}} if $item->{id};
+			}
+		}
+	}
+
+	main::DEBUGLOG && $log->is_debug && $log->debug("Final playlist folder order " . Data::Dump::dump($tree{'/'}));
+	return $tree{'/'};
+}
+
 sub spotifyCacheFolder {
 	if (main::ISMAC) {
 		return MAC_PERSISTENT_CACHE_PATH;
