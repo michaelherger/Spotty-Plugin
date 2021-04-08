@@ -268,11 +268,12 @@ sub playlistTrackIDs {
 
 	do {
 		my $params = {
+			market => 'from_token',
 			offset => $offset,
 			limit => SPOTIFY_PLAYLIST_TRACKS_LIMIT,
 		};
 
-		$params->{fields} = 'next,items(track(uri))' if !$getFullData;
+		$params->{fields} = 'next,items(track(uri,restrictions))' if !$getFullData;
 
 		my $response = $self->_call("playlists/$id/tracks", $params);
 
@@ -283,7 +284,7 @@ sub playlistTrackIDs {
 				$libraryCache->normalize($_->{track}) if $getFullData;
 				$_->{track}->{uri};
 			} grep {
-				$_->{track} && ref $_->{track} && $_->{track}->{uri} && $_->{track}->{uri} =~ /^spotify:(episode|track):/
+				$_->{track} && ref $_->{track} && $_->{track}->{uri} && $_->{track}->{uri} =~ /^spotify:(episode|track):/ && !$_->{track}->{restrictions}
 			} @{$response->{items}};
 			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 		}
