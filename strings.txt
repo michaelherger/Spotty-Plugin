@@ -584,6 +584,10 @@ PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER
 	DE	Podcast Reihenfolge
 	EN	Podcast Sort Order
 
+PLUGIN_SPOTTY_AUTOPLAY_DESC
+	DE	Autoplay - Automatisch ähnliche Songs abspielen, wenn die Musik zu Ende geht.
+	EN	Autoplay similar songs when your music ends.
+
 PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER_DESC
 	DE	Die Reihenfolge der Podcast-Folgen umkehren. Dies kann hilfreich sein, wenn Sie alle Folgen eines Podcasts am Stück hören wollen.
 	EN	Reverse the episode sort order. This can be helpful if you want to listen to all episodes of a show in the correct order.

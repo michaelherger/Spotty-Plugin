@@ -28,7 +28,9 @@ sub page {
 
 sub prefs {
 	my ($class, $client) = @_;
-	return ($prefs->client($client), qw(enableSpotifyConnect replaygain filterExplicitContent reversePodcastOrder));
+	my @prefs = qw(enableSpotifyConnect replaygain filterExplicitContent reversePodcastOrder);
+	push @prefs, 'enableAutoplay' if Plugins::Spotty::Helper->getCapability('autoplay');
+	return ($prefs->client($client), @prefs);
 }
 
 sub handler {
@@ -37,6 +39,8 @@ sub handler {
 	if ( !Plugins::Spotty::Connect->canSpotifyConnect() ) {
 		$params->{errorString} = $client->string('PLUGIN_SPOTTY_NEED_HELPER_UPDATE');
 	}
+
+	$params->{canAutoplay} = Plugins::Spotty::Helper->getCapability('autoplay');
 
 	return $class->SUPER::handler( $client, $params );
 }

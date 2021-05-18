@@ -54,10 +54,10 @@ sub init {
 
 		return unless $client && $client->id;
 
-		main::INFOLOG && $log->is_info && $log->info("Spotify Account for player " . $client->id . " has changed - re-initialize Connect helper");
+		main::INFOLOG && $log->is_info && $log->info("Spotify setting $pref for player " . $client->id . " has changed - re-initialize Connect helper");
 		$class->stopHelper($client);
 		initHelpers();
-	}, 'account', 'helper');
+	}, 'account', 'helper', 'enableAutoplay');
 
 	$prefs->setChange(sub {
 		my ($pref, $new, undef, $old) = @_;

@@ -212,7 +212,7 @@ sub _getNextTrack {
 	$song->pluginData('context')->addPlay($song->streamUrl);
 
 	# for playlists and albums we can know the last track. In this case no further check would be required.
-	if ( $song->pluginData('context')->isLastTrack($song->streamUrl) ) {
+	if ( $song->pluginData('context')->isLastTrack($song->streamUrl) && !$spotty->doesAutoplay ) {
 		$class->_delayedStop($client);
 		$successCb->();
 		return;

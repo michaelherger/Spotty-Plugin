@@ -12,21 +12,26 @@
 		<label for="pref_reversePodcastOrder">[% "PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER_DESC" | string %]</label>
 	[% END %]
 
-	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="" %]
-		[% IF errorString %]
-			<div style="color: red">[% errorString %]</div>
-		[% ELSE %]
-			<input type="checkbox" name="pref_enableSpotifyConnect" id="pref_enableSpotifyConnect" value="1" [% prefs.pref_enableSpotifyConnect ? "checked" : "" %]>
-			<label for="pref_enableSpotifyConnect">[% "PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC" | string %]</label>
-		[% END %]
-	[% END %]
-
 	[% WRAPPER setting title="PLUGIN_SPOTTY_EXPLICIT" desc="" %]
 		<select class="stdedit" name="pref_filterExplicitContent" id="pref_filterExplicitContent">
 			<option value="0">[% "PLUGIN_SPOTTY_EXPLICIT_DONT_CARE" | string %]</option>
 			<option [% IF prefs.pref_filterExplicitContent == 1 %]selected [% END %]value="1">[% "PLUGIN_SPOTTY_EXPLICIT_HIDE" | string %]</option>
 			<option [% IF prefs.pref_filterExplicitContent == 2 %]selected [% END %]value="2">[% "PLUGIN_SPOTTY_EXPLICIT_DONT_PLAY" | string %]</option>
 		</select>
+	[% END %]
+
+	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="" %]
+		[% IF errorString %]
+			<div style="color: red">[% errorString %]</div>
+		[% ELSE %]
+			<input type="checkbox" name="pref_enableSpotifyConnect" id="pref_enableSpotifyConnect" value="1" [% prefs.pref_enableSpotifyConnect ? "checked" : "" %]>
+			<label for="pref_enableSpotifyConnect">[% "PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC" | string %]</label>
+			[% IF canAutoplay %]
+				<br/>
+				<input name="pref_enableAutoplay" id="pref_enableAutoplay" type="checkbox" [% IF prefs.pref_enableAutoplay %] checked [% END %]>
+				<label for="pref_enableAutoplay">[% "PLUGIN_SPOTTY_AUTOPLAY_DESC" | string %]</label>
+			[% END %]
+		[% END %]
 	[% END %]
 
 [% PROCESS settings/footer.html %]

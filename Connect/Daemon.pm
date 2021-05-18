@@ -77,6 +77,10 @@ sub start {
 		push @helperArgs, '--disable-discovery';
 	}
 
+	if ( $prefs->client($client)->get('enableAutoplay') ) {
+		push @helperArgs, '--autoplay';
+	}
+
 	if (main::INFOLOG && $log->is_info) {
 		$log->info("Starting Spotty Connect daemon: \n$helperPath " . join(' ', @helperArgs));
 		push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');

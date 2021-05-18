@@ -1505,6 +1505,13 @@ sub canPodcast {
 	$self->_canPodcast(Plugins::Spotty::Helper->getCapability('podcasts') || 0);
 }
 
+sub doesAutoplay {
+	my $self = $_[0];
+
+	return unless $prefs->client($self->client)->get('enableAutoplay');
+	return Plugins::Spotty::Helper->getCapability('autoplay');
+}
+
 sub _DEFAULT_LIMIT {
 	Plugins::Spotty::Plugin->hasDefaultIcon() ? DEFAULT_LIMIT : MAX_LIMIT;
 };
