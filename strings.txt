@@ -510,12 +510,14 @@ PLUGIN_SPOTTY_CLIENT_ID_DESC
 	DE	<li>Besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an.</li>
 	DE	<li>Klicken Sie "Create An App", und folgen Sie den Anweisungen.</li>
 	DE	<li>Kopieren Sie die neu erstellte Client ID, und fügen Sie sie in den Spotty Einstellungen ein.</li>
+	DE	<li>Falls Sie einen Familienaccount verwenden, oder sonst mehrere Konten in Spotty verwenden möchten, fügen Sie die entsprechenden Konten bei der neu erstellten Konfiguration unter "Users and Access" hinzu.</li>
 	DE	</ul>
 	EN	<div>Using a custom Client ID can help if you hit issues with rate limiting ("error 429"). In order to get your own Client ID please follow these simple steps:</div>
 	EN	<ul style="list-style:initial">
 	EN	<li>Go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed.</li>
 	EN	<li>Click "Create An App", follow the instructions.</li>
 	EN	<li>Copy the newly created Client ID to your Spotty Settings.</li>
+	EN	<li>If you plan to use multiple Spotify accounts with Spotty (eg. a family account), you'll need to add the accounts to the "Users and Access" section in the newly created configuration.</li>
 	EN	</ul>
 #	DE	Sehr wahrscheinlich braucht dich diese Einstellung nicht zu interessieren. Falls doch, dann weisst du hoffentlich was das sein soll. Lass es einfach leer, falls dem nicht so ist. Weitere Informationen braucht es nicht 😀.
 #	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀.
