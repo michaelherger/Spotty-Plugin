@@ -69,8 +69,8 @@ sub new {
 
 	my $cmd = sprintf(
 		Plugins::Spotty::Helper->getCapability('save-token')
-			? '%s -n Squeezebox -c "%s" -i %s --scope "%s" --save-token "%s"'
-			: '%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s" > "%s" 2>&1',
+			? '%s -n Squeezebox -c "%s" -i %s --disable-discovery --scope "%s" --save-token "%s"'
+			: '%s -n Squeezebox -c "%s" -i %s --disable-discovery --scope "%s" --get-token > "%s" 2>&1',
 		scalar Plugins::Spotty::Helper->get(),
 		$self->api->cache || Plugins::Spotty::AccountHelper->cacheFolder($account),
 		$args->{code} || $prefs->get('iconCode'),
@@ -204,7 +204,7 @@ sub get {
 	}
 
 	if (main::SCANNER) {
-		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',
+		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --disable-discovery --get-token --scope "%s"',
 			scalar Plugins::Spotty::Helper->get(),
 			Plugins::Spotty::AccountHelper->cacheFolder($args->{accountId}),
 			$prefs->get('iconCode'),
@@ -235,7 +235,7 @@ sub get {
 
 		my $account = Plugins::Spotty::AccountHelper->getAccount($api->client);
 
-		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --get-token --scope "%s"',
+		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i --disable-discovery %s --get-token --scope "%s"',
 			scalar Plugins::Spotty::Helper->get(),
 			$api->cache || Plugins::Spotty::AccountHelper->cacheFolder($account),
 			$args->{code} || $prefs->get('iconCode'),

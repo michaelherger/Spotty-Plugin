@@ -113,6 +113,8 @@ sub scanAlbums { if (main::SCANNER) {
 
 		main::INFOLOG && $log->is_info && $log->info("Getting missing album information...");
 		foreach (@$albums) {
+			next unless $_ && ref $_ && $_->{id};
+
 			my $cached = $libraryCache->get($_->{uri});
 			if (!$cached || !$cached->{image}) {
 				push @missingAlbums, $_->{id};
