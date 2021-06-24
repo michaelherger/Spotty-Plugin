@@ -235,7 +235,7 @@ sub get {
 
 		my $account = Plugins::Spotty::AccountHelper->getAccount($api->client);
 
-		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i --disable-discovery %s --get-token --scope "%s"',
+		my $cmd = sprintf('%s -n Squeezebox -c "%s" -i %s --disable-discovery --get-token --scope "%s"',
 			scalar Plugins::Spotty::Helper->get(),
 			$api->cache || Plugins::Spotty::AccountHelper->cacheFolder($account),
 			$args->{code} || $prefs->get('iconCode'),
