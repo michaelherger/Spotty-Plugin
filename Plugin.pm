@@ -65,6 +65,9 @@ sub initPlugin {
 		displayNames => {},
 		helper => '',
 		webTokens => {},
+		sortSongsAlphabetically => 1,
+		sortAlbumsAlphabetically => 1,
+		sortArtistsAlphabetically => 1,
 	});
 
 	$prefs->setValidate({ 'validator' => sub { $_[1] =~ /^[a-f0-9]{32}$/i } }, 'iconCode');

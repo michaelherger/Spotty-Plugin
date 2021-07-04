@@ -554,6 +554,18 @@ PLUGIN_SPOTTY_AUDIO_SETTINGS
 	DE	Soundqualität
 	EN	Audio Settings
 
+PLUGIN_SPOTTY_SORT_ORDER
+	DE	Bibliothekssortierung
+	EN	Library Sort Order
+
+PLUGIN_SPOTTY_SORT_ALPHABETICALLY
+	DE	Alphabetisch sortieren
+	EN	Sort alphabetically
+
+PLUGIN_SPOTTY_SORT_CHRONOLOGICALLY
+	DE	Nach Hinzufügedatum sortieren
+	EN	Sort by date of addition
+
 # leading 0 to allow for sorting....
 PLUGIN_SPOTTY_AUDIO_SETTINGS_096
 	EN	Normal (96kbps)

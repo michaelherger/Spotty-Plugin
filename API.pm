@@ -533,6 +533,7 @@ sub relatedArtists {
 
 	Plugins::Spotty::API::Pipeline->new($self, 'artists/' . $id . '/related-artists', sub {
 		my $artists = $_[0] || {};
+
 		my $items = [ sort _artistSort map {
 			$libraryCache->normalize($_)
 		} @{$artists->{artists} || []} ];
@@ -821,9 +822,12 @@ sub mySongs {
 			return [ map { $libraryCache->normalize($_->{track}, $fast) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, sub {
-		my $results = shift;
+		my $items = shift;
 
-		my $items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @{$results || []} ];
+		$items = [ sort {
+			Slim::Utils::Text::ignoreCaseArticles($a->{name}) cmp Slim::Utils::Text::ignoreCaseArticles($b->{name})
+		} @{$items || []} ] if $prefs->get('sortSongsAlphabetically');
+
 		$cb->($items);
 	}, {
 		limit => max(LIBRARY_LIMIT, _DEFAULT_LIMIT()),
@@ -838,9 +842,12 @@ sub myAlbums {
 			return [ map { $libraryCache->normalize($_->{album}, $fast) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
 	}, sub {
-		my $results = shift;
+		my $items = shift;
 
-		my $items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @{$results || []} ];
+		$items = [ sort {
+			Slim::Utils::Text::ignoreCaseArticles($a->{name}) cmp Slim::Utils::Text::ignoreCaseArticles($b->{name})
+		} @{$items || []} ] if $prefs->get('sortAlbumsAlphabetically');
+
 		$cb->($items);
 	}, {
 		limit => max(LIBRARY_LIMIT, _DEFAULT_LIMIT()),
@@ -967,7 +974,7 @@ sub myArtists {
 				}
 			}
 
-			$items = [ sort _artistSort @$items ];
+			$items = [ sort _artistSort @$items ] if $prefs->get('sortArtistsAlphabetically');
 
 			# do one more lookup if the albums list returned artists we don't have artwork for, yet...
 			if (scalar @$missingArtwork) {
@@ -1235,7 +1242,7 @@ sub recommendations {
 }
 
 sub _artistSort {
-	lc($a->{sortname} || $a->{name}) cmp lc($b->{sortname} || $b->{name});
+	Slim::Utils::Text::ignoreCaseArticles($a->{sortname} || $a->{name}) cmp Slim::Utils::Text::ignoreCaseArticles($b->{sortname} || $b->{name});
 }
 
 sub _isPlayable {

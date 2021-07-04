@@ -82,6 +82,20 @@
 		</select>
 	[% END %]
 
+	[% WRAPPER setting title="PLUGIN_SPOTTY_SORT_ORDER" desc="" %]
+		[% categories = ['Albums', 'Artists'] %]
+		[% IF !hasDefaultIcon; categories.unshift('Songs'); END %]
+		[% FOREACH category IN categories %]
+			[% varName = "pref_sort" _ category _ "Alphabetically" %]
+			<div>
+				<select class="stdedit" name="[% varName %]" id="[% varName %]">
+					<option [% IF prefs.$varName %]selected [% END %]value="1">[% category | upper | string %][% "COLON" | string %] [% "PLUGIN_SPOTTY_SORT_ALPHABETICALLY" | string %]</option>
+					<option [% IF !prefs.$varName %]selected [% END %]value="0">[% category | upper | string %][% "COLON" | string %] [% "PLUGIN_SPOTTY_SORT_CHRONOLOGICALLY" | string %]</option>
+				</select>
+			</div>
+		[% END %]
+	[% END %]
+
 	[% WRAPPER setting title="PLUGIN_SPOTTY_PLAYLIST_FOLDERS" desc="" %]
 		<input name="clearPlaylistFolderCache" id="clearPlaylistFolderCache" type="checkbox">
 		<label for="clearPlaylistFolderCache">[% "PLUGIN_SPOTTY_CLEAR_PLAYLIST_FOLDERS_CACHE" | string %]</label>
