@@ -373,7 +373,7 @@ sub _connectEvent {
 		my $volume = $request->getParam('_p2') || return;
 
 		# sometimes volume would be reset to a default 50 right after the daemon start - ignore
-		if ( $volume == 50 && Plugins::Spotty::Connect::DaemonManager->uptime($client->id) < VOLUME_GRACE_PERIOD ) {
+		if ( $volume =~ /50|49/ && Plugins::Spotty::Connect::DaemonManager->uptime($client->id) < VOLUME_GRACE_PERIOD ) {
 			main::INFOLOG && $log->is_info && $log->info("Ignoring initial volume reset right after daemon start");
 			# this is kind of the "onConnect" handler - get a list of all players
 			$spotty->devices();
