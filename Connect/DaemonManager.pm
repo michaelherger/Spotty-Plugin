@@ -204,7 +204,7 @@ sub checkAPIConnectPlayers {
 		foreach my $helper ( $oneHelper || values %helperInstances ) {
 			my $spotifyId = $connectDevices{$helper->name};
 
-			if ( !$spotifyId && $helper->cache eq $cacheFolder ) {
+			if ( !$oneHelper && !$spotifyId && $helper->cache eq $cacheFolder ) {
 				$log->warn("Connect daemon is running, but not connected - shutting down to force restart: " . $helper->mac . " " . $helper->name);
 				$class->stopHelper($helper->mac);
 
@@ -212,7 +212,7 @@ sub checkAPIConnectPlayers {
 				# $prefs->set('checkDaemonConnected', 1) if $prefs->get('disableDiscovery');
 			}
 			elsif ( $spotifyId ) {
-				main::INFOLOG && $log->is_info && $log->info("Updating id of Connect connected dameon for " . $helper->mac);
+				main::INFOLOG && $log->is_info && $log->info("Updating id of Connect connected daemon for " . $helper->mac);
 				$helper->spotifyId($spotifyId);
 			}
 		}

@@ -1414,7 +1414,7 @@ sub _call {
 					# 	$result = $json;
 					# }
 					else {
-						$log->error("Invalid data");
+						$log->error("Invalid data: " . ($response->code || ''));
 						main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
 						$result = {
 							error => 'Error: Invalid data',
