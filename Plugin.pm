@@ -240,6 +240,9 @@ sub updateTranscodingTable {
 		$prefs->client($client)->set('replaygain', $serverPrefs->client($client)->get('replayGainMode'));
 	}
 
+	my $canOggDirect = Plugins::Spotty::Helper->getCapability('ogg-direct');
+	my $canReplayGain = Plugins::Spotty::Helper->getCapability('volume-normalisation') && $client && $prefs->client($client)->get('replaygain');
+
 	my $commandTable = Slim::Player::TranscodingHelper::Conversions();
 	foreach ( keys %$commandTable ) {
 		if ( $_ =~ /^spt-/ && $commandTable->{$_} =~ /single-track/ ) {
@@ -248,11 +251,11 @@ sub updateTranscodingTable {
 			$commandTable->{$_} =~ s/^[^\[]+// if !$tmpDir;
 			$commandTable->{$_} =~ s/--bitrate \d{2,3}/$bitrate/;
 			$commandTable->{$_} =~ s/\[spotty.*?\]/\[$helper\]/g if $helper;
-			$commandTable->{$_} =~ s/\[spotty.*?\]/\[$helper\]/g if $helper && Plugins::Spotty::Helper->getCapability('ogg-direct');
-			$commandTable->{$_} =~ s/\[spotty.*?\]/\[spotty-ogg\]/g if $helper && !Plugins::Spotty::Helper->getCapability('ogg-direct') && $commandTable->{$_} =~ /--pass.?through/;
+			$commandTable->{$_} =~ s/\[spotty.*?\]/\[$helper\]/g if $helper && $canOggDirect;
+			$commandTable->{$_} =~ s/\[spotty.*?\]/\[spotty-ogg\]/g if $commandTable->{$_} =~ /--pass.?through/ && (!$canOggDirect || $canReplayGain);
 			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g;
 			$commandTable->{$_} =~ s/ --enable-volume-normalisation //;
-			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if Plugins::Spotty::Helper->getCapability('volume-normalisation') && $client && $prefs->client($client)->get('replaygain');
+			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if $canReplayGain;
 
 			main::INFOLOG && $log->is_info && $log->info($commandTable->{$_});
 		}
