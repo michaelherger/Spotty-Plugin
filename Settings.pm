@@ -75,12 +75,6 @@ sub handler {
 			if ($knownIncompatible) {
 				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE');
 			}
-			elsif (Slim::Utils::OSDetect::isLinux() && ($osDetails->{'osArch'} || '') =~ /armv8|aarch64/i) {
-				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_AARCH64');
-			}
-			elsif (Slim::Utils::OSDetect::isLinux() && ($osDetails->{'osArch'} || '') =~ /arm/i) {
-				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER_ARM_LEGACY');
-			}
 			else {
 				$paramRef->{helperMissing} = string('PLUGIN_SPOTTY_MISSING_HELPER');
 			}
