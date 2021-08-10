@@ -17,7 +17,7 @@ use Plugins::Spotty::API qw(uri2url);
 
 use constant CONNECT_HELPER_VERSION => '0.12.0';
 use constant SEEK_THRESHOLD => 3;
-use constant VOLUME_GRACE_PERIOD => 5;
+use constant VOLUME_GRACE_PERIOD => 60;
 use constant PRE_BUFFER_TIME => 7;
 use constant PRE_BUFFER_SIZE_THRESHOLD => 10 * 1024 * 1024;
 
@@ -365,7 +365,7 @@ sub _connectEvent {
 		return;
 	}
 
-	main::INFOLOG && $log->is_info && $log->info("Got called from spotty helper: $cmd");
+	main::INFOLOG && $log->is_info && $log->info(sprintf('Got called from spotty helper for %s: %s', $client->id, $cmd));
 
 	my $spotty = __PACKAGE__->getAPIHandler($client);
 
