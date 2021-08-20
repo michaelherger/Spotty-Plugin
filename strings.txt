@@ -615,6 +615,7 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
 PLUGIN_SPOTTY_NEED_HELPER_UPDATE
 	DE	Spotify Connect ist nicht verfügbar.
 	EN	Spotify Connect is not available.
+	FR	Spotify Connect n'est pas disponible.
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS
 	DE	Soundqualität
