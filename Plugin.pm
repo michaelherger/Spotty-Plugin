@@ -247,7 +247,7 @@ sub updateTranscodingTable {
 	foreach ( keys %$commandTable ) {
 		if ( $_ =~ /^spt-/ && $commandTable->{$_} =~ /single-track/ ) {
 			$commandTable->{$_} =~ s/-c ".*?"/-c "$cacheDir"/g;
-			$commandTable->{$_} =~ s/(\[spotty.*?\])/$tmpDir $1/g if $tmpDir;
+			$commandTable->{$_} =~ s/(\[spotty.*?\])/$tmpDir $1/g if $tmpDir && $commandTable->{$_} !~ /TMPDIR=/;
 			$commandTable->{$_} =~ s/^[^\[]+// if !$tmpDir;
 			$commandTable->{$_} =~ s/--bitrate \d{2,3}/$bitrate/;
 			$commandTable->{$_} =~ s/\[spotty.*?\]/\[$helper\]/g if $helper;
