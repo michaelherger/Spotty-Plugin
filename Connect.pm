@@ -413,8 +413,12 @@ sub _connectEvent {
 		}
 
 		# in case of a change event we need to figure out what actually changed...
-		if ( $cmd eq 'change' && $result && ref $result && ref $result->{track} && (($streamUrl ne $result->{track}->{uri} && $result->{is_playing}) || !__PACKAGE__->isSpotifyConnect($client)) ) {
+		if ( $cmd eq 'change' && ref $result->{track} && (($streamUrl ne $result->{track}->{uri} && $result->{is_playing}) || !__PACKAGE__->isSpotifyConnect($client)) ) {
 			main::INFOLOG && $log->is_info && $log->info("Got a $cmd event, but actually this is a play next track event");
+			$cmd = 'start';
+		}
+		elsif ( $cmd eq 'change' && !$client->isPlaying && ref $result->{track} && (($streamUrl eq $result->{track}->{uri} && $result->{is_playing})) ) {
+			main::INFOLOG && $log->is_info && $log->info("Got a $cmd event, but actually this is a resume event");
 			$cmd = 'start';
 		}
 
