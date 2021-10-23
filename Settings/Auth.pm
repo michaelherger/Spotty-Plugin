@@ -49,7 +49,7 @@ sub handler {
 	if ($paramRef->{'saveSettings'}) {
 		if ( $paramRef->{'username'} && $paramRef->{'password'} && (my $helperPath = Plugins::Spotty::Helper->get()) ) {
 			my $command = sprintf(
-				'%s -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery',
+				'"%s" -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery',
 				$helperPath,
 				$class->_cacheFolder(),
 				string('PLUGIN_SPOTTY_AUTH_NAME'),
