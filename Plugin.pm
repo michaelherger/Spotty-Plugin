@@ -68,6 +68,7 @@ sub initPlugin {
 		sortSongsAlphabetically => 1,
 		sortAlbumsAlphabetically => 1,
 		sortArtistsAlphabetically => 1,
+		sortPlaylisttracksByAddition => 0,
 	});
 
 	$prefs->setValidate({ 'validator' => sub { $_[1] =~ /^[a-f0-9]{32}$/i } }, 'iconCode');

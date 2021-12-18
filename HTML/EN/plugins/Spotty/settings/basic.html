@@ -94,7 +94,14 @@
 				</select>
 			</div>
 		[% END %]
-	[% END %]
+		[% varName = "pref_sortPlaylisttracksByAddition" %]
+		<div>
+			<select class="stdedit" name="[% varName %]" id="[% varName %]">
+				<option [% IF prefs.$varName %]selected [% END %]value="1">[% "PLUGIN_SPOTTY_PLAYLIST_TRACKS" | string %][% "COLON" | string %] [% "PLUGIN_SPOTTY_SORT_CHRONOLOGICALLY" | string %]</option>
+				<option [% IF !prefs.$varName %]selected [% END %]value="0">[% "PLUGIN_SPOTTY_PLAYLIST_TRACKS" | string %][% "COLON" | string %] [% "STANDARD" | string %]</option>
+			</select>
+		</div>
+[% END %]
 
 	[% WRAPPER setting title="PLUGIN_SPOTTY_PLAYLIST_FOLDERS" desc="" %]
 		<input name="clearPlaylistFolderCache" id="clearPlaylistFolderCache" type="checkbox">

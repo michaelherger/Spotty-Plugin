@@ -603,8 +603,15 @@ sub playlist {
 	Plugins::Spotty::API::Pipeline->new($self, 'playlists/' . $id . '/tracks', sub {
 		my $items = [];
 
+		my $rawItems = $_[0]->{items};
+		if ($prefs->get('sortPlaylisttracksByAddition')) {
+			$rawItems = [ sort {
+				$b->{added_at} cmp $a->{added_at}
+			} @$rawItems ];
+		}
+
 		my $cc = $self->country;
-		for my $item ( @{ $_[0]->{items} } ) {
+		for my $item ( @$rawItems ) {
 			my $track = $item->{track} || next;
 
 			# if we set market => 'from_token', then we don't get available_markets back, but only a is_playable flag

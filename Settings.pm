@@ -44,7 +44,7 @@ sub page {
 }
 
 sub prefs {
-	my @prefs = qw(myAlbumsOnly cleanupTags bitrate iconCode accountSwitcherMenu helper optimizePreBuffer sortAlbumsAlphabetically sortArtistsAlphabetically);
+	my @prefs = qw(myAlbumsOnly cleanupTags bitrate iconCode accountSwitcherMenu helper optimizePreBuffer sortAlbumsAlphabetically sortArtistsAlphabetically sortPlaylisttracksByAddition);
 	push @prefs, 'disableDiscovery', 'checkDaemonConnected' if Plugins::Spotty::Plugin->canDiscovery();
 	push @prefs, 'disableAsyncTokenRefresh' if Plugins::Spotty::Helper->getCapability('save-token');
 	push @prefs, 'sortSongsAlphabetically' if !Plugins::Spotty::Plugin->hasDefaultIcon();
