@@ -78,6 +78,9 @@ sub new {
 		$self->_tmpfile
 	);
 
+	# for whatever reason Windows can't handle the quotes here...
+	main::ISWINDOWS && $cmd =~ s/"//g;
+
 	_logCommand($cmd);
 
 	eval {
