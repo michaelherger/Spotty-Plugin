@@ -380,6 +380,12 @@ sub _connectEvent {
 			return;
 		}
 
+		# sometimes volume would be reset to a default 49 for whatever reason. Just ignore it. Always.
+		if ( $volume == 49 ) {
+			main::INFOLOG && $log->is_info && $log->info("Ignoring volume reset to 49");
+			return;
+		}
+
 		main::INFOLOG && $log->is_info && $log->info("Set volume to $volume");
 
 		# we don't let spotty handle volume directly to prevent getting caught in a call loop
