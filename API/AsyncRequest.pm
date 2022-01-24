@@ -3,7 +3,7 @@ package Plugins::Spotty::API::AsyncRequest;
 =pod
 	This class extends Slim::Networking::SimpleAsyncHTTP to add PUT support,
 	and deal with the 429 error (rate limiting).
-	
+
 	Unfortunately the only method we'd need to override (onError) is not a class
 	method. Therefore we have to duplicate _createHTTPRequest, too.
 =cut
@@ -43,18 +43,18 @@ sub _createHTTPRequest {
 
 	$self->type( $type );
 	$self->url( $url );
-	
+
 	my $params = $self->_params;
 	my $client = $params->{params}->{client};
-		
+
 	main::DEBUGLOG && $log->debug("${type}ing $url");
-	
+
 	# Check for cached response
 	if ( $params->{cache} ) {
-		
+
 		my $cache = Slim::Utils::Cache->new();
-		
-		if ( my $data = $cache->get( Slim::Networking::SimpleAsyncHTTP::_cacheKey($url, $client) ) ) {			
+
+		if ( my $data = $cache->get( Slim::Networking::SimpleAsyncHTTP::_cacheKey($url, $client) ) ) {
 			$self->cachedResponse( $data );
 
 # SPOTTY - specific change starts here
@@ -66,26 +66,26 @@ sub _createHTTPRequest {
 #			if we got a 304 (data not change) on the first of a series of requests, return
 #			cached follow up requests without re-validation
 			if ( delete $params->{no_revalidate} ) {
-				
+
 				main::INFOLOG && $spottyLog->is_info && $spottyLog->info("Using cached response [$url]");
 # /SPOTTY
-				
+
 				return $self->sendCachedResponse();
 			}
 		}
 	}
-	
-	my $timeout 
+
+	my $timeout
 		=  $params->{Timeout}
 		|| $params->{timeout}
 		|| $prefs->get('remotestreamtimeout');
-		
+
 	my $request = HTTP::Request->new( $type => $url );
-	
+
 	if ( @_ % 2 ) {
 		$request->content( pop @_ );
 	}
-	
+
 	# If cached, add If-None-Match and If-Modified-Since headers
 	my $data = $self->cachedResponse;
 	if ( $data && ref $data && $data->{headers} ) {
@@ -109,7 +109,7 @@ sub _createHTTPRequest {
 			'Accept-Encoding' => 'deflate, gzip', # deflate is less overhead than gzip
 		);
 	}
-	
+
 	# Add Accept-Language header
 	my $lang;
 	if ( $client ) {
@@ -117,15 +117,16 @@ sub _createHTTPRequest {
 	}
 
 	$lang ||= $prefs->get('language') || 'en';
-		
+	$lang =~ s/_/-/g;
+
 	unshift @_, (
 		'Accept-Language' => lc($lang),
 	);
-	
+
 	if ( @_ ) {
 		$request->header( @_ );
 	}
-	
+
 	my $http = Slim::Networking::Async::HTTP->new;
 	$http->send_request( {
 		request     => $request,
@@ -141,31 +142,31 @@ sub _createHTTPRequest {
 
 sub onError {
 	my ( $http, $error, $self ) = @_;
-	
+
 	my $uri = $http->request->uri;
-	
+
 	# If we have a cached copy of this request, we can use it
 	if ( $self->cachedResponse ) {
 
 		$log->warn("Failed to connect to $uri, using cached copy. ($error)");
-		
+
 		return $self->sendCachedResponse();
 	}
 	else {
 		$log->warn("Failed to connect to $uri ($error)");
 	}
-	
+
 	$self->error( $error );
 
 	main::PERFMON && (my $now = AnyEvent->time);
-	
+
 	# return the response object in addition to the standard values from SimpleAsyncHTTP
 	# SPOTTY
 	$self->ecb->( $self, $error, $http->response );
 	# /SPOTTY
 
 	main::PERFMON && $now && Slim::Utils::PerfMon->check('async', AnyEvent->time - $now, undef, $self->ecb);
-	
+
 	return;
 }
 
@@ -173,11 +174,11 @@ sub onError {
 # SPOTTY
 sub sendCachedResponse {
 	my $self = shift;
-	
+
 	$self->cachedResponse->{headers}->{'x-spotty-cached-response'} = 1;
-	
+
 	$self->SUPER::sendCachedResponse();
-	
+
 	return;
 }
 # /SPOTTY
