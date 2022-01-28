@@ -796,7 +796,11 @@ sub trackURIsFromURI {
 		uri => $uri
 	};
 
-	if ($uri =~ /:playlist:/) {
+	if ($uri =~ /:playlist:.*:recommended/) {
+		main::INFOLOG && $log->is_info && $log->info("Not looking up playlist, as it's the :recommended continuation");
+		$cb->([]);
+	}
+	elsif ($uri =~ /:playlist:/) {
 		$self->playlist($cb2, $params);
 	}
 	elsif ( $uri =~ /:artist:/ ) {
