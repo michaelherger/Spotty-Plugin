@@ -115,7 +115,7 @@ sub _pollTokenHelper {
 		Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper, $args);
 	}
 	else {
-		$self->_killTokenHelper(0, 'Token refresh call helper has closed unexpectedly? - Please consider re-setting your Spotify credentials should this happen all the time.');
+		$self->_killTokenHelper(0, 'Token refresh call helper has closed unexpectedly? - Please consider re-setting your Spotify credentials should this continue to happen.');
 	}
 }
 
@@ -165,7 +165,7 @@ sub _gotTokenInfo {
 	}
 
 	if (!$token) {
-		$log->error("Failed to get Spotify access token");
+		$log->error($response->{error} || "Failed to get Spotify access token");
 		# store special value to prevent hammering the backend
 		$cache->set($cacheKey, $token = -1, 15);
 	}
