@@ -260,7 +260,7 @@ PLUGIN_SPOTTY_MISSING_HELPER
 PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Bitte stellen Sie sicher, dass die <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-Bit!)</a> installiert ist.
 	EN	There has been a problem running the Spotty helper application. Please make sure you have the <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-bit!)</a> installed on your system.
-	FR	Un problème est survenu lors de l'exécution de l'application d'assistance Spotty. Assurez-vous de disposer du <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64 bits !)</a > sur votre ordinateur.
+	FR	Un problème est survenu lors de l'exécution de l'application d'assistance Spotty. Assurez-vous de disposer du <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64 bits !)</a > sur votre ordinateur.
 	NL	Er is een probleem opgetreden bij het uitvoeren van de Spotty hulptoepassing. Zorg ervoor dat <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-bit!)</a> is geïnstalleerd op jouw systeem.
 
 PLUGIN_SPOTTY_LO_POWER_PI
@@ -609,7 +609,7 @@ PLUGIN_SPOTTY_ERROR_429
 PLUGIN_SPOTTY_ERROR_429_DESC
 	DE	Zugriffsrate überschritten für: %s; nächster Versuch in %s Sekunden.
 	EN	Access Rate limit exceeded for: %s; retry after %s seconds.
-	FR	Limite de débit dépassée pour : %s ; prochaine tentative dans %s secondes.
+	FR	Limite de débit dépassée pour : %s ; prochaine tentative dans %s secondes.
 	NL	Toegangslimiet overschreden voor: %s; volgende poging na %s seconden.
 
 PLUGIN_SPOTTY_MISSING_SSL
@@ -637,7 +637,7 @@ PLUGIN_SPOTTY_CLIENT_ID_DESC
 	EN	<li>Copy the newly created Client ID to your Spotty Settings.</li>
 	EN	<li>If you plan to use multiple Spotify accounts with Spotty (eg. a family account), you'll need to add the accounts to the "Users and Access" section in the newly created configuration.</li>
 	EN	</ul>
-	FR	<div>L'utilisation d'un ID client personnalisé peut vous aider si vous rencontrez des problèmes de limitation de débit ("erreur 429"). Pour obtenir votre propre identifiant client, veuillez suivre ces étapes simples :</div>
+	FR	<div>L'utilisation d'un ID client personnalisé peut vous aider si vous rencontrez des problèmes de limitation de débit ("erreur 429"). Pour obtenir votre propre identifiant client, veuillez suivre ces étapes simples :</div>
 	FR	<ul style="list-style:initial">
 	FR	<li>Accédez au <a href="https://developer.spotify.com/dashboard/applications" target="_blank">portail des développeurs Spotify</a> et connectez-vous si nécessaire.</li>
 	FR	<li>Cliquez sur "Create An App" et suivez les instructions.</li>
