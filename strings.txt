@@ -43,7 +43,7 @@ PLUGIN_SPOTTY_AUTH_RESET
 	DE	Anmeldung zurücksetzen
 	EN	Reset Authorization
 	FR	Réinitialiser l'autorisation
-	NL	Autorisatie resetten 
+	NL	Autorisatie resetten
 
 PLUGIN_SPOTTY_ADD_ACCOUNT
 	DE	Konto hinzufügen
@@ -130,7 +130,7 @@ PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_DESC
 	DE	Die Integration ihrer Spotify Sammlung mit der lokalen Musik gibt ihnen Zugriff auf alle ihre Musik in einem Menü. Auch erlaubt dies die Verwendung von Zufallswiedergabe mit Spotify Titeln, schnelle und Volltext-Suche etc.
 	EN	Integrating the Spotify library with your local library allows you to browse all your music from one place, allows you to use Random Play with Spotify music etc. PLEASE NOTE that changing this preference will trigger a rescan of your library.
 	FR	L'intégration de la bibliothèque Spotify à votre bibliothèque locale vous permet de parcourir toute votre musique à partir d'un seul endroit. Elle vous permet d'utiliser la lecture aléatoire avec la musique Spotify, etc. La modification de ce paramètre déclenchera une nouvelle analyse de votre bibliothèque.
-	NL	Het samenvoegen van jouw Spotify muziekcollectie met jouw lokale muziekcollectie maakt het mogelijk om door al jouw muziek te bladeren vanaf één plek. Het is ook mogelijk om shuffle te gebruiken met Spotify nummers, snel en volledige-tekst zoeken enz.  
+	NL	Het samenvoegen van jouw Spotify muziekcollectie met jouw lokale muziekcollectie maakt het mogelijk om door al jouw muziek te bladeren vanaf één plek. Het is ook mogelijk om shuffle te gebruiken met Spotify nummers, snel en volledige-tekst zoeken enz.
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_0
 	DE	Die Spotify Musiksammlung nicht in die lokale Musiksammlung integrieren
@@ -243,7 +243,7 @@ PLUGIN_SPOTTY_HELPER_ERROR
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten!
 	EN	There has been a problem running the Spotty helper application.
 	FR	Un problème est survenu lors de l'exécution de l'application Spotty Helper.
-	NL	Er is een probleem opgetreden tijdens het uitvoeren van de Spotty hulptoepassing. 
+	NL	Er is een probleem opgetreden tijdens het uitvoeren van de Spotty hulptoepassing.
 
 PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE
 	DE	Tut mir Leid, aber sehr wahrscheinlich ist ihre Prozessorarchitektur oder das Betriebssystem nicht mit Spotty kompatibel. Sie können noch immer einen Versuch wagen. Aber vermutlich wird er fehl schlagen.
@@ -292,7 +292,7 @@ PLUGIN_SPOTTY_ADVANCED_SETTING_DESC
 	EN	Please don't change the following settings, unless you know exactly what you're doing - or I told you to do so. Used the wrong way they can have a negative impact on the Spotty experience.
 	FR	Veuillez ne pas modifier les paramètres suivants, à moins que vous ne sachiez exactement ce que vous faites (ou que je vous ai dit de le faire). Utilisés de la mauvaise manière, ils peuvent avoir un impact négatif sur l'expérience Spotty.
 	NL	Wijzig de volgende instellingen niet, tenzij je precies weet wat je doet (of als het wordt gevraagd). Als ze op de verkeerde manier worden gebruikt, kunnen ze de Spotty ervaring negatief beïnvloeden.
-	
+
 PLUGIN_SPOTTY_WHATS_NEW
 	CS	Novinky
 	DA	Nyheder
@@ -556,7 +556,7 @@ PLUGIN_SPOTTY_CLEAR_SEARCH_HISTORY
 	DE	Alle gespeicherte Suchen löschen
 	EN	Clear complete search history
 	FR	Effacer l'historique des recherches
-	NL	Volledige zoekgeschiedenis wissen 
+	NL	Volledige zoekgeschiedenis wissen
 
 PLUGIN_SPOTTY_RECOMMENDATIONS
 	DE	Spotify Empfehlungen (basierend auf aktueller Wiedergabeliste)
@@ -645,11 +645,11 @@ PLUGIN_SPOTTY_CLIENT_ID_DESC
 	FR	<li>Si vous prévoyez d'utiliser plusieurs comptes Spotify avec Spotty (par exemple, un compte familial), vous devrez ajouter les comptes à la section "Utilisateurs et accès" dans la configuration nouvellement créée.</li>
 	FR	</ul>
 	NL	<div>Het gebruik van een aangepaste Client ID kan helpen als er problemen zijn met de snelheidsbeperking ("error 429"). Volg deze eenvoudige stappen om een eigen klant-ID te krijgen:</div>
-	NL 	<ul style="list-style:initial">
-	NL 	<li>Ga naar <a href="https://developer.spotify.com/dashboard/applications" target="_blank">de Spotify Developer Portal</a>, log indien nodig in.</li>
-	NL 	<li>Klik op "Create An App", volg de instructies.</li>
-	NL 	<li>Kopieer de nieuw aangemaakte Client ID naar jouw Spotty instellingen.</li>
-	NL 	<li>Als je van plan bent meerdere Spotify accounts met Spotty te gebruiken (bijv. een gezinsaccount), moet je de accounts toevoegen aan het gedeelte 'Gebruikers en toegang' in de nieuw gemaakte configuratie.</li>
+	NL	<ul style="list-style:initial">
+	NL	<li>Ga naar <a href="https://developer.spotify.com/dashboard/applications" target="_blank">de Spotify Developer Portal</a>, log indien nodig in.</li>
+	NL	<li>Klik op "Create An App", volg de instructies.</li>
+	NL	<li>Kopieer de nieuw aangemaakte Client ID naar jouw Spotty instellingen.</li>
+	NL	<li>Als je van plan bent meerdere Spotify accounts met Spotty te gebruiken (bijv. een gezinsaccount), moet je de accounts toevoegen aan het gedeelte 'Gebruikers en toegang' in de nieuw gemaakte configuratie.</li>
 	NL	</ul>
 #	DE	Sehr wahrscheinlich braucht dich diese Einstellung nicht zu interessieren. Falls doch, dann weisst du hoffentlich was das sein soll. Lass es einfach leer, falls dem nicht so ist. Weitere Informationen braucht es nicht 😀.
 #	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀.
@@ -669,7 +669,7 @@ PLUGIN_SPOTTY_PLEASE_UPDATE
 	DE	Information steht nicht zur Verfügung. Bitte Logitech Media Server auf 7.7.6 oder neuer aktualisieren.
 	EN	Information is not avaialable. Please update Logitech Media Server to 7.7.6 or more recent.
 	FR	Les informations ne sont pas disponibles. Veuillez mettre à jour Logitech Media Server vers 7.7.6 ou une version plus récente.
-	NL	Informatie is niet beschikbaar. Update Logitech Media Server naar versie 7.7.6 of recenter. 
+	NL	Informatie is niet beschikbaar. Update Logitech Media Server naar versie 7.7.6 of recenter.
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT
 	EN	Spotify Connect
