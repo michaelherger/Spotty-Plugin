@@ -527,7 +527,7 @@ sub search {
 			splice(@items, $params->{quantity}) if defined $params->{index} && !$params->{index} && $params->{quantity} < scalar @items;
 		}
 		elsif ($type eq 'album') {
-			push @items, @{albumList($client, $results)};
+			push @items, @{albumList($client, $results, 1)};
 		}
 		elsif ($type eq 'artist') {
 			push @items, @{artistList($client, $results)};
@@ -688,7 +688,7 @@ sub myAlbums {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->myAlbums(sub {
 		my ($result) = @_;
 
-		my ($items, $indexList) = albumList($client, $result);
+		my ($items, $indexList) = albumList($client, $result, !$prefs->get('sortAlbumsAlphabetically'));
 
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
@@ -708,7 +708,7 @@ sub myArtists {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->myArtists(sub {
 		my ($result) = @_;
 
-		my ($items, $indexList) = artistList($client, $result, $prefs->get('myAlbumsOnly'));
+		my ($items, $indexList) = artistList($client, $result, $prefs->get('myAlbumsOnly'), !$prefs->get('sortArtistsAlphabetically'));
 
 		push @$items, {
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_STUFF'),
@@ -1249,7 +1249,7 @@ sub albumList {
 	my $count = 0;
 
 	for my $album ( @{$albums} ) {
-		my $textkey = $noIndexList ? '' : uc(substr($album->{name} || '', 0, 1));
+		my $textkey = $noIndexList ? '' : substr(Slim::Utils::Text::ignoreCaseArticles($album->{name}) || '', 0, 1);
 
 		if ( defined $indexLetter && $indexLetter ne ($textkey || '') ) {
 			push @$indexList, [$indexLetter, $count];
@@ -1297,7 +1297,7 @@ sub _albumItem {
 }
 
 sub artistList {
-	my ( $client, $artists, $myAlbumsOnly ) = @_;
+	my ( $client, $artists, $myAlbumsOnly, $noIndexList ) = @_;
 
 	my $items = [];
 
@@ -1306,7 +1306,7 @@ sub artistList {
 	my $count = 0;
 
 	for my $artist ( @{$artists} ) {
-		my $textkey = substr($artist->{sortname} || '', 0, 1);
+		my $textkey = $noIndexList ? '' : substr(Slim::Utils::Text::ignoreCaseArticles($artist->{sortname}) || '', 0, 1);
 
 		if ( defined $indexLetter && $indexLetter ne ($textkey || '') ) {
 			push @$indexList, [$indexLetter, $count];
