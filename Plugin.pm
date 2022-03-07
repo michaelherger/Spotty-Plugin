@@ -102,6 +102,12 @@ sub initPlugin {
 		return 1;
 	});
 
+	# we reset this value every now and then to not overload the API backends
+	$prefs->migrate(2, sub {
+		$prefs->set('forceFallbackAP', 0);
+		return 1;
+	});
+
 	Plugins::Spotty::Helper->init();
 
 	$VERSION = $class->_pluginDataFor('version');
@@ -243,6 +249,7 @@ sub updateTranscodingTable {
 
 	my $canOggDirect = Plugins::Spotty::Helper->getCapability('ogg-direct');
 	my $canReplayGain = Plugins::Spotty::Helper->getCapability('volume-normalisation') && $client && $prefs->client($client)->get('replaygain');
+	my $forceFallbackAP = $prefs->get('forceFallbackAP');
 
 	my $commandTable = Slim::Player::TranscodingHelper::Conversions();
 	foreach ( keys %$commandTable ) {
@@ -257,6 +264,8 @@ sub updateTranscodingTable {
 			$commandTable->{$_} =~ s/enable-audio-cache/disable-audio-cache/g;
 			$commandTable->{$_} =~ s/ --enable-volume-normalisation //;
 			$commandTable->{$_} =~ s/( -n )/ --enable-volume-normalisation $1/ if $canReplayGain;
+			$commandTable->{$_} =~ s/( -n )/ --ap-port=12321 $1/ if $forceFallbackAP && $commandTable->{$_} !~ /--ap-port/;
+			$commandTable->{$_} =~ s/--ap-port=\d+ // if !$forceFallbackAP;
 
 			main::INFOLOG && $log->is_info && $log->info($commandTable->{$_});
 		}

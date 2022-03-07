@@ -281,6 +281,14 @@ PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH
 	FR	Désactiver l'actualisation asynchrone de jeton. Noter que cela peut potentiellement bloquer votre Logitech Media Server pendant quelques secondes.
 	NL	Schakel asynchrone token refresh uit. Houd er rekening mee dat dit de Logitech Media Server mogelijk enkele seconden kan blokkeren.
 
+PLUGIN_SPOTTY_FORCE_FALLBACK_AP
+	DE	Spotifys Fallback Access Point verwenden
+	EN	Use Spotify's Fallback Access Point
+
+PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC
+	DE	Manchmal antworten Spotifys Server nicht korrekt. In dieser Situation kann es ev. helfen, den Fallback Access Point zu verwenden.
+	EN	Sometimes some of Spotify's Access Points fail to respond correctly. In this situation you can try to use the fallback servers instead.
+
 PLUGIN_SPOTTY_ADVANCED_SETTING
 	DE	Erweiterte Einstellungen
 	EN	Advanced Settings
