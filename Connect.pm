@@ -23,6 +23,7 @@ use constant PRE_BUFFER_SIZE_THRESHOLD => 10 * 1024 * 1024;
 
 my $cache = Slim::Utils::Cache->new();
 my $prefs = preferences('plugin.spotty');
+my $serverPrefs = preferences('server');
 my $log = logger('plugin.spotty');
 
 my $initialized;
@@ -335,8 +336,10 @@ sub _onVolume {
 	return if $request->source && $request->source eq __PACKAGE__;
 
 	my $client  = $request->client();
-	return if !defined $client;
+	return if !defined $client || ($client->hasDigitalOut && $serverPrefs->client($client)->get('digitalVolumeControl'));
+
 	$client = $client->master;
+	return if $client->hasDigitalOut && $serverPrefs->client($client)->get('digitalVolumeControl');
 
 	return if !__PACKAGE__->isSpotifyConnect($client);
 
@@ -556,7 +559,7 @@ sub cacheFolder {
 		my $id = $clientId;
 		$id =~ s/://g;
 
-		my $playerCacheFolder = catdir(preferences('server')->get('cachedir'), 'spotty', $id);
+		my $playerCacheFolder = catdir($serverPrefs->get('cachedir'), 'spotty', $id);
 		mkpath $playerCacheFolder unless -e $playerCacheFolder;
 
 		if ( !-e catfile($playerCacheFolder, 'credentials.json') ) {
