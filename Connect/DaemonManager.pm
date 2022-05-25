@@ -64,6 +64,8 @@ sub init {
 
 		return if !($new || $old) && $new eq $old;
 
+		Slim::Utils::Timers::killTimers( $class, \&initHelpers );
+
 		if (main::INFOLOG && $log->is_info) {
 			$pref eq 'disableDiscovery' && $log->info("Discovery mode for Connect has changed - re-initialize Connect helpers");
 			$pref eq 'helper' && $log->info("Helper binary was re-configured - re-initialize Connect helpers");
@@ -73,7 +75,7 @@ sub init {
 
 		# call the initialization asynchronously, to allow other change handlers to finish before we restart
 		Slim::Utils::Timers::setTimer( $class, time() + 1, \&initHelpers );
-	}, 'helper', Plugins::Spotty::Plugin->canDiscovery() ? 'disableDiscovery' : undef);
+	}, 'helper', 'forceFallbackAP', Plugins::Spotty::Plugin->canDiscovery() ? 'disableDiscovery' : undef);
 
 	preferences('server')->setChange(sub {
 		main::INFOLOG && $log->is_info && $log->info("Authentication information for LMS has changed - re-initialize Connect helpers");

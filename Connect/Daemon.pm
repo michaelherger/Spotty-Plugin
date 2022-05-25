@@ -81,6 +81,10 @@ sub start {
 		push @helperArgs, '--autoplay';
 	}
 
+	if ( $prefs->get('forceFallbackAP') ) {
+		push @helperArgs, '--ap-port=12321';
+	}
+
 	if (main::INFOLOG && $log->is_info) {
 		$log->info("Starting Spotty Connect daemon: \n$helperPath " . join(' ', @helperArgs));
 		push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');
