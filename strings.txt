@@ -1,4 +1,5 @@
 PLUGIN_SPOTTY
+	CS	Spotty Spotify pro Squeezebox
 	DE	Spotty Spotify für Squeezebox
 	EN	Spotty Spotify for Squeezebox
 	FR	Spotty Spotify pour Squeezebox
@@ -11,53 +12,64 @@ SPT
 	EN	Spotty
 
 PLUGIN_SPOTTY_HOME
+	CS	Domů
 	DE	Start
 	EN	Home
 	FR	Accueil
 
 PLUGIN_SPOTTY_NOT_AUTHORIZED
+	CS	Chybí přihlašovací údaje ke Spotify
 	DE	Spotify Anmeldedaten fehlen
 	EN	Spotify Credentials missing
 	FR	Identifiants Spotify manquants
 	NL	Spotify autorisatie gegevens ontbreken
 
 PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT
+	CS	Ve webovém rozhraní zkontrolujte Nastavení/Pokročilé/Spotty Spotify pro Squeezebox
 	DE	Bitte überprüfen Sie Einstellungen/Erweitert/Spotty Spotify für Squeezebox im Web Interface
 	EN	Please check Settings/Advanced/Spotty Spotify for Squeezebox in the web interface
 	FR	Vérifiez "Paramètres/Avancé/Spotty Spotify pour Squeezebox" dans l'interface Web
 	NL	Controleer Instellingen/Geavanceerd/Spotty Spotify voor Squeezebox in de webinterface
 
 PLUGIN_SPOTTY_AUTH
+	CS	Autorizace Spotify
 	DE	Spotify Anmeldung
 	EN	Spotify Authorization
 	FR	Autorisation Spotify
 	NL	Spotify Autorisatie
 
 PLUGIN_SPOTTY_AUTH_NAME
+	CS	Autorizace Spotify
 	DE	Spotify Anmeldung
 	EN	Spotify Authorization
 	FR	Autorisation Spotify
 	NL	Spotify Autorisatie
 
 PLUGIN_SPOTTY_AUTH_RESET
+	CS	Obnovení autorizace
 	DE	Anmeldung zurücksetzen
 	EN	Reset Authorization
 	FR	Réinitialiser l'autorisation
 	NL	Autorisatie resetten
 
 PLUGIN_SPOTTY_ADD_ACCOUNT
+	CS	Přidat účet
 	DE	Konto hinzufügen
 	EN	Add Account
 	FR	Ajouter un compte
 	NL	Account toevoegen
 
 PLUGIN_SPOTTY_WEB_TOKEN
+	CS	Webový token
 	DE	Web Token
 	EN	Web token
 	FR	Jeton Web
 	NL	Web Token
 
 PLUGIN_SPOTTY_WEB_TOKEN_DESC
+	CS	Za určitých okolností může Webový token pomoci získat přístup ke zdrojům, které by jinak nebyly dostupné. Obvykle není vyžadován.
+	CS	Pokud vám chybí nabídka "Domů" nebo některé její položky, může vám pomoci přidání webového tokenu. Musíte ho exportovat ze souborů cookie prohlížeče pro <a href="https://open.spotify.com" target="_blank">open.spotify.com</a>.
+	CS	Jmenuje se "sp_dc" a má velký počet znaků. Viz <a href="/plugins/Spotty/html/websession-cookie.html" target="_blank">tento návod</a>.
 	DE	Das Web Token erlaubt es unter Umständen, auf Inhalte Zugriffe zu erhalten, die sonst nicht verfügbar sind. Es ist normalerweise nicht notwendig.
 	DE	Sollten jedoch Inhalte im "Start" Menü nicht verfügbar sein, so kann die Angabe eines Web Tokens helfen.
 	DE	Das Web Token muss im Browser, in welchem du dich bei <a href="https://open.spotify.com" target="_blank">open.spotify.com</a> angemeldet hast, exportiert werden.
@@ -73,72 +85,84 @@ PLUGIN_SPOTTY_WEB_TOKEN_DESC
 	NL	Het token heet "sp_dc" en heeft een groot aantal karakters. Zie <a href="/plugins/Spotty/html/websession-cookie.html" target="_blank">deze instructies</a>.
 
 PLUGIN_SPOTTY_USERNAME
+	CS	Uživatelské jméno Spotify
 	DE	Spotify Benutzername
 	EN	Spotify Username
 	FR	Nom d'utilisateur Spotify
 	NL	Spotify Gebruikersnaam
 
 PLUGIN_SPOTTY_PASSWORD
+	CS	Heslo Spotify
 	DE	Spotify Passwort
 	EN	Spotify Password
 	FR	Mot de passe Spotify
 	NL	Spotify Wachtwoord
 
 PLUGIN_SPOTTY_USERNAME_DESC
+	CS	Zadejte své uživatelské jméno Spotify (vyžaduje se Premium účet)
 	DE	Gib deinen Spotify Benutzernamen ein (Premium Account notwendig)
 	EN	Enter your Spotify username (Premium Account required)
 	FR	Entrez votre nom d'utilisateur Spotify (compte Premium requis)
 	NL	Vul jouw Spotify gebruikersnaam in (vereist een Premium Account)
 
 PLUGIN_SPOTTY_PASSWORD_DESC
+	CS	Zadejte heslo Spotify (vyžaduje se Premium účet)
 	DE	Gib dein Spotify Passwort ein (Premium Account notwendig)
 	EN	Enter your Spotify password (Premium Account required)
 	FR	Entrez votre mot de passe Spotify (compte Premium requis)
 	NL	Vul jouw Spotify wachtwoord in (vereist een Premium Account)
 
 PLUGIN_SPOTTY_AUTH_FAILED
+	CS	Autorizace se nezdařila
 	DE	Anmeldung fehlgeschlagen
 	EN	Authorization failed
 	FR	Echec de l'autorisation
 	NL	Autorisatie mislukt
 
 PLUGIN_SPOTTY_IMPORT_LIBRARY
+	CS	Importovat
 	DE	Importieren
 	EN	Import
 	FR	Importer
 	NL	Importeren
 
 PLUGIN_SPOTTY_DONT_IMPORT_LIBRARY
+	CS	Neimportovat
 	DE	Nicht importieren
 	EN	Don't import
 	FR	Ne pas importer
 	NL	Niet importeren
 
 PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY
+	CS	Místní hudba a %s
 	DE	Lokale Musik und %s
 	EN	Local Music and %s's
 	FR	Musique locale et %s
 	NL	Lokale muziek en %s
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY
+	CS	Sloučení s "Moje hudba"
 	DE	In "Meine Musik" anzeigen
 	EN	Merge with "My Music"
 	FR	Fusionner avec "Ma musique"
 	NL	Samenvoegen met "Mijn muziek"
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_DESC
+	CS	Integrace knihovny Spotify s místní knihovnou umožňuje procházet veškerou hudbu z jednoho místa, umožňuje používat náhodné přehrávání s hudbou Spotify atd. UPOZORŇUJEME, že změna této předvolby vyvolá opětovné prohledání vaší knihovny.
 	DE	Die Integration ihrer Spotify Sammlung mit der lokalen Musik gibt ihnen Zugriff auf alle ihre Musik in einem Menü. Auch erlaubt dies die Verwendung von Zufallswiedergabe mit Spotify Titeln, schnelle und Volltext-Suche etc.
 	EN	Integrating the Spotify library with your local library allows you to browse all your music from one place, allows you to use Random Play with Spotify music etc. PLEASE NOTE that changing this preference will trigger a rescan of your library.
 	FR	L'intégration de la bibliothèque Spotify à votre bibliothèque locale vous permet de parcourir toute votre musique à partir d'un seul endroit. Elle vous permet d'utiliser la lecture aléatoire avec la musique Spotify, etc. La modification de ce paramètre déclenchera une nouvelle analyse de votre bibliothèque.
 	NL	Het samenvoegen van jouw Spotify muziekcollectie met jouw lokale muziekcollectie maakt het mogelijk om door al jouw muziek te bladeren vanaf één plek. Het is ook mogelijk om shuffle te gebruiken met Spotify nummers, snel en volledige-tekst zoeken enz.
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_0
+	CS	Neslučovat sbírku Spotify s místní hudební knihovnou
 	DE	Die Spotify Musiksammlung nicht in die lokale Musiksammlung integrieren
 	EN	Do not merge your Spotify collection with the local music library
 	FR	Ne pas fusionner votre bibliothèque Spotify avec votre bibliothèque locale
 	NL	Voeg jouw Spotify muziekcollectie niet samen met jouw lokale muziekcollectie
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_1
+	CS	Sloučit sbírku Spotify s místní hudební knihovnou
 	DE	Integriere die Spotify Musiksammlung mit der lokalen Musik
 	EN	Merge your Spotify collection with your local music library
 	FR	Fusionner votre bibliothèque Spotify avec votre bibliothèque locale
@@ -159,7 +183,7 @@ PLUGIN_SPOTTY_ACCOUNT
 	SV	Konto
 
 PLUGIN_SPOTTY_SELECT_ACCOUNT
-	CS	Vyberte účet
+	CS	Zvolení účtu
 	DA	Vælg konto
 	DE	Konto auswählen
 	EN	Select Account
@@ -174,128 +198,150 @@ PLUGIN_SPOTTY_SELECT_ACCOUNT
 	SV	Välj konto
 
 PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_OFF
+	CS	Poskytnout nabídku pro přepínání mezi účty. Tato možnost je vhodná, pokud se většinu času držíte jednoho účtu na zařízení.
 	DE	Stelle ein Menü zur Verfügung, um zwischen Konten zu wechseln. Dies empfiehlt sich, wenn auf einem Gerät meist dasselbe Konto verwendet wird.
 	EN	Provide a menu to switch between accounts. This option is suitable if you stick with one account per device most of the time.
 	FR	Fournir un menu pour basculer entre les comptes. Cette option convient si la plupart du temps vous vous en tenez à un seul compte par appareil.
 	NL	Maak een menu om tussen accounts te schakelen. Deze optie is geschikt als je de meeste tijd met één account per apparaat werkt.
 
 PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_ON
+	CS	Poskytnout jednu nabídku procházení pro každý účet. To umožňuje rychlý přístup ke knihovnám různých uživatelů, ale vytváří více položek v nabídce.
 	DE	Erstelle pro Konto ein Untermenü. Dies erlaubt den schnellen Zugriff auf die Sammlungen mehrerer Benutzer, erstellt aber mehr Menü-Einträge.
 	EN	Provide one browse menu per account. This allows you to quickly access libraries of the various users, but creates more menu entries.
 	FR	Fournir un menu de navigation par compte. Cela permet d'accéder rapidement aux bibliothèques des différents utilisateurs, mais crée plus d'entrées de menu.
 	NL	Maak een menu per account. Dit geeft snelle toegang tot de muziekcollecties van meerdere gebruikers, maar creëert meer menu items.
 
 PLUGIN_SPOTTY_HELPER
+	CS	Pomocná aplikace Spotty
 	DE	Spotty Helferanwendung
 	EN	Spotty Helper Application
 	FR	Application Spotty Helper
 	NL	Spotty Hulptoepassing
 
 PLUGIN_SPOTTY_HELPER_MISSING
+	CS	Chybí pomocná aplikace Spotify Connect
 	DE	Die Spotify Connect Helferanwendung fehlt
 	EN	Spotify Connect Helper application is missing
 	FR	L'application Spotify Connect Helper est manquante.
 	NL	Spotify Connect hulptoepassing ontbreekt
 
 PLUGIN_SPOTTY_HELPER_CHOOSE
+	CS	Pokud automatická detekce selže, vyberte pomocnou aplikaci. NEPOUŽÍVEJTE, pokud "Automaticky" selže.
 	DE	Wähle eine Helferanwendung, falls die automatische Erkennung fehl schlägt. Bitte nur anwenden, wenn "Automatisch" versagt.
 	EN	Select a helper application if the automatic detection fails. Do NOT use unless "Automatic" fails.
 	FR	Sélectionner manuellement l'application Helper si la détection automatique échoue. N'utiliser QUE si la détection automatique échoue.
 	NL	Selecteer een hulptoepassing als de automatische detectie mislukt. Alleen gebruiken als "Automatisch" mislukt.
 
 PLUGIN_SPOTTY_HELPER_DISCOVER
+	CS	Vybrat Automaticky (výchozí)
 	DE	Automatisch Wählen
 	EN	Select Automatically (default)
 	FR	Sélectionner automatiquement l'application Helper.
 	NL	Selecteer Automatisch (standaard)
 
 PLUGIN_SPOTTY_HELPER_MISSING_HELP
+	CS	Nepodařilo se spustit pomocnou aplikaci Spotify Connect. Možná vaše platforma není podporována?
 	DE	Konnte die Spotify Connect Helferanwendung nicht finden oder nicht ausführen. Ist ihr Betriebssystem unterstützt?
 	EN	Couldn't start the Spotify Connect Helper application. Maybe your platform isn't supported?
 	FR	Impossible de démarrer l'application Spotify Connect Helper. Peut-être que votre plateforme n'est pas prise en charge ?
 	NL	Niet mogelijk om de Spotify Connect hulptoepassing te starten. Misschien wordt jouw besturingssysteem niet ondersteund?
 
 PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC
+	CS	Neoznamovat ve své síti přehrávače Squeezebox spuštěné v režimu Spotify Connect. Tuto možnost zaškrtněte, pokud nechcete, aby se váš přehrávač Squeezebox s povoleným režimem Spotify Connect zobrazoval ve všech aplikacích Spotify ve vaší síti.
 	DE	Squeezebox Player im Spotify Connect Modus nicht im lokalen Netzwerk bekannt geben. Aktiviere diese Option, falls dein Player im Spotify Connect Modus nur vom Spotify-Konto gesehen werden soll, welches zuletzt für dieses Gerät verwendet wurde.
 	EN	Don't announce Squeezebox players running in Spotify Connect mode in your network. Check this option if you don't want your Spotify Connect enabled Squeezebox player to show up in all Spotify apps in your network.
 	FR	Ne pas annoncer les platines Squeezebox compatibles Spotify Connect sur votre réseau. Cocher cette option si vous ne souhaitez pas que les platines Squeezebox compatibles Spotify Connect apparaissent dans toutes les applications Spotify de votre réseau.
 	NL	Kondig geen Squeezebox muziekspelers aan in de Spotify Connect modus in jouw netwerk. Vink deze optie aan als je niet wilt dat Spotify Connect compatibele Squeezebox muziekspelers in alle Spotify apps op jouw netwerk verschijnen.
 
 PLUGIN_SPOTTY_OPTIMIZE_PRE_BUFFERING
+	CS	Optimalizovat přednačítání - povolte pouze v případě, kdy se zdá, že vaše aplikace Spotify předbíhá přehrávání Spotty v režimu Connect.
 	DE	Pre-Buffering optimieren - nur empfohlen, wenn die Spotify App im Connect Modus Spotty weit voraus zu sein scheint.
 	EN	Optimize Pre-Buffering - only enable if your Spotify application seems to be tracks ahead of Spotty playback in Connect mode.
 	FR	Optimiser la mise en cache anticipée. A n'activer que si votre application Spotify est en avance sur Spotty en mode Connect.
 	NL	Optimaliseer pre-buffering - schakel deze optie alleen in als de Spotify App nummers voorloopt op de Spotty weergave in de Connect modus.
 
 PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
+	CS	Zobrazit pouze alba mé knihovny pro interprety mé knihovny.
 	DE	Zeige nur meine Alben unter meinen Interpreten.
 	EN	Only show my library's albums for my library's artists.
 	FR	Afficher uniquement les albums de ma bibliothèque pour les artistes de ma bibliothèque.
 	NL	Toon alleen mijn albums onder mijn artiesten.
 
 PLUGIN_SPOTTY_CLEANUP_TAGS
+	CS	Zpřehlednit názvy alb a skladeb (např. odstranit "Deluxe Edition", "Remastered" atd.)
 	DE	Albennamen und Titel bereinigen (z.B. "Deluxe Edition", "Remastered" etc. entfernen)
 	EN	Clean up album and track titles (eg. remove "Deluxe Edition", "Remastered" etc.)
 	FR	Epurer les titres des albums et des morceaux (par exemple, supprimer "Deluxe Edition", "Remastered"...)
 	NL	Albums en nummers opschonen (bijv. verwijder "Deluxe Edition", "Remastered", etc.)
 
 PLUGIN_SPOTTY_HELPER_ERROR
+	CS	Vyskytl se problém se spuštěním pomocné aplikace Spotty.
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten!
 	EN	There has been a problem running the Spotty helper application.
 	FR	Un problème est survenu lors de l'exécution de l'application Spotty Helper.
 	NL	Er is een probleem opgetreden tijdens het uitvoeren van de Spotty hulptoepassing.
 
 PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE
+	CS	Je mi líto, ale vaše architektura procesoru nebo operační systém s největší pravděpodobností nejsou se Spotty kompatibilní. Přesto jej můžete vyzkoušet. Ale nebuďte překvapeni, když se to nepodaří...
 	DE	Tut mir Leid, aber sehr wahrscheinlich ist ihre Prozessorarchitektur oder das Betriebssystem nicht mit Spotty kompatibel. Sie können noch immer einen Versuch wagen. Aber vermutlich wird er fehl schlagen.
 	EN	I'm sorry, but your processor architecture or operating system most likely is not compatible with Spotty. You can still give it a try. But don't be surprised if it fails...
 	FR	Malheureusement, votre architecture de processeur ou votre système d'exploitation n'est probablement pas compatible avec Spotty. Vous pouvez toujours essayer, mais ne soyez pas surpris si cela échoue...
 	NL	Helaas, jouw processorarchitectuur of besturingssysteem is hoogstwaarschijnlijk niet compatibel met Spotty. Je kunt het nog steeds proberen, maar wees niet verbaasd als het niet lukt...
 
 PLUGIN_SPOTTY_MISSING_HELPER
+	CS	Vyskytl se problém se spuštěním pomocné aplikace Spotty. Pravděpodobně není podporován váš operační systém a/nebo platforma. Nahlaste mi prosím následující údaje:
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Vermutlich wird diese auf ihrem System nicht unterstützt. Bitte wenden Sie sich an mich, unter Angabe der folgenden Plattform-Informationen:
 	EN	There has been a problem running the Spotty helper application. Most likely your operating system and/or platform is not supported. Please report the following details to me:
 	FR	Un problème est survenu lors de l'exécution de l'application Spotty Helper. Il est fort probable que votre système d'exploitation et/ou votre plateforme ne soient pas pris en charge. Merci de me communiquer les informations suivantes :
 	NL	Er is een probleem opgetreden bij het uitvoeren van de Spotty hulptoepassing. Hoogstwaarschijnlijk wordt jouw besturingssysteem en/of platform niet ondersteund. Geef de volgende gegevens aan mij door:
 
 PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS
+	CS	Vyskytl se problém se spuštěním pomocné aplikace Spotty. Ujistěte se prosím, že máte v systému nainstalován <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-Bit!)</a>.
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Bitte stellen Sie sicher, dass die <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-Bit!)</a> installiert ist.
 	EN	There has been a problem running the Spotty helper application. Please make sure you have the <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-bit!)</a> installed on your system.
 	FR	Un problème est survenu lors de l'exécution de l'application d'assistance Spotty. Assurez-vous de disposer du <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64 bits !)</a > sur votre ordinateur.
 	NL	Er is een probleem opgetreden bij het uitvoeren van de Spotty hulptoepassing. Zorg ervoor dat <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-bit!)</a> is geïnstalleerd op jouw systeem.
 
 PLUGIN_SPOTTY_LO_POWER_PI
+	CS	Zdá se, že Spotty používáte na Raspberry Pi nejnižší specifikace (Pi A/A+/B/B+ první generace nebo Pi Zero). Spotty na této platformě pravděpodobně nebude fungovat.
 	DE	Sie scheinen Spotty auf einem schwachbrüstigen Raspberry Pi (erste Generation Pi A/A+/B/B+, oder Pi Zero) zu verwenden. Spotty wird darauf vermutlich nicht funktionieren.
 	EN	You seem to be running Spotty on a lowest spec Raspberry Pi (first generation Pi A/A+/B/B+, or Pi Zero). Spotty likely will not work on this platform.
 	FR	Vous semblez utiliser Spotty sur un Raspberry Pi aux spécifications les plus basses (Pi A/A+/B/B+ de première génération ou Pi Zero). Spotty ne fonctionnera probablement pas sur cette plate-forme.
 	NL	Het lijkt erop dat je Spotty gebruikt op een Raspberry Pi met de laagste specificatie (eerste generatie Pi A/A+/B/B+ of Pi Zero). Spotty zal waarschijnlijk niet werken op dit platform.
 
 PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED
+	CS	Monitorovat připojení pomocníka Spotty Connect k serverům Spotify. To může být užitečné, pokud vaše zařízení s povolenou funkcí Spotty Connect pravidelně mizí z aplikací Spotify.
 	DE	Überwache die Verbindung der Spotty Connect Helferanwendung mit den Spotify Servern. Dies kann helfen, wenn Spotty Connect aktivierte Geräte regelmässig aus den Spotify-Anwendungen verschwinden.
 	EN	Monitor the connection of the Spotty Connect helper with the Spotify servers. This can be useful if your Spotty Connect enabled devices regularly disappear from the Spotify apps.
 	FR	Surveiller la connexion de Spotty Connect Helper avec les serveurs Spotify. Cela peut être utile si vos appareils compatibles Spotty Connect disparaissent régulièrement des applications Spotify.
 	NL	Monitor de verbinding van de Spotty Connect hulptoepassing met de Spotify servers. Dit kan handig zijn als jouw voor Spotty Connect geschikte apparaten regelmatig uit de Spotify apps verdwijnen.
 
 PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH
+	CS	Zakázat asynchronní volání obnovení tokenu. Upozorňujeme, že to může na několik sekund zablokovat Logitech Media Server.
 	DE	Deaktiviere asynchronen Token Refresh. Bitte beachten Sie, dass dies ihr Logitech Media Server System u.U. für ein paar Sekunden blockieren kann.
 	EN	Disable asynchronous token refresh call. Please note that this can potentially block your Logitech Media Server for a few seconds.
 	FR	Désactiver l'actualisation asynchrone de jeton. Noter que cela peut potentiellement bloquer votre Logitech Media Server pendant quelques secondes.
 	NL	Schakel asynchrone token refresh uit. Houd er rekening mee dat dit de Logitech Media Server mogelijk enkele seconden kan blokkeren.
 
 PLUGIN_SPOTTY_FORCE_FALLBACK_AP
+	CS	Použít záložní přístupový bod služby Spotify
 	DE	Spotifys Fallback Access Point verwenden
 	EN	Use Spotify's Fallback Access Point
 
 PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC
+	CS	Někdy některé přístupové body služby Spotify nereagují správně. V takové situaci můžete místo toho zkusit použít záložní servery.
 	DE	Manchmal antworten Spotifys Server nicht korrekt. In dieser Situation kann es ev. helfen, den Fallback Access Point zu verwenden.
 	EN	Sometimes some of Spotify's Access Points fail to respond correctly. In this situation you can try to use the fallback servers instead.
 
 PLUGIN_SPOTTY_ADVANCED_SETTING
+	CS	Pokročilá nastavení
 	DE	Erweiterte Einstellungen
 	EN	Advanced Settings
 	FR	Réglages avancés
 	NL	Geavanceerde Instellingen
 
 PLUGIN_SPOTTY_ADVANCED_SETTING_DESC
+	CS	Následující nastavení neměňte, pokud přesně nevíte, co děláte, nebo pokud jsem vám to neřekl. Při nesprávném použití mohou mít negativní dopad na zážitek ze Spotty.
 	DE	Bitte verändere die folgenden Einstellungen nur, wenn du weisst was du tust, oder dazu aufgefordert wirst. Falsche Einstellungen können einen negativen Einfluss haben auf den Betrieb von Spotty.
 	EN	Please don't change the following settings, unless you know exactly what you're doing - or I told you to do so. Used the wrong way they can have a negative impact on the Spotty experience.
 	FR	Veuillez ne pas modifier les paramètres suivants, à moins que vous ne sachiez exactement ce que vous faites (ou que je vous ai dit de le faire). Utilisés de la mauvaise manière, ils peuvent avoir un impact négatif sur l'expérience Spotty.
@@ -317,7 +363,7 @@ PLUGIN_SPOTTY_WHATS_NEW
 	SV	Nyheter
 
 PLUGIN_SPOTTY_TOP_TRACKS
-	CS	Nejlepší stopy
+	CS	Nejlepší skladby
 	DA	Mest populære numre
 	DE	Top-Titel
 	EN	Top Tracks
@@ -362,13 +408,14 @@ PLUGIN_SPOTTY_ARTIST_RADIO
 	SV	Artistradio
 
 PLUGIN_SPOTTY_GENRES_MOODS
+	CS	Žánry a nálady
 	DE	Genres und Stimmungen
 	EN	Genres and Moods
 	FR	Genres et ambiances
 	NL	Genres en Stemmingen
 
 PLUGIN_SPOTTY_COMPILATIONS
-	CS	Sbírka
+	CS	Sbírky
 	DA	Kompilationer
 	DE	Kompilationen
 	EN	Compilations
@@ -399,22 +446,8 @@ PLUGIN_SPOTTY_SINGLES
 	RU	Синглы и EP
 	SV	Singlar och EP-skivor
 
-PLUGIN_SPOTTY_TOP_TRACKS
-	CS	Nejlepší stopy
-	DA	Mest populære numre
-	DE	Top-Titel
-	EN	Top Tracks
-	ES	Pistas principales
-	FI	Suositut kappaleet
-	FR	Meilleurs morceaux
-	IT	Brani più ascoltati
-	NL	Topnummers
-	NO	Mest populære spor
-	PL	Najpopularniejsze utwory
-	RU	Лучшие дорожки
-	SV	Toppspår
-
 PLUGIN_SPOTTY_TITLE_RADIO
+	CS	Rádio skladby
 	DE	Titel-Radio
 	EN	Title Radio
 	FR	Titre Radio
@@ -436,36 +469,42 @@ PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST
 	SV	Lägg till spår i spellistan
 
 PLUGIN_SPOTTY_FOLLOW_ARTIST
+	CS	Sledovat interpreta
 	DE	Künstler folgen
 	EN	Follow artist
 	FR	Suivre l'artiste
 	NL	Volg artiest
 
 PLUGIN_SPOTTY_FOLLOWING_ARTIST
+	CS	Sledujících tohoto umělce:
 	DE	Folge nun dem Künstler:
 	EN	Following this artist:
 	FR	Suivez maintenant l'artiste :
 	NL	Volg deze artiest:
 
 PLUGIN_SPOTTY_FOLLOWERS
+	CS	Sledujících:
 	DE	Follower:
 	EN	Followers:
 	FR	Followers :
 	NL	Volgers:
 
 PLUGIN_SPOTTY_ADD_STUFF
+	CS	Přidejte si alba nebo sledujte interpreta či seznam skladeb pro doplnění hudební knihovny.
 	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen.
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.
 	FR	Ajoutez des albums à votre musique ou suivez un artiste ou une liste de lecture pour remplir votre bibliothèque.
 	NL	Voeg albums toe of volg een artiest of afspeellijst om jouw muziekcollectie aan te vullen.
 
 PLUGIN_SPOTTY_ADD_SONGS
+	CS	Přidejte prosím skladby do své hudební knihovny pro naplnění této sekce.
 	DE	Fügen Sie Ihrer Musikbibliothek Lieder hinzu, um diesen Abschnitt zu füllen.
 	EN	Please add songs to your music library to populate your this section.
 	FR	Veuillez ajouter des morceaux à votre bibliothèque pour remplir cette section.
 	NL	Voeg nummers toe aan jouw muziekcollectie om dit gedeelte aan te vullen.
 
 PLUGIN_SPOTTY_SONGS_LIST
+	CS	Skladby
 	EN	Songs
 	FR	Morceaux
 	NL	Nummers
@@ -486,7 +525,7 @@ PLUGIN_SPOTTY_ADD_ALBUM_TO_LIBRARY
 	SV	Lägg till album i biblioteket.
 
 PLUGIN_SPOTTY_MUSIC_ADDED
-	CS	Byla přidána hudba
+	CS	Hudba byla přidána
 	DA	Der er tilføjet musik
 	DE	Musik wurde hinzugefügt
 	EN	Music has been added
@@ -516,24 +555,28 @@ PLUGIN_SPOTTY_USERS
 	SV	Användare
 
 PLUGIN_SPOTTY_TRANSFER
+	CS	Přenést přehrávání
 	DE	Wiedergabe übernehmen
 	EN	Transfer Playback
 	FR	Transférer la lecture
 	NL	Afspelen overnemen
 
 PLUGIN_SPOTTY_TRANSFER_DESC
+	CS	Přehrávání Spotify z níže uvedeného zařízení můžete přenést do Squeezeboxu. Upozorňujeme, že ne vždy je možné obnovit přesně stejný seznam skladeb.
 	DE	Sie können die Spotify Wiedergabe vom unten gelisteten Gerät übernehmen. Allerdings ist es nicht immer möglich, die genau Wiedergabeliste zu übernehmen.
 	EN	You can transfer Spotify playback from below listed device to your Squeezebox. Please note that it's not always possible to restore the exact same playlist.
 	FR	Vous pouvez transférer la lecture Spotify de l'appareil répertorié ci-dessous vers votre Squeezebox. Notez qu'il n'est pas toujours possible de restaurer exactement la même liste de lecture.
 	NL	Je kunt de Spotify weergave van het onderstaande apparaat overzetten naar jouw Squeezebox. Houd er rekening mee dat het niet altijd mogelijk is om exact dezelfde afspeellijst te herstellen.
 
 PLUGIN_SPOTTY_TRANSFER_CONNECT_DESC
+	CS	Přehrávání Spotify z níže uvedeného zařízení můžete přenést do Squeezeboxu. Přehrávání bude pokračovat v režimu Spotify Connect. To znamená, že se přehrávání na původním zařízení zastaví.
 	DE	Sie können die Spotify Wiedergabe vom unten gelisteten Gerät übernehmen. Die Wiedergabe wirde im Spotify Connect Modus weitergeführt. D.h. dass die Wiedergabe auf dem anderen Gerät angehalten wird.
 	EN	You can transfer Spotify playback from below listed device to your Squeezebox. Playback will continue in Spotify Connect mode. This means that playback on the origin device will stop.
 	FR	Vous pouvez transférer la lecture Spotify de l'appareil répertorié ci-dessous vers votre Squeezebox. La lecture se poursuivra en mode Spotify Connect. Cela signifie que la lecture sur le périphérique d'origine s'arrêtera.
 	NL	Je kunt de Spotify weergave van het onderstaande apparaat overzetten naar jouw Squeezebox. Het afspelen gaat verder in de Spotify Connect modus. Dit betekent dat het afspelen op het oorspronkelijke apparaat stopt.
 
 PLUGIN_SPOTTY_NO_PLAYER_FOUND
+	CS	Nebylo nalezeno žádné zařízení přehrávající Spotify.
 	DE	Es wurde kein Gerät oder keine Wiedergabeliste gefunden.
 	EN	No Spotify playing device was found.
 	FR	Aucun appareil de lecture Spotify n'a été trouvé.
@@ -555,25 +598,28 @@ PLUGIN_SPOTTY_NEW_SEARCH
 	SV	Ny sökning
 
 PLUGIN_SPOTTY_SEARCH_HISTORY
+	CS	Historie hledání
 	DE	Gespeicherte Suchen
 	EN	Search History
 	FR	Historique des recherches
 	NL	Zoekgeschiedenis
 
 PLUGIN_SPOTTY_CLEAR_SEARCH_HISTORY
+	CS	Vymazat kompletní historii hledání
 	DE	Alle gespeicherte Suchen löschen
 	EN	Clear complete search history
 	FR	Effacer l'historique des recherches
 	NL	Volledige zoekgeschiedenis wissen
 
 PLUGIN_SPOTTY_RECOMMENDATIONS
+	CS	Doporučení Spotify (na základě aktuálního seznamu skladeb)
 	DE	Spotify Empfehlungen (basierend auf aktueller Wiedergabeliste)
 	EN	Spotify Recommendations (based on the current playlist)
 	FR	Recommandations Spotify (basées sur la liste de lecture actuelle)
 	NL	Spotify Aanbevelingen (gebaseerd op de huidige afspeellijst)
 
 PLUGIN_SPOTTY_ON_SPOTIFY
-	CS	Na službě Spotify
+	CS	Na Spotify
 	DA	På Spotify
 	DE	In Spotify
 	EN	On Spotify
@@ -588,7 +634,7 @@ PLUGIN_SPOTTY_ON_SPOTIFY
 	SV	På Spotify
 
 PLUGIN_SPOTTY_NO_PLAYER_CONNECTED
-	CS	Nelze získat přístup ke službám Spotify bez připojeného přehrávače.
+	CS	Nelze získat přístup ke Spotify bez připojeného přehrávače.
 	DA	Du kan ikke få adgang til tjenesterne på Spotify medmindre der er tilsluttet en afspiller.
 	DE	Sie können sich ohne Player nicht mit Spotify verbinden.
 	EN	Cannot access Spotify services without a player connected.
@@ -603,24 +649,28 @@ PLUGIN_SPOTTY_NO_PLAYER_CONNECTED
 	SV	Det går inte att få tillgång till Spotify-tjänsterna eftersom ingen spelare är ansluten.
 
 PLUGIN_SPOTTY_ERROR_NO_ACCESS_TOKEN
+	CS	Nepodařilo se získat přístupový token
 	DE	Konnte keinen Access Token erhalten
 	EN	Failed to get access token
 	FR	Impossible d'obtenir le jeton d'accès
 	NL	Kan geen Access Token krijgen
 
 PLUGIN_SPOTTY_ERROR_429
+	CS	Překročení míry přístupů
 	DE	Zugriffsrate überschritten
 	EN	Rate limit exceeded
 	FR	Limite de débit dépassée
 	NL	Toegangslimiet overschreden
 
 PLUGIN_SPOTTY_ERROR_429_DESC
+	CS	Překročena míra přístupů pro: %s; opakování po %s sekundách.
 	DE	Zugriffsrate überschritten für: %s; nächster Versuch in %s Sekunden.
 	EN	Access Rate limit exceeded for: %s; retry after %s seconds.
 	FR	Limite de débit dépassée pour : %s ; prochaine tentative dans %s secondes.
 	NL	Toegangslimiet overschreden voor: %s; volgende poging na %s seconden.
 
 PLUGIN_SPOTTY_MISSING_SSL
+	CS	Spotty vyžaduje modul Perlu IO::Socket::SSL. Bez tohoto modulu nelze Spotty používat. K jeho instalaci použijte správce balíčků vašeho operačního systému.
 	DE	Spotty benötigt das Perl Modul IO::Socket::SSL! Ohne dieses Modul ist die Nutzung von Spotty NICHT möglich. Bitte benutze den Paket-Manager deines Betriebssystems um es zu installieren.
 	EN	Spotty requires the Perl module IO::Socket::SSL. You can NOT use Spotty without this module. Please use your operating system's package manager to install it.
 	FR	Le module Perl IO::Socket::SSL est indispensable pour Spotty. Utilisez le gestionnaire de paquets de votre système d'exploitation pour installer ce module.
@@ -631,6 +681,13 @@ PLUGIN_SPOTTY_CLIENT_ID
 	FR	Spotify ID Client
 
 PLUGIN_SPOTTY_CLIENT_ID_DESC
+	CS	<div>Použití vlastního ID klienta může pomoci, pokud narazíte na problémy s překročením míry přístupů ("chyba 429"). Chcete-li získat vlastní Client ID, postupujte podle následujících jednoduchých kroků:</div>
+	CS	<ul style="list-style:initial">
+	CS	<li>Přejděte na <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a> a v případě potřeby se přihlaste.</li>
+	CS	<li>Klikněte na možnost "Create An App" a postupujte podle pokynů.</li>
+	CS	<li>Zkopírujte nově vytvořené Client ID do nastavení Spotty.</li>
+	CS	<li>Pokud plánujete se Spotty používat více účtů Spotify (např. rodinný účet), budete je muset přidat do části "Users and Access" v nově vytvořené konfiguraci.</li>
+	CS	</ul>
 	DE	<div>Die Verwendung einer eigenen Client ID kann helfen, falls Sie Probleme mit dem "Rate Limiting" haben (Fehler 429). Um eine solche Client ID zu erhalten, befolgen Sie diese einfachen Schritte:</div>
 	DE	<ul style="list-style:initial">
 	DE	<li>Besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an.</li>
@@ -666,6 +723,7 @@ PLUGIN_SPOTTY_CLIENT_ID_DESC
 
 # this is a duplicate of INFORMATION_BINDIRS - which is not available in 7.7.5
 PLUGIN_SPOTTY_INFORMATION_BINDIRS
+	CS	Složka pomocných aplikací
 	DE	Ordner für Hilfsprogramme
 	EN	Helper Applications Folder
 	FR	Dossier pour les applications Helper
@@ -674,6 +732,7 @@ PLUGIN_SPOTTY_INFORMATION_BINDIRS
 	PL	Folder aplikacji pomocniczych
 
 PLUGIN_SPOTTY_PLEASE_UPDATE
+	CS	Informace nejsou k dispozici. Aktualizujte prosím Logitech Media Server na verzi 7.7.6 nebo novější.
 	DE	Information steht nicht zur Verfügung. Bitte Logitech Media Server auf 7.7.6 oder neuer aktualisieren.
 	EN	Information is not avaialable. Please update Logitech Media Server to 7.7.6 or more recent.
 	FR	Les informations ne sont pas disponibles. Veuillez mettre à jour Logitech Media Server vers 7.7.6 ou une version plus récente.
@@ -683,42 +742,49 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT
 	EN	Spotify Connect
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
+	CS	Vyberte přehrávače, které chcete používat se službou Spotify Connect. Mějte na paměti, že každé povolené zařízení spustí proces na pozadí. To může vést k problémům na serverech s nedostatkem paměti.
 	DE	Wählen aus, welche Geräte als Spotify Connect Endpunkte zur Auswahl stehen sollen. Bitte beachte, dass für jedes Gerät ein Hintergrundprozess gestartet wird. Dies kann auf Geräten mit wenig Speicher u.U. zu Problemen führen.
 	EN	Select which players you'd like to use with Spotify Connect. Please keep in mind that every enabled device will launch a background process. This could potentially lead to issues on servers running low on memory.
 	FR	Sélectionnez les platines que vous souhaitez utiliser avec Spotify Connect. Gardez à l'esprit que chaque appareil activé lancera un processus en arrière-plan. Cela pourrait potentiellement entraîner des problèmes sur des serveurs avec peu de mémoire.
 	NL	Selecteer welke muziekspelers je wilt gebruiken met Spotify Connect. Houd er rekening mee dat er voor elk apparaat een proces start op de achtergrond. Dit kan mogelijk tot problemen leiden op servers met weinig geheugen.
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
+	CS	Povolit přístupový bod Spotify Connect pro tento přehrávač
 	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen
 	EN	Enable Spotify Connect endpoint for this player
 	FR	Rendre cet appareil disponible pour Spotify Connect
 	NL	Schakel Spotify Connect in voor deze muziekspeler
 
 PLUGIN_SPOTTY_NEED_HELPER_UPDATE
+	CS	Spotify Connect není k dispozici.
 	DE	Spotify Connect ist nicht verfügbar.
 	EN	Spotify Connect is not available.
 	FR	Spotify Connect n'est pas disponible.
 	NL	Spotify Connect is niet beschikbaar.
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS
+	CS	Nastavení zvuku
 	DE	Soundqualität
 	EN	Audio Settings
 	FR	Paramètres audio
 	NL	Geluidskwaliteit
 
 PLUGIN_SPOTTY_SORT_ORDER
+	CS	Pořadí řazení knihovny
 	DE	Bibliothekssortierung
 	EN	Library Sort Order
 	FR	Ordre de tri de la bibliothèque
 	NL	Mediabibliotheek sorteervolgorde
 
 PLUGIN_SPOTTY_SORT_ALPHABETICALLY
+	CS	Řadit podle abecedy
 	DE	Alphabetisch sortieren
 	EN	Sort alphabetically
 	FR	Trier par ordre alphabétique
 	NL	Sorteer alfabetisch
 
 PLUGIN_SPOTTY_SORT_CHRONOLOGICALLY
+	CS	Řadit podle data přidání
 	DE	Nach Hinzufügedatum sortieren
 	EN	Sort by date of addition
 	FR	Trier par date d'ajout
@@ -726,71 +792,83 @@ PLUGIN_SPOTTY_SORT_CHRONOLOGICALLY
 
 # leading 0 to allow for sorting....
 PLUGIN_SPOTTY_AUDIO_SETTINGS_096
+	CS	Normální (96 kb/s)
 	EN	Normal (96kbps)
 	FR	Normal (96 kbit/s)
 	NL	Normaal (96 kbit/s)
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS_160
+	CS	Vysoký (160 kb/s)
 	DE	Hoch (160kbps)
 	EN	High (160kbps)
 	FR	Elevé (160 kbit/s)
 	NL	Hoog (160 kbit/s)
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS_320
+	CS	Extrémní (320kb/s)
 	DE	Extrem (320kbps)
 	EN	Extreme (320kbps)
 	FR	Extrême (320 kbit/s)
 	NL	Extreem (320 kbit/s)
 
 PLUGIN_SPOTTY_EXPLICIT
+	CS	Explicitní obsah
 	DE	Anstössige Inhalte
 	EN	Explicit content
 	FR	Contenu explicite
 	NL	Expliciete inhoud
 
 PLUGIN_SPOTTY_EXPLICIT_HIDE
+	CS	Skrýt skladby
 	DE	Aus Listen entfernen
 	EN	Hide tracks
 	FR	Masquer les morceaux
 	NL	Verberg nummers
 
 PLUGIN_SPOTTY_EXPLICIT_DONT_PLAY
+	CS	Ukázat, ale nehrát
 	DE	Anzeigen, aber nicht wiedergeben
 	EN	Show, but don't play
 	FR	Montrer, mais ne pas lire
 	NL	Tonen, maar niet afspelen
 
 PLUGIN_SPOTTY_EXPLICIT_DONT_CARE
+	CS	Hrát normálně
 	DE	Normal wiedergeben
 	EN	Play normally
 	FR	Lire normalement
 	NL	Normaal afspelen
 
 PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER
+	CS	Pořadí třídění podcastů
 	DE	Podcast Reihenfolge
 	EN	Podcast Sort Order
 	FR	Ordre de tri des podcasts
 	NL	Podcast sorteervolgorde
 
 PLUGIN_SPOTTY_AUTOPLAY_DESC
+	CS	Automaticky přehrávat podobné skladby po skončení přehrávání hudby.
 	DE	Autoplay - Automatisch ähnliche Songs abspielen, wenn die Musik zu Ende geht.
 	EN	Autoplay similar songs when your music ends.
 	FR	Lire automatiquement des morceaux similaires lorsque la musique se termine.
 	NL	Speel vergelijkbare nummers automatisch af wanneer de muziek stopt.
 
 PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER_DESC
+	CS	Obrátit pořadí řazení epizod. To může být užitečné, pokud chcete poslouchat všechny epizody pořadu ve správném pořadí.
 	DE	Die Reihenfolge der Podcast-Folgen umkehren. Dies kann hilfreich sein, wenn Sie alle Folgen eines Podcasts am Stück hören wollen.
 	EN	Reverse the episode sort order. This can be helpful if you want to listen to all episodes of a show in the correct order.
 	FR	Inverser l'ordre de tri des épisodes. Cela peut être utile si vous souhaitez écouter tous les épisodes d'une émission dans le bon ordre.
 	NL	Sorteervolgorde van de afleveringen omkeren. Dit kan handig zijn als je alle afleveringen van een programma in de juiste volgorde wilt beluisteren.
 
 PLUGIN_SPOTTY_PLAYLIST_FOLDERS
+	CS	Složky seznamů skladeb
 	DE	Wiedergabelisten Ordner
 	EN	Playlist Folders
 	FR	Dossier des listes de lecture
 	NL	Afspeellijst Mappen
 
 PLUGIN_SPOTTY_CLEAR_PLAYLIST_FOLDERS_CACHE
+	CS	Vyčistit uložené informace o složkách seznamu skladeb (<a href="playlist-folders.html">další informace</a>)
 	DE	Gespeicherte Wiedergabelisten-Ordner Informationen löschen (<a href="playlist-folders.html">mehr Informationen</a>)
 	EN	Clear stored playlist folder information (<a href="playlist-folders.html">more information</a>)
 	FR	Nettoyer le dossier de cache des listes de lecture (<a href="playlist-folders.html">plus d'informations</a>)
@@ -828,6 +906,7 @@ PLUGIN_SPOTTY_SHOWS
 	SV	Poddsändningar
 
 PLUGIN_SPOTTY_ADD_SHOW_TO_LIBRARY
+	CS	Přidat podcast do knihovny
 	DA	Føj podcast til bibliotek
 	DE	Podcast zu Bibliothek hinzufügen
 	EN	Add podcast to library
@@ -839,6 +918,7 @@ PLUGIN_SPOTTY_ADD_SHOW_TO_LIBRARY
 	SV	Lägg till podcast i biblioteket
 
 PLUGIN_SPOTTY_EPISODES
+	CS	Epizody podcastu
 	DE	Podcast-Folgen
 	EN	Podcast Episodes
 	FR	Épisodes de podcast
@@ -847,45 +927,53 @@ PLUGIN_SPOTTY_EPISODES
 	SV	Podcastavsnitt
 
 PLUGIN_SPOTTY_ALBUMS_PROGRESS
+	CS	Alba Spotty
 	DE	Spotty Alben
 	EN	Spotty Albums
 
 PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS
+	CS	Načítání alb pro %s...
 	DE	Lese Alben für %s...
 	EN	Fetching Albums for %s...
 	FR	Récupération des albums pour %s...
 	NL	Albums ophalen voor %s...
 
 PLUGIN_SPOTTY_ARTISTS_PROGRESS
+	CS	Interpreti Spotty
 	DE	Spotty Interpreten
 	EN	Spotty Artists
 	FR	Spotty Artistes
 	NL	Spotty Artiesten
 
 PLUGIN_SPOTTY_PROGRESS_READ_ARTISTS
+	CS	Načítání interpretů pro %s...
 	DE	Lese Interpreten für %s...
 	EN	Fetching Artists for %s...
 	FR	Récupération des artistes pour %s...
 	NL	Artiesten ophalen voor %s...
 
 PLUGIN_SPOTTY_PROGRESS_READ_TRACKS
+	CS	Načítání informací o názvu pro %s...
 	DE	Lese Titel-Informationen für %s...
 	EN	Fetching Title Information for %s...
 	FR	Récupération des informations des morceaux pour %s...
 	NL	Nummer informatie ophalen voor %s...
 
 PLUGIN_SPOTTY_PLAYLISTS_PROGRESS
+	CS	Seznamy skladeb Spotty
 	DE	Spotty Wiedergabelisten
 	EN	Spotty Playlists
 	NL	Spotty Afspeellijsten
 
 PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS
+	CS	Načítání seznamů skladeb pro %s...
 	DE	Lese Wiedergabelisten für %s...
 	EN	Fetching Playlists for %s...
 	FR	Récupération des albums pour %s...
 	NL	Afspeellijsten ophalen voor %s...
 
 PLUGIN_SPOTTY_PLAYLIST_TRACKS
+	CS	Skladby v seznamu skladeb
 	DE	Titel in Wiedergabeliste
 	EN	Playlist Tracks
 	NL	Afspeellijst Nummers
