@@ -46,10 +46,13 @@ sub prefs {
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup, $httpClient, $response) = @_;
 
+	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
+
 	if ($paramRef->{'saveSettings'}) {
-		if ( $paramRef->{'username'} && $paramRef->{'password'} && (my $helperPath = Plugins::Spotty::Helper->get()) ) {
+		if ( $paramRef->{'username'} && $paramRef->{'password'} && $helperPath ) {
 			my $command = sprintf(
-				'"%s" -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery',
+				#                                                                 always use fallback, as the user has no way to force this at this point yet if needed
+				'"%s" -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery --ap-port 12321',
 				$helperPath,
 				$class->_cacheFolder(),
 				string('PLUGIN_SPOTTY_AUTH_NAME'),
@@ -59,14 +62,17 @@ sub handler {
 			);
 
 			if (main::INFOLOG && $log->is_info) {
+				$command .= ' --verbose';
 				my $logCmd = $command;
 				$logCmd =~ s/-p ".*?"/-p "\*\*\*\*\*\*\*\*"/g;
 				$log->info("Trying to authenticate using: $logCmd");
 			}
 
-			my $response = `$command 2>&1`;
+			my $response = `$command`;
 
-			if ( !($response && $response =~ /authorized/) ) {
+			main::INFOLOG && $log->is_info && $log->info("Got response: $response");
+
+			if ( !($response && $response =~ /authorized/s) ) {
 				$paramRef->{'warning'} = string('PLUGIN_SPOTTY_AUTH_FAILED');
 
 				if ($response =~ /panicked at '(.*?)'/i) {
@@ -90,7 +96,7 @@ sub handler {
 	}
 
 	if ( !$class->startHelper() ) {
-		$paramRef->{helperMissing} = Plugins::Spotty::Helper->get() || 1;
+		$paramRef->{helperMissing} = $helperPath || 1;
 	}
 
 	my $helpers = Plugins::Spotty::Helper->getAll();
@@ -98,8 +104,6 @@ sub handler {
 	if ($helpers && scalar keys %$helpers > 1) {
 		$paramRef->{helpers} = $helpers;
 	}
-
-	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
 
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
@@ -145,10 +149,14 @@ sub startHelper {
 			my @helperArgs = (
 				'-c', $class->_cacheFolder(),
 				'-n', sprintf("%s (%s)", Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'), Slim::Utils::Misc::getLibraryName()),
+				'--ap-port=12321',             # always use fallback, as the user has no way to force this at this point yet if needed
 				'-a'
 			);
 
-			main::INFOLOG && $log->is_info && $log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
+			if (main::INFOLOG && $log->is_info) {
+				push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');
+				$log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
+			}
 
 			eval {
 				$helper = Proc::Background->new(
