@@ -102,9 +102,9 @@ sub initPlugin {
 		return 1;
 	});
 
-	# we reset this value every now and then to not overload the API backends
-	$prefs->migrate(2, sub {
-		$prefs->set('forceFallbackAP', 0);
+	# Spotty seems to be disabling all those hosts... use fallback by default now...
+	$prefs->migrate(3, sub {
+		$prefs->set('forceFallbackAP', 1);
 		return 1;
 	});
 
