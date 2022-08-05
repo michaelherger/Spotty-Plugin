@@ -249,7 +249,7 @@ sub updateTranscodingTable {
 
 	my $canOggDirect = Plugins::Spotty::Helper->getCapability('ogg-direct');
 	my $canReplayGain = Plugins::Spotty::Helper->getCapability('volume-normalisation') && $client && $prefs->client($client)->get('replaygain');
-	my $forceFallbackAP = $prefs->get('forceFallbackAP');
+	my $forceFallbackAP = $prefs->get('forceFallbackAP') && !Plugins::Spotty::Helper->getCapability('no-ap-port');
 
 	my $commandTable = Slim::Player::TranscodingHelper::Conversions();
 	foreach ( keys %$commandTable ) {

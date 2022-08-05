@@ -51,14 +51,15 @@ sub handler {
 	if ($paramRef->{'saveSettings'}) {
 		if ( $paramRef->{'username'} && $paramRef->{'password'} && $helperPath ) {
 			my $command = sprintf(
-				#                                                                 always use fallback, as the user has no way to force this at this point yet if needed
-				'"%s" -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery --ap-port 12321',
+				'"%s" -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery %s',
 				$helperPath,
 				$class->_cacheFolder(),
 				string('PLUGIN_SPOTTY_AUTH_NAME'),
 				Slim::Utils::Misc::getLibraryName(),
 				$paramRef->{'username'},
 				$paramRef->{'password'},
+				# always use fallback (if possible), as the user has no way to force this at this point yet if needed
+				Plugins::Spotty::Helper->getCapability('no-ap-port') ? '' : '--ap-port 12321',
 			);
 
 			if (main::INFOLOG && $log->is_info) {
@@ -149,9 +150,13 @@ sub startHelper {
 			my @helperArgs = (
 				'-c', $class->_cacheFolder(),
 				'-n', sprintf("%s (%s)", Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'), Slim::Utils::Misc::getLibraryName()),
-				'--ap-port=12321',             # always use fallback, as the user has no way to force this at this point yet if needed
 				'-a'
 			);
+
+			# always use fallback (if possible), as the user has no way to force this at this point yet if needed
+			if (!Plugins::Spotty::Helper->getCapability('no-ap-port')) {
+				push @helperArgs, '--ap-port=12321';
+			}
 
 			if (main::INFOLOG && $log->is_info) {
 				push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');

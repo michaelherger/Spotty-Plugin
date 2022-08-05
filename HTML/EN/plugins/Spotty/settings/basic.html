@@ -162,10 +162,10 @@
 		<label for="pref_disableAsyncTokenRefresh">[% "PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH" | string %]</label>
 	[% END; END %]
 
-	[% WRAPPER setting title="" desc="PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC" %]
+	[% IF canApPort; WRAPPER setting title="" desc="PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC" %]
 		<input name="pref_forceFallbackAP" id="pref_forceFallbackAP" type="checkbox" [% IF prefs.pref_forceFallbackAP %] checked [% END %]>
 		<label for="pref_forceFallbackAP">[% "PLUGIN_SPOTTY_FORCE_FALLBACK_AP" | string %]</label>
-	[% END %]
+	[% END; END %]
 
 	[% WRAPPER setting title="PLUGIN_SPOTTY_CLIENT_ID" desc="PLUGIN_SPOTTY_CLIENT_ID_DESC" %]
 		<input name="pref_iconCode" id="pref_iconCode" type="text" value="[% IF !hasDefaultIcon; prefs.pref_iconCode; END %]" class="stdedit" size="40">

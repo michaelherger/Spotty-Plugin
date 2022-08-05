@@ -188,9 +188,10 @@ sub _killTokenHelper {
 	}
 }
 
+my $startupTime = time();
 sub _getCacheKey {
 	my ($code, $username) = @_;
-	return 'spotty_access_token' . ($code || $prefs->get('iconCode')) . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
+	return "spotty_access_token_$startupTime" . ($code || $prefs->get('iconCode')) . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
 }
 
 # singleton shortcut to the main class

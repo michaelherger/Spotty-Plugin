@@ -44,10 +44,11 @@ sub page {
 }
 
 sub prefs {
-	my @prefs = qw(myAlbumsOnly cleanupTags bitrate iconCode accountSwitcherMenu helper optimizePreBuffer sortAlbumsAlphabetically sortArtistsAlphabetically sortPlaylisttracksByAddition forceFallbackAP);
+	my @prefs = qw(myAlbumsOnly cleanupTags bitrate iconCode accountSwitcherMenu helper optimizePreBuffer sortAlbumsAlphabetically sortArtistsAlphabetically sortPlaylisttracksByAddition);
 	push @prefs, 'disableDiscovery', 'checkDaemonConnected' if Plugins::Spotty::Plugin->canDiscovery();
 	push @prefs, 'disableAsyncTokenRefresh' if Plugins::Spotty::Helper->getCapability('save-token');
 	push @prefs, 'sortSongsAlphabetically' if !Plugins::Spotty::Plugin->hasDefaultIcon();
+	push @prefs, 'forceFallbackAP' if !Plugins::Spotty::Helper->getCapability('no-ap-port');
 	return ($prefs, @prefs);
 }
 
@@ -179,6 +180,7 @@ sub beforeRender {
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
 	$paramRef->{canConnect}     = Plugins::Spotty::Connect->canSpotifyConnect();
 	$paramRef->{canAsyncTokenRefresh} = Plugins::Spotty::API::Token::CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token');
+	$paramRef->{canApPort}      = !Plugins::Spotty::Helper->getCapability('no-ap-port');
 
 	$paramRef->{hasDefaultIcon} = Plugins::Spotty::Plugin->hasDefaultIcon();
 
