@@ -378,8 +378,14 @@ sub setName {
 
 	if ($result && $result->{display_name}) {
 		my $names = $prefs->get('displayNames');
-		$names->{$userId} = $result->{display_name};
-		$prefs->set('displayNames', $names);
+
+		my $oldName = $names->{$userId};
+		my $newName = $result->{display_name};
+
+		if (!$oldName || ($oldName ne $newName)) {
+			$names->{$userId} = $result->{display_name};
+			$prefs->set('displayNames', $names);
+		}
 	}
 }
 
