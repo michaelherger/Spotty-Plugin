@@ -1066,7 +1066,7 @@ sub episodes {
 		}
 	}, $cb, {
 		market => 'from_token',
-		limit  => min($args->{limit} || DEFAULT_LIMIT, DEFAULT_LIMIT),
+		limit  => min($args->{limit} || _DEFAULT_LIMIT(), _DEFAULT_LIMIT()),
 		offset => $args->{offset} || 0,
 	})->get();
 }
