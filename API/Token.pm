@@ -183,7 +183,7 @@ sub _killTokenHelper {
 
 	$self->_callCallbacks() if $self && !$active;
 
-	if ($self && $self->_proc && $self->_proc->alive) {
+	if ($self && $self->_proc) {
 		$self->_proc->die();
 	}
 }
