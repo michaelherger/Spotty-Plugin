@@ -296,7 +296,7 @@ sub playerVolume {
 
 	$self->withIdFromMac(sub {
 		my $args = {
-			volume_percent => $volume,
+			volume_percent => int($volume),
 		};
 
 		$args->{device_id} = $_[0] if $_[0];
