@@ -5,7 +5,8 @@ use strict;
 use base qw(Slim::Utils::Accessor);
 
 use File::Slurp;
-use File::Temp qw(tempfile);
+use File::Spec::Functions qw(catfile tmpdir);
+use File::Temp;
 use JSON::XS::VersionOneAndTwo;
 use Proc::Background;
 
@@ -53,6 +54,8 @@ my $prefs = preferences('plugin.spotty');
 
 my %procs;
 
+_cleanupTmpDir();
+
 sub new {
 	my ($class, $api, $args) = @_;
 	$args ||= {};
@@ -65,7 +68,11 @@ sub new {
 
 	my $account = Plugins::Spotty::AccountHelper->getAccount($api->client);
 
-	$self->_tmpfile(File::Temp->new(UNLINK => 1)->filename);
+	$self->_tmpfile(File::Temp->new(
+		UNLINK => 1,
+		TEMPLATE => 'spt-XXXXXXXX',
+		DIR => tmpdir()
+	)->filename);
 
 	my $cmd = sprintf(
 		Plugins::Spotty::Helper->getCapability('save-token')
@@ -95,6 +102,18 @@ sub new {
 	Slim::Utils::Timers::setHighTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper, $args);
 
 	return $self;
+}
+
+sub _cleanupTmpDir {
+	my $tmpDir = tmpdir();
+
+	if (opendir(DIR, $tmpDir)) {
+		foreach my $tmp ( grep /^spt-\w{8}$/i, readdir(DIR) ) {
+			unlink catfile($tmpDir, $tmp);
+		}
+
+		closedir DIR;
+	}
 }
 
 sub _pollTokenHelper {

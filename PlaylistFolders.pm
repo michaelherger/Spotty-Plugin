@@ -444,7 +444,7 @@ sub purgeCache {
 			unlink $file if $delete;
 		}
 
-		close DIR;
+		closedir(DIR);
 	}
 }
 
