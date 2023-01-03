@@ -45,4 +45,8 @@ sub handler {
 	return $class->SUPER::handler( $client, $params );
 }
 
+sub validFor {
+	return Plugins::Spotty::AccountHelper->hasCredentials() ? 1 : 0;
+}
+
 1;
