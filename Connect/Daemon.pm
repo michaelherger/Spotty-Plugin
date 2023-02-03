@@ -69,6 +69,7 @@ sub start {
 		'-n', $self->name,
 		'--disable-audio-cache',
 		'--bitrate', 96,
+#		'--initial-volume', $serverPrefs->client($client)->get('volume'),
 		'--player-mac', $self->mac,
 		'--lms', Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
 	);
