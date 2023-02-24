@@ -171,7 +171,7 @@ sub postinitPlugin { if (main::TRANSCODING) {
 		}
 	}
 
-	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::OnlineLibrary::Plugin') ) {
+	if ( CAN_IMPORTER && Slim::Utils::PluginManager->isEnabled('Slim::Plugin::OnlineLibrary::Plugin') ) {
 		Slim::Plugin::OnlineLibrary::Plugin->addLibraryIconProvider('spotify', '/plugins/Spotty/html/images/icon.png');
 	}
 

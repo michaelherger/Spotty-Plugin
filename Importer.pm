@@ -62,7 +62,7 @@ sub startScan { if (main::SCANNER) {
 			$class->scanArtists($accounts);
 		}
 
-		if (!$class->can('ignorePlaylists') || !$class->ignorePlaylists) {
+		if (!$class->_ignorePlaylists) {
 			$class->scanPlaylists($accounts);
 		}
 
@@ -360,6 +360,8 @@ sub needsUpdate {
 	require Async::Util;
 	require Plugins::Spotty::API;
 
+	main::INFOLOG && $log->is_info && $log->info("Checking Spotify library state...");
+
 	my $timestamp = time();
 	my @workers;
 	my $accounts = _enabledAccounts();
@@ -371,33 +373,43 @@ sub needsUpdate {
 			cache => Plugins::Spotty::AccountHelper->cacheFolder($accountId)
 		}) || next;
 
-		push @workers, sub {
-			my ($result, $acb) = @_;
+		if (!$class->_ignorePlaylists) {
+			push @workers, sub {
+				my ($result, $acb) = @_;
 
-			# don't run any further test in the queue if we already have a result
-			return $acb->($result) if $result;
+				# don't run any further test in the queue if we already have a result
+				return $acb->($result) if $result;
 
-			my $snapshotIds = $cache->get('spotty_snapshot_ids' . $accountId);
+				my $snapshotIds = $cache->get('spotty_snapshot_ids' . $accountId);
+				main::INFOLOG && $log->is_info && $log->info("Got playlist snapshot IDs: " . Data::Dump::dump($snapshotIds));
 
-			$api->playlists(sub {
-				my ($playlists) = @_;
+				$api->playlists(sub {
+					my ($playlists) = @_;
 
-				my $needUpdate;
-				for my $playlist (@$playlists) {
-					my $snapshotId = $snapshotIds->{$playlist->{id}};
-					# we need an update if
-					# - we haven't a snapshot ID for this playlist, OR
-					# - the snapshot ID doesn't match, OR
-					# - the playlist is Spotify generated and older than a day
-					if ( !$snapshotId || ($snapshotId =~ /^\d{10}$/ ? $snapshotId < $timestamp : $snapshotId ne $playlist->{snapshot_id}) ) {
-						$needUpdate = 1;
-						last;
+					my $needUpdate;
+					for my $playlist (@$playlists) {
+						my $snapshotId = $snapshotIds->{$playlist->{id}};
+						# we need an update if
+						# - we haven't a snapshot ID for this playlist, OR
+						# - the snapshot ID doesn't match, OR
+						# - the playlist is Spotify generated and older than a day
+						if ( !$snapshotId || ($snapshotId =~ /^\d{10}$/ ? $snapshotId < $timestamp : $snapshotId ne $playlist->{snapshot_id}) ) {
+							main::INFOLOG && $log->is_info && $log->info("Re-run import due to playlist change: " . Data::Dump::dump({
+								playlist => $playlist->{id},
+								snapshotId => $snapshotId,
+								newSnapshotId => $playlist->{snapshot_id},
+								timestamp => $timestamp,
+							}));
+
+							$needUpdate = 1;
+							last;
+						}
 					}
-				}
 
-				$acb->($needUpdate);
-			});
-		};
+					$acb->($needUpdate);
+				});
+			};
+		}
 
 		push @workers, sub {
 			my ($result, $acb) = @_;
@@ -408,7 +420,14 @@ sub needsUpdate {
 			my $lastUpdateData = $cache->get('spotty_latest_album_update' . $accountId) || '';
 
 			$api->myAlbumsMeta(sub {
-				$acb->($class->libraryMetaId($_[0]) eq $lastUpdateData ? 0 : 1);
+				my $latestUpdateData = $class->libraryMetaId($_[0]);
+
+				main::INFOLOG && $log->is_info && $log->info("Latest album update: " . Data::Dump::dump({
+					lastUpdate => $lastUpdateData,
+					latestUpdate => $latestUpdateData
+				}));
+
+				$acb->($latestUpdateData eq $lastUpdateData ? 0 : 1);
 			});
 		};
 
@@ -428,7 +447,14 @@ sub needsUpdate {
 					hash  => md5_hex(join('|', sort map { $_->{id} } @$artists)),
 				};
 
-				$acb->($class->libraryMetaId($libraryMeta) eq $lastUpdateData ? 0 : 1);
+				my $latestUpdateData = $class->libraryMetaId($libraryMeta);
+
+				main::INFOLOG && $log->is_info && $log->info("Latest artist update: " . Data::Dump::dump({
+					lastUpdate => $lastUpdateData,
+					latestUpdate => $latestUpdateData
+				}));
+
+				$acb->($latestUpdateData eq $lastUpdateData ? 0 : 1);
 			}, 1);
 		};
 	}
@@ -446,6 +472,11 @@ sub needsUpdate {
 	else {
 		$cb->();
 	}
+}
+
+sub _ignorePlaylists {
+	my $class = shift;
+	return $class->can('ignorePlaylists') && $class->ignorePlaylists;
 }
 
 sub _enabledAccounts {
