@@ -80,13 +80,22 @@ sub explodePlaylist {
 		$cb->([$uri]);
 	}
 	elsif (my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client)) {
-		$spotty->trackURIsFromURI(sub {
-			$cb->([
-				map {
-					/((?:track|episode):.*)/;
-					"spotify://$1";
-				} @{shift || []}
-			]);
+		$spotty->tracksFromURI(sub {
+			my $result = shift || [];
+			my $firstItem = $result->[0];
+
+			# OPML - return everything
+			if (ref $firstItem) {
+				$cb->({ items => Plugins::Spotty::OPML::trackList($client, $result) });
+			}
+			else {
+				$cb->([
+					map {
+						/((?:track|episode):.*)/;
+						"spotify://$1";
+					} @{$result}
+				]);
+			}
 		}, $uri);
 	}
 	else {

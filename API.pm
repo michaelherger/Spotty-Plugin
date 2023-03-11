@@ -792,6 +792,12 @@ sub trackURIsFromURI {
 		} @{$_[0]} ])
 	};
 
+	$self->tracksFromURI($cb2, $uri);
+}
+
+sub tracksFromURI {
+	my ( $self, $cb, $uri ) = @_;
+
 	my $params = {
 		uri => $uri
 	};
@@ -801,19 +807,19 @@ sub trackURIsFromURI {
 		$cb->([]);
 	}
 	elsif ($uri =~ /:playlist:/) {
-		$self->playlist($cb2, $params);
+		$self->playlist($cb, $params);
 	}
 	elsif ( $uri =~ /:artist:/ ) {
-		$self->artistTracks($cb2, $params);
+		$self->artistTracks($cb, $params);
 	}
 	elsif ( $uri =~ /:show:/ ) {
 		$self->show(sub {
-			$cb2->(($_[0] || {})->{episodes});
+			$cb->(($_[0] || {})->{episodes});
 		}, $params);
 	}
 	elsif ( $uri =~ /:album:/ ) {
 		$self->album(sub {
-			$cb2->(($_[0] || {})->{tracks});
+			$cb->(($_[0] || {})->{tracks});
 		}, $params);
 	}
 	elsif ( $uri =~ m{:/*(?:track|episode):} ) {
