@@ -291,7 +291,7 @@ sub scanPlaylists { if (main::SCANNER) {
 				next if defined $tracks{$_};
 
 				my $cached = $libraryCache->get($_);
-				$tracks{$_} = $cached && $cached->{image} ? 1 : 0;
+				$tracks{$_} = $cached && ref $cached && $cached->{image} ? 1 : 0;
 			}
 		}
 
