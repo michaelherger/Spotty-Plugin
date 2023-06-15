@@ -491,7 +491,7 @@ PLUGIN_SPOTTY_FOLLOWERS
 
 PLUGIN_SPOTTY_ADD_STUFF
 	CS	Přidejte si alba nebo sledujte interpreta či seznam skladeb pro doplnění hudební knihovny.
-	DE	Folge Artisten, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen.
+	DE	Folge Künstlern, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen.
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.
 	FR	Ajoutez des albums à votre musique ou suivez un artiste ou une liste de lecture pour remplir votre bibliothèque.
 	NL	Voeg albums toe of volg een artiest of afspeellijst om jouw muziekcollectie aan te vullen.
