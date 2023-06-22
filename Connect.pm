@@ -63,8 +63,9 @@ sub init {
 		if (!$prefs->get('optimizePreBuffer')) {
 			# we have to wait a few seconds before the buffer size is known
 			Slim::Utils::Timers::setTimer($client, time() + 5, sub {
-				if ($client->bufferSize > PRE_BUFFER_SIZE_THRESHOLD) {
-					main::INFOLOG && $log->is_info && $log->info(sprintf("Enabling pre-buffer optimization as player seems to be using very large buffer: %s (%sMB)", $client->name, int($client->bufferSize/1024/1024)));
+				my $c = shift;
+				if ($c && $c->bufferSize > PRE_BUFFER_SIZE_THRESHOLD) {
+					main::INFOLOG && $log->is_info && $log->info(sprintf("Enabling pre-buffer optimization as player seems to be using very large buffer: %s (%sMB)", $c->name, int($c->bufferSize/1024/1024)));
 					$prefs->set('optimizePreBuffer', 1);
 				}
 			});
