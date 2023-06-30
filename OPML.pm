@@ -1548,6 +1548,8 @@ sub trackInfoMenu {
 		};
 	}
 
+	$args = undef unless $args->{title} || $args->{uri};
+
 	return _objInfoMenu($client, $args);
 }
 
