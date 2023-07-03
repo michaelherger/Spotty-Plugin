@@ -67,8 +67,8 @@ my %topuri = (
 	XX => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbMDoHDwVN2tF',	# fallback "Top 100 on Spotify"
 );
 
-# sort order for home menu items - -1 means hide item
-my %homeItems = (
+# sort order for home menu items
+my %homeItemsWeights = (
 	'made-for-x' => 1,
 	'podcast-recs-show-affinity-wrapper' => 5,
 	'NMF-NRFY' => 10,
@@ -76,9 +76,6 @@ my %homeItems = (
 	'home-personalized[recommended-stations]' => 40,
 	'home-personalized[more-of-what-you-like]' => 100,
 	'uniquely-yours-shelf' => 200,
-	'recently-updated-playlists[0]' => -1,
-	'recently-updated-playlists' => -1,
-	'recently-played' => -1,
 );
 
 my $nextNameCheck = 0;
@@ -360,15 +357,15 @@ sub handleFeed {
 sub home {
 	my ($client, $cb, $params) = @_;
 
+	my $ignoreItems = $prefs->get('ignoreHomeItems');
+
 	Plugins::Spotty::Plugin->getAPIHandler($client)->home(sub {
 		my ($homeItems) = @_;
 
 		my $items = [];
 
-		foreach my $group ( sort {
-			($homeItems{$a->{id}} || 999) <=> ($homeItems{$b->{id}} || 999);
-		} @$homeItems ) {
-			if ($group->{name} && $group->{href} && ($homeItems{$group->{id}} || 0) > -1) {
+		foreach my $group ( @{sortHomeItems($homeItems)} ) {
+			if ($group->{name} && $group->{href} && !$ignoreItems->{$group->{id}}) {
 				my $item = {
 					type => 'link',
 					name => $group->{name},
@@ -397,6 +394,12 @@ sub home {
 
 		$cb->({ items => $items });
 	});
+}
+
+sub sortHomeItems {
+	return [ sort {
+		($homeItemsWeights{$a->{id}} || 999) <=> ($homeItemsWeights{$b->{id}} || 999);
+	} @{$_[0]} ];
 }
 
 sub browseWebUrl {

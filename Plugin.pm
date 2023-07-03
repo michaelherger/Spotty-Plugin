@@ -59,6 +59,11 @@ sub initPlugin {
 		bitrate => 320,
 		iconCode => \&_initIcon,
 		tracksSincePurge => 0,
+		ignoreHomeItems => {
+			'recently-updated-playlists[0]' => -1,
+			'recently-updated-playlists' => -1,
+			'recently-played' => -1,
+		},
 		accountSwitcherMenu => 0,
 		disableDiscovery => 0,
 		checkDaemonConnected => 0,

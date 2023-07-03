@@ -58,6 +58,17 @@
 		[% END %]
 	[% END %]
 
+	[% IF homeItems %]
+		[% WRAPPER setting title="PLUGIN_SPOTTY_HOME_ITEMS" desc="PLUGIN_SPOTTY_HOME_DESC" %]
+			[% FOREACH homeItem IN homeItems %]
+				<div>
+					<input name="[% "pref_homeItem_" _ homeItem.id %]" id="[% "pref_homeItem_" _ homeItem.id %]" type="checkbox" [% IF !homeItem.disabled %] checked [% END %]>
+					<label for="[% "pref_homeItem_" _ homeItem.id %]">[% homeItem.name %]</label>
+				</div>
+			[% END %]
+		[% END %]
+	[% END %]
+
 	[% WRAPPER setting title="" desc="" %]
 		<input name="pref_myAlbumsOnly" id="pref_myAlbumsOnly" type="checkbox" [% IF prefs.pref_myAlbumsOnly %] checked [% END %]>
 		<label for="pref_myAlbumsOnly">[% "PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC" | string %]</label>
@@ -101,7 +112,7 @@
 				<option [% IF !prefs.$varName %]selected [% END %]value="0">[% "PLUGIN_SPOTTY_PLAYLIST_TRACKS" | string %][% "COLON" | string %] [% "STANDARD" | string %]</option>
 			</select>
 		</div>
-[% END %]
+	[% END %]
 
 	[% WRAPPER setting title="PLUGIN_SPOTTY_PLAYLIST_FOLDERS" desc="" %]
 		<input name="clearPlaylistFolderCache" id="clearPlaylistFolderCache" type="checkbox">

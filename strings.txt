@@ -762,6 +762,15 @@ PLUGIN_SPOTTY_NEED_HELPER_UPDATE
 	FR	Spotify Connect n'est pas disponible.
 	NL	Spotify Connect is niet beschikbaar.
 
+PLUGIN_SPOTTY_HOME_ITEMS
+	DE	"Start" Menüeinträge
+	EN	Home Menu Customization
+	FR	Personnalisation du Menu "Accueil"
+
+PLUGIN_SPOTTY_HOME_DESC
+	DE	Aktiviere die "Start" Menüeinträge, die du sehen willst, deaktiviere jene, die versteckt werden sollen.
+	EN	Check the "Home" menu items you want to use, uncheck those you want to hide.
+
 PLUGIN_SPOTTY_AUDIO_SETTINGS
 	CS	Nastavení zvuku
 	DE	Soundqualität
