@@ -90,17 +90,6 @@ sub handler {
 		}
 		$prefs->set('dontImportAccounts', $dontImportAccounts);
 
-		my $webTokens = $prefs->get('webTokens') || {};
-		foreach my $prefName (keys %$paramRef) {
-			if ($prefName =~ /^pref_webtoken_(.*)/) {
-				my $i = $1;
-				$webTokens->{$i} = $paramRef->{$prefName};
-				$webTokens->{$i} =~ s/^sp_dc\W+//;
-				$webTokens->{$i} =~ s/\s.*//;
-			}
-		}
-#		$prefs->set('webTokens', $webTokens);
-
 		# make sure value is not undefined, or it might get re-initialized
 		$paramRef->{pref_cleanupTags} ||= 0;
 	}
@@ -209,7 +198,6 @@ sub beforeRender {
 
 	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
 
-#	$paramRef->{spottyWebTokens}= $prefs->get('webTokens') || {};
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
 	$paramRef->{canConnect}     = Plugins::Spotty::Connect->canSpotifyConnect();

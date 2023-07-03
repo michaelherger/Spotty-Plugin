@@ -64,19 +64,6 @@ sub getAccount {
 	return $id;
 }
 
-sub getWebToken {
-	my ($class, $client) = @_;
-
-	my $userId = $class->getAccount($client);
-
-	if ($userId) {
-		my $webTokens = $prefs->get('webTokens') || {};
-		return $webTokens->{$userId};
-	}
-
-	return;
-}
-
 sub getSomeAccount {
 	my ($class) = @_;
 

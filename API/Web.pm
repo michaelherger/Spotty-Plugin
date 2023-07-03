@@ -29,60 +29,9 @@ my $prefs = preferences('plugin.spotty');
 sub getToken {
 	my ($class, $api, $cb) = @_;
 
-	Plugins::Spotty::API::Token->get($api, sub {
-		my $webToken = shift;
-
-		if ($webToken) {
-			$cb->($webToken);
-		}
-		else {
-			$class->_getTokenFromWebCookie($api, $cb);
-		}
-	},{
+	Plugins::Spotty::API::Token->get($api, $cb, {
 		code => _code(),
 		scope => 'playlist-read'
-	});
-}
-
-sub _getTokenFromWebCookie {
-	my ($class, $api, $cb) = @_;
-
-	my $webToken = Plugins::Spotty::AccountHelper->getWebToken($api->client);
-	my $username = $api->username || 'generic';
-
-	main::INFOLOG && $log->is_info && $log->info("Getting web token for $username: " . Slim::Utils::DbCache::_key('spotty_access_token_web' . $username));
-
-	my $cacheKey = 'spotty_access_token_web' . $webToken;
-
-	if (my $cached = $cache->get($cacheKey)) {
-		main::INFOLOG && $log->is_info && $log->info("Found cached web access token for $username");
-		main::DEBUGLOG && $log->is_debug && $log->debug($cached);
-		$cb->($cached);
-		return;
-	}
-
-	my $cookieJar = Slim::Networking::Async::HTTP::cookie_jar();
-	$cookieJar->set_cookie(0, 'sp_dc', $webToken || '', '/', 'open.spotify.com');
-	$cookieJar->set_cookie(0, 'sp_dc', $webToken || '', '/', '.spotify.com');
-	$cookieJar->save();
-
-	$class->_call('https://open.spotify.com/get_access_token', sub {
-		my $response = shift || {};
-
-		if ($response && ref $response && $response->{accessToken}) {
-			$cache->set($cacheKey, $response->{accessToken}, 1800);
-			main::INFOLOG && $log->is_info && $log->info("Received web access token for $username");
-			main::DEBUGLOG && $log->is_debug && $log->debug($response->{accessToken});
-			$cb->($response->{accessToken});
-		}
-		else {
-			$log->warn("Failed to get web token for $username");
-			main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response)) if $response;
-			$cb->();
-		}
-	},{
-		reason => 'transport',
-		productType => 'web_player',
 	});
 }
 
@@ -312,22 +261,14 @@ sub _call {
 		}
 	);
 
-	if ($url =~ /get_access_token/) {
-		main::INFOLOG && $log->is_info && $log->info("Get Web Token call: $url");
-		# warn Data::Dump::dump(\@headers);
+	$class->getToken($params->{_api}, sub {
+		my $token = shift;
+		push @headers, 'Authorization' => 'Bearer ' . $token;
+
+		main::INFOLOG && $log->is_info && $log->info("Web API call: $url");
+
 		$http->get($url, @headers);
-	}
-	else {
-		$class->getToken($params->{_api}, sub {
-			my $token = shift;
-			push @headers, 'Authorization' => 'Bearer ' . $token;
-
-			main::INFOLOG && $log->is_info && $log->info("Web API call: $url");
-			# warn Data::Dump::dump(\@headers);
-
-			$http->get($url, @headers);
-		});
-	}
+	});
 }
 
 1;

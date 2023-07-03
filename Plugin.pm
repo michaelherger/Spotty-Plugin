@@ -69,7 +69,6 @@ sub initPlugin {
 		checkDaemonConnected => 0,
 		displayNames => {},
 		helper => '',
-		webTokens => {},
 		sortSongsAlphabetically => 1,
 		sortAlbumsAlphabetically => 1,
 		sortArtistsAlphabetically => 1,
