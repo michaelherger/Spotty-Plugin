@@ -426,7 +426,7 @@ sub album {
 					for my $track ( @{ $_[0]->{items} } ) {
 						# Add missing album data to track
 						$track->{album} = $minAlbum;
-						push @$items, $libraryCache->normalize($track);
+						push @$items, $libraryCache->normalize($track) if $self->_isPlayable($_);
 					}
 
 					return $items, $_[0]->{total}, $_[0]->{'next'};
@@ -440,6 +440,10 @@ sub album {
 
 				return;
 			}
+
+			$album->{tracks} = [ grep {
+				$_ && $self->_isPlayable($_)
+			} @{$album->{tracks} || []} ];
 
 			$cb->($album);
 		},
