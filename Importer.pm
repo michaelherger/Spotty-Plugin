@@ -76,7 +76,6 @@ sub scanAlbums { if (main::SCANNER) {
 	my ($class, $accounts) = @_;
 
 	my $progress;
-	# my $deleteLibrary_sth   = $dbh->prepare_cached("DELETE FROM library_track WHERE library = ?");
 
 	foreach my $account (keys %$accounts) {
 		my $accountId = $accounts->{$account};
@@ -94,13 +93,9 @@ sub scanAlbums { if (main::SCANNER) {
 			});
 		}
 
-		# if we've got more than one user, then create a virtual library per user
-		# TODO - library support doesn't really work yet. Needs more investigation.
 		my ($libraryId, $accountName);
 		if (scalar keys %$accounts > 1) {
 			$accountName = "spotify:$account";
-		# 	$libraryId = md5_hex($accountId);
-		# 	$deleteLibrary_sth->execute($libraryId);
 		}
 
 		my @missingAlbums;
@@ -127,6 +122,7 @@ sub scanAlbums { if (main::SCANNER) {
 		$api->albums(\@missingAlbums);
 
 		main::INFOLOG && $log->is_info && $log->info("Importing album tracks...");
+
 		foreach (@$albums) {
 			$progress->update($account . string('COLON') . ' ' . $_->{name});
 			main::SCANNER && Slim::Schema->forceCommit;
@@ -143,39 +139,6 @@ sub scanAlbums { if (main::SCANNER) {
 				} @{$_->{tracks}}
 			], $libraryId, $accountName);
 		}
-
-		# if ($libraryId) {
-		# 	Slim::Music::VirtualLibraries->unregisterLibrary($accountId . 'AndLocal');
-		# 	Slim::Music::VirtualLibraries->registerLibrary({
-		# 		id => $accountId . 'AndLocal',
-		# 		name => Plugins::Spotty::AccountHelper->getDisplayName($account),
-		# 		priority => 10,
-		# 		sql => qq{
-		# 			SELECT tracks.id
-		# 			FROM tracks
-		# 			WHERE tracks.url like 'file://%' OR tracks.id IN (
-		# 				SELECT library_track.track
-		# 				FROM library_track
-		# 				WHERE library_track.library = '$libraryId'
-		# 			)
-		# 		},
-		# 	});
-
-		# 	Slim::Music::VirtualLibraries->unregisterLibrary($accountId);
-		# 	Slim::Music::VirtualLibraries->registerLibrary({
-		# 		id => $accountId,
-		# 		name => Plugins::Spotty::AccountHelper->getDisplayName($account) . ' (Spotty)',
-		# 		priority => 20,
-		# 		scannerCB => sub {
-		# 			my ($id) = @_;
-
-		# 			# needs to be declared locally as it's called in this callback
-		# 			my $dbh = Slim::Schema->dbh();
-		# 			my $insertTrackInLibrary_sth = $dbh->prepare_cached("UPDATE library_track SET library = ? WHERE library = ?");
-		# 			$insertTrackInLibrary_sth->execute($id, $libraryId);
-		# 		}
-		# 	});
-		# }
 
 		main::SCANNER && Slim::Schema->forceCommit;
 	}
