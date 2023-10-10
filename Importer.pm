@@ -133,8 +133,10 @@ sub scanAlbums { if (main::SCANNER) {
 				$discc = max($discc, $_->{disc_number})
 			};
 
+			my $trackCount = $_->{total_tracks} || scalar @{$_->{tracks}};
+
 			$class->storeTracks([
-				map { _prepareTrack($_, $discc) } grep {
+				map { _prepareTrack($_, $discc, $trackCount) } grep {
 					!defined $_->{is_playable} || $_->{is_playable}
 				} @{$_->{tracks}}
 			], $libraryId, $accountName);
@@ -456,7 +458,7 @@ sub _enabledAccounts {
 }
 
 sub _prepareTrack {
-	my ($track, $discc) = @_;
+	my ($track, $discc, $trackCount) = @_;
 
 	my $splitChar = substr(preferences('server')->get('splitList'), 0, 1);
 
@@ -465,27 +467,39 @@ sub _prepareTrack {
 	my $artist = join($splitChar, map { $_->{name} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
 	my $extId  = join($splitChar, map { $_->{uri} } @{ $item->{album}->{artists} || [$item->{artists}->[0]] });
 
-	return {
+	# Spotify only knows "album" and "single" - but labels some as "EP" in the title
+	my $releaseType = $item->{album}->{album_type};
+	if ($releaseType =~ /single/i && ($trackCount > 2 || $item->{album}->{name} =~ /\bEP\b/)) {
+		$releaseType = 'EP';
+	}
+
+	my $trackData = {
 		url          => $item->{uri},
 		TITLE        => $_cleanupTags->($item->{name}),
 		ARTIST       => $artist,
 		ARTIST_EXTID => $extId,
-		TRACKARTIST  => join($splitChar, map { $_->{name} } @{ $item->{artists} }),
+		TRACKARTIST  => join($splitChar, grep { $_ ne $artist } map { $_->{name} } @{ $item->{artists} }),
 		ALBUM        => $_cleanupTags->($item->{album}->{name}),
 		ALBUM_EXTID  => $item->{album}->{uri},
 		TRACKNUM     => $item->{track_number},
 		GENRE        => 'Spotify',
-		DISC         => $item->{disc_number},
-		DISCC        => $discc || 1,
 		SECS         => $item->{duration_ms}/1000,
 		YEAR         => substr($item->{release_date} || $item->{album}->{release_date}, 0, 4),
 		COVER        => $item->{album}->{image},
 		AUDIO        => 1,
 		EXTID        => $item->{uri},
 		COMPILATION  => $item->{album}->{album_type} eq 'compilation',
+		RELEASETYPE  => $releaseType,
 		TIMESTAMP    => str2time($item->{album}->{added_at} || 0),
 		CONTENT_TYPE => 'spt'
 	};
+
+	if ($discc && $discc > 1) {
+		$trackData->{DISCC} = $discc;
+		$trackData->{DISC} = $item->{disc_number};
+	}
+
+	return $trackData;
 }
 
 1;
