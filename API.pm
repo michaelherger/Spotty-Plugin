@@ -426,7 +426,7 @@ sub album {
 					for my $track ( @{ $_[0]->{items} } ) {
 						# Add missing album data to track
 						$track->{album} = $minAlbum;
-						push @$items, $libraryCache->normalize($track) if $self->_isPlayable($_);
+						push @$items, $libraryCache->normalize($track) if $self->_isPlayable($track);
 					}
 
 					return $items, $_[0]->{total}, $_[0]->{'next'};
@@ -1268,6 +1268,8 @@ sub _artistSort {
 
 sub _isPlayable {
 	my ($self, $item, $cc) = @_;
+
+	return unless $item && ref $item;
 
 	$cc ||= $self->country;
 
