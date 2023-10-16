@@ -240,7 +240,7 @@ PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
 	DE	Zeige nur meine Alben unter meinen Interpreten.
 	EN	Only show my library's albums for my library's artists.
 	FR	Afficher uniquement les albums de ma bibliothèque pour les artistes de ma bibliothèque.
-	NL	Toon alleen mijn albums onder mijn artiesten.
+	NL	Toon alleen mijn albums voor de artiesten uit mijn muziekcollectie.
 
 PLUGIN_SPOTTY_CLEANUP_TAGS
 	CS	Zpřehlednit názvy alb a skladeb (např. odstranit "Deluxe Edition", "Remastered" atd.)
@@ -302,11 +302,13 @@ PLUGIN_SPOTTY_FORCE_FALLBACK_AP
 	CS	Použít záložní přístupový bod služby Spotify
 	DE	Spotifys Fallback Access Point verwenden
 	EN	Use Spotify's Fallback Access Point
+	NL	Gebruik het Fallback Access Point van Spotify
 
 PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC
 	CS	Někdy některé přístupové body služby Spotify nereagují správně. V takové situaci můžete místo toho zkusit použít záložní servery.
 	DE	Manchmal antworten Spotifys Server nicht korrekt. In dieser Situation kann es ev. helfen, den Fallback Access Point zu verwenden.
 	EN	Sometimes some of Spotify's Access Points fail to respond correctly. In this situation you can try to use the fallback servers instead.
+	NL	Soms reageren de Access Points van Spotify niet correct. In deze situatie kan het helpen om in plaats daarvan de fallback servers te gebruiken.
 
 PLUGIN_SPOTTY_ADVANCED_SETTING
 	CS	Pokročilá nastavení
@@ -361,7 +363,7 @@ PLUGIN_SPOTTY_RELATED_ARTISTS
 	FI	Liittyvät artistit
 	FR	Artistes connexes
 	IT	Artisti correlati
-	NL	Verwante artiesten
+	NL	Soortgelijke artiesten
 	NO	Liknende artister
 	PL	Pokrewni wykonawcy
 	RU	Подобные исполнители
@@ -387,7 +389,7 @@ PLUGIN_SPOTTY_GENRES_MOODS
 	DE	Genres und Stimmungen
 	EN	Genres and Moods
 	FR	Genres et ambiances
-	NL	Genres en Stemmingen
+	NL	Genres en stemmingen
 
 PLUGIN_SPOTTY_COMPILATIONS
 	CS	Sbírky
@@ -741,10 +743,12 @@ PLUGIN_SPOTTY_HOME_ITEMS
 	DE	"Start" Menüeinträge
 	EN	Home Menu Customization
 	FR	Personnalisation du Menu "Accueil"
+	NL	"Home" menu aanpassen
 
 PLUGIN_SPOTTY_HOME_DESC
 	DE	Aktiviere die "Start" Menüeinträge, die du sehen willst, deaktiviere jene, die versteckt werden sollen.
 	EN	Check the "Home" menu items you want to use, uncheck those you want to hide.
+	NL	Vink de "Home" menu items aan die je wilt gebruiken, vink de items uit die je wilt verbergen.
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS
 	CS	Nastavení zvuku
@@ -758,7 +762,7 @@ PLUGIN_SPOTTY_SORT_ORDER
 	DE	Bibliothekssortierung
 	EN	Library Sort Order
 	FR	Ordre de tri de la bibliothèque
-	NL	Mediabibliotheek sorteervolgorde
+	NL	Muziekcollectie sorteervolgorde
 
 PLUGIN_SPOTTY_SORT_ALPHABETICALLY
 	CS	Řadit podle abecedy
@@ -897,7 +901,7 @@ PLUGIN_SPOTTY_ADD_SHOW_TO_LIBRARY
 	ES	Agregar podcast a biblioteca
 	FR	Ajouter le podcast à la bibliothèque en ligne
 	IT	Aggiungi podcast a libreria
-	NL	Podcast aan mediabibliotheek toevoegen
+	NL	Podcast aan muziekcollectie toevoegen
 	NO	Legg podcast til i biblioteket
 	SV	Lägg till podcast i biblioteket
 
