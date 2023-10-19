@@ -1530,7 +1530,7 @@ sub trackInfoMenu {
 		$uri =~ s/\///g;
 
 		# Hmm... can't do an async lookup, as trackInfoMenu is run synchronously
-		my $track = Plugins::Spotty::Plugin->getAPIHandler($client)->trackCached(undef, $uri) || {};
+		my $track = ($client && Plugins::Spotty::Plugin->getAPIHandler($client)->trackCached(undef, $uri)) || {};
 
 		$args = {
 			artists => $track->{artists},
