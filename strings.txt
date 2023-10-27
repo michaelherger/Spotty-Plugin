@@ -401,7 +401,7 @@ PLUGIN_SPOTTY_COMPILATIONS
 	FR	Compilations
 	HE	אוספים
 	IT	Compilation
-	NL	Verzamelingen
+	NL	Compilaties
 	NO	Samlinger
 	PL	Kompilacje
 	RU	Сборки
@@ -417,7 +417,7 @@ PLUGIN_SPOTTY_SINGLES
 	FI	Singlet ja EP-levyt
 	FR	Singles et EPs
 	IT	Single/EP
-	NL	Singles & EP's
+	NL	Singles & EPs
 	NO	Singler og EP-er
 	PL	Single i EP
 	RU	Синглы и EP
