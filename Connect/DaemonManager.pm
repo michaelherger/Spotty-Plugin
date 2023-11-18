@@ -209,6 +209,7 @@ sub checkAPIConnectPlayers {
 			if ( !$oneHelper && !$spotifyId && $helper->cache eq $cacheFolder ) {
 				$log->warn("Connect daemon is running, but not connected - shutting down to force restart: " . $helper->mac . " " . $helper->name);
 				$class->stopHelper($helper->mac);
+				initHelpers();
 
 				# flag this system as flaky if we have to restart and the user is relying on the server
 				# $prefs->set('checkDaemonConnected', 1) if $prefs->get('disableDiscovery');
