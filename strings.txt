@@ -77,21 +77,21 @@ PLUGIN_SPOTTY_USERNAME_DESC
 	CS	Zadejte své uživatelské jméno Spotify (vyžaduje se Premium účet)
 	DE	Gib deinen Spotify Benutzernamen ein (Premium Account notwendig)
 	EN	Enter your Spotify username (Premium Account required)
-	FR	Entrez votre nom d'utilisateur Spotify (compte Premium requis)
+	FR	Saisir votre nom d'utilisateur Spotify (compte Premium requis)
 	NL	Vul jouw Spotify gebruikersnaam in (vereist een Premium Account)
 
 PLUGIN_SPOTTY_PASSWORD_DESC
 	CS	Zadejte heslo Spotify (vyžaduje se Premium účet)
 	DE	Gib dein Spotify Passwort ein (Premium Account notwendig)
 	EN	Enter your Spotify password (Premium Account required)
-	FR	Entrez votre mot de passe Spotify (compte Premium requis)
+	FR	Saisir votre mot de passe Spotify (compte Premium requis)
 	NL	Vul jouw Spotify wachtwoord in (vereist een Premium Account)
 
 PLUGIN_SPOTTY_AUTH_FAILED
 	CS	Autorizace se nezdařila
 	DE	Anmeldung fehlgeschlagen
 	EN	Authorization failed
-	FR	Echec de l'autorisation
+	FR	Échec de l'autorisation
 	NL	Autorisatie mislukt
 
 PLUGIN_SPOTTY_IMPORT_LIBRARY
@@ -246,7 +246,7 @@ PLUGIN_SPOTTY_CLEANUP_TAGS
 	CS	Zpřehlednit názvy alb a skladeb (např. odstranit "Deluxe Edition", "Remastered" atd.)
 	DE	Albennamen und Titel bereinigen (z.B. "Deluxe Edition", "Remastered" etc. entfernen)
 	EN	Clean up album and track titles (eg. remove "Deluxe Edition", "Remastered" etc.)
-	FR	Epurer les titres des albums et des morceaux (par exemple, supprimer "Deluxe Edition", "Remastered"...)
+	FR	Épurer les titres des albums et des morceaux (par exemple, supprimer "Deluxe Edition", "Remastered"...)
 	NL	Albums en nummers opschonen (bijv. verwijder "Deluxe Edition", "Remastered", etc.)
 
 PLUGIN_SPOTTY_HELPER_ERROR
@@ -274,7 +274,7 @@ PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS
 	CS	Vyskytl se problém se spuštěním pomocné aplikace Spotty. Ujistěte se prosím, že máte v systému nainstalován <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-Bit!)</a>.
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Bitte stellen Sie sicher, dass die <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-Bit!)</a> installiert ist.
 	EN	There has been a problem running the Spotty helper application. Please make sure you have the <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-bit!)</a> installed on your system.
-	FR	Un problème est survenu lors de l'exécution de l'application d'assistance Spotty. Assurez-vous de disposer du <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64 bits !)</a > sur votre ordinateur.
+	FR	Un problème est survenu lors de l'exécution de l'application Spotty Helper. Assurez-vous de disposer du <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64 bits !)</a > sur votre ordinateur.
 	NL	Er is een probleem opgetreden bij het uitvoeren van de Spotty hulptoepassing. Zorg ervoor dat <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-bit!)</a> is geïnstalleerd op jouw systeem.
 
 PLUGIN_SPOTTY_LO_POWER_PI
@@ -302,12 +302,14 @@ PLUGIN_SPOTTY_FORCE_FALLBACK_AP
 	CS	Použít záložní přístupový bod služby Spotify
 	DE	Spotifys Fallback Access Point verwenden
 	EN	Use Spotify's Fallback Access Point
+	FR	Utiliser le point d'accès de secours de Spotify
 	NL	Gebruik het Fallback Access Point van Spotify
 
 PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC
 	CS	Někdy některé přístupové body služby Spotify nereagují správně. V takové situaci můžete místo toho zkusit použít záložní servery.
 	DE	Manchmal antworten Spotifys Server nicht korrekt. In dieser Situation kann es ev. helfen, den Fallback Access Point zu verwenden.
 	EN	Sometimes some of Spotify's Access Points fail to respond correctly. In this situation you can try to use the fallback servers instead.
+	FR	Parfois, les serveurs de Spotify ne répondent pas correctement. Vous pouvez alors tenter d’utiliser le point d’accès de secours.
 	NL	Soms reageren de Access Points van Spotify niet correct. In deze situatie kan het helpen om in plaats daarvan de fallback servers te gebruiken.
 
 PLUGIN_SPOTTY_ADVANCED_SETTING
@@ -321,7 +323,7 @@ PLUGIN_SPOTTY_ADVANCED_SETTING_DESC
 	CS	Následující nastavení neměňte, pokud přesně nevíte, co děláte, nebo pokud jsem vám to neřekl. Při nesprávném použití mohou mít negativní dopad na zážitek ze Spotty.
 	DE	Bitte verändere die folgenden Einstellungen nur, wenn du weisst was du tust, oder dazu aufgefordert wirst. Falsche Einstellungen können einen negativen Einfluss haben auf den Betrieb von Spotty.
 	EN	Please don't change the following settings, unless you know exactly what you're doing - or I told you to do so. Used the wrong way they can have a negative impact on the Spotty experience.
-	FR	Veuillez ne pas modifier les paramètres suivants, à moins que vous ne sachiez exactement ce que vous faites (ou que je vous ai dit de le faire). Utilisés de la mauvaise manière, ils peuvent avoir un impact négatif sur l'expérience Spotty.
+	FR	Veuillez ne pas modifier les paramètres suivants, à moins que vous ne sachiez exactement ce que vous faites (ou que je vous aie dit de le faire). Utilisés de la mauvaise manière, ils peuvent avoir un impact négatif sur l'expérience Spotty.
 	NL	Wijzig de volgende instellingen niet, tenzij je precies weet wat je doet (of als het wordt gevraagd). Als ze op de verkeerde manier worden gebruikt, kunnen ze de Spotty ervaring negatief beïnvloeden.
 
 PLUGIN_SPOTTY_WHATS_NEW
@@ -456,7 +458,7 @@ PLUGIN_SPOTTY_FOLLOWING_ARTIST
 	CS	Sledujících tohoto umělce:
 	DE	Folge nun dem Künstler:
 	EN	Following this artist:
-	FR	Suivez maintenant l'artiste :
+	FR	Suivre l'artiste :
 	NL	Volg deze artiest:
 
 PLUGIN_SPOTTY_FOLLOWERS
@@ -470,7 +472,7 @@ PLUGIN_SPOTTY_ADD_STUFF
 	CS	Přidejte si alba nebo sledujte interpreta či seznam skladeb pro doplnění hudební knihovny.
 	DE	Folge Künstlern, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen.
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.
-	FR	Ajoutez des albums à votre musique ou suivez un artiste ou une liste de lecture pour remplir votre bibliothèque.
+	FR	Ajouter des albums à votre musique ou suivre un artiste ou une liste de lecture pour remplir votre bibliothèque.
 	NL	Voeg albums toe of volg een artiest of afspeellijst om jouw muziekcollectie aan te vullen.
 
 PLUGIN_SPOTTY_ADD_SONGS
@@ -722,14 +724,14 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
 	CS	Vyberte přehrávače, které chcete používat se službou Spotify Connect. Mějte na paměti, že každé povolené zařízení spustí proces na pozadí. To může vést k problémům na serverech s nedostatkem paměti.
 	DE	Wählen aus, welche Geräte als Spotify Connect Endpunkte zur Auswahl stehen sollen. Bitte beachte, dass für jedes Gerät ein Hintergrundprozess gestartet wird. Dies kann auf Geräten mit wenig Speicher u.U. zu Problemen führen.
 	EN	Select which players you'd like to use with Spotify Connect. Please keep in mind that every enabled device will launch a background process. This could potentially lead to issues on servers running low on memory.
-	FR	Sélectionnez les platines que vous souhaitez utiliser avec Spotify Connect. Gardez à l'esprit que chaque appareil activé lancera un processus en arrière-plan. Cela pourrait potentiellement entraîner des problèmes sur des serveurs avec peu de mémoire.
+	FR	Sélectionner les platines à utiliser avec Spotify Connect. Garder à l'esprit que chaque appareil activé lancera un processus en arrière-plan. Cela pourrait potentiellement entraîner des problèmes sur des serveurs avec peu de mémoire.
 	NL	Selecteer welke muziekspelers je wilt gebruiken met Spotify Connect. Houd er rekening mee dat er voor elk apparaat een proces start op de achtergrond. Dit kan mogelijk tot problemen leiden op servers met weinig geheugen.
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
 	CS	Povolit přístupový bod Spotify Connect pro tento přehrávač
 	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen
 	EN	Enable Spotify Connect endpoint for this player
-	FR	Rendre cet appareil disponible pour Spotify Connect
+	FR	Rendre cette platine disponible pour Spotify Connect
 	NL	Schakel Spotify Connect in voor deze muziekspeler
 
 PLUGIN_SPOTTY_NEED_HELPER_UPDATE
@@ -748,6 +750,7 @@ PLUGIN_SPOTTY_HOME_ITEMS
 PLUGIN_SPOTTY_HOME_DESC
 	DE	Aktiviere die "Start" Menüeinträge, die du sehen willst, deaktiviere jene, die versteckt werden sollen.
 	EN	Check the "Home" menu items you want to use, uncheck those you want to hide.
+	FR	Cocher les éléments que vous souhaitez voir dans le menu "Accueil". Décocher ceux que vous souhaitez masquer.
 	NL	Vink de "Home" menu items aan die je wilt gebruiken, vink de items uit die je wilt verbergen.
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS
@@ -918,6 +921,7 @@ PLUGIN_SPOTTY_ALBUMS_PROGRESS
 	CS	Alba Spotty
 	DE	Spotty Alben
 	EN	Spotty Albums
+	FR	Albums Spotty
 
 PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS
 	CS	Načítání alb pro %s...
@@ -930,7 +934,7 @@ PLUGIN_SPOTTY_ARTISTS_PROGRESS
 	CS	Interpreti Spotty
 	DE	Spotty Interpreten
 	EN	Spotty Artists
-	FR	Spotty Artistes
+	FR	Artistes Spotty
 	NL	Spotty Artiesten
 
 PLUGIN_SPOTTY_PROGRESS_READ_ARTISTS
@@ -951,17 +955,19 @@ PLUGIN_SPOTTY_PLAYLISTS_PROGRESS
 	CS	Seznamy skladeb Spotty
 	DE	Spotty Wiedergabelisten
 	EN	Spotty Playlists
+	FR	Listes de lecture Spotty
 	NL	Spotty Afspeellijsten
 
 PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS
 	CS	Načítání seznamů skladeb pro %s...
 	DE	Lese Wiedergabelisten für %s...
 	EN	Fetching Playlists for %s...
-	FR	Récupération des albums pour %s...
+	FR	Récupération des listes de lecture pour %s...
 	NL	Afspeellijsten ophalen voor %s...
 
 PLUGIN_SPOTTY_PLAYLIST_TRACKS
 	CS	Skladby v seznamu skladeb
 	DE	Titel in Wiedergabeliste
 	EN	Playlist Tracks
+	FR	Morceaux de la liste de lecture
 	NL	Afspeellijst Nummers
