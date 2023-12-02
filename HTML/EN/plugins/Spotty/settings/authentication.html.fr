@@ -1,0 +1,25 @@
+[% PROCESS "plugins/Spotty/settings/auth-header.html" %]
+
+	[% IF canDiscovery; WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
+		<div>Pour utiliser votre Squeezebox avec Spotify, Logitech Media Server doit &ecirc;tre approuv&eacute; &agrave; l'aide d'une application Spotify. 
+		Il peut s'agir d'une de leurs applications pour ordinateurs ou pour mobiles. 
+		Veuillez noter que l'authentification n'est pas possible via le client Web de Spotify. 
+		Un abonnement Spotify Premium est requis !</div>
+		<div>Suivez simplement ces &eacute;tapes :</div>
+
+		<div class="spotty-instructions">
+			<ol class="spotty">
+				<li>D&eacute;marrez votre application Spotify.</li>
+				<li>&Eacute;coutez de la musique sur Spotify.</li>
+				<li>Ouvrez la liste des appareils disponibles de Spotify.<br><img src="[% webroot %]plugins/Spotty/html/images/desktop-auth.png"></li>
+				<li>Choisissez l'appareil "[% "PLUGIN_SPOTTY_AUTH_NAME" | string %]". (La lecture de musique peut s'interrompre &agrave; ce stade.)</li>
+				<li>Attendez quelques secondes pendant que l'application autorise Logitech Media Server &agrave; utiliser Spotify.</li>
+				<li>Ne paniquez pas. Cela peut parfois prendre une ou deux douzaines de secondes. &#x1F603;</li>
+			</ol>
+		</div>
+
+		<div>C'est fait ! Cet &eacute;cran devrait dispara&icirc;tre.</div>
+		<div><br/>Parfois, l'autorisation automatique &eacute;choue. Dans ce cas, authentifiez-vous en utilisant votre nom d'utilisateur et votre mot de passe dans le formulaire ci-dessous.</div>
+	[% END; END %]
+
+[% PROCESS "plugins/Spotty/settings/auth-footer.html" %]

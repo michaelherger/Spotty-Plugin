@@ -1,0 +1,88 @@
+[% PROCESS settings/header.html %]
+	[% title = "PLUGIN_SPOTTY" %]
+	<style>
+		<!-- div.spotty-instructions {
+			margin: 10px;
+			line-height: 150%;
+		}
+
+		ol.spotty {
+			list-style-type: decimal;
+			list-style-position: inside;
+		}
+		-->
+	</style>
+
+	[% BLOCK niceNumbers %]
+		[% PERL %]
+			my $count = $stash->{count} - 2;
+			print ['Deux', 'Trois', 'Quatre', 'Cinq', 'Six', 'Sept', 'Huit', 'Neuf', 'Dix', 'Onze', 'Douze']->[$count] || $count;
+		[% END %]
+	[% END %]
+
+	[% WRAPPER setting title="Structures de dossiers de listes de lecture" desc="" %]
+		Malheureusement, Spotify n'envoie pas d'informations sur la fa&ccedil;on dont vous avez organis&eacute; vos listes de lecture. 
+		Mais nous pouvons essayer de trouver ces informations dans le dossier de cache d'une application Spotify. 
+		Cela peut &ecirc;tre fait automatiquement si une application Spotify est ex&eacute;cut&eacute;e sur le m&ecirc;me ordinateur que votre Logitech Media Server. 
+		Ou, si ce n'est pas le cas (par exemple, si Logitech Media Server est ex&eacute;cut&eacute; sur un NAS), vous pouvez importer ces fichiers depuis un autre appareil.
+	[% END %]
+
+	[% WRAPPER setting title="Structures de dossiers trouv&eacute;es" desc="" %]
+		[% endOfPhrase = "dans le dossier de Spotify de votre appareil (${spotifyCacheFolder})." %]
+		[% IF spotifyFiles.size == 1 %]
+			Une structure de dossiers de listes de lecture a &eacute;t&eacute; cr&eacute;&eacute;e [% endOfPhrase %]
+		[% ELSIF spotifyFiles.size %]
+			[% PROCESS niceNumbers count=spotifyFiles.size %] Des structures de dossiers de listes de lecture ont &eacute;t&eacute; cr&eacute;&eacute;es [% endOfPhrase %]
+		[% ELSE %]
+			Il n'y avait pas de dossier de cache [% endOfPhrase %].
+		[% END %]
+	[% END %]
+
+	[% WRAPPER setting title="Structures de dossiers import&eacute;es" desc="" %]
+		[% IF cacheFiles.size == 1 %]
+			Une structure de dossiers import&eacute;e a &eacute;t&eacute; trouv&eacute;e.
+		[% ELSIF cacheFiles.size %]
+			Il y avait [% PROCESS niceNumbers count=cacheFiles.size FILTER lower %] structures de dossiers import&eacute;es trouv&eacute;es.
+		[% ELSE %]
+			Aucune structure de dossiers import&eacute;e n'a &eacute;t&eacute; trouv&eacute;e.
+		[% END %]
+	[% END %]
+
+	[% IF cacheFiles.size; WRAPPER setting title="" desc="" %]
+		<div>S&eacute;lectionnez les structures de dossiers que vous souhaitez supprimer :</div>
+		[% PROCESS "plugins/Spotty/settings/playlist-folders-list.html" %]
+	[% END; END %]
+
+	[% WRAPPER setting title="" desc="" %]
+		Si vous souhaitez importer des structures de dossiers de listes de lecture, proc&eacute;dez comme suit :
+		<div class='spotty-instructions'>
+			<ol class="spotty">
+				<li>T&eacute;l&eacute;charger <a href="http://www.herger.net/spotty/findSpotifyFolderFiles.sh.zip" target="_blank">ce script pour
+					Linux/macOS/Unix</a>, ou <a href="http://www.herger.net/spotty/findSpotifyFolderFiles.zip" target="_blank">cet
+					utilitaire pour Windows</a> sur l'ordinateur o&ugrave; est install&eacute; Spotify.</li>
+				<li>Extrayez les fichiers t&eacute;l&eacute;charg&eacute;s. Sur Linux/macOS/Unix ex&eacute;cutez <code>chmod a+x findSpotifyFolderFiles.sh</code> dans le
+					dossier t&eacute;l&eacute;charg&eacute; pour rendre le script ex&eacute;cutable.</li>
+				<li>Ex&eacute;cutez l'outil avec l'IP et le Port de votre Logitech Media Server : par exemple, <code>./findSpotifyFolderFiles.sh 192.168.0.1:9000</code> (Linux/macOS/Unix),
+					ou <code>findSpotifyFolderFiles.exe 192.168.0.1:9000</code> (Windows).</li>
+			</ol>
+		</div>
+		<div>Si tout se passe bien vous obtiendrez une liste de noms de fichiers import&eacute;s, sinon un message d'erreur.</div>
+	[% END %]
+
+	</form>
+
+	[% WRAPPER setting title="Import de structures de dossiers" desc="" %]
+		Si la m&eacute;thode ci-dessus n'a pas r&eacute;ussi &agrave; transf&eacute;rer les structures de dossiers, vous pouvez les t&eacute;l&eacute;charger manuellement :<br>
+		<form method="post" enctype="multipart/form-data" action="/plugins/spotty/uploadPlaylistFolderData">
+			<div class="spotty-instructions">
+				<input type="file" name="uploadPlaylistFolderFile"><br>
+				<input type="submit" name="uploadDatFile" value="T&eacute;l&eacute;charger">
+				<input type="hidden" name="uploadFromSettings" value=1>
+			</div>
+	[% END %]
+
+	[% IF uploadError; WRAPPER setting title="" desc="" %]
+		<span style="color: red">[% uploadError %]</span>
+	[% END; END %]
+
+[% PROCESS settings/footer.html %]

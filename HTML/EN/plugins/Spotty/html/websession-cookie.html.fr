@@ -1,0 +1,39 @@
+[% pagetitle = 'Spotty Web Session Cookie' %]
+[% lefttoright = '1' %]
+[% PROCESS helpheader.html %]
+	<h4>Nous avons besoin d'un cookie de session Web</h4>
+	<p>
+		Malheureusement, il y a quelques manipulations &agrave; effectuer pour extraire un cookie d'un navigateur. 
+		A titre d'exemple, voici comment faire avec Google Chrome. Le principe sera le m&ecirc;me dans tous les navigateurs r&eacute;cents.
+	</p>
+
+	<h4>Acc&egrave;s aux outils de d&eacute;veloppement</h4>
+	<p>
+		Pour commencer, connectez-vous &agrave; <a href="https://open.spotify.com" target="_blank">open.spotify.com</a> avec votre compte. 
+		Ensuite, acc&eacute;dez au menu du navigateur et s&eacute;lectionnez "Plus d'outils / Outils de d&eacute;veloppement".
+	</p>
+
+	<p>
+		Le panneau des outils de d&eacute;veloppement devrait alors s'ouvrir. Il peut appara&icirc;tre en bas de la fen&ecirc;tre du navigateur ou sur le c&ocirc;t&eacute;. 
+		Si c'est sur le c&ocirc;t&eacute;, il est pratique d'utiliser le menu "point point point" &agrave; l'extr&ecirc;me droite pour placer le panneau en bas :
+	</p>
+	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-dock.png"></p>
+
+	<h4>R&eacute;cup&eacute;ration du cookie</h4>
+	<p>
+		Dans le panneau des outils de d&eacute;veloppement :
+		<ol style="list-style-type: decimal; padding: revert;">
+			<li>S&eacute;lectionnez l'onglet "Application".</li>
+			<li>Dans la liste &agrave; gauche, d&eacute;ployez l'&eacute;l&eacute;ment "Cookies" et s&eacute;lectionnez la ligne mentionnant open.spotify.com.</li>
+			<li>Sur la droite, dans la liste des cookies, s&eacute;lectionnez "sp_dc" et copiez sa valeur.</li>
+		</ol>
+	</p>
+	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-cookies.png"></p>
+
+	<p>Vous &ecirc;tes maintenant pr&ecirc;t &agrave; coller cette valeur dans les param&egrave;tres de Spotty. Bonne chance !</p>
+
+	<h4>Mauvaise nouvelle...</h4>
+
+	<p>Malheureusement, le cookie de session Web a une dur&eacute;e de vie limit&eacute;e. Il expirera au bout d'un an environ. Recommencer alors simplement la proc&eacute;dure ci-dessus.</p>
+
+[% PROCESS helpfooter.html %]
