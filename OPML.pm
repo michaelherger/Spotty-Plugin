@@ -24,16 +24,21 @@ use constant CAN_EXTID => (Slim::Utils::Versions->compareVersions($::VERSION, '8
 use constant IMG_TRACK => '/html/images/cover.png';
 use constant IMG_HOME => 'plugins/Spotty/html/images/home.png';
 use constant IMG_ALBUM => 'plugins/Spotty/html/images/album.png';
+use constant IMG_COMPILATION => 'plugins/Spotty/html/images/compilation.png';
 use constant IMG_PODCAST => 'plugins/Spotty/html/images/podcasts.png';
 use constant IMG_PLAYLIST => 'plugins/Spotty/html/images/playlist.png';
 use constant IMG_COLLABORATIVE => 'plugins/Spotty/html/images/playlist-collab.png';
 use constant IMG_SEARCH => 'plugins/Spotty/html/images/search.png';
 use constant IMG_ACCOUNT => 'plugins/Spotty/html/images/account.png';
 use constant IMG_ARTIST => 'plugins/Spotty/html/images/artist.png';
+use constant IMG_FOLLOW_ARTIST => 'plugins/Spotty/html/images/followartist.png';
 use constant IMG_TOPTRACKS => 'plugins/Spotty/html/images/toptracks.png';
 use constant IMG_NEWS => 'plugins/Spotty/html/images/news.png';
 use constant IMG_GENRES => 'plugins/Spotty/html/images/genres.png';
 use constant IMG_INBOX => 'plugins/Spotty/html/images/inbox.png';
+use constant IMG_TRANSFER => 'plugins/Spotty/html/images/transfer.png';
+use constant IMG_SONG => 'plugins/Spotty/html/images/song.png';
+use constant IMG_RADIO => 'plugins/Spotty/html/images/radio.png';
 
 # must delay this import, as it's using above export
 use Plugins::Spotty::PlaylistFolders;
@@ -284,7 +289,7 @@ sub handleFeed {
 			unshift @$personalItems, {
 				name  => cstring($client, 'PLUGIN_SPOTTY_SONGS_LIST'),
 				type  => 'playlist',
-				image => IMG_PLAYLIST,
+				image => IMG_SONG,
 				url  => \&mySongs,
 			}
 		}
@@ -326,7 +331,7 @@ sub handleFeed {
 		push @$items, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_TRANSFER'),
 			type  => 'link',
-			image => IMG_PLAYLIST,
+			image => IMG_TRANSFER,
 			url   => \&transferPlaylist
 		};
 
@@ -606,7 +611,7 @@ sub _searchItems {
 		[ 'ARTISTS', 'artist', IMG_ARTIST ],
 		[ 'ALBUMS', 'album', IMG_ALBUM ],
 		[ 'PLAYLISTS', 'playlist', IMG_PLAYLIST ],
-		[ 'SONGS', 'track', IMG_TRACK ],
+		[ 'SONGS', 'track', IMG_SONG ],
 		# https://github.com/spotify/web-api/issues/551#issuecomment-486898766
 		[ 'PLUGIN_SPOTTY_SHOWS', 'show_audio', IMG_PODCAST ],
 		[ 'PLUGIN_SPOTTY_EPISODES', 'episode_audio', IMG_PODCAST ],
@@ -958,6 +963,7 @@ sub _gotArtistData {
 	if ( scalar @$albums ) {
 		push @$items, {
 			name  => cstring($client, 'ALBUMS'),
+			icon  => IMG_ALBUM,
 			items => $albums,
 		};
 	}
@@ -965,6 +971,7 @@ sub _gotArtistData {
 	if ( scalar @$singles ) {
 		push @$items, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_SINGLES'),
+			icon  => IMG_SONG,
 			items => $singles,
 		};
 	}
@@ -972,6 +979,7 @@ sub _gotArtistData {
 	if ( scalar @$comps ) {
 		push @$items, {
 			name  => cstring($client, 'PLUGIN_SPOTTY_COMPILATIONS'),
+			icon  => IMG_COMPILATION,
 			items => $comps,
 		};
 	}
@@ -979,6 +987,7 @@ sub _gotArtistData {
 	push @$items, {
 		type  => 'outline',
 		name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
+		icon  => IMG_TOPTRACKS,
 		items => trackList($client, $artistInfo->{tracks}),
 	# },{
 	# 	type => 'playlist',
@@ -994,14 +1003,17 @@ sub _gotArtistData {
 		type => 'playlist',
 		on_select => 'play',
 		name => cstring($client, 'PLUGIN_SPOTTY_ARTIST_RADIO'),
+		icon => IMG_RADIO,
 		url  => \&artistRadio,
 		passthrough => [{ uri => $artistURI }],
 	},{
 		name => cstring($client, 'PLUGIN_SPOTTY_RELATED_ARTISTS'),
+		icon => IMG_ARTIST,
 		url  => \&relatedArtists,
 		passthrough => [{ uri => $artistURI }],
 	},{
 		name => cstring($client, 'PLUGIN_SPOTTY_FOLLOW_ARTIST'),
+		icon => IMG_FOLLOW_ARTIST,
 		url  => \&followArtist,
 		passthrough => [{
 			name => $artist->{name},
