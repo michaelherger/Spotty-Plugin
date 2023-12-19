@@ -478,7 +478,7 @@ sub _prepareTrack {
 		TITLE        => $_cleanupTags->($item->{name}),
 		ARTIST       => $artist,
 		ARTIST_EXTID => $extId,
-		TRACKARTIST  => join($splitChar, grep { $_ ne $artist } map { $_->{name} } @{ $item->{artists} }),
+		TRACKARTIST  => join($splitChar, map { $_->{name} } @{ $item->{artists} }),
 		ALBUM        => $_cleanupTags->($item->{album}->{name}),
 		ALBUM_EXTID  => $item->{album}->{uri},
 		TRACKNUM     => $item->{track_number},
@@ -488,7 +488,7 @@ sub _prepareTrack {
 		COVER        => $item->{album}->{image},
 		AUDIO        => 1,
 		EXTID        => $item->{uri},
-		COMPILATION  => $item->{album}->{album_type} eq 'compilation',
+		COMPILATION  => $item->{album}->{album_type} eq 'compilation' && scalar @{$item->{album}->{artists}} > 1,
 		RELEASETYPE  => $releaseType,
 		TIMESTAMP    => str2time($item->{album}->{added_at} || 0),
 		CONTENT_TYPE => 'spt'
