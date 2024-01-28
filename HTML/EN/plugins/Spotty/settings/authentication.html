@@ -4,7 +4,10 @@
 		<div>In order to use your Squeezebox with Spotify, you'll need to authorize 
 		Logitech Media Server using one of Spotify's applications. This can be their desktop 
 		client, or one of their mobile apps. Please note that authentication is not possible
-		through Spotify's web client. A Spotify Premium subscription is required!</div>
+		through Spotify's web client. A Spotify Premium subscription is required! Spotify uses 
+		a random port for listening for connections that changes after reboot, if running LMS
+		in a container you may need to use host network. If running a firewall on the host you
+		may need to disable or come up with a way to dynamically update your rules.</div>
 		<div>Just follow these simple steps:</div>
 
 		<div class="spotty-instructions">
