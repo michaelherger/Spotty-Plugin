@@ -1,10 +1,16 @@
 [% PROCESS "plugins/Spotty/settings/auth-header.html" %]
 
 	[% IF canDiscovery; WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
-		<div>Um die Squeezebox mit Spotify verwenden zu k&ouml;nnen muss Logitech Media Server mit Hilfe
+		<div style="padding-bottom: 7px;">Um die Squeezebox mit Spotify verwenden zu k&ouml;nnen muss Logitech Media Server mit Hilfe
 		einer Spotify Anwendung zugelassen werden. Dies kann die Desktop-Anwendung sein, oder auch eine Mobil-App.
 		Eine Spotify Premium Subskription ist Voraussetzung!</div>
-		
+
+		<div style="padding-bottom: 7px;">Spotify benutzt einen zufälligen Port um auf Verbindungen zu warten. Dieser Port
+		kann mit jedem Start ändern. Falls Sie LMS in einem Docker Container verwenden, so müssen Sie diesen im Host Netzwerkmodus
+		laufen lassen. Falls Sie auf dem LMS Rechner eine Firewall verwenden, so müssen Sie diese so konfigurieren,
+		dass sie die Regeln dynamisch anpasst (z.B. die Anwendung freischalten unter Windows).
+		</div>
+
 		<div>Befolgen Sie einfach die folgenden, einfachen Schritte:</div>
 
 		<div class="spotty-instructions">
@@ -18,8 +24,8 @@
 			</ol>
 		</div>
 
-		<div>Fertig. Nun sollte dieser Bildschirm verschwinden.</div>
-		<div><br/>Unter Umst&auml;nden schl&auml;gt die Anmeldung &uuml;ber die Spotify App fehl. In diesem Fall benutzen Sie 
+		<div style="padding-bottom: 7px;">Fertig. Nun sollte dieser Bildschirm verschwinden.</div>
+		<div style="padding-bottom: 7px;">Unter Umst&auml;nden schl&auml;gt die Anmeldung &uuml;ber die Spotify App fehl. In diesem Fall benutzen Sie
 		die folgenden Eingabefelder, um sich mit Benutzernamen und Passwort anzumelden.</div>
 	[% END; END %]
 
