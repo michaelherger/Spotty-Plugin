@@ -1,10 +1,15 @@
 [% PROCESS "plugins/Spotty/settings/auth-header.html" %]
 
 	[% IF canDiscovery; WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
-		<div>Pour utiliser votre Squeezebox avec Spotify, Logitech Media Server doit &ecirc;tre approuv&eacute; &agrave; l'aide d'une application Spotify. 
+		<div style="padding-bottom: 7px;">Pour utiliser votre Squeezebox avec Spotify, Logitech Media Server doit &ecirc;tre approuv&eacute; &agrave; l'aide d'une application Spotify. 
 		Il peut s'agir d'une de leurs applications pour ordinateurs ou pour mobiles. 
 		Veuillez noter que l'authentification n'est pas possible via le client Web de Spotify. 
 		Un abonnement Spotify Premium est requis !</div>
+
+		<div style="padding-bottom: 7px;">Spotify utilise un port al&eacute;atoire pour &eacute;couter les connexions, port qui change apr&egrave;s le red&eacute;marrage. 
+		Si vous ex&eacute;cutez LMS dans un conteneur, vous devrez peut-&ecirc;tre utiliser le type de r&eacute;seau &quot;host&quot;. 
+		Si vous utilisez un pare-feu, vous devrez peut-&ecirc;tre le d&eacute;sactiver ou trouver un moyen de mettre &agrave; jour dynamiquement ses r&egrave;gles.</div>
+
 		<div>Suivez simplement ces &eacute;tapes :</div>
 
 		<div class="spotty-instructions">
@@ -18,8 +23,8 @@
 			</ol>
 		</div>
 
-		<div>C'est fait ! Cet &eacute;cran devrait dispara&icirc;tre.</div>
-		<div><br/>Parfois, l'autorisation automatique &eacute;choue. Dans ce cas, authentifiez-vous en utilisant votre nom d'utilisateur et votre mot de passe dans le formulaire ci-dessous.</div>
+		<div style="padding-bottom: 7px;">C'est fait ! Cet &eacute;cran devrait dispara&icirc;tre.</div>
+		<div style="padding-bottom: 7px;">Parfois, l'autorisation automatique &eacute;choue. Dans ce cas, authentifiez-vous en utilisant votre nom d'utilisateur et votre mot de passe dans le formulaire ci-dessous.</div>
 	[% END; END %]
 
 [% PROCESS "plugins/Spotty/settings/auth-footer.html" %]
