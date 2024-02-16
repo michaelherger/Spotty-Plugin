@@ -221,6 +221,10 @@ PLUGIN_SPOTTY_HELPER_MISSING_HELP
 	FR	Impossible de démarrer l'application Spotify Connect Helper. Peut-être que votre plateforme n'est pas prise en charge ?
 	NL	Niet mogelijk om de Spotify Connect hulptoepassing te starten. Misschien wordt jouw besturingssysteem niet ondersteund?
 
+PLUGIN_SPOTTY_HELPER_PORTS
+	DE	Bitte stellen Sie sicher, dass die Helferanwendung über die Ports 80, 443 und 4070 aufs Internet zugreifen kann.
+	EN	Please make sure you allow the helper application is allowed to reach the internet on ports 80, 443, and 4070.
+
 PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC
 	CS	Neoznamovat ve své síti přehrávače Squeezebox spuštěné v režimu Spotify Connect. Tuto možnost zaškrtněte, pokud nechcete, aby se váš přehrávač Squeezebox s povoleným režimem Spotify Connect zobrazoval ve všech aplikacích Spotify ve vaší síti.
 	DE	Squeezebox Player im Spotify Connect Modus nicht im lokalen Netzwerk bekannt geben. Aktiviere diese Option, falls dein Player im Spotify Connect Modus nur vom Spotify-Konto gesehen werden soll, welches zuletzt für dieses Gerät verwendet wurde.

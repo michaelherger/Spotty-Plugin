@@ -6,6 +6,10 @@
 					<option value="[% helper %]" [% IF prefs.pref_helper == helper %]selected [% END %]>[% helper | html %] (v[% helpers.$helper.version %])</option>
 				[% END %]
 			</select>
+
+			<div>
+				<br>[% "PLUGIN_SPOTTY_HELPER_PORTS" | string | html %]
+			</div>
 		[% END %]
 	[% ELSE %]
 		[% WRAPPER setting title="PLUGIN_SPOTTY_HELPER" desc="" %]
