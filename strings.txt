@@ -224,6 +224,7 @@ PLUGIN_SPOTTY_HELPER_MISSING_HELP
 PLUGIN_SPOTTY_HELPER_PORTS
 	DE	Bitte stellen Sie sicher, dass die Helferanwendung über die Ports 80, 443 und 4070 aufs Internet zugreifen kann.
 	EN	Please make sure you allow the helper application is allowed to reach the internet on ports 80, 443, and 4070.
+	FR	Veuillez vous assurer que l'application Helper peut accéder à Internet via les ports 80, 443 et 4070.
 
 PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC
 	CS	Neoznamovat ve své síti přehrávače Squeezebox spuštěné v režimu Spotify Connect. Tuto možnost zaškrtněte, pokud nechcete, aby se váš přehrávač Squeezebox s povoleným režimem Spotify Connect zobrazoval ve všech aplikacích Spotify ve vaší síti.
