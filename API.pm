@@ -9,6 +9,7 @@ BEGIN {
 	use constant DEFAULT_LIMIT => 200;
 	use constant MAX_LIMIT => 10_000;
 	use constant SPOTIFY_LIMIT => 50;
+	use constant PERSONAL_MIX_CATEGORY => '0JQ5DAt0tbjZptfcdMSKl3';   # https://community.spotify.com/t5/Spotify-for-Developers/How-can-I-get-access-to-Made-for-You-playlist-by-Web-API/m-p/5905136/highlight/true#M12816
 
 	use Exporter::Lite;
 	our @EXPORT_OK = qw( SPOTIFY_LIMIT DEFAULT_LIMIT uri2url );
@@ -101,7 +102,9 @@ sub me {
 }
 
 sub home {
-	Plugins::Spotty::API::Web->home(@_);
+	my ($self, $cb) = @_;
+
+	$self->categoryPlaylists($cb, PERSONAL_MIX_CATEGORY );
 }
 
 sub browseWebUrl {

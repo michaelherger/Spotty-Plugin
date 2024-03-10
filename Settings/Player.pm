@@ -34,7 +34,7 @@ sub prefs {
 }
 
 sub handler {
-	my ($class, $client, $params) = @_;
+	my ($class, $client, $params, $callback, $httpClient, $response) = @_;
 
 	if ( !Plugins::Spotty::Connect->canSpotifyConnect() ) {
 		$params->{errorString} = $client->string('PLUGIN_SPOTTY_NEED_HELPER_UPDATE');
@@ -42,11 +42,44 @@ sub handler {
 
 	$params->{canAutoplay} = Plugins::Spotty::Helper->getCapability('autoplay');
 
-	return $class->SUPER::handler( $client, $params );
+	# get Home menu items if a client is connected
+	Plugins::Spotty::Plugin->getAPIHandler($client)->home(sub {
+		_initHomeMenuItems($client, $params, shift);
+		my $body = $class->SUPER::handler($client, $params);
+		$callback->( $client, $params, $body, $httpClient, $response );
+	});
+
+	return;
 }
 
 sub validFor {
 	return Plugins::Spotty::AccountHelper->hasCredentials() ? 1 : 0;
+}
+
+sub _initHomeMenuItems {
+	my ($client, $params, $homeItems) = @_;
+	my $ignoreItems = $prefs->client($client)->get('ignoreHomeItems') || {};
+
+	$params->{homeItems} = [ map {
+		if ($params->{saveSettings}) {
+			if ($params->{'pref_homeItem_' . $_->{id}}) {
+				delete $ignoreItems->{$_->{id}};
+			}
+			else {
+				$ignoreItems->{$_->{id}} = 1;
+			}
+		}
+
+		{
+			name => $_->{name} . ($_->{description} ? ' - ' . $_->{description} : ''),
+			id => $_->{id},
+			disabled => $ignoreItems->{$_->{id}},
+		};
+	} @{ Plugins::Spotty::OPML::sortHomeItems($homeItems) } ];
+
+	$prefs->client($client)->set('ignoreHomeItems', $ignoreItems);
+
+	return $params->{homeItems};
 }
 
 1;

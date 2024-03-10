@@ -72,17 +72,6 @@ my %topuri = (
 	XX => 'spotify:user:spotifycharts:playlist:37i9dQZEVXbMDoHDwVN2tF',	# fallback "Top 100 on Spotify"
 );
 
-# sort order for home menu items
-my %homeItemsWeights = (
-	'made-for-x' => 1,
-	'podcast-recs-show-affinity-wrapper' => 5,
-	'NMF-NRFY' => 10,
-	'home-personalized[favorite-albums]' => 20,
-	'home-personalized[recommended-stations]' => 40,
-	'home-personalized[more-of-what-you-like]' => 100,
-	'uniquely-yours-shelf' => 200,
-);
-
 my $nextNameCheck = 0;
 
 sub init {
@@ -362,48 +351,37 @@ sub handleFeed {
 sub home {
 	my ($client, $cb, $params) = @_;
 
-	my $ignoreItems = $prefs->get('ignoreHomeItems');
+	my $ignoreItems = $prefs->client($client)->get('ignoreHomeItems');
 
 	Plugins::Spotty::Plugin->getAPIHandler($client)->home(sub {
 		my ($homeItems) = @_;
 
-		my $items = [];
+		my %taglines;
 
-		foreach my $group ( @{sortHomeItems($homeItems)} ) {
-			if ($group->{name} && $group->{href} && !$ignoreItems->{$group->{id}}) {
-				my $item = {
-					type => 'link',
-					name => $group->{name},
-					url  => \&browseWebUrl,
-					passthrough => [{
-						href => $group->{href}
-					}],
-					image => $group->{image}
-				};
+		my $items = sortHomeItems([ grep {
+			$taglines{$_->{uri}} = $_->{description};
+			$_->{name} && $_->{id} && !$ignoreItems->{$_->{id}};
+		} @$homeItems ]);
 
-				$item->{name2} = $group->{tag_line} if $group->{tag_line};
-
-				if ($group->{id} =~ /podcast/) {
-					$item->{image} ||= IMG_PODCAST;
-				}
-				elsif ($group->{id} =~ /favorite-albums|NMF-NRFY|inspired-by-recent-albums/) {
-					$item->{image} ||= IMG_ALBUM;
-				}
-				else {
-					$item->{image} ||= IMG_PLAYLIST;
-				}
-
-				push @$items, $item;
-			}
-		}
-
-		$cb->({ items => $items });
+		$cb->({ items => [ map {
+			$_->{line2} = $taglines{$_->{favorites_url}} if $taglines{$_->{favorites_url}};
+			$_;
+		} @{playlistList($client, $items)} ] });
 	});
 }
 
 sub sortHomeItems {
+	my $dailyMixRegex = qr/Daily Mix|MixTape/i;
+	my $weeklyMixRegex = qr/Discover Weekly|Mix der Woche/i;
+	my $releaseRadarRegex = qr/Release Radar/i;
+
 	return [ sort {
-		($homeItemsWeights{$a->{id}} || 999) <=> ($homeItemsWeights{$b->{id}} || 999);
+		return -1 if $a->{name} =~ $dailyMixRegex && $b->{name} !~ $dailyMixRegex;
+		return  1 if $b->{name} =~ $dailyMixRegex && $a->{name} !~ $dailyMixRegex;
+		return -1 if $a->{name} =~ $releaseRadarRegex;
+		return  1 if $b->{name} =~ $releaseRadarRegex;
+		return -1 if $a->{name} =~ $weeklyMixRegex;
+		return  1 if $b->{name} =~ $weeklyMixRegex;
 	} @{$_[0]} ];
 }
 

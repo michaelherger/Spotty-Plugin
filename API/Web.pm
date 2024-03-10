@@ -35,66 +35,6 @@ sub getToken {
 	});
 }
 
-sub home {
-	my ( $class, $api, $cb ) = @_;
-
-	my $username = $api->username || 'generic';
-	my $cacheKey = "spotty_webhome_$username";
-
-	if (my $cached = $cache->get($cacheKey)) {
-		main::INFOLOG && $log->is_info && $log->info(sprintf('Returning cached Home menu structure for %s (%s)', $username, Slim::Utils::DbCache::_key($cacheKey)));
-		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
-		$cb->($cached);
-		return;
-	}
-
-	$class->_call(sprintf(API_URL, 'views/desktop-home'), sub {
-		my ($result) = @_;
-
-		my $items = [ map {
-			my $item = {
-				name  => $_->{name},
-				tag_line => $_->{tag_line},
-				id    => $_->{id},
-				href  => $_->{content}->{href},
-			};
-
-			# try to get four images to create a mosaic
-			my %seen;
-			my @imageIds = grep { $_ && !$seen{$_}++ } map {
-				my $url = $_->{images}->[0]->{url};
-				$url =~ m|/([a-f0-9]{40})(?:/.*?)?$|;
-				$1;
-			} grep {
-				$_->{images} && (ref $_->{images} || '') eq 'ARRAY'
-			} @{$_->{content}->{items}};
-
-			if (@imageIds >= 4) {
-				$item->{image} = sprintf(IMAGE_MOSAIC_URL, shuffle @imageIds);
-			}
-
-			$item;
-		} grep {
-			$_->{name} && $_->{content} && $_->{content}->{items} && (ref $_->{content}->{items} || '') eq 'ARRAY' && scalar @{$_->{content}->{items}}
-		} @{$result->{content}->{items}} ];
-
-		$cache->set($cacheKey, $items, 900);
-
-		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
-		$cb->($items);
-	},{
-		content_limit => 20,
-		locale => $api->locale,
-		# platform => 'web',
-		country => $api->country,
-		timestamp => $api->_getTimestamp(),
-		types => 'album,playlist,artist,show,station',
-		limit => 20,
-		# offset => 0,
-		_api => $api,
-	});
-}
-
 sub getPlaylistHierarchy {
 	my ( $class, $api, $cb ) = @_;
 

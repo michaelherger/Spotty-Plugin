@@ -12,6 +12,17 @@
 		<label for="pref_reversePodcastOrder">[% "PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER_DESC" | string %]</label>
 	[% END %]
 
+	[% IF homeItems %]
+		[% WRAPPER setting title="PLUGIN_SPOTTY_HOME_ITEMS" desc="PLUGIN_SPOTTY_HOME_DESC" %]
+			[% FOREACH homeItem IN homeItems %]
+				<div>
+					<input name="[% "pref_homeItem_" _ homeItem.id %]" id="[% "pref_homeItem_" _ homeItem.id %]" type="checkbox" [% IF !homeItem.disabled %] checked [% END %]>
+					<label for="[% "pref_homeItem_" _ homeItem.id %]">[% homeItem.name %]</label>
+				</div>
+			[% END %]
+		[% END %]
+	[% END %]
+
 	[% WRAPPER setting title="PLUGIN_SPOTTY_EXPLICIT" desc="" %]
 		<select class="stdedit" name="pref_filterExplicitContent" id="pref_filterExplicitContent">
 			<option value="0">[% "PLUGIN_SPOTTY_EXPLICIT_DONT_CARE" | string %]</option>
