@@ -4,6 +4,7 @@ use strict;
 use Exporter::Lite;
 
 BEGIN {
+	use constant API_URL => 'https://api.spotify.com/v1/%s';
 	use constant LIBRARY_LIMIT => 500;
 	use constant RECOMMENDATION_LIMIT => 100;		# for whatever reason this call does support a maximum chunk size of 100
 	use constant DEFAULT_LIMIT => 200;
@@ -28,7 +29,6 @@ use Plugins::Spotty::Plugin;
 use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::Helper;
 use Plugins::Spotty::API::Pipeline;
-use Plugins::Spotty::API::AsyncRequest;
 use Plugins::Spotty::API::Token;
 use Plugins::Spotty::API::Web;
 
@@ -59,6 +59,13 @@ my %tokenHandlers;
 
 sub new {
 	my ($class, $args) = @_;
+
+	if (Slim::Networking::SimpleHTTP::Base->can('shouldNotRevalidate')) {
+		require Plugins::Spotty::API::AsyncRequest;
+	}
+	else {
+		require Plugins::Spotty::API::AsyncRequestLegacy;
+	}
 
 	my $self = $class->SUPER::new();
 
@@ -1489,13 +1496,13 @@ sub _call {
 			}
 
 			if ( $type eq 'POST' ) {
-				$http->post($url, @headers, $content);
+				$http->post(sprintf(API_URL, $url), @headers, $content);
 			}
 			elsif ( $type eq 'PUT' ) {
-				$http->put($url, @headers, $content);
+				$http->put(sprintf(API_URL, $url), @headers, $content);
 			}
 			else {
-				$http->get($url, @headers);
+				$http->get(sprintf(API_URL, $url), @headers);
 			}
 		}
 	});
