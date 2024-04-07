@@ -38,6 +38,10 @@
 			</tr>
 		[% END %]
 		</table>
+
+		[% IF credentials.size > 1 && !hasDefaultIcon %]
+			<div>[% "PLUGIN_SPOTTY_ADD_USER_TO_CLIENT_ID" | string %]</div>
+		[% END %]
 	[% END; END %]
 
 	[% WRAPPER setting title="" desc="" %]

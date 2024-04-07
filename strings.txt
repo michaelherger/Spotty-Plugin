@@ -700,10 +700,10 @@ PLUGIN_SPOTTY_CLIENT_ID_DESC
 	NL	<li>Kopieer de nieuw aangemaakte Client ID naar jouw Spotty instellingen.</li>
 	NL	<li>Als je van plan bent meerdere Spotify accounts met Spotty te gebruiken (bijv. een gezinsaccount), moet je de accounts toevoegen aan het gedeelte 'Gebruikers en toegang' in de nieuw gemaakte configuratie.</li>
 	NL	</ul>
-#	DE	Sehr wahrscheinlich braucht dich diese Einstellung nicht zu interessieren. Falls doch, dann weisst du hoffentlich was das sein soll. Lass es einfach leer, falls dem nicht so ist. Weitere Informationen braucht es nicht 😀.
-#	EN	You most certainly don't need to touch this value. If you feel a need to do so, then you'll hopefully know what it's supposed to be. Just leave it empty unless told. No more instructions needed 😀.
-#	FR	Vous n'avez certainement pas besoin de toucher à cette valeur. Si vous ressentez le besoin de le faire, vous saurez, espérons-le, ce que c'est censé être. Laissez-la vide à moins qu'on ne vous le dise. Plus besoin d'instructions 😀.
-#	NL	Hoogstwaarschijnlijk dien je je niet druk te maken over deze instelling. Zo ja, dan weet je hopelijk wat dat zou moeten zijn. Laat het gewoon leeg als dit niet het geval is. Verdere informatie is niet nodig 😀.
+
+PLUGIN_SPOTTY_ADD_USER_TO_CLIENT_ID
+	DE	Da Sie eine eigent Client ID verwenden, besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an, und fügen Sie die entsprechenden Konten unter "Users and Access" hinzu.
+	EN	As you're using your own Client ID, you'll have to go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed, and add the accounts to the "Users and Access" section.
 
 # this is a duplicate of INFORMATION_BINDIRS - which is not available in 7.7.5
 PLUGIN_SPOTTY_INFORMATION_BINDIRS
