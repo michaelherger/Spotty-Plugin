@@ -1,10 +1,5 @@
 package Plugins::Spotty::Settings::PlaylistFolders;
 
-# Logitech Media Server Copyright 2001-2011 Logitech.
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License,
-# version 2.
-
 use strict;
 use base qw(Slim::Web::Settings);
 
