@@ -704,6 +704,7 @@ PLUGIN_SPOTTY_CLIENT_ID_DESC
 PLUGIN_SPOTTY_ADD_USER_TO_CLIENT_ID
 	DE	Da Sie eine eigent Client ID verwenden, besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an, und fügen Sie die entsprechenden Konten unter "Users and Access" hinzu.
 	EN	As you're using your own Client ID, you'll have to go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed, and add the accounts to the "Users and Access" section.
+	FR	Puisque vous utilisez votre propre identifiant client, vous devez vous rendre sur le <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, vous connecter si nécessaire, et ajouter les comptes appropriés dans "Users and Access".
 
 # this is a duplicate of INFORMATION_BINDIRS - which is not available in 7.7.5
 PLUGIN_SPOTTY_INFORMATION_BINDIRS
