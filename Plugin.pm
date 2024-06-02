@@ -23,6 +23,7 @@ use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION,
 
 my $prefs = preferences('plugin.spotty');
 my $serverPrefs = preferences('server');
+my $cache = Slim::Utils::Cache->new();
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.spotty',
@@ -82,7 +83,7 @@ sub initPlugin {
 		Slim::Music::Import->doQueueScanTasks(0);
 	}, 'cleanupTags');
 	$prefs->setChange( sub {
-		Slim::Utils::Cache->remove('spotty_rate_limit_exceeded');
+		$cache->remove('spotty_rate_limit_exceeded');
 	}, 'iconCode');
 
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
