@@ -85,15 +85,7 @@ sub getToken {
 	my ( $self, $cb ) = @_;
 
 	if ($cache->get('spotty_rate_limit_exceeded')) {
-		# If the client ID used when this error was cached
-		# has changed, clear the cache.
-		if ($cache->get('spotty_rate_limit_exceeded_client_id') !=
-			$prefs->get('iconCode')) {
-			$cache->remove('spotty_rate_limit_exceeded');
-			$cache->remove('spotty_rate_limit_exceeded_client_id');
-		} else {
-			return $cb->(-429) ;
-		}
+		return $cb->(-429) ;
 	}
 
 	Plugins::Spotty::API::Token->get($self, $cb);
@@ -1524,7 +1516,6 @@ sub error429 {
 
 	# set special token to tell _call not to proceed
 	$cache->set('spotty_rate_limit_exceeded', 1, $headers->{'retry-after'} || 5);
-	$cache->set('spotty_rate_limit_exceeded_client_id', $prefs->get('iconCode'), $headers->{'retry-after'} || 5);
 
 	$error429 = sprintf(string('PLUGIN_SPOTTY_ERROR_429_DESC'), $url, $headers->{'retry-after'} || 5);
 

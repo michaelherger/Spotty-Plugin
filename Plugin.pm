@@ -81,6 +81,9 @@ sub initPlugin {
 		Slim::Control::Request::executeRequest(undef, ['rescan', 'onlinelibrary']);
 		Slim::Music::Import->doQueueScanTasks(0);
 	}, 'cleanupTags');
+	$prefs->setChange( sub {
+		Slim::Utils::Cache->remove('spotty_rate_limit_exceeded');
+	}, 'iconCode');
 
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed
 	# this might be premature optimization, as ARM CPUs are getting more and more powerful...
