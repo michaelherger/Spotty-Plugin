@@ -120,7 +120,7 @@ PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY
 	DE	In "Meine Musik" anzeigen
 	EN	Merge with "My Music"
 	FR	Fusionner avec "Ma musique"
-	NL	Samenvoegen met "Mijn muziek"
+	NL	Samenvoegen met "Mijn Muziek"
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_DESC
 	CS	Integrace knihovny Spotify s místní knihovnou umožňuje procházet veškerou hudbu z jednoho místa, umožňuje používat náhodné přehrávání s hudbou Spotify atd. UPOZORŇUJEME, že změna této předvolby vyvolá opětovné prohledání vaší knihovny.
@@ -370,7 +370,7 @@ PLUGIN_SPOTTY_RELATED_ARTISTS
 	FI	Liittyvät artistit
 	FR	Artistes connexes
 	IT	Artisti correlati
-	NL	Soortgelijke artiesten
+	NL	Gerelateerde artiesten
 	NO	Liknende artister
 	PL	Pokrewni wykonawcy
 	RU	Подобные исполнители
