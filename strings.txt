@@ -59,34 +59,6 @@ PLUGIN_SPOTTY_ADD_ACCOUNT
 	FR	Ajouter un compte
 	NL	Account toevoegen
 
-PLUGIN_SPOTTY_USERNAME
-	CS	Uživatelské jméno Spotify
-	DE	Spotify Benutzername
-	EN	Spotify Username
-	FR	Nom d'utilisateur Spotify
-	NL	Spotify Gebruikersnaam
-
-PLUGIN_SPOTTY_PASSWORD
-	CS	Heslo Spotify
-	DE	Spotify Passwort
-	EN	Spotify Password
-	FR	Mot de passe Spotify
-	NL	Spotify Wachtwoord
-
-PLUGIN_SPOTTY_USERNAME_DESC
-	CS	Zadejte své uživatelské jméno Spotify (vyžaduje se Premium účet)
-	DE	Gib deinen Spotify Benutzernamen ein (Premium Account notwendig)
-	EN	Enter your Spotify username (Premium Account required)
-	FR	Saisir votre nom d'utilisateur Spotify (compte Premium requis)
-	NL	Vul jouw Spotify gebruikersnaam in (vereist een Premium Account)
-
-PLUGIN_SPOTTY_PASSWORD_DESC
-	CS	Zadejte heslo Spotify (vyžaduje se Premium účet)
-	DE	Gib dein Spotify Passwort ein (Premium Account notwendig)
-	EN	Enter your Spotify password (Premium Account required)
-	FR	Saisir votre mot de passe Spotify (compte Premium requis)
-	NL	Vul jouw Spotify wachtwoord in (vereist een Premium Account)
-
 PLUGIN_SPOTTY_AUTH_FAILED
 	CS	Autorizace se nezdařila
 	DE	Anmeldung fehlgeschlagen

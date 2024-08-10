@@ -25,8 +25,6 @@
 		</div>
 
 		<div style="padding-bottom: 7px;">Fertig. Nun sollte dieser Bildschirm verschwinden.</div>
-		<div style="padding-bottom: 7px;">Unter Umst&auml;nden schl&auml;gt die Anmeldung &uuml;ber die Spotify App fehl. In diesem Fall benutzen Sie
-		die folgenden Eingabefelder, um sich mit Benutzernamen und Passwort anzumelden.</div>
 	[% END; END %]
 
 [% PROCESS "plugins/Spotty/settings/auth-footer.html" %]

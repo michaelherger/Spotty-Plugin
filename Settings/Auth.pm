@@ -48,43 +48,6 @@ sub handler {
 
 	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
 
-	if ($paramRef->{'saveSettings'}) {
-		if ( $paramRef->{'username'} && $paramRef->{'password'} && $helperPath ) {
-			my $command = sprintf(
-				'"%s" -c "%s" -n "%s (%s)" -u "%s" -p "%s" -a --disable-discovery %s',
-				$helperPath,
-				$class->_cacheFolder(),
-				string('PLUGIN_SPOTTY_AUTH_NAME'),
-				Slim::Utils::Misc::getLibraryName(),
-				$paramRef->{'username'},
-				$paramRef->{'password'},
-				# always use fallback (if possible), as the user has no way to force this at this point yet if needed
-				Plugins::Spotty::Helper->getCapability('no-ap-port') ? '' : '--ap-port 12321',
-			);
-
-			if (main::INFOLOG && $log->is_info) {
-				$command .= ' --verbose';
-				my $logCmd = $command;
-				$logCmd =~ s/-p ".*?"/-p "\*\*\*\*\*\*\*\*"/g;
-				$log->info("Trying to authenticate using: $logCmd");
-			}
-
-			my $response = `$command`;
-
-			main::INFOLOG && $log->is_info && $log->info("Got response: $response");
-
-			if ( !($response && $response =~ /authorized/s) ) {
-				$paramRef->{'warning'} = string('PLUGIN_SPOTTY_AUTH_FAILED');
-
-				if ($response =~ /panicked at '(.*?)'/i) {
-					$paramRef->{'warning'} .= string('COLON') . " $1";
-				}
-
-				$log->warn($paramRef->{'warning'} . string('COLON') . " $response");
-			}
-		}
-	}
-
 	if ( Plugins::Spotty::AccountHelper->hasCredentials(AUTHENTICATE) ) {
 		$class->shutdownHelper;
 

@@ -1,11 +1,4 @@
-	[% WRAPPER setting title="PLUGIN_SPOTTY_USERNAME" desc="PLUGIN_SPOTTY_USERNAME_DESC" %]
-		<input type="text" class="stdedit" name="username" id="username" value="[% username %]" size="40">
-	[% END %]
-
-	[% WRAPPER setting title="PLUGIN_SPOTTY_PASSWORD" desc="PLUGIN_SPOTTY_PASSWORD_DESC" %]
-		<input type="password" class="stdedit" name="password" id="password" value="[% password %]" size="40">
-		<input type="hidden" name="accountId" value="[% accountId %]">
-	[% END %]
+	<input type="hidden" name="accountId" value="[% accountId %]">
 
 	[% PROCESS "plugins/Spotty/settings/helpers.html" %]
 

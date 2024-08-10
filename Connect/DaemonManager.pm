@@ -81,7 +81,7 @@ sub init {
 		main::INFOLOG && $log->is_info && $log->info("Authentication information for LMS has changed - re-initialize Connect helpers");
 		$class->shutdown();
 		initHelpers();
-	}, 'authorize', 'username', 'password');
+	}, 'authorize', 'username');
 }
 
 sub initHelpers {
