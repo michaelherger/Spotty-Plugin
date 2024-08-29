@@ -3,6 +3,7 @@ PLUGIN_SPOTTY
 	DE	Spotty Spotify für Squeezebox
 	EN	Spotty Spotify for Squeezebox
 	FR	Spotty Spotify pour Squeezebox
+	HU	Spotty Spotify a Squeezeboxhoz
 	NL	Spotty Spotify voor Squeezebox
 
 PLUGIN_SPOTTY_NAME
@@ -16,12 +17,14 @@ PLUGIN_SPOTTY_HOME
 	DE	Start
 	EN	Home
 	FR	Accueil
+	HU	Kezdő
 
 PLUGIN_SPOTTY_NOT_AUTHORIZED
 	CS	Chybí přihlašovací údaje ke Spotify
 	DE	Spotify Anmeldedaten fehlen
 	EN	Spotify Credentials missing
 	FR	Identifiants Spotify manquants
+	HU	Hiányoznak a Spotify hitelesítő adatai
 	NL	Spotify autorisatie gegevens ontbreken
 
 PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT
@@ -29,6 +32,7 @@ PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT
 	DE	Bitte überprüfen Sie Einstellungen/Erweitert/Spotty Spotify für Squeezebox im Web Interface
 	EN	Please check Settings/Advanced/Spotty Spotify for Squeezebox in the web interface
 	FR	Vérifiez "Paramètres/Avancé/Spotty Spotify pour Squeezebox" dans l'interface Web
+	HU	Kérjük, ellenőrizze a Beállítások/Speciális/Spotty Spotify for Squeezebox lehetőséget a webes felületen
 	NL	Controleer Instellingen/Geavanceerd/Spotty Spotify voor Squeezebox in de webinterface
 
 PLUGIN_SPOTTY_AUTH
@@ -36,6 +40,7 @@ PLUGIN_SPOTTY_AUTH
 	DE	Spotify Anmeldung
 	EN	Spotify Authorization
 	FR	Autorisation Spotify
+	HU	Spotify fiók belépés
 	NL	Spotify Autorisatie
 
 PLUGIN_SPOTTY_AUTH_NAME
@@ -43,6 +48,7 @@ PLUGIN_SPOTTY_AUTH_NAME
 	DE	Spotify Anmeldung
 	EN	Spotify Authorization
 	FR	Autorisation Spotify
+	HU	Spotify fiók belépés
 	NL	Spotify Autorisatie
 
 PLUGIN_SPOTTY_AUTH_RESET
@@ -50,6 +56,7 @@ PLUGIN_SPOTTY_AUTH_RESET
 	DE	Anmeldung zurücksetzen
 	EN	Reset Authorization
 	FR	Réinitialiser l'autorisation
+	HU	Spotify fiók kilépés
 	NL	Autorisatie resetten
 
 PLUGIN_SPOTTY_ADD_ACCOUNT
@@ -57,6 +64,7 @@ PLUGIN_SPOTTY_ADD_ACCOUNT
 	DE	Konto hinzufügen
 	EN	Add Account
 	FR	Ajouter un compte
+	HU	Fiók hozzáadása
 	NL	Account toevoegen
 
 PLUGIN_SPOTTY_AUTH_FAILED
@@ -64,6 +72,7 @@ PLUGIN_SPOTTY_AUTH_FAILED
 	DE	Anmeldung fehlgeschlagen
 	EN	Authorization failed
 	FR	Échec de l'autorisation
+	HU	Az azonosítás sikertelen
 	NL	Autorisatie mislukt
 
 PLUGIN_SPOTTY_IMPORT_LIBRARY
@@ -71,6 +80,7 @@ PLUGIN_SPOTTY_IMPORT_LIBRARY
 	DE	Importieren
 	EN	Import
 	FR	Importer
+	HU	Import
 	NL	Importeren
 
 PLUGIN_SPOTTY_DONT_IMPORT_LIBRARY
@@ -78,6 +88,7 @@ PLUGIN_SPOTTY_DONT_IMPORT_LIBRARY
 	DE	Nicht importieren
 	EN	Don't import
 	FR	Ne pas importer
+	HU	Ne importáljon
 	NL	Niet importeren
 
 PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY
@@ -85,6 +96,7 @@ PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY
 	DE	Lokale Musik und %s
 	EN	Local Music and %s's
 	FR	Musique locale et %s
+	HU	Helyi zene és %s
 	NL	Lokale muziek en %s
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY
@@ -92,6 +104,7 @@ PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY
 	DE	In "Meine Musik" anzeigen
 	EN	Merge with "My Music"
 	FR	Fusionner avec "Ma musique"
+	HU	Egyesítse a "Saját zenék"-el
 	NL	Samenvoegen met "Mijn Muziek"
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_DESC
@@ -99,6 +112,7 @@ PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_DESC
 	DE	Die Integration ihrer Spotify Sammlung mit der lokalen Musik gibt ihnen Zugriff auf alle ihre Musik in einem Menü. Auch erlaubt dies die Verwendung von Zufallswiedergabe mit Spotify Titeln, schnelle und Volltext-Suche etc.
 	EN	Integrating the Spotify library with your local library allows you to browse all your music from one place, allows you to use Random Play with Spotify music etc. PLEASE NOTE that changing this preference will trigger a rescan of your library.
 	FR	L'intégration de la bibliothèque Spotify à votre bibliothèque locale vous permet de parcourir toute votre musique à partir d'un seul endroit. Elle vous permet d'utiliser la lecture aléatoire avec la musique Spotify, etc. La modification de ce paramètre déclenchera une nouvelle analyse de votre bibliothèque.
+	HU	A Spotify könyvtár és a helyi könyvtár integrálása lehetővé teszi, hogy egy helyről böngésszen az összes zenéje között, lehetővé teszi a véletlenszerű lejátszást Spotify zenékkel stb.. FIGYELEM, hogy ennek a beállításnak a módosítása a könyvtár újraellenőrzését indítja el.
 	NL	Het samenvoegen van jouw Spotify muziekcollectie met jouw lokale muziekcollectie maakt het mogelijk om door al jouw muziek te bladeren vanaf één plek. Het is ook mogelijk om shuffle te gebruiken met Spotify nummers, snel en volledige-tekst zoeken enz.
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_0
@@ -106,6 +120,7 @@ PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_0
 	DE	Die Spotify Musiksammlung nicht in die lokale Musiksammlung integrieren
 	EN	Do not merge your Spotify collection with the local music library
 	FR	Ne pas fusionner votre bibliothèque Spotify avec votre bibliothèque locale
+	HU	Ne vonja össze Spotify-gyűjteményét a helyi zenei könyvtárral
 	NL	Voeg jouw Spotify muziekcollectie niet samen met jouw lokale muziekcollectie
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_1
@@ -113,6 +128,7 @@ PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY_1
 	DE	Integriere die Spotify Musiksammlung mit der lokalen Musik
 	EN	Merge your Spotify collection with your local music library
 	FR	Fusionner votre bibliothèque Spotify avec votre bibliothèque locale
+	HU	Egyesítse Spotify-gyűjteményét helyi zenei könyvtárával
 	NL	Voeg jouw Spotify muziekcollectie samen met jouw lokale muziekcollectie
 
 PLUGIN_SPOTTY_ACCOUNT
@@ -123,6 +139,7 @@ PLUGIN_SPOTTY_ACCOUNT
 	ES	Cuenta
 	FI	Tili
 	FR	Compte
+	HU	Fiók
 	NL	Account
 	NO	Konto
 	PL	Konto
@@ -137,6 +154,7 @@ PLUGIN_SPOTTY_SELECT_ACCOUNT
 	ES	Seleccionar cuenta
 	FI	Valitse tili
 	FR	Sélectionner le compte
+	HU	Válasszon fiókot
 	IT	Seleziona account
 	NL	Account selecteren
 	NO	Velg konto
@@ -149,6 +167,7 @@ PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_OFF
 	DE	Stelle ein Menü zur Verfügung, um zwischen Konten zu wechseln. Dies empfiehlt sich, wenn auf einem Gerät meist dasselbe Konto verwendet wird.
 	EN	Provide a menu to switch between accounts. This option is suitable if you stick with one account per device most of the time.
 	FR	Fournir un menu pour basculer entre les comptes. Cette option convient si la plupart du temps vous vous en tenez à un seul compte par appareil.
+	HU	Legyen egy menü a fiókok közötti váltáshoz. Ez a lehetőség akkor megfelelő, ha az idő nagy részében eszközönként egy fiókot használ.
 	NL	Maak een menu om tussen accounts te schakelen. Deze optie is geschikt als je de meeste tijd met één account per apparaat werkt.
 
 PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_ON
@@ -156,6 +175,7 @@ PLUGIN_SPOTTY_SIMPLIFIED_ACCOUNT_SWITCHING_ON
 	DE	Erstelle pro Konto ein Untermenü. Dies erlaubt den schnellen Zugriff auf die Sammlungen mehrerer Benutzer, erstellt aber mehr Menü-Einträge.
 	EN	Provide one browse menu per account. This allows you to quickly access libraries of the various users, but creates more menu entries.
 	FR	Fournir un menu de navigation par compte. Cela permet d'accéder rapidement aux bibliothèques des différents utilisateurs, mais crée plus d'entrées de menu.
+	HU	Legyen egy böngészési menü fiókonként. Ez lehetővé teszi a különböző felhasználók könyvtárainak gyors elérését, de további menübejegyzéseket hoz létre.
 	NL	Maak een menu per account. Dit geeft snelle toegang tot de muziekcollecties van meerdere gebruikers, maar creëert meer menu items.
 
 PLUGIN_SPOTTY_HELPER
@@ -163,12 +183,14 @@ PLUGIN_SPOTTY_HELPER
 	DE	Spotty Helferanwendung
 	EN	Spotty Helper Application
 	FR	Application Spotty Helper
+	HU	Foltos Helper alkalmazás
 	NL	Spotty Hulptoepassing
 
 PLUGIN_SPOTTY_HELPER_MISSING
 	CS	Chybí pomocná aplikace Spotify Connect
 	DE	Die Spotify Connect Helferanwendung fehlt
 	EN	Spotify Connect Helper application is missing
+	HU	A Spotify Connect Helper alkalmazás hiányzik
 	FR	L'application Spotify Connect Helper est manquante.
 	NL	Spotify Connect hulptoepassing ontbreekt
 
@@ -177,6 +199,7 @@ PLUGIN_SPOTTY_HELPER_CHOOSE
 	DE	Wähle eine Helferanwendung, falls die automatische Erkennung fehl schlägt. Bitte nur anwenden, wenn "Automatisch" versagt.
 	EN	Select a helper application if the automatic detection fails. Do NOT use unless "Automatic" fails.
 	FR	Sélectionner manuellement l'application Helper si la détection automatique échoue. N'utiliser QUE si la détection automatique échoue.
+	HU	Válasszon egy segédalkalmazást, ha az automatikus észlelés sikertelen. NE használja, kivéve, ha az "Automatikus" sikertelen.
 	NL	Selecteer een hulptoepassing als de automatische detectie mislukt. Alleen gebruiken als "Automatisch" mislukt.
 
 PLUGIN_SPOTTY_HELPER_DISCOVER
@@ -184,6 +207,7 @@ PLUGIN_SPOTTY_HELPER_DISCOVER
 	DE	Automatisch Wählen
 	EN	Select Automatically (default)
 	FR	Sélectionner automatiquement l'application Helper.
+	HU	Automatikus választás (alapértelmezett)
 	NL	Selecteer Automatisch (standaard)
 
 PLUGIN_SPOTTY_HELPER_MISSING_HELP
@@ -191,18 +215,21 @@ PLUGIN_SPOTTY_HELPER_MISSING_HELP
 	DE	Konnte die Spotify Connect Helferanwendung nicht finden oder nicht ausführen. Ist ihr Betriebssystem unterstützt?
 	EN	Couldn't start the Spotify Connect Helper application. Maybe your platform isn't supported?
 	FR	Impossible de démarrer l'application Spotify Connect Helper. Peut-être que votre plateforme n'est pas prise en charge ?
+	HU	Nem sikerült elindítani a Spotify Connect Helper alkalmazást. Lehet, hogy az Ön platformja nem támogatott?
 	NL	Niet mogelijk om de Spotify Connect hulptoepassing te starten. Misschien wordt jouw besturingssysteem niet ondersteund?
 
 PLUGIN_SPOTTY_HELPER_PORTS
 	DE	Bitte stellen Sie sicher, dass die Helferanwendung über die Ports 80, 443 und 4070 aufs Internet zugreifen kann.
 	EN	Please make sure you allow the helper application is allowed to reach the internet on ports 80, 443, and 4070.
 	FR	Veuillez vous assurer que l'application Helper peut accéder à Internet via les ports 80, 443 et 4070.
+	HU	Kérjük, győződjön meg arról, hogy a 80-as, 443-as és 4070-es portokon engedélyezi a helper alkalmazás számára az internet elérését.
 
 PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC
 	CS	Neoznamovat ve své síti přehrávače Squeezebox spuštěné v režimu Spotify Connect. Tuto možnost zaškrtněte, pokud nechcete, aby se váš přehrávač Squeezebox s povoleným režimem Spotify Connect zobrazoval ve všech aplikacích Spotify ve vaší síti.
 	DE	Squeezebox Player im Spotify Connect Modus nicht im lokalen Netzwerk bekannt geben. Aktiviere diese Option, falls dein Player im Spotify Connect Modus nur vom Spotify-Konto gesehen werden soll, welches zuletzt für dieses Gerät verwendet wurde.
 	EN	Don't announce Squeezebox players running in Spotify Connect mode in your network. Check this option if you don't want your Spotify Connect enabled Squeezebox player to show up in all Spotify apps in your network.
 	FR	Ne pas annoncer les platines Squeezebox compatibles Spotify Connect sur votre réseau. Cocher cette option si vous ne souhaitez pas que les platines Squeezebox compatibles Spotify Connect apparaissent dans toutes les applications Spotify de votre réseau.
+	HU	Ne jelentse be a hálózaton a Spotify Connect módban futó Squeezebox-lejátszókat. Jelölje be ezt a lehetőséget, ha nem szeretné, hogy a Spotify Connect-kompatibilis Squeezebox lejátszója megjelenjen a hálózaton lévő összes Spotify alkalmazásban.
 	NL	Kondig geen Squeezebox muziekspelers aan in de Spotify Connect modus in jouw netwerk. Vink deze optie aan als je niet wilt dat Spotify Connect compatibele Squeezebox muziekspelers in alle Spotify apps op jouw netwerk verschijnen.
 
 PLUGIN_SPOTTY_OPTIMIZE_PRE_BUFFERING
@@ -210,6 +237,7 @@ PLUGIN_SPOTTY_OPTIMIZE_PRE_BUFFERING
 	DE	Pre-Buffering optimieren - nur empfohlen, wenn die Spotify App im Connect Modus Spotty weit voraus zu sein scheint.
 	EN	Optimize Pre-Buffering - only enable if your Spotify application seems to be tracks ahead of Spotty playback in Connect mode.
 	FR	Optimiser la mise en cache anticipée. A n'activer que si votre application Spotify est en avance sur Spotty en mode Connect.
+	HU	Az előpufferelés optimalizálása – csak akkor kapcsolja be, ha a Spotify-alkalmazás úgy tűnik, hogy a csatlakozási módban a Spotty lejátszás előtt van.
 	NL	Optimaliseer pre-buffering - schakel deze optie alleen in als de Spotify App nummers voorloopt op de Spotty weergave in de Connect modus.
 
 PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
@@ -217,6 +245,7 @@ PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
 	DE	Zeige nur meine Alben unter meinen Interpreten.
 	EN	Only show my library's albums for my library's artists.
 	FR	Afficher uniquement les albums de ma bibliothèque pour les artistes de ma bibliothèque.
+	HU	Csak a könyvtáram albumai jelenjenek meg a könyvtáram előadóitól.
 	NL	Toon alleen mijn albums voor de artiesten uit mijn muziekcollectie.
 
 PLUGIN_SPOTTY_CLEANUP_TAGS
@@ -224,6 +253,7 @@ PLUGIN_SPOTTY_CLEANUP_TAGS
 	DE	Albennamen und Titel bereinigen (z.B. "Deluxe Edition", "Remastered" etc. entfernen)
 	EN	Clean up album and track titles (eg. remove "Deluxe Edition", "Remastered" etc.)
 	FR	Épurer les titres des albums et des morceaux (par exemple, supprimer "Deluxe Edition", "Remastered"...)
+	HU	Tisztítsa meg az albumok és számok címét (pl. távolítsa el a „Deluxe Edition”, „Remastered” stb.)
 	NL	Albums en nummers opschonen (bijv. verwijder "Deluxe Edition", "Remastered", etc.)
 
 PLUGIN_SPOTTY_HELPER_ERROR
@@ -231,6 +261,7 @@ PLUGIN_SPOTTY_HELPER_ERROR
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten!
 	EN	There has been a problem running the Spotty helper application.
 	FR	Un problème est survenu lors de l'exécution de l'application Spotty Helper.
+	HU	Hiba történt a Spotty helper alkalmazás futtatásakor.
 	NL	Er is een probleem opgetreden tijdens het uitvoeren van de Spotty hulptoepassing.
 
 PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE
@@ -238,6 +269,7 @@ PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE
 	DE	Tut mir Leid, aber sehr wahrscheinlich ist ihre Prozessorarchitektur oder das Betriebssystem nicht mit Spotty kompatibel. Sie können noch immer einen Versuch wagen. Aber vermutlich wird er fehl schlagen.
 	EN	I'm sorry, but your processor architecture or operating system most likely is not compatible with Spotty. You can still give it a try. But don't be surprised if it fails...
 	FR	Malheureusement, votre architecture de processeur ou votre système d'exploitation n'est probablement pas compatible avec Spotty. Vous pouvez toujours essayer, mais ne soyez pas surpris si cela échoue...
+	HU	Sajnálom, de a processzor architektúrája vagy operációs rendszere valószínűleg nem kompatibilis a Spotty-val. Még mindig meg lehet próbálni. De ne csodálkozz, ha nem sikerül...
 	NL	Helaas, jouw processorarchitectuur of besturingssysteem is hoogstwaarschijnlijk niet compatibel met Spotty. Je kunt het nog steeds proberen, maar wees niet verbaasd als het niet lukt...
 
 PLUGIN_SPOTTY_MISSING_HELPER
@@ -245,6 +277,7 @@ PLUGIN_SPOTTY_MISSING_HELPER
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Vermutlich wird diese auf ihrem System nicht unterstützt. Bitte wenden Sie sich an mich, unter Angabe der folgenden Plattform-Informationen:
 	EN	There has been a problem running the Spotty helper application. Most likely your operating system and/or platform is not supported. Please report the following details to me:
 	FR	Un problème est survenu lors de l'exécution de l'application Spotty Helper. Il est fort probable que votre système d'exploitation et/ou votre plateforme ne soient pas pris en charge. Merci de me communiquer les informations suivantes :
+	HU	Hiba történt a Spotty helper alkalmazás futtatásakor. Valószínűleg az operációs rendszere és/vagy platformja nem támogatott. Kérem, jelezze felém az alábbi adatokat:
 	NL	Er is een probleem opgetreden bij het uitvoeren van de Spotty hulptoepassing. Hoogstwaarschijnlijk wordt jouw besturingssysteem en/of platform niet ondersteund. Geef de volgende gegevens aan mij door:
 
 PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS
@@ -252,6 +285,7 @@ PLUGIN_SPOTTY_MISSING_HELPER_WINDOWS
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Bitte stellen Sie sicher, dass die <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-Bit!)</a> installiert ist.
 	EN	There has been a problem running the Spotty helper application. Please make sure you have the <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-bit!)</a> installed on your system.
 	FR	Un problème est survenu lors de l'exécution de l'application Spotty Helper. Assurez-vous de disposer du <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64 bits !)</a > sur votre ordinateur.
+	HU	Hiba történt a Spotty helper alkalmazás futtatásakor. Kérjük, győződjön meg arról, hogy a <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64 bites!)</a > telepítve van a rendszerére.
 	NL	Er is een probleem opgetreden bij het uitvoeren van de Spotty hulptoepassing. Zorg ervoor dat <a href="https://www.microsoft.com/download/details.aspx?id=48145" target="_blank">Microsoft Visual C++ Runtime (64-bit!)</a> is geïnstalleerd op jouw systeem.
 
 PLUGIN_SPOTTY_LO_POWER_PI
@@ -259,6 +293,7 @@ PLUGIN_SPOTTY_LO_POWER_PI
 	DE	Sie scheinen Spotty auf einem schwachbrüstigen Raspberry Pi (erste Generation Pi A/A+/B/B+, oder Pi Zero) zu verwenden. Spotty wird darauf vermutlich nicht funktionieren.
 	EN	You seem to be running Spotty on a lowest spec Raspberry Pi (first generation Pi A/A+/B/B+, or Pi Zero). Spotty likely will not work on this platform.
 	FR	Vous semblez utiliser Spotty sur un Raspberry Pi aux spécifications les plus basses (Pi A/A+/B/B+ de première génération ou Pi Zero). Spotty ne fonctionnera probablement pas sur cette plate-forme.
+	HU	Úgy tűnik, a Spotty a legalacsonyabb specifikációjú Raspberry Pi-n (első generációs Pi A/A+/B/B+ vagy Pi Zero) fut. A Spotty valószínűleg nem fog működni ezen a platformon.
 	NL	Het lijkt erop dat je Spotty gebruikt op een Raspberry Pi met de laagste specificatie (eerste generatie Pi A/A+/B/B+ of Pi Zero). Spotty zal waarschijnlijk niet werken op dit platform.
 
 PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED
@@ -266,6 +301,7 @@ PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED
 	DE	Überwache die Verbindung der Spotty Connect Helferanwendung mit den Spotify Servern. Dies kann helfen, wenn Spotty Connect aktivierte Geräte regelmässig aus den Spotify-Anwendungen verschwinden.
 	EN	Monitor the connection of the Spotty Connect helper with the Spotify servers. This can be useful if your Spotty Connect enabled devices regularly disappear from the Spotify apps.
 	FR	Surveiller la connexion de Spotty Connect Helper avec les serveurs Spotify. Cela peut être utile si vos appareils compatibles Spotty Connect disparaissent régulièrement des applications Spotify.
+	HU	Figyelje a Spotty Connect kapcsolatát a Spotify szerverekkel. Ez akkor lehet hasznos, ha a Spotty Connect-kompatibilis eszközei rendszeresen eltűnnek a Spotify alkalmazásokból.
 	NL	Monitor de verbinding van de Spotty Connect hulptoepassing met de Spotify servers. Dit kan handig zijn als jouw voor Spotty Connect geschikte apparaten regelmatig uit de Spotify apps verdwijnen.
 
 PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH
@@ -273,6 +309,7 @@ PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH
 	DE	Deaktiviere asynchronen Token Refresh. Bitte beachten Sie, dass dies ihr Logitech Media Server System u.U. für ein paar Sekunden blockieren kann.
 	EN	Disable asynchronous token refresh call. Please note that this can potentially block your Logitech Media Server for a few seconds.
 	FR	Désactiver l'actualisation asynchrone de jeton. Noter que cela peut potentiellement bloquer votre Logitech Media Server pendant quelques secondes.
+	HU	Az aszinkron token frissítési hívás letiltása. Kérjük, vegye figyelembe, hogy ez néhány másodpercre blokkolhatja az LMS-t.
 	NL	Schakel asynchrone token refresh uit. Houd er rekening mee dat dit de Logitech Media Server mogelijk enkele seconden kan blokkeren.
 
 PLUGIN_SPOTTY_FORCE_FALLBACK_AP
@@ -280,6 +317,7 @@ PLUGIN_SPOTTY_FORCE_FALLBACK_AP
 	DE	Spotifys Fallback Access Point verwenden
 	EN	Use Spotify's Fallback Access Point
 	FR	Utiliser le point d'accès de secours de Spotify
+	HU	Használja a Spotify tartalék hozzáférési pontját
 	NL	Gebruik het Fallback Access Point van Spotify
 
 PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC
@@ -287,6 +325,7 @@ PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC
 	DE	Manchmal antworten Spotifys Server nicht korrekt. In dieser Situation kann es ev. helfen, den Fallback Access Point zu verwenden.
 	EN	Sometimes some of Spotify's Access Points fail to respond correctly. In this situation you can try to use the fallback servers instead.
 	FR	Parfois, les serveurs de Spotify ne répondent pas correctement. Vous pouvez alors tenter d’utiliser le point d’accès de secours.
+	HU	Néha a Spotify egyes hozzáférési pontjai nem válaszolnak megfelelően. Ebben a helyzetben megpróbálhatja helyette a tartalék szervereket használni.
 	NL	Soms reageren de Access Points van Spotify niet correct. In deze situatie kan het helpen om in plaats daarvan de fallback servers te gebruiken.
 
 PLUGIN_SPOTTY_ADVANCED_SETTING
@@ -294,6 +333,7 @@ PLUGIN_SPOTTY_ADVANCED_SETTING
 	DE	Erweiterte Einstellungen
 	EN	Advanced Settings
 	FR	Réglages avancés
+	HU	Speciális beállítások
 	NL	Geavanceerde Instellingen
 
 PLUGIN_SPOTTY_ADVANCED_SETTING_DESC
@@ -301,6 +341,7 @@ PLUGIN_SPOTTY_ADVANCED_SETTING_DESC
 	DE	Bitte verändere die folgenden Einstellungen nur, wenn du weisst was du tust, oder dazu aufgefordert wirst. Falsche Einstellungen können einen negativen Einfluss haben auf den Betrieb von Spotty.
 	EN	Please don't change the following settings, unless you know exactly what you're doing - or I told you to do so. Used the wrong way they can have a negative impact on the Spotty experience.
 	FR	Veuillez ne pas modifier les paramètres suivants, à moins que vous ne sachiez exactement ce que vous faites (ou que je vous aie dit de le faire). Utilisés de la mauvaise manière, ils peuvent avoir un impact négatif sur l'expérience Spotty.
+	HU	Kérjük, ne változtassa meg a következő beállításokat, hacsak nem tudja pontosan, hogy mit csinál – vagy én mondtam, hogy tegye meg. Rossz módon használva negatív hatással lehetnek a Spotty-élményre.
 	NL	Wijzig de volgende instellingen niet, tenzij je precies weet wat je doet (of als het wordt gevraagd). Als ze op de verkeerde manier worden gebruikt, kunnen ze de Spotty ervaring negatief beïnvloeden.
 
 PLUGIN_SPOTTY_WHATS_NEW
@@ -311,6 +352,7 @@ PLUGIN_SPOTTY_WHATS_NEW
 	ES	Novedades
 	FI	Uutuudet
 	FR	Nouveautés
+	HU	Újdonságok
 	IT	Novità
 	NL	Wat is er nieuw?
 	NO	Hva er nytt?
@@ -326,6 +368,7 @@ PLUGIN_SPOTTY_TOP_TRACKS
 	ES	Pistas principales
 	FI	Suositut kappaleet
 	FR	Meilleurs morceaux
+	HU	Legjobb zenék
 	IT	Brani più ascoltati
 	NL	Topnummers
 	NO	Mest populære spor
@@ -341,6 +384,7 @@ PLUGIN_SPOTTY_RELATED_ARTISTS
 	ES	Artistas relacionados
 	FI	Liittyvät artistit
 	FR	Artistes connexes
+	HU	Kapcsolódó művészek
 	IT	Artisti correlati
 	NL	Gerelateerde artiesten
 	NO	Liknende artister
@@ -356,6 +400,7 @@ PLUGIN_SPOTTY_ARTIST_RADIO
 	ES	Radio de artista
 	FI	Artistiradio
 	FR	Radio d'artiste
+	HU	Előadó rádió
 	IT	Radio artista
 	NL	Radio artiest
 	NO	Artistradio
@@ -368,6 +413,7 @@ PLUGIN_SPOTTY_GENRES_MOODS
 	DE	Genres und Stimmungen
 	EN	Genres and Moods
 	FR	Genres et ambiances
+	HU	Műfajok és hangulatok
 	NL	Genres en stemmingen
 
 PLUGIN_SPOTTY_COMPILATIONS
@@ -379,6 +425,7 @@ PLUGIN_SPOTTY_COMPILATIONS
 	FI	Kokoelmat
 	FR	Compilations
 	HE	אוספים
+	HU	Válogatások
 	IT	Compilation
 	NL	Compilaties
 	NO	Samlinger
@@ -395,6 +442,7 @@ PLUGIN_SPOTTY_SINGLES
 	ES	Singles y EPs
 	FI	Singlet ja EP-levyt
 	FR	Singles et EPs
+	HU	Kislemezek és EP-k
 	IT	Single/EP
 	NL	Singles & EPs
 	NO	Singler og EP-er
@@ -407,6 +455,7 @@ PLUGIN_SPOTTY_TITLE_RADIO
 	DE	Titel-Radio
 	EN	Title Radio
 	FR	Titre Radio
+	HU	Cím Rádió
 	NL	Titel Radio
 
 PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST
@@ -417,6 +466,7 @@ PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST
 	ES	Agregar pista a lista de reproducción
 	FI	Lisää kappale soittoluetteloon
 	FR	Ajouter le morceau à la liste de lecture
+	HU	Szám hozzáadása a lejátszási listához
 	IT	Aggiungi brano alla playlist
 	NL	Nummer aan afspeellijst toevoegen
 	NO	Legg til spor på spilleliste
@@ -429,6 +479,7 @@ PLUGIN_SPOTTY_FOLLOW_ARTIST
 	DE	Künstler folgen
 	EN	Follow artist
 	FR	Suivre l'artiste
+	HU	Előadó követése
 	NL	Volg artiest
 
 PLUGIN_SPOTTY_FOLLOWING_ARTIST
@@ -436,6 +487,7 @@ PLUGIN_SPOTTY_FOLLOWING_ARTIST
 	DE	Folge nun dem Künstler:
 	EN	Following this artist:
 	FR	Suivre l'artiste :
+	HU	Ezt a művészt követed:
 	NL	Volg deze artiest:
 
 PLUGIN_SPOTTY_FOLLOWERS
@@ -443,6 +495,7 @@ PLUGIN_SPOTTY_FOLLOWERS
 	DE	Follower:
 	EN	Followers:
 	FR	Followers :
+	HU	Követők:
 	NL	Volgers:
 
 PLUGIN_SPOTTY_ADD_STUFF
@@ -450,6 +503,7 @@ PLUGIN_SPOTTY_ADD_STUFF
 	DE	Folge Künstlern, Wiedergabelisten, oder füge Alben zu deiner Musik hinzu, um sie in deiner Musiksammlung anzuzeigen.
 	EN	Add albums to your music, or follow an artist or playlist to populate your music library.
 	FR	Ajouter des albums à votre musique ou suivre un artiste ou une liste de lecture pour remplir votre bibliothèque.
+	HU	Adjon hozzá albumokat zenéihez, vagy kövessen egy előadót vagy lejátszási listát zenei könyvtárának feltöltéséhez.
 	NL	Voeg albums toe of volg een artiest of afspeellijst om jouw muziekcollectie aan te vullen.
 
 PLUGIN_SPOTTY_ADD_SONGS
@@ -457,12 +511,14 @@ PLUGIN_SPOTTY_ADD_SONGS
 	DE	Fügen Sie Ihrer Musikbibliothek Lieder hinzu, um diesen Abschnitt zu füllen.
 	EN	Please add songs to your music library to populate your this section.
 	FR	Veuillez ajouter des morceaux à votre bibliothèque pour remplir cette section.
+	HU	Kérjük, adjon hozzá dalokat zenei könyvtárához, hogy feltöltse ezt a részt.
 	NL	Voeg nummers toe aan jouw muziekcollectie om dit gedeelte aan te vullen.
 
 PLUGIN_SPOTTY_SONGS_LIST
 	CS	Skladby
 	EN	Songs
 	FR	Morceaux
+	HU	Dalok
 	NL	Nummers
 
 PLUGIN_SPOTTY_ADD_ALBUM_TO_LIBRARY
@@ -473,6 +529,7 @@ PLUGIN_SPOTTY_ADD_ALBUM_TO_LIBRARY
 	ES	Agregar álbum a biblioteca
 	FI	Lisää levy kirjastoon
 	FR	Ajouter l'album à la bibliothèque en ligne
+	HU	Album hozzáadása a könyvtárhoz
 	IT	Aggiungi album a libreria
 	NL	Album aan collectie toevoegen
 	NO	Legg album til i biblioteket
@@ -488,6 +545,7 @@ PLUGIN_SPOTTY_MUSIC_ADDED
 	ES	Se ha agregado música
 	FI	Lisättiin musiikkia
 	FR	La musique a été ajoutée
+	HU	Zene hozzáadva
 	IT	Musica aggiunta
 	NL	Muziek is toegevoegd
 	NO	Musikk har blitt lagt til
@@ -503,6 +561,7 @@ PLUGIN_SPOTTY_USERS
 	ES	Usuarios
 	FI	Käyttäjät
 	FR	Utilisateurs
+	HU	Felhasználók
 	IT	Utenti
 	NL	Gebruikers
 	NO	Brukere
@@ -515,6 +574,7 @@ PLUGIN_SPOTTY_TRANSFER
 	DE	Wiedergabe übernehmen
 	EN	Transfer Playback
 	FR	Transférer la lecture
+	HU	Lejátszás átvitele
 	NL	Afspelen overnemen
 
 PLUGIN_SPOTTY_TRANSFER_DESC
@@ -522,6 +582,7 @@ PLUGIN_SPOTTY_TRANSFER_DESC
 	DE	Sie können die Spotify Wiedergabe vom unten gelisteten Gerät übernehmen. Allerdings ist es nicht immer möglich, die genau Wiedergabeliste zu übernehmen.
 	EN	You can transfer Spotify playback from below listed device to your Squeezebox. Please note that it's not always possible to restore the exact same playlist.
 	FR	Vous pouvez transférer la lecture Spotify de l'appareil répertorié ci-dessous vers votre Squeezebox. Notez qu'il n'est pas toujours possible de restaurer exactement la même liste de lecture.
+	HU	A Spotify lejátszást átviheti az alább felsorolt ​​eszközről a Squeezeboxra. Felhívjuk figyelmét, hogy nem mindig lehet pontosan ugyanazt a lejátszási listát visszaállítani.
 	NL	Je kunt de Spotify weergave van het onderstaande apparaat overzetten naar jouw Squeezebox. Houd er rekening mee dat het niet altijd mogelijk is om exact dezelfde afspeellijst te herstellen.
 
 PLUGIN_SPOTTY_TRANSFER_CONNECT_DESC
@@ -529,6 +590,7 @@ PLUGIN_SPOTTY_TRANSFER_CONNECT_DESC
 	DE	Sie können die Spotify Wiedergabe vom unten gelisteten Gerät übernehmen. Die Wiedergabe wirde im Spotify Connect Modus weitergeführt. D.h. dass die Wiedergabe auf dem anderen Gerät angehalten wird.
 	EN	You can transfer Spotify playback from below listed device to your Squeezebox. Playback will continue in Spotify Connect mode. This means that playback on the origin device will stop.
 	FR	Vous pouvez transférer la lecture Spotify de l'appareil répertorié ci-dessous vers votre Squeezebox. La lecture se poursuivra en mode Spotify Connect. Cela signifie que la lecture sur le périphérique d'origine s'arrêtera.
+	HU	A Spotify lejátszást átviheti az alább felsorolt ​​eszközről a Squeezeboxra. A lejátszás Spotify Connect módban folytatódik. Ez azt jelenti, hogy a lejátszás az eredeti eszközön leáll.
 	NL	Je kunt de Spotify weergave van het onderstaande apparaat overzetten naar jouw Squeezebox. Het afspelen gaat verder in de Spotify Connect modus. Dit betekent dat het afspelen op het oorspronkelijke apparaat stopt.
 
 PLUGIN_SPOTTY_NO_PLAYER_FOUND
@@ -536,6 +598,7 @@ PLUGIN_SPOTTY_NO_PLAYER_FOUND
 	DE	Es wurde kein Gerät oder keine Wiedergabeliste gefunden.
 	EN	No Spotify playing device was found.
 	FR	Aucun appareil de lecture Spotify n'a été trouvé.
+	HU	Nem található Spotify lejátszóeszköz.
 	NL	Er is geen Spotify apparaat gevonden.
 
 PLUGIN_SPOTTY_NEW_SEARCH
@@ -546,6 +609,7 @@ PLUGIN_SPOTTY_NEW_SEARCH
 	ES	Nueva búsqueda
 	FI	Uusi haku
 	FR	Nouvelle recherche
+	HU	Új keresés
 	IT	Nuova ricerca
 	NL	Nieuwe zoekopdracht
 	NO	Nytt søk
@@ -558,6 +622,7 @@ PLUGIN_SPOTTY_SEARCH_HISTORY
 	DE	Gespeicherte Suchen
 	EN	Search History
 	FR	Historique des recherches
+	HU	Keresési előzmények
 	NL	Zoekgeschiedenis
 
 PLUGIN_SPOTTY_CLEAR_SEARCH_HISTORY
@@ -565,6 +630,7 @@ PLUGIN_SPOTTY_CLEAR_SEARCH_HISTORY
 	DE	Alle gespeicherte Suchen löschen
 	EN	Clear complete search history
 	FR	Effacer l'historique des recherches
+	HU	A teljes keresési előzmények törlése
 	NL	Volledige zoekgeschiedenis wissen
 
 PLUGIN_SPOTTY_RECOMMENDATIONS
@@ -572,6 +638,7 @@ PLUGIN_SPOTTY_RECOMMENDATIONS
 	DE	Spotify Empfehlungen (basierend auf aktueller Wiedergabeliste)
 	EN	Spotify Recommendations (based on the current playlist)
 	FR	Recommandations Spotify (basées sur la liste de lecture actuelle)
+	HU	Spotify ajánlások (az aktuális lejátszási lista alapján)
 	NL	Spotify Aanbevelingen (gebaseerd op de huidige afspeellijst)
 
 PLUGIN_SPOTTY_ON_SPOTIFY
@@ -582,6 +649,7 @@ PLUGIN_SPOTTY_ON_SPOTIFY
 	ES	En Spotify
 	FI	Spotifyssä
 	FR	Sur Spotify
+	HU	A Spotify-n
 	IT	Su Spotify
 	NL	Op Spotify
 	NO	På Spotify
@@ -597,6 +665,7 @@ PLUGIN_SPOTTY_NO_PLAYER_CONNECTED
 	ES	No es posible acceder a servicios Spotify sin un reproductor conectado.
 	FI	Jos soitinta ei ole yhdistetty, Spotify-palveluja ei voida käyttää.
 	FR	Impossible d'accéder aux services Spotify sans une platine connectée.
+	HU	Nem férhet hozzá a Spotify szolgáltatásokhoz lejátszó csatlakoztatása nélkül.
 	IT	Impossibile accedere ai servizi Spotify se non è collegato un lettore.
 	NL	Zonder een verbonden muzieksysteem kan je geen verbinding maken met Spotify.
 	NO	Kan ikke bruke Spotify-tjenester når det ikke er koplet til en spiller.
@@ -609,6 +678,7 @@ PLUGIN_SPOTTY_ERROR_NO_ACCESS_TOKEN
 	DE	Konnte keinen Access Token erhalten
 	EN	Failed to get access token
 	FR	Impossible d'obtenir le jeton d'accès
+	HU	Nem sikerült megszerezni a hozzáférési tokent
 	NL	Kan geen Access Token krijgen
 
 PLUGIN_SPOTTY_ERROR_429
@@ -616,6 +686,7 @@ PLUGIN_SPOTTY_ERROR_429
 	DE	Zugriffsrate überschritten
 	EN	Rate limit exceeded
 	FR	Limite de débit dépassée
+	HU	A díjkorlát túllépve
 	NL	Toegangslimiet overschreden
 
 PLUGIN_SPOTTY_ERROR_429_DESC
@@ -623,6 +694,7 @@ PLUGIN_SPOTTY_ERROR_429_DESC
 	DE	Zugriffsrate überschritten für: %s; nächster Versuch in %s Sekunden.
 	EN	Access Rate limit exceeded for: %s; retry after %s seconds.
 	FR	Limite de débit dépassée pour : %s ; prochaine tentative dans %s secondes.
+	HU	A hozzáférési sebesség korlátja túllépve: %s; próbálja újra %s másodperc múlva.
 	NL	Toegangslimiet overschreden voor: %s; volgende poging na %s seconden.
 
 PLUGIN_SPOTTY_MISSING_SSL
@@ -630,11 +702,13 @@ PLUGIN_SPOTTY_MISSING_SSL
 	DE	Spotty benötigt das Perl Modul IO::Socket::SSL! Ohne dieses Modul ist die Nutzung von Spotty NICHT möglich. Bitte benutze den Paket-Manager deines Betriebssystems um es zu installieren.
 	EN	Spotty requires the Perl module IO::Socket::SSL. You can NOT use Spotty without this module. Please use your operating system's package manager to install it.
 	FR	Le module Perl IO::Socket::SSL est indispensable pour Spotty. Utilisez le gestionnaire de paquets de votre système d'exploitation pour installer ce module.
+	HU	A Spotty az IO::Socket::SSL Perl modult igényli. A Spotty e modul nélkül NEM használható. Kérjük, használja az operációs rendszer csomagkezelőjét a telepítéshez.
 	NL	Spotty vereist de Perl-module IO::Socket::SSL. Je kan Spotty NIET gebruiken zonder deze module. Gebruik de pakketbeheerder van uw besturingssysteem om het te installeren.
 
 PLUGIN_SPOTTY_CLIENT_ID
 	EN	Spotify Client ID
 	FR	Spotify ID Client
+	HU	Spotify ügyfél-azonosító (Client ID)
 
 PLUGIN_SPOTTY_CLIENT_ID_DESC
 	CS	<div>Použití vlastního ID klienta může pomoci, pokud narazíte na problémy s překročením míry přístupů ("chyba 429"). Chcete-li získat vlastní Client ID, postupujte podle následujících jednoduchých kroků:</div>
@@ -665,6 +739,13 @@ PLUGIN_SPOTTY_CLIENT_ID_DESC
 	FR	<li>Copiez l'ID client nouvellement créé dans vos paramètres Spotty.</li>
 	FR	<li>Si vous prévoyez d'utiliser plusieurs comptes Spotify avec Spotty (par exemple, un compte familial), vous devrez ajouter les comptes à la section "Utilisateurs et accès" dans la configuration nouvellement créée.</li>
 	FR	</ul>
+	HU	<div>Egyéni ügyfél-azonosító használata segíthet, ha problémába ütközik a sebességkorlátozással ("429-es hiba"). A saját ügyfél-azonosító megszerzéséhez kövesse az alábbi egyszerű lépéseket:</div>
+	HU	<ul style="list-style:initial">
+	HU	<li>Nyissa meg a <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify fejlesztői portált</a>, és jelentkezzen be, ha szükséges.</li>
+	HU	<li>Kattintson az "Alkalmazás létrehozása" lehetőségre, és kövesse az utasításokat.</li>
+	HU	<li>Másolja az újonnan létrehozott ügyfél-azonosítót a Spotty beállításokba.</li>
+	HU	<li>Ha több Spotify-fiókot szeretne használni a Spotty szolgáltatással (pl. családi fiók), akkor hozzá kell adnia a fiókokat az újonnan létrehozott konfiguráció „Felhasználók és hozzáférés” részéhez.</li>
+	HU	</ul>
 	NL	<div>Het gebruik van een aangepaste Client ID kan helpen als er problemen zijn met de snelheidsbeperking ("error 429"). Volg deze eenvoudige stappen om een eigen klant-ID te krijgen:</div>
 	NL	<ul style="list-style:initial">
 	NL	<li>Ga naar <a href="https://developer.spotify.com/dashboard/applications" target="_blank">de Spotify Developer Portal</a>, log indien nodig in.</li>
@@ -677,6 +758,7 @@ PLUGIN_SPOTTY_ADD_USER_TO_CLIENT_ID
 	DE	Da Sie eine eigent Client ID verwenden, besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an, und fügen Sie die entsprechenden Konten unter "Users and Access" hinzu.
 	EN	As you're using your own Client ID, you'll have to go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed, and add the accounts to the "Users and Access" section.
 	FR	Puisque vous utilisez votre propre identifiant client, vous devez vous rendre sur le <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, vous connecter si nécessaire, et ajouter les comptes appropriés dans "Users and Access".
+	HU	Mivel saját ügyfél-azonosítóját használja, fel kell lépnie <a href="https://developer.spotify.com/dashboard/applications" target="_blank">a Spotify fejlesztői portáljára</a>. , jelentkezzen be, ha szükséges, és adja hozzá a fiókokat a „Felhasználók és hozzáférés” szakaszhoz.
 
 # this is a duplicate of INFORMATION_BINDIRS - which is not available in 7.7.5
 PLUGIN_SPOTTY_INFORMATION_BINDIRS
@@ -684,6 +766,7 @@ PLUGIN_SPOTTY_INFORMATION_BINDIRS
 	DE	Ordner für Hilfsprogramme
 	EN	Helper Applications Folder
 	FR	Dossier pour les applications Helper
+	HU	Segítő alkalmazások mappa
 	NL	Map hulptoepassing
 	NO	Mappe for støtteprogrammer
 	PL	Folder aplikacji pomocniczych
@@ -693,6 +776,7 @@ PLUGIN_SPOTTY_PLEASE_UPDATE
 	DE	Information steht nicht zur Verfügung. Bitte Logitech Media Server auf 7.7.6 oder neuer aktualisieren.
 	EN	Information is not avaialable. Please update Logitech Media Server to 7.7.6 or more recent.
 	FR	Les informations ne sont pas disponibles. Veuillez mettre à jour Logitech Media Server vers 7.7.6 ou une version plus récente.
+	HU	Információ nem elérhető. Kérjük, frissítse a LMS 7.7.6 vagy újabb verzióra.
 	NL	Informatie is niet beschikbaar. Update Logitech Media Server naar versie 7.7.6 of recenter.
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT
@@ -703,6 +787,7 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
 	DE	Wählen aus, welche Geräte als Spotify Connect Endpunkte zur Auswahl stehen sollen. Bitte beachte, dass für jedes Gerät ein Hintergrundprozess gestartet wird. Dies kann auf Geräten mit wenig Speicher u.U. zu Problemen führen.
 	EN	Select which players you'd like to use with Spotify Connect. Please keep in mind that every enabled device will launch a background process. This could potentially lead to issues on servers running low on memory.
 	FR	Sélectionner les platines à utiliser avec Spotify Connect. Garder à l'esprit que chaque appareil activé lancera un processus en arrière-plan. Cela pourrait potentiellement entraîner des problèmes sur des serveurs avec peu de mémoire.
+	HU	Válassza ki, mely lejátszókat szeretné használni a Spotify Connect szolgáltatással. Ne feledje, hogy minden engedélyezett eszköz elindít egy háttérfolyamatot. Ez problémákat okozhat a kiszolgálókon, amelyeknél kevés a memória.
 	NL	Selecteer welke muziekspelers je wilt gebruiken met Spotify Connect. Houd er rekening mee dat er voor elk apparaat een proces start op de achtergrond. Dit kan mogelijk tot problemen leiden op servers met weinig geheugen.
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
@@ -710,6 +795,7 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
 	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen
 	EN	Enable Spotify Connect endpoint for this player
 	FR	Rendre cette platine disponible pour Spotify Connect
+	HU	Spotify Connect végpont engedélyezése ehhez a lejátszóhoz
 	NL	Schakel Spotify Connect in voor deze muziekspeler
 
 PLUGIN_SPOTTY_NEED_HELPER_UPDATE
@@ -717,18 +803,21 @@ PLUGIN_SPOTTY_NEED_HELPER_UPDATE
 	DE	Spotify Connect ist nicht verfügbar.
 	EN	Spotify Connect is not available.
 	FR	Spotify Connect n'est pas disponible.
+	HU	A Spotify Connect nem érhető el.
 	NL	Spotify Connect is niet beschikbaar.
 
 PLUGIN_SPOTTY_HOME_ITEMS
 	DE	"Start" Menüeinträge
 	EN	Home Menu Customization
 	FR	Personnalisation du Menu "Accueil"
+	HU	Főmenü testreszabása
 	NL	"Home" menu aanpassen
 
 PLUGIN_SPOTTY_HOME_DESC
 	DE	Aktiviere die "Start" Menüeinträge, die du sehen willst, deaktiviere jene, die versteckt werden sollen.
 	EN	Check the "Home" menu items you want to use, uncheck those you want to hide.
 	FR	Cocher les éléments que vous souhaitez voir dans le menu "Accueil". Décocher ceux que vous souhaitez masquer.
+	HU	Jelölje be a használni kívánt "Kezdőlap" menüpontokat, és törölje az elrejteni kívánt elemek jelölését.
 	NL	Vink de "Home" menu items aan die je wilt gebruiken, vink de items uit die je wilt verbergen.
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS
@@ -736,6 +825,7 @@ PLUGIN_SPOTTY_AUDIO_SETTINGS
 	DE	Soundqualität
 	EN	Audio Settings
 	FR	Paramètres audio
+	HU	Hangbeállítások
 	NL	Geluidskwaliteit
 
 PLUGIN_SPOTTY_SORT_ORDER
@@ -743,6 +833,7 @@ PLUGIN_SPOTTY_SORT_ORDER
 	DE	Bibliothekssortierung
 	EN	Library Sort Order
 	FR	Ordre de tri de la bibliothèque
+	HU	Könyvtári rendezési sorrend
 	NL	Muziekcollectie sorteervolgorde
 
 PLUGIN_SPOTTY_SORT_ALPHABETICALLY
@@ -750,6 +841,7 @@ PLUGIN_SPOTTY_SORT_ALPHABETICALLY
 	DE	Alphabetisch sortieren
 	EN	Sort alphabetically
 	FR	Trier par ordre alphabétique
+	HU	Rendezés ábécé szerint
 	NL	Sorteer alfabetisch
 
 PLUGIN_SPOTTY_SORT_CHRONOLOGICALLY
@@ -757,6 +849,7 @@ PLUGIN_SPOTTY_SORT_CHRONOLOGICALLY
 	DE	Nach Hinzufügedatum sortieren
 	EN	Sort by date of addition
 	FR	Trier par date d'ajout
+	HU	Rendezés a hozzáadás dátuma szerint
 	NL	Sorteer op datum van toevoeging
 
 # leading 0 to allow for sorting....
@@ -764,6 +857,7 @@ PLUGIN_SPOTTY_AUDIO_SETTINGS_096
 	CS	Normální (96 kb/s)
 	EN	Normal (96kbps)
 	FR	Normal (96 kbit/s)
+	HU	Normál (96 kbps)
 	NL	Normaal (96 kbit/s)
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS_160
@@ -771,6 +865,7 @@ PLUGIN_SPOTTY_AUDIO_SETTINGS_160
 	DE	Hoch (160kbps)
 	EN	High (160kbps)
 	FR	Elevé (160 kbit/s)
+	HU	Magas (160 kbps)
 	NL	Hoog (160 kbit/s)
 
 PLUGIN_SPOTTY_AUDIO_SETTINGS_320
@@ -778,6 +873,7 @@ PLUGIN_SPOTTY_AUDIO_SETTINGS_320
 	DE	Extrem (320kbps)
 	EN	Extreme (320kbps)
 	FR	Extrême (320 kbit/s)
+	HU	Extrém (320 kbps)
 	NL	Extreem (320 kbit/s)
 
 PLUGIN_SPOTTY_EXPLICIT
@@ -785,6 +881,7 @@ PLUGIN_SPOTTY_EXPLICIT
 	DE	Anstössige Inhalte
 	EN	Explicit content
 	FR	Contenu explicite
+	HU	Explicit tartalom
 	NL	Expliciete inhoud
 
 PLUGIN_SPOTTY_EXPLICIT_HIDE
@@ -792,6 +889,7 @@ PLUGIN_SPOTTY_EXPLICIT_HIDE
 	DE	Aus Listen entfernen
 	EN	Hide tracks
 	FR	Masquer les morceaux
+	HU	Zeneszámok elrejtése
 	NL	Verberg nummers
 
 PLUGIN_SPOTTY_EXPLICIT_DONT_PLAY
@@ -799,6 +897,7 @@ PLUGIN_SPOTTY_EXPLICIT_DONT_PLAY
 	DE	Anzeigen, aber nicht wiedergeben
 	EN	Show, but don't play
 	FR	Montrer, mais ne pas lire
+	HU	Mutasd, de ne játssz
 	NL	Tonen, maar niet afspelen
 
 PLUGIN_SPOTTY_EXPLICIT_DONT_CARE
@@ -806,6 +905,7 @@ PLUGIN_SPOTTY_EXPLICIT_DONT_CARE
 	DE	Normal wiedergeben
 	EN	Play normally
 	FR	Lire normalement
+	HU	Normál lejátszás
 	NL	Normaal afspelen
 
 PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER
@@ -813,6 +913,7 @@ PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER
 	DE	Podcast Reihenfolge
 	EN	Podcast Sort Order
 	FR	Ordre de tri des podcasts
+	HU	Podcast rendezési sorrend
 	NL	Podcast sorteervolgorde
 
 PLUGIN_SPOTTY_AUTOPLAY_DESC
@@ -820,6 +921,7 @@ PLUGIN_SPOTTY_AUTOPLAY_DESC
 	DE	Autoplay - Automatisch ähnliche Songs abspielen, wenn die Musik zu Ende geht.
 	EN	Autoplay similar songs when your music ends.
 	FR	Lire automatiquement des morceaux similaires lorsque la musique se termine.
+	HU	Hasonló dalok automatikus lejátszása, amikor a zene véget ér.
 	NL	Speel vergelijkbare nummers automatisch af wanneer de muziek stopt.
 
 PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER_DESC
@@ -827,6 +929,7 @@ PLUGIN_SPOTTY_REVERSE_PODCAST_ORDER_DESC
 	DE	Die Reihenfolge der Podcast-Folgen umkehren. Dies kann hilfreich sein, wenn Sie alle Folgen eines Podcasts am Stück hören wollen.
 	EN	Reverse the episode sort order. This can be helpful if you want to listen to all episodes of a show in the correct order.
 	FR	Inverser l'ordre de tri des épisodes. Cela peut être utile si vous souhaitez écouter tous les épisodes d'une émission dans le bon ordre.
+	HU	Fordítsa meg az epizód rendezési sorrendjét. Ez akkor lehet hasznos, ha egy műsor összes epizódját a megfelelő sorrendben szeretné meghallgatni.
 	NL	Sorteervolgorde van de afleveringen omkeren. Dit kan handig zijn als je alle afleveringen van een programma in de juiste volgorde wilt beluisteren.
 
 PLUGIN_SPOTTY_PLAYLIST_FOLDERS
@@ -834,6 +937,7 @@ PLUGIN_SPOTTY_PLAYLIST_FOLDERS
 	DE	Wiedergabelisten Ordner
 	EN	Playlist Folders
 	FR	Dossier des listes de lecture
+	HU	Lejátszási lista mappa
 	NL	Afspeellijst Mappen
 
 PLUGIN_SPOTTY_CLEAR_PLAYLIST_FOLDERS_CACHE
@@ -841,6 +945,7 @@ PLUGIN_SPOTTY_CLEAR_PLAYLIST_FOLDERS_CACHE
 	DE	Gespeicherte Wiedergabelisten-Ordner Informationen löschen (<a href="playlist-folders.html">mehr Informationen</a>)
 	EN	Clear stored playlist folder information (<a href="playlist-folders.html">more information</a>)
 	FR	Nettoyer le dossier de cache des listes de lecture (<a href="playlist-folders.html">plus d'informations</a>)
+	HU	Tárolt lejátszási lista mappainformációinak törlése (<a href="playlist-folders.html">további információ</a>)
 	NL	Opgeslagen mapgegevens voor afspeellijsten wissen (<a href="playlist-folders.html">meer informatie</a>)
 
 PLUGIN_SPOTTY_FILE_NOT_FOUND
@@ -851,6 +956,7 @@ PLUGIN_SPOTTY_FILE_NOT_FOUND
 	ES	Archivo no encontrado
 	FI	Tiedostoa ei löydy
 	FR	Fichier introuvable
+	HU	A fájl nem található
 	IT	File non trovato
 	NL	Bestand niet gevonden
 	NO	Finner ikke filen
@@ -867,6 +973,7 @@ PLUGIN_SPOTTY_SHOWS
 	FI	Podcast-lähetykset
 	FR	Podcasts
 	HE	פריטי Podcast
+	HU	Podcastok
 	IT	Podcast
 	NL	Podcasts
 	NO	Podkaster
@@ -881,6 +988,7 @@ PLUGIN_SPOTTY_ADD_SHOW_TO_LIBRARY
 	EN	Add podcast to library
 	ES	Agregar podcast a biblioteca
 	FR	Ajouter le podcast à la bibliothèque en ligne
+	HU	Podcast hozzáadása a könyvtárhoz
 	IT	Aggiungi podcast a libreria
 	NL	Podcast aan muziekcollectie toevoegen
 	NO	Legg podcast til i biblioteket
@@ -891,6 +999,7 @@ PLUGIN_SPOTTY_EPISODES
 	DE	Podcast-Folgen
 	EN	Podcast Episodes
 	FR	Épisodes de podcast
+	HU	Podcast epizódok
 	NL	Podcast afleveringen
 	NO	Podcast-episoder
 	SV	Podcastavsnitt
@@ -900,12 +1009,14 @@ PLUGIN_SPOTTY_ALBUMS_PROGRESS
 	DE	Spotty Alben
 	EN	Spotty Albums
 	FR	Albums Spotty
+	HU	Spotty albumok
 
 PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS
 	CS	Načítání alb pro %s...
 	DE	Lese Alben für %s...
 	EN	Fetching Albums for %s...
 	FR	Récupération des albums pour %s...
+	HU	Albumok lekérése a következőhöz: %s...
 	NL	Albums ophalen voor %s...
 
 PLUGIN_SPOTTY_ARTISTS_PROGRESS
@@ -913,6 +1024,7 @@ PLUGIN_SPOTTY_ARTISTS_PROGRESS
 	DE	Spotty Interpreten
 	EN	Spotty Artists
 	FR	Artistes Spotty
+	HU	Spotty előadók
 	NL	Spotty Artiesten
 
 PLUGIN_SPOTTY_PROGRESS_READ_ARTISTS
@@ -920,6 +1032,7 @@ PLUGIN_SPOTTY_PROGRESS_READ_ARTISTS
 	DE	Lese Interpreten für %s...
 	EN	Fetching Artists for %s...
 	FR	Récupération des artistes pour %s...
+	HU	Előadók lekérése a következőhöz: %s...
 	NL	Artiesten ophalen voor %s...
 
 PLUGIN_SPOTTY_PROGRESS_READ_TRACKS
@@ -927,6 +1040,7 @@ PLUGIN_SPOTTY_PROGRESS_READ_TRACKS
 	DE	Lese Titel-Informationen für %s...
 	EN	Fetching Title Information for %s...
 	FR	Récupération des informations des morceaux pour %s...
+	HU	%s cím információinak lekérése...
 	NL	Nummer informatie ophalen voor %s...
 
 PLUGIN_SPOTTY_PLAYLISTS_PROGRESS
@@ -934,6 +1048,7 @@ PLUGIN_SPOTTY_PLAYLISTS_PROGRESS
 	DE	Spotty Wiedergabelisten
 	EN	Spotty Playlists
 	FR	Listes de lecture Spotty
+	HU	Spotty lejátszási listák
 	NL	Spotty Afspeellijsten
 
 PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS
@@ -941,6 +1056,7 @@ PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS
 	DE	Lese Wiedergabelisten für %s...
 	EN	Fetching Playlists for %s...
 	FR	Récupération des listes de lecture pour %s...
+	HU	Lejátszási listák lekérése a következőhöz: %s...
 	NL	Afspeellijsten ophalen voor %s...
 
 PLUGIN_SPOTTY_PLAYLIST_TRACKS
@@ -948,4 +1064,5 @@ PLUGIN_SPOTTY_PLAYLIST_TRACKS
 	DE	Titel in Wiedergabeliste
 	EN	Playlist Tracks
 	FR	Morceaux de la liste de lecture
+	HU	Lejátszási lista zeneszámok
 	NL	Afspeellijst Nummers
