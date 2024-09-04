@@ -10,7 +10,7 @@
 	<h4></h4>
 	<p>
 		Zuerst einmal meldest du dich auf <a href="https://open.spotify.com" target="_blank">open.spotify.com</a> an.
-		Nachdem du angemeldet bist öffnest du die "Entwicklertools" aus dem "Weitere Tools" Men&uuml;.
+		Nachdem du angemeldet bist &ouml;ffnest du die "Entwicklertools" aus dem "Weitere Tools" Men&uuml;.
 	</p>
 	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-menu-de.png"></p>
 
@@ -31,7 +31,7 @@
 	</p>
 	<p><img src="[% webroot %]plugins/Spotty/html/images/dev-tools-cookies.png"></p>
 
-	<p>Diesen Wert kannst du nun in den Spotty Einstellungen einfügen. Viel Glück!</p>
+	<p>Diesen Wert kannst du nun in den Spotty Einstellungen einf&uuml;gen. Viel Gl&uuml;ck!</p>
 
 	<h4>Und j&auml;hrlich gr&uuml;sst das Murmeltier...</h4>
 

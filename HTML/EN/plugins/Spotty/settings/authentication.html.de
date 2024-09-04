@@ -5,9 +5,9 @@
 		einer Spotify Anwendung zugelassen werden. Dies kann die Desktop-Anwendung sein, oder auch eine Mobil-App.
 		Eine Spotify Premium Subskription ist Voraussetzung!</div>
 
-		<div style="padding-bottom: 7px;">Spotify benutzt einen zufälligen Port um auf Verbindungen zu warten. Dieser Port
-		kann mit jedem Start ändern. Falls Sie LMS in einem Docker Container verwenden, so müssen Sie diesen im Host Netzwerkmodus
-		laufen lassen. Falls Sie auf dem LMS Rechner eine Firewall verwenden, so müssen Sie diese so konfigurieren,
+		<div style="padding-bottom: 7px;">Spotify benutzt einen zuf&auml;lligen Port um auf Verbindungen zu warten. Dieser Port
+		kann mit jedem Start &auml;ndern. Falls Sie LMS in einem Docker Container verwenden, so m&uuml;ssen Sie diesen im Host Netzwerkmodus
+		laufen lassen. Falls Sie auf dem LMS Rechner eine Firewall verwenden, so m&uuml;ssen Sie diese so konfigurieren,
 		dass sie die Regeln dynamisch anpasst (z.B. die Anwendung freischalten unter Windows).
 		</div>
 
