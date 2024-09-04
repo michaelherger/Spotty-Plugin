@@ -13,7 +13,7 @@ SPT
 	EN	Spotty
 
 PLUGIN_SPOTTY_BROKEN
-	DE	Tut mir Leid mitteilen zu müssen, dass Spotty auf Grund von Veränderungen auf Spotifys Seite im Moment nicht mehr funktioniert. Aber ich arbeite drand. Ich brauche Spotty - oder meine Kinder bringen mich um.
+	DE	Tut mir Leid mitteilen zu müssen, dass Spotty auf Grund von Veränderungen auf Spotifys Seite im Moment nicht mehr funktioniert. Aber ich arbeite dran. Ich brauche Spotty - oder meine Kinder bringen mich um.
 	EN	I'm sorry to say that Spotty seems to be broken by a change on Spotify's end. Rest assured that I'm trying hard to get this fixed as soon as possible. I need this back myself - or my kids will kill me.
 	FR	Je suis désolé de vous dire que Spotty semble être affecté par un changement du côté de Spotify. Soyez assuré que je m'efforce de le réparer dès que possible. J'ai besoin de cela moi-même - sinon mes enfants me tueront.
 
