@@ -113,7 +113,7 @@ sub startHelper {
 			my @helperArgs = (
 				'-c', $class->_cacheFolder(),
 				'-n', sprintf("%s (%s)", Slim::Utils::Strings::string('PLUGIN_SPOTTY_AUTH_NAME'), Slim::Utils::Misc::getLibraryName()),
-				'-a'
+				'--authenticate'
 			);
 
 			# always use fallback (if possible), as the user has no way to force this at this point yet if needed
