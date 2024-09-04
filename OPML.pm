@@ -198,7 +198,10 @@ sub handleFeed {
 		}
 
 		# Build main menu structure
-		my $items = [];
+		my $items = [{
+			name => cstring($client, 'PLUGIN_SPOTTY_BROKEN'),
+			type => 'textarea',
+		}];
 
 		if ( hasRecentSearches() ) {
 			push @{$items}, {
