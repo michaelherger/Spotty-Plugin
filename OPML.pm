@@ -198,10 +198,7 @@ sub handleFeed {
 		}
 
 		# Build main menu structure
-		my $items = [{
-			name => cstring($client, 'PLUGIN_SPOTTY_BROKEN'),
-			type => 'textarea',
-		}];
+		my $items = [];
 
 		if ( hasRecentSearches() ) {
 			push @{$items}, {
@@ -340,6 +337,11 @@ sub handleFeed {
 				image => IMG_ACCOUNT,
 			};
 		}
+
+		# unshift @$items, {
+		# 	name => cstring($client, 'PLUGIN_SPOTTY_BROKEN'),
+		# 	type => 'textarea',
+		# };
 
 		$cb->({
 # XXX - how to refresh the title when the account has changed?
