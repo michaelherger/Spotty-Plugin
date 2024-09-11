@@ -40,7 +40,7 @@ sub initPlugin {
 	my $class = shift;
 
 	if (!CAN_IMPORTER) {
-		$log->warn('The library importer feature requires at least Logitech Media Server 8.');
+		$log->warn('The library importer feature requires at least Lyrion Music Server 8.');
 		return;
 	}
 

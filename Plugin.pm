@@ -135,7 +135,7 @@ sub initPlugin {
 	);
 
 	if ( Slim::Utils::Versions->compareVersions($::VERSION, '7.9.1') < 0 ) {
-		$log->error('Please update to Logitech Media Server 7.9.1 if you want to use seeking in Spotify tracks.');
+		$log->error('Please update to Lyrion Music Server 7.9.1 if you want to use seeking in Spotify tracks.');
 	}
 
 	if (CAN_IMPORTER) {
@@ -214,7 +214,7 @@ sub onlineLibraryNeedsUpdate {
 		return Plugins::Spotty::Importer->needsUpdate(@_);
 	}
 	else {
-		$log->warn('The library importer feature requires at least Logitech Media Server 8');
+		$log->warn('The library importer feature requires at least Lyrion Music Server 8');
 	}
 
 	my $cb = $_[1];

@@ -98,7 +98,7 @@ sub start {
 			push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')));
 		}
 		else {
-			$log->error("Your Logitech Media Server is password protected, but your spotty helper can't deal with it! Spotty will NOT work. Please update.");
+			$log->error("Your Lyrion Music Server is password protected, but your spotty helper can't deal with it! Spotty will NOT work. Please update.");
 		}
 	}
 

@@ -23,8 +23,8 @@
 	[% WRAPPER setting title="Playlist Hierarchies" desc="" %]
 		Unfortunately Spotify does not send information about the hierarchy in which you've organized your playlists.
 		But we can try to find that information from a Spotify application's cache folder. This can either happen automatically
-		if a Spotify application is run on the same computer as your Logitech Media Server. Or, if this is not the case
-		(eg. Logitech Media Server is run on a NAS), you can import those files from a computer on which you run Spotify.
+		if a Spotify application is run on the same computer as your Lyrion Music Server. Or, if this is not the case
+		(eg. Lyrion Music Server is run on a NAS), you can import those files from a computer on which you run Spotify.
 	[% END %]
 
 	[% WRAPPER setting title="Playlist Hierarchies found in Spotify" desc="" %]
@@ -62,7 +62,7 @@
 					utility for Windows</a> to the computer where you have Spotify installed.</li>
 				<li>Extract the downloaded files. On Linux/macOS/Unix run <code>chmod a+x findSpotifyFolderFiles.sh</code> from the
 					download folder to make the script executable</li>
-				<li>Run the tool with your Logitech Media Server's IP and Port: eg. <code>./findSpotifyFolderFiles.sh 192.168.0.1:9000</code> (Linux/macOS/Unix),
+				<li>Run the tool with your Lyrion Music Server's IP and Port: eg. <code>./findSpotifyFolderFiles.sh 192.168.0.1:9000</code> (Linux/macOS/Unix),
 					or <code>findSpotifyFolderFiles.exe 192.168.0.1:9000</code> (Windows)</li>
 			</ol>
 		</div>

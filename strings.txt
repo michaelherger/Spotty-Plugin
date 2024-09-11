@@ -310,12 +310,12 @@ PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED
 	NL	Monitor de verbinding van de Spotty Connect hulptoepassing met de Spotify servers. Dit kan handig zijn als jouw voor Spotty Connect geschikte apparaten regelmatig uit de Spotify apps verdwijnen.
 
 PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH
-	CS	Zakázat asynchronní volání obnovení tokenu. Upozorňujeme, že to může na několik sekund zablokovat Logitech Media Server.
-	DE	Deaktiviere asynchronen Token Refresh. Bitte beachten Sie, dass dies ihr Logitech Media Server System u.U. für ein paar Sekunden blockieren kann.
-	EN	Disable asynchronous token refresh call. Please note that this can potentially block your Logitech Media Server for a few seconds.
-	FR	Désactiver l'actualisation asynchrone de jeton. Noter que cela peut potentiellement bloquer votre Logitech Media Server pendant quelques secondes.
+	CS	Zakázat asynchronní volání obnovení tokenu. Upozorňujeme, že to může na několik sekund zablokovat Lyrion Music Server.
+	DE	Deaktiviere asynchronen Token Refresh. Bitte beachten Sie, dass dies ihr Lyrion Music Server System u.U. für ein paar Sekunden blockieren kann.
+	EN	Disable asynchronous token refresh call. Please note that this can potentially block your Lyrion Music Server for a few seconds.
+	FR	Désactiver l'actualisation asynchrone de jeton. Noter que cela peut potentiellement bloquer votre Lyrion Music Server pendant quelques secondes.
 	HU	Az aszinkron token frissítési hívás letiltása. Kérjük, vegye figyelembe, hogy ez néhány másodpercre blokkolhatja az LMS-t.
-	NL	Schakel asynchrone token refresh uit. Houd er rekening mee dat dit de Logitech Media Server mogelijk enkele seconden kan blokkeren.
+	NL	Schakel asynchrone token refresh uit. Houd er rekening mee dat dit de Lyrion Music Server mogelijk enkele seconden kan blokkeren.
 
 PLUGIN_SPOTTY_FORCE_FALLBACK_AP
 	CS	Použít záložní přístupový bod služby Spotify
@@ -777,12 +777,12 @@ PLUGIN_SPOTTY_INFORMATION_BINDIRS
 	PL	Folder aplikacji pomocniczych
 
 PLUGIN_SPOTTY_PLEASE_UPDATE
-	CS	Informace nejsou k dispozici. Aktualizujte prosím Logitech Media Server na verzi 7.7.6 nebo novější.
-	DE	Information steht nicht zur Verfügung. Bitte Logitech Media Server auf 7.7.6 oder neuer aktualisieren.
-	EN	Information is not avaialable. Please update Logitech Media Server to 7.7.6 or more recent.
-	FR	Les informations ne sont pas disponibles. Veuillez mettre à jour Logitech Media Server vers 7.7.6 ou une version plus récente.
+	CS	Informace nejsou k dispozici. Aktualizujte prosím Lyrion Music Server na verzi 7.7.6 nebo novější.
+	DE	Information steht nicht zur Verfügung. Bitte Lyrion Music Server auf 7.7.6 oder neuer aktualisieren.
+	EN	Information is not avaialable. Please update Lyrion Music Server to 7.7.6 or more recent.
+	FR	Les informations ne sont pas disponibles. Veuillez mettre à jour Lyrion Music Server vers 7.7.6 ou une version plus récente.
 	HU	Információ nem elérhető. Kérjük, frissítse a LMS 7.7.6 vagy újabb verzióra.
-	NL	Informatie is niet beschikbaar. Update Logitech Media Server naar versie 7.7.6 of recenter.
+	NL	Informatie is niet beschikbaar. Update Lyrion Music Server naar versie 7.7.6 of recenter.
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT
 	EN	Spotify Connect

@@ -21,10 +21,10 @@
 	[% END %]
 
 	[% WRAPPER setting title="Structures de dossiers de listes de lecture" desc="" %]
-		Malheureusement, Spotify n'envoie pas d'informations sur la fa&ccedil;on dont vous avez organis&eacute; vos listes de lecture. 
-		Mais nous pouvons essayer de trouver ces informations dans le dossier de cache d'une application Spotify. 
-		Cela peut &ecirc;tre fait automatiquement si une application Spotify est ex&eacute;cut&eacute;e sur le m&ecirc;me ordinateur que votre Logitech Media Server. 
-		Ou, si ce n'est pas le cas (par exemple, si Logitech Media Server est ex&eacute;cut&eacute; sur un NAS), vous pouvez importer ces fichiers depuis un autre appareil.
+		Malheureusement, Spotify n'envoie pas d'informations sur la fa&ccedil;on dont vous avez organis&eacute; vos listes de lecture.
+		Mais nous pouvons essayer de trouver ces informations dans le dossier de cache d'une application Spotify.
+		Cela peut &ecirc;tre fait automatiquement si une application Spotify est ex&eacute;cut&eacute;e sur le m&ecirc;me ordinateur que votre Lyrion Music Server.
+		Ou, si ce n'est pas le cas (par exemple, si Lyrion Music Server est ex&eacute;cut&eacute; sur un NAS), vous pouvez importer ces fichiers depuis un autre appareil.
 	[% END %]
 
 	[% WRAPPER setting title="Structures de dossiers trouv&eacute;es" desc="" %]
@@ -62,7 +62,7 @@
 					utilitaire pour Windows</a> sur l'ordinateur o&ugrave; est install&eacute; Spotify.</li>
 				<li>Extrayez les fichiers t&eacute;l&eacute;charg&eacute;s. Sur Linux/macOS/Unix ex&eacute;cutez <code>chmod a+x findSpotifyFolderFiles.sh</code> dans le
 					dossier t&eacute;l&eacute;charg&eacute; pour rendre le script ex&eacute;cutable.</li>
-				<li>Ex&eacute;cutez l'outil avec l'IP et le Port de votre Logitech Media Server : par exemple, <code>./findSpotifyFolderFiles.sh 192.168.0.1:9000</code> (Linux/macOS/Unix),
+				<li>Ex&eacute;cutez l'outil avec l'IP et le Port de votre Lyrion Music Server : par exemple, <code>./findSpotifyFolderFiles.sh 192.168.0.1:9000</code> (Linux/macOS/Unix),
 					ou <code>findSpotifyFolderFiles.exe 192.168.0.1:9000</code> (Windows).</li>
 			</ol>
 		</div>

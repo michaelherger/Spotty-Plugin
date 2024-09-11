@@ -1,7 +1,7 @@
 [% PROCESS "plugins/Spotty/settings/auth-header.html" %]
 
 	[% IF canDiscovery; WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
-		<div style="padding-bottom: 7px;">Um die Squeezebox mit Spotify verwenden zu k&ouml;nnen muss Logitech Media Server mit Hilfe
+		<div style="padding-bottom: 7px;">Um die Squeezebox mit Spotify verwenden zu k&ouml;nnen muss Lyrion Music Server mit Hilfe
 		einer Spotify Anwendung zugelassen werden. Dies kann die Desktop-Anwendung sein, oder auch eine Mobil-App.
 		Eine Spotify Premium Subskription ist Voraussetzung!</div>
 
@@ -19,7 +19,7 @@
 				<li>Starten Sie die Musikwiedergabe in Spotify</li>
 				<li>&Ouml;ffnen Sie die List der verf&uuml;gbaren Ger&auml;te in Spotify<br><img src="[% webroot %]plugins/Spotty/html/images/desktop-auth.png"></li>
 				<li>W&auml;hlen Sie den "[% "PLUGIN_SPOTTY_AUTH_NAME" | string %]" Eintrag - die Musikwiedergabe wird an dieser Stelle verstummen.</li>
-				<li>Warten Sie einen Moment, bis Logitech Media Server zur Benutzung von Spotify zugelassen wurde.</li>
+				<li>Warten Sie einen Moment, bis Lyrion Music Server zur Benutzung von Spotify zugelassen wurde.</li>
 				<li>Keine Panik - der Vorgang kann schon mal 20 Sekunden oder mehr dauern &#x1F603;.</li>
 			</ol>
 		</div>
