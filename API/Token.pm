@@ -173,13 +173,13 @@ sub _gotTokenInfo {
 
 	if ( $response && ref $response ) {
 		if ( $token = $response->{accessToken} ) {
-			if ( main::DEBUGLOG && $log->is_debug ) {
-				$log->debug("Received access token: " . Data::Dump::dump($response));
-				$log->debug("Caching for " . ($response->{expiresIn} || 3600) . " seconds.");
-			}
+			my $expiry = $response->{expiresIn} ? ($response->{expiresIn}->{secs} || 3600) : 3600;
+
+			main::DEBUGLOG && $log->is_debug && $log->debug("Received access token: " . Data::Dump::dump($response));
+			main::INFOLOG && $log->is_info && $log->debug("Caching access token for $expiry seconds.");
 
 			# Cache for the given expiry time (less some to be sure...)
-			$cache->set($cacheKey, $token, ($response->{expiresIn} || 3600) - 300);
+			$cache->set($cacheKey, $token, $expiry - 300);
 		}
 	}
 
@@ -218,12 +218,14 @@ sub get {
 	my ($class, $api, $cb, $args) = @_;
 	$args ||= {};
 
-	if (my $token = $cache->get(_getCacheKey($args->{code}, $args->{accountId} || ($api && $api->username) || (main::SCANNER ? '_scanner' : 'generic')))) {
-		main::DEBUGLOG && $log->is_debug && $log->debug("Found cached token: $token");
+	my $cacheKey = _getCacheKey($args->{code}, $args->{accountId} || ($api && $api->username) || (main::SCANNER ? '_scanner' : 'generic'));
+	if (my $token = $cache->get($cacheKey)) {
+		main::INFOLOG && $log->is_info && $log->info("Found cached token: $token");
+		main::DEBUGLOG && $log->is_debug && $log->debug($token);
 		return $cb ? $cb->($token) : $token;
 	}
 	else {
-		main::DEBUGLOG && $log->is_debug && $log->debug("Didn't find cached token. Need to refresh.");
+		$log->warn("Didn't find cached token. Need to refresh.");
 	}
 
 	if (main::SCANNER) {
