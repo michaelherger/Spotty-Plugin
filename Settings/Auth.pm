@@ -16,6 +16,7 @@ use Slim::Utils::Timers;
 
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::AccountHelper;
+use Plugins::Spotty::Settings::Callback;
 
 use constant AUTHENTICATE => '__AUTHENTICATE__';
 use constant HELPER_TIMEOUT => 60*15;		# kill the helper application after 15 minutes
@@ -29,6 +30,7 @@ sub new {
 
 	Slim::Web::Pages->addPageFunction($class->page, $class);
 	Slim::Web::Pages->addRawFunction("plugins/Spotty/settings/hasCredentials", \&checkCredentials);
+	Plugins::Spotty::Settings::Callback->init();
 }
 
 sub name {
@@ -75,6 +77,8 @@ sub handler {
 	# discovery doesn't work on Windows
 	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
 
+	$paramRef->{authUrl} = Plugins::Spotty::Settings::Callback->getAuthURL();
+
 	return $class->SUPER::handler($client, $paramRef);
 }
 
@@ -99,7 +103,7 @@ sub checkCredentials {
 	$response->header('Connection' => 'close');
 	$response->content_type('application/json');
 
-	Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \$content	);
+	Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \$content );
 }
 
 sub startHelper {

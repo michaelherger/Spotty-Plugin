@@ -27,19 +27,19 @@ __PACKAGE__->mk_accessor( rw => qw(
 
 # override the scope list hard-coded in to the spotty helper application
 use constant SPOTIFY_SCOPE => join(',', qw(
-  user-read-private
+  playlist-modify-private
+  playlist-modify-public
+  playlist-read-collaborative
+  playlist-read-private
   user-follow-modify
   user-follow-read
-  user-library-read
   user-library-modify
-  user-top-read
-  user-read-recently-played
-  user-read-playback-state
+  user-library-read
   user-modify-playback-state
-  playlist-read-private
-  playlist-read-collaborative
-  playlist-modify-public
-  playlist-modify-private
+  user-read-playback-state
+  user-read-private
+  user-read-recently-played
+  user-top-read
 ));
 
 use constant POLLING_INTERVAL => 0.5;
@@ -225,7 +225,7 @@ sub get {
 		return $cb ? $cb->($token) : $token;
 	}
 	else {
-		main::INFOLOG && $log->is_info && $log->info("Didn't find cached token. Need to refresh.");
+		main::INFOLOG && $log->is_info && $log->info("Didn't find cached token. Need to refresh. " . ($args->{accountId} || ($api && $api->username) || (main::SCANNER ? '_scanner' : 'generic')));
 	}
 
 	if (main::SCANNER) {
