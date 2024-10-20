@@ -1072,7 +1072,7 @@ sub transferPlaylist {
 		my $items = [];
 
 		# if Connect is enabled for the target player, switch playback
-		if ( $info && $info->{device} && Plugins::Spotty::Connect->canSpotifyConnect() && $prefs->client($client)->get('enableSpotifyConnect') ) {
+		if ( $info && $info->{device} && Plugins::Spotty::Plugin->canSpotifyConnect() && $prefs->client($client)->get('enableSpotifyConnect') ) {
 			push @$items, {
 				name => cstring($client, 'PLUGIN_SPOTTY_TRANSFER_CONNECT_DESC'),
 				type => 'textarea'

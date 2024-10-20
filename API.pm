@@ -190,7 +190,7 @@ sub player {
 				}
 
 				# keep track of MAC -> ID mapping
-				if ( Plugins::Spotty::Connect->canSpotifyConnect() ) {
+				if ( Plugins::Spotty::Plugin->canSpotifyConnect() ) {
 					Plugins::Spotty::Connect::DaemonManager->checkAPIConnectPlayer($self, $result);
 				}
 
@@ -323,7 +323,7 @@ sub playerVolume {
 sub idFromMac {
 	my ( $class, $mac ) = @_;
 
-	return Plugins::Spotty::Connect->canSpotifyConnect()
+	return Plugins::Spotty::Plugin->canSpotifyConnect()
 		&& Plugins::Spotty::Connect::DaemonManager->idFromMac($mac);
 }
 
@@ -350,7 +350,7 @@ sub devices {
 		sub {
 			my ($result) = @_;
 
-			if ( Plugins::Spotty::Connect->canSpotifyConnect() ) {
+			if ( Plugins::Spotty::Plugin->canSpotifyConnect() ) {
 				Plugins::Spotty::Connect::DaemonManager->checkAPIConnectPlayers($self, $result);
 			}
 

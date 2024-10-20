@@ -15,7 +15,6 @@ use Slim::Utils::Timers;
 
 use Plugins::Spotty::API qw(uri2url);
 
-use constant CONNECT_HELPER_VERSION => '0.12.0';
 use constant SEEK_THRESHOLD => 3;
 use constant VOLUME_GRACE_PERIOD => 20;
 use constant PRE_BUFFER_TIME => 7;
@@ -32,8 +31,6 @@ sub init {
 	my ($class) = @_;
 
 	return if $initialized;
-
-	return unless $class->canSpotifyConnect('dontInit');
 
 	require Plugins::Spotty::Connect::Context;
 
@@ -76,20 +73,6 @@ sub init {
 	Plugins::Spotty::Connect::DaemonManager->init();
 
 	$initialized = 1;
-}
-
-sub canSpotifyConnect {
-	my ($class, $dontInit) = @_;
-
-	# we need a minimum helper application version
-	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Helper->getVersion(), CONNECT_HELPER_VERSION, 10) ) {
-		$log->error("Cannot support Spotty Connect, need at least helper version " . CONNECT_HELPER_VERSION);
-		return;
-	}
-
-	__PACKAGE__->init() unless $initialized || $dontInit;
-
-	return 1;
 }
 
 sub isSpotifyConnect {

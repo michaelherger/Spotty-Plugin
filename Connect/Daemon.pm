@@ -68,7 +68,7 @@ sub start {
 		'-c', $self->cache,
 		'-n', $self->name,
 		'--disable-audio-cache',
-		'--bitrate', 96,
+#		'--bitrate', 96,
 #		'--initial-volume', $serverPrefs->client($client)->get('volume'),
 		'--player-mac', $self->mac,
 		'--lms', Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
@@ -82,7 +82,8 @@ sub start {
 		push @helperArgs, '--autoplay';
 	}
 
-	if ( $prefs->get('forceFallbackAP') ) {
+	# TODO - review no AP port behaviour
+	if ( $prefs->get('forceFallbackAP') && !Plugins::Spotty::Helper->getCapability('no-ap-port') ) {
 		push @helperArgs, '--ap-port=12321';
 	}
 

@@ -31,7 +31,7 @@ sub prefs {
 sub handler {
 	my ($class, $client, $params, $callback, $httpClient, $response) = @_;
 
-	if ( !Plugins::Spotty::Connect->canSpotifyConnect() ) {
+	if ( !Plugins::Spotty::Plugin->canSpotifyConnect() ) {
 		$params->{errorString} = $client->string('PLUGIN_SPOTTY_NEED_HELPER_UPDATE');
 	}
 

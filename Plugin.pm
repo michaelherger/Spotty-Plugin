@@ -14,11 +14,11 @@ use Slim::Utils::Strings qw(string);
 
 use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::API;
-use Plugins::Spotty::Connect;
 use Plugins::Spotty::Helper;
 use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
+use constant CONNECT_HELPER_VERSION => '0.12.0';
 use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 
 my $prefs = preferences('plugin.spotty');
@@ -156,7 +156,7 @@ sub postinitPlugin { if (main::TRANSCODING) {
 	# we're going to hijack the Spotify URI schema
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
 
-	Plugins::Spotty::Connect->init();
+	$class->canSpotifyConnect();
 
 	# if user has the Don't Stop The Music plugin enabled, register ourselves
 	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::DontStopTheMusic::Plugin')
@@ -320,6 +320,25 @@ sub getAPIHandler {
 	}
 
 	return $api;
+}
+
+sub canSpotifyConnect {
+	my ($class, $dontInit) = @_;
+
+# TODO - fix Connect mode!
+	return 0;
+
+	# we need a minimum helper application version
+	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Helper->getVersion(), CONNECT_HELPER_VERSION, 10) ) {
+		$log->error("Cannot support Spotty Connect, need at least helper version " . CONNECT_HELPER_VERSION);
+		return;
+	}
+
+	require Plugins::Spotty::Connect;
+
+	Plugins::Spotty::Connect->init() unless $dontInit;
+
+	return 1;
 }
 
 sub canDiscovery { 1 }

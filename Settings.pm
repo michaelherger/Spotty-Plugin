@@ -163,7 +163,7 @@ sub beforeRender {
 
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
-	$paramRef->{canConnect}     = Plugins::Spotty::Connect->canSpotifyConnect();
+	$paramRef->{canConnect}     = Plugins::Spotty::Plugin->canSpotifyConnect();
 	$paramRef->{canAsyncTokenRefresh} = Plugins::Spotty::API::Token::CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token');
 	$paramRef->{canApPort}      = !Plugins::Spotty::Helper->getCapability('no-ap-port');
 

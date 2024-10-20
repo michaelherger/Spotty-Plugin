@@ -789,7 +789,7 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
 	CS	Vyberte přehrávače, které chcete používat se službou Spotify Connect. Mějte na paměti, že každé povolené zařízení spustí proces na pozadí. To může vést k problémům na serverech s nedostatkem paměti.
-	DE	Wählen aus, welche Geräte als Spotify Connect Endpunkte zur Auswahl stehen sollen. Bitte beachte, dass für jedes Gerät ein Hintergrundprozess gestartet wird. Dies kann auf Geräten mit wenig Speicher u.U. zu Problemen führen.
+	DE	Wählen Sie aus, welche Geräte als Spotify Connect Endpunkte zur Auswahl stehen sollen. Bitte beachten Sie, dass für jedes Gerät ein Hintergrundprozess gestartet wird. Dies kann auf Geräten mit wenig Speicher u.U. zu Problemen führen.
 	EN	Select which players you'd like to use with Spotify Connect. Please keep in mind that every enabled device will launch a background process. This could potentially lead to issues on servers running low on memory.
 	FR	Sélectionner les platines à utiliser avec Spotify Connect. Garder à l'esprit que chaque appareil activé lancera un processus en arrière-plan. Cela pourrait potentiellement entraîner des problèmes sur des serveurs avec peu de mémoire.
 	HU	Válassza ki, mely lejátszókat szeretné használni a Spotify Connect szolgáltatással. Ne feledje, hogy minden engedélyezett eszköz elindít egy háttérfolyamatot. Ez problémákat okozhat a kiszolgálókon, amelyeknél kevés a memória.
