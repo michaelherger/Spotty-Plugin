@@ -357,7 +357,9 @@ sub shutdownPlugin { if (main::TRANSCODING) {
 		Plugins::Spotty::Settings::Auth->shutdownHelper();
 	}
 
-	Plugins::Spotty::Connect->shutdown();
+	if (__PACKAGE__->canSpotifyConnect()) {
+		Plugins::Spotty::Connect->shutdown();
+	}
 } }
 
 1;
