@@ -106,13 +106,13 @@ sub explodePlaylist {
 sub isRepeatingStream {
 	my ( undef, $song ) = @_;
 
-	return $song && Plugins::Spotty::Connect->isSpotifyConnect($song->master());
+	return $song && Plugins::Spotty::Plugin->isSpotifyConnect($song->master());
 }
 
 sub canDoAction {
 	my ( $class, $client, $url, $action ) = @_;
 
-	if ( $action eq 'pause' && $prefs->get('optimizePreBuffer') && Plugins::Spotty::Connect->isSpotifyConnect($client) ) {
+	if ( $action eq 'pause' && $prefs->get('optimizePreBuffer') && Plugins::Spotty::Plugin->isSpotifyConnect($client) ) {
 		return 0;
 	}
 
@@ -124,7 +124,7 @@ sub getNextTrack {
 
 	my $client = $song->master();
 
-	if (Plugins::Spotty::Connect->isSpotifyConnect($client)) {
+	if (Plugins::Spotty::Plugin->isSpotifyConnect($client)) {
 		Plugins::Spotty::Connect->getNextTrack($song, $successCb, $errorCb);
 		return;
 	}
@@ -162,7 +162,7 @@ sub getMetadataFor {
 	$meta = undef;
 
 	# sometimes we wouldn't get a song object, and an outdated url. Get latest data instead!
-	if ((!$url || $url =~ /connect-/) && !$song && Plugins::Spotty::Connect->isSpotifyConnect($client) && ($song = $client->playingSong)) {
+	if ((!$url || $url =~ /connect-/) && !$song && Plugins::Spotty::Plugin->isSpotifyConnect($client) && ($song = $client->playingSong)) {
 		$url = $song->streamUrl;
 	}
 

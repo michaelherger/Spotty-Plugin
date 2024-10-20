@@ -225,7 +225,7 @@ sub get {
 		return $cb ? $cb->($token) : $token;
 	}
 	else {
-		$log->warn("Didn't find cached token. Need to refresh.");
+		main::INFOLOG && $log->is_info && $log->info("Didn't find cached token. Need to refresh.");
 	}
 
 	if (main::SCANNER) {

@@ -341,6 +341,11 @@ sub canSpotifyConnect {
 	return 1;
 }
 
+sub isSpotifyConnect {
+	my $class = shift;
+	return $class->canSpotifyConnect() && Plugins::Spotty::Connect->isSpotifyConnect(@_);
+}
+
 sub canDiscovery { 1 }
 
 # we only run when transcoding is enabled, but shutdown would be called no matter what
