@@ -92,6 +92,13 @@ sub oauthCallback {
 	);
 
 	my $renderCb = sub {
+		my $error = shift;
+
+		if ($error) {
+			$params->{auth_error} = $error;
+			$log->error($error);
+		}
+
 		my $response = $args[1];
 
 		# $response->code(404);
@@ -105,54 +112,46 @@ sub oauthCallback {
 	Slim::Networking::SimpleAsyncHTTP->new(
 		sub {
 			my $response = shift;
+			my $error;
 
 			if ( $response->headers->content_type =~ /json/i ) {
 				my $result = eval { decode_json($response->content) };
 
-				$log->error("Failed to parse token exchange response: $@") if $@;
+				$error = $@;
+				$log->error("Failed to parse token exchange response.") if $@;
 
 				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
 
 				if ($result && (my $accessToken = $result->{access_token})) {
-					Slim::Networking::SimpleAsyncHTTP->new(
-						sub {
-							my $userinfo = eval { decode_json(shift->content) };
-							$log->error("Failed to parse userinfo response: $@") if $@;
-
-							main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($userinfo));
-
-							warn Data::Dump::dump($userinfo);
-
-							$renderCb->();
-						},
-						sub {
-							my ($http, $error, $response) = @_;
-							warn Data::Dump::dump($response, $error);
-
-							$renderCb->();
-						}
-					)->get(USERINFO_URL,
-						'Authorization' => "Bearer $accessToken"
+					# TODO - async token refresh, timeout
+					my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s" %s',
+						scalar Plugins::Spotty::Helper->get(),
+						Plugins::Spotty::Settings::Auth->_cacheFolder(),
+						$prefs->get('iconCode'),
+						SCOPE,
+						'--access-token=' . $accessToken,
 					);
 
-					return;
-				}
+					Plugins::Spotty::API::Token::_logCommand($cmd);
 
-				warn Data::Dump::dump($result);
+					`$cmd 2>&1`;
+				}
+				elsif ($result->{error}) {
+					$error = $result->{error};
+				}
 			}
 			else {
-				$log->warn("Failed to get token");
-
+				$error = 'Failed to get token';
 				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
 			}
 
-			$renderCb->();
+			$renderCb->($error);
 		},
 		sub {
 			my ($http, $error, $response) = @_;
-			warn Data::Dump::dump($response, $error);
+			$log->error("Failed to get token") if $error;
 
-			$renderCb->();
+			$renderCb->($error);
 		},
 		{
 			cache => 0,

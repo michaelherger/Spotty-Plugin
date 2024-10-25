@@ -1,1 +1,13 @@
-great!
+[% pagetitle = "PLUGIN_SPOTTY_AUTH" | string; PROCESS helpheader.html noCrumbList=1 %]
+
+<div>
+	[% IF auth_error %]
+		<p>[% "PLUGIN_SPOTTY_AUTH_FAILED" | string | html %][% "COLON" | string %]</p>
+		<div><pre>[% auth_error %]</pre></div>
+		<p>[% "PLUGIN_SPOTTY_RETRY_AUTH" | string | html %]</p>
+	[% ELSE %]
+		<p>[% "PLUGIN_SPOTTY_AUTH_SUCCESS" | string %]</p>
+	[% END %]
+</div>
+
+[% PROCESS pagefooter.html %]

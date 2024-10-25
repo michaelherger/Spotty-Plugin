@@ -56,6 +56,20 @@ PLUGIN_SPOTTY_AUTH_NAME
 	HU	Spotify fiók belépés
 	NL	Spotify Autorisatie
 
+PLUGIN_SPOTTY_AUTH_OAUTH
+	CS	Autorizace Spotify (OAUTH)
+	DE	Spotify Anmeldung (OAUTH)
+	EN	Spotify Authorization (OAUTH)
+	FR	Autorisation Spotify (OAUTH)
+	HU	Spotify fiók belépés (OAUTH)
+	NL	Spotify Autorisatie (OAUTH)
+
+PLUGIN_SPOTTY_AUTH_OAUTH_DESC
+	DE	Falls die App basierte Anmeldung fehlschlägt können Sie den Web basierten OAUTH Flow <a href="%s" target="_blank">mit diesem Link</a> starten.
+	EN	If the app based authentication fails, you can try the web based OAUTH flow following <a href="%s" target="_blank">this link</a>.
+	FR	Si l'authentification basée sur l'application échoue, vous pouvez essayer le flux OAUTH basé sur le web en <a href="%s" target="_blank">suivant ce lien</a>.
+	NL	Als de app-gebaseerde authenticatie mislukt, kun je de webgebaseerde OAUTH flow proberen <a href="%s" target="_blank">via deze link</a>.
+
 PLUGIN_SPOTTY_AUTH_RESET
 	CS	Obnovení autorizace
 	DE	Anmeldung zurücksetzen
@@ -79,6 +93,18 @@ PLUGIN_SPOTTY_AUTH_FAILED
 	FR	Échec de l'autorisation
 	HU	Az azonosítás sikertelen
 	NL	Autorisatie mislukt
+
+PLUGIN_SPOTTY_AUTH_SUCCESS
+	DE	Spotify Anmeldung erfolgreich beendet! Bitte schliessen Sie diese Seite und geniessen Sie ihre Spotify Sammlung in Lyrion Music Server.
+	EN	Spotify authentication succeeded! Please close this page and enjoy your Spotify collection in Lyrion Music Server.
+	FR	L'authentification Spotify a réussi ! Veuillez fermer cette page et profiter de votre collection Spotify dans Lyrion Music Server.
+	NL	Spotify verificatie geslaagd! Sluit deze pagina en geniet van je Spotify-collectie in Lyrion Music Server.
+
+PLUGIN_SPOTTY_RETRY_AUTH
+	DE	Bitte schliessen Sie diese Seite und versuchen Sie es noch einmal.
+	EN	Please close this page and try again.
+	FR	Veuillez fermer cette page et réessayer.
+	NL	Sluit deze pagina en probeer het opnieuw.
 
 PLUGIN_SPOTTY_IMPORT_LIBRARY
 	CS	Importovat

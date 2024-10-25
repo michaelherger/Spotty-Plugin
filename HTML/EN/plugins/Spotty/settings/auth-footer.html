@@ -1,6 +1,8 @@
 	<input type="hidden" name="accountId" value="[% accountId %]">
 
-	<div><a href="[% authUrl %]" target="_blank">OAUTH</a></div>
+	[% WRAPPER setting title="PLUGIN_SPOTTY_AUTH_OAUTH" desc="" %]
+		<div>[% "PLUGIN_SPOTTY_AUTH_OAUTH_DESC" | string(authUrl) %]</div>
+	[% END %]
 
 	[% PROCESS "plugins/Spotty/settings/helpers.html" %]
 
