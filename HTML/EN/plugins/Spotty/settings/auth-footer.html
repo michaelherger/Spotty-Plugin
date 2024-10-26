@@ -1,7 +1,9 @@
 	<input type="hidden" name="accountId" value="[% accountId %]">
 
 	[% WRAPPER setting title="PLUGIN_SPOTTY_AUTH_OAUTH" desc="" %]
-		<div>[% "PLUGIN_SPOTTY_AUTH_OAUTH_DESC" | string(authUrl) %]</div>
+		<div><a href="[% authUrl %]" target="_blank"><img style="width: 189px; margin-bottom: 10px;" src="/plugins/Spotty/html/images/signinwithspotify.png"></a></div>
+		<div>[% "PLUGIN_SPOTTY_AUTH_OAUTH_DESC" | string %]</div>
+		<div>[% "PLUGIN_SPOTTY_AUTH_OAUTH_DESC2" | string %] <pre>[% callbackUrl %]</pre></div>
 	[% END %]
 
 	[% PROCESS "plugins/Spotty/settings/helpers.html" %]

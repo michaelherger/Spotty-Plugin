@@ -21,7 +21,6 @@ use Slim::Utils::Strings qw(string);
 
 use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::API::Cache;
-use Plugins::Spotty::API::Token;
 
 use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 

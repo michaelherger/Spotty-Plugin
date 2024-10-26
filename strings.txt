@@ -65,10 +65,16 @@ PLUGIN_SPOTTY_AUTH_OAUTH
 	NL	Spotify Autorisatie (OAUTH)
 
 PLUGIN_SPOTTY_AUTH_OAUTH_DESC
-	DE	Falls die App basierte Anmeldung fehlschlägt können Sie den Web basierten OAUTH Flow <a href="%s" target="_blank">mit diesem Link</a> starten.
-	EN	If the app based authentication fails, you can try the web based OAUTH flow following <a href="%s" target="_blank">this link</a>.
-	FR	Si l'authentification basée sur l'application échoue, vous pouvez essayer le flux OAUTH basé sur le web en <a href="%s" target="_blank">suivant ce lien</a>.
-	NL	Als de app-gebaseerde authenticatie mislukt, kun je de webgebaseerde OAUTH flow proberen <a href="%s" target="_blank">via deze link</a>.
+	DE	Falls die App basierte Anmeldung fehlschlägt können Sie den Web basierten OAUTH Flow mit obigem Button starten.
+	EN	If the app based authentication fails, you can try the web based OAUTH flow using the above button.
+	FR	Si l'authentification basée sur l'application échoue, vous pouvez essayer le flux OAUTH basé sur le web en utilisant le bouton ci-dessus.
+	NL	Als de app-gebaseerde authenticatie mislukt, kun je de webgebaseerde OAUTH flow proberen met de bovenstaande knop.
+
+PLUGIN_SPOTTY_AUTH_OAUTH_DESC2
+	DE	Bitte beachten Sie, dass Sie, wenn Sie Ihre eigene Client-ID verwenden, die folgende URL in die Liste der "Redirect URIs" Ihres Clients aufnehmen müssen:
+	EN	Please note that if you are using your own Client ID, you'll have to add the following URL to your client's "Redirect URIs" list:
+	FR	Veuillez noter que si vous utilisez votre propre identifiant client, vous devrez ajouter l'URL suivante à la liste des « Redirect URIs » de votre client :
+	NL	Let op: als je je eigen Client ID gebruikt, moet je de volgende URL toevoegen aan de lijst "Redirect URIs" van je client:
 
 PLUGIN_SPOTTY_AUTH_RESET
 	CS	Obnovení autorizace

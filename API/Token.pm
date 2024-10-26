@@ -151,7 +151,8 @@ sub _callCallbacks {
 sub _logCommand {
 	if (main::INFOLOG && $log->is_info) {
 		my ($cmd) = @_;
-		$cmd =~ s/--client-id [a-f0-9]+/--client-id abcdef1234567890/;
+		$cmd =~ s/--client-id [a-f0-9]+/--client-id ***/;
+		$cmd =~ s/(access_token|refresh_token)=\w+/$1=***/g;
 		$log->info("Trying to get access token: $cmd");
 	}
 }

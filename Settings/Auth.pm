@@ -78,6 +78,7 @@ sub handler {
 	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
 
 	$paramRef->{authUrl} = Plugins::Spotty::Settings::Callback->getAuthURL();
+	$paramRef->{callbackUrl} = Plugins::Spotty::Settings::Callback->getCallbackUrl();
 
 	return $class->SUPER::handler($client, $paramRef);
 }
