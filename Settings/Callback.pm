@@ -50,8 +50,8 @@ my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
 
 sub init {
-	Slim::Web::Pages->addPageFunction(REDIRECT_PATH, \&oauthRedirect);
-	Slim::Web::Pages->addPageFunction(CALLBACK_PATH, \&oauthCallback);
+	Slim::Web::Pages->addPageFunction(Slim::Web::HTTP::CSRF->protectURI(REDIRECT_PATH), \&oauthRedirect);
+	Slim::Web::Pages->addPageFunction(Slim::Web::HTTP::CSRF->protectURI(CALLBACK_PATH), \&oauthCallback);
 }
 
 sub getRedirectUri {
@@ -109,7 +109,7 @@ sub oauthRedirect {
 					$cache->set(PKCE_CODE_VERIFIER_CACHEKEY, $code_verifier);
 
 					my $url = sprintf(PKCE_AUTH_URL,
-						$prefs->get('iconCode'),
+						Plugins::Spotty::Plugin->initIcon(),
 						CALLBACK_URL,
 						$code_challenge,
 						SCOPE,
@@ -164,7 +164,7 @@ sub oauthCallback {
 	my $body = sprintf('grant_type=authorization_code&code=%s&redirect_uri=%s&client_id=%s&code_verifier=%s',
 		$code,
 		CALLBACK_URL,
-		$prefs->get('iconCode'),
+		Plugins::Spotty::Plugin->initIcon(),
 		$cache->get(PKCE_CODE_VERIFIER_CACHEKEY),
 	);
 
@@ -194,7 +194,7 @@ sub oauthCallback {
 					my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s" %s',
 						scalar Plugins::Spotty::Helper->get(),
 						Plugins::Spotty::Settings::Auth->_cacheFolder(),
-						$prefs->get('iconCode'),
+						Plugins::Spotty::Plugin->initIcon(),
 						SCOPE,
 						'--access-token=' . $accessToken,
 					);
@@ -240,6 +240,9 @@ sub feedbackPage {
 	if (my $error = $params->{auth_error}) {
 		$log->error($error);
 	}
+
+	# always use Default skin for this page, as Material wouldn't render correctly outside its own context
+	$params->{skinOverride} = 'Default';
 
 	my $response = $args[1];
 

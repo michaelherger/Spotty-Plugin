@@ -68,7 +68,7 @@ sub handler {
 	}
 
 	if ($paramRef->{saveSettings}) {
-		$paramRef->{pref_iconCode} ||= Plugins::Spotty::Plugin->_initIcon();
+		$paramRef->{pref_iconCode} ||= Plugins::Spotty::Plugin->initIcon();
 
 		foreach my $client ( Slim::Player::Client::clients() ) {
 			$prefs->client($client)->set('enableSpotifyConnect', $paramRef->{'connect_' . $client->id} ? 1 : 0);

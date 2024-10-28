@@ -58,7 +58,7 @@ sub initPlugin {
 		country => 'US',
 		cleanupTags => 1,
 		bitrate => 320,
-		iconCode => \&_initIcon,
+		iconCode => \&initIcon,
 		tracksSincePurge => 0,
 		ignoreHomeItems => {
 			'recently-updated-playlists[0]' => -1,
@@ -298,12 +298,12 @@ sub _pluginDataFor {
 	return undef;
 }
 
-sub _initIcon {
+sub initIcon {
 	__PACKAGE__->_pluginDataFor('icon') =~ m|.*/(.*?)\.| && return $1;
 }
 
 sub hasDefaultIcon {
-	$prefs->get('iconCode') eq _initIcon() ? 1 : 0;
+	$prefs->get('iconCode') eq initIcon() ? 1 : 0;
 }
 
 sub getAPIHandler {
