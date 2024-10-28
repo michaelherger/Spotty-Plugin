@@ -15,6 +15,7 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
 use Plugins::Spotty::API::Cache;
+use Plugins::Spotty::API::Token;
 
 {
 	__PACKAGE__->mk_accessor( rw => qw(
