@@ -13,7 +13,7 @@ SPT
 	EN	Spotty
 
 PLUGIN_SPOTTY_BROKEN
-	DA	Desværre ser det ud tli at Spotty ikke fungerer pga. ændringer i Spotifys ende. Jeg arbejder hårdt på at reparere dette så hurtigt som muligt. Jeg har selv brug for Spotty - ellers vil mine børn plage livet af mig.
+	DA	Desværre ser det ud til at Spotty ikke fungerer pga. ændringer i Spotifys ende. Jeg arbejder hårdt på at reparere dette så hurtigt som muligt. Jeg har selv brug for Spotty - ellers vil mine børn plage livet af mig.
 	DE	Tut mir Leid mitteilen zu müssen, dass Spotty auf Grund von Veränderungen auf Spotifys Seite im Moment nicht mehr funktioniert. Aber ich arbeite dran. Ich brauche Spotty - oder meine Kinder bringen mich um.
 	EN	I'm sorry to say that Spotty seems to be broken by a change on Spotify's end. Rest assured that I'm trying hard to get this fixed as soon as possible. I need this back myself - or my kids will kill me.
 	FR	Je suis désolé de vous dire que Spotty semble être affecté par un changement du côté de Spotify. Soyez assuré que je m'efforce de le réparer dès que possible. J'ai besoin de cela moi-même - sinon mes enfants me tueront.
@@ -118,7 +118,7 @@ PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY
 	CS	Sloučení s "Moje hudba"
-	DA	Sammenflet med "Min musik"
+	DA	Integrér med "Min musik"
 	DE	In "Meine Musik" anzeigen
 	EN	Merge with "My Music"
 	FR	Fusionner avec "Ma musique"
@@ -239,7 +239,7 @@ PLUGIN_SPOTTY_HELPER_DISCOVER
 
 PLUGIN_SPOTTY_HELPER_MISSING_HELP
 	CS	Nepodařilo se spustit pomocnou aplikaci Spotify Connect. Možná vaše platforma není podporována?
-	DA	Kunne ikke finde eller køre Spotify Connect-hjælpeprogrammet. Er dit operativsystem understøttet?
+	DA	Kunne ikke finde eller køre Spotify Connect hjælpeprogrammet. Er dit operativsystem understøttet?
 	DE	Konnte die Spotify Connect Helferanwendung nicht finden oder nicht ausführen. Ist ihr Betriebssystem unterstützt?
 	EN	Couldn't start the Spotify Connect Helper application. Maybe your platform isn't supported?
 	FR	Impossible de démarrer l'application Spotify Connect Helper. Peut-être que votre plateforme n'est pas prise en charge ?
@@ -255,7 +255,7 @@ PLUGIN_SPOTTY_HELPER_PORTS
 
 PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC
 	CS	Neoznamovat ve své síti přehrávače Squeezebox spuštěné v režimu Spotify Connect. Tuto možnost zaškrtněte, pokud nechcete, aby se váš přehrávač Squeezebox s povoleným režimem Spotify Connect zobrazoval ve všech aplikacích Spotify ve vaší síti.
-	DA	Annoncér ikke Squeezebox Playere på det lokale netværk i Spotify Connect-tilstand. Aktivér denne mulighed, hvis du ikke ønsker, at din Spotify Connect-aktiverede Squeezebox-afspillere skal vises i alle Spotify-apps på dit netværk.
+	DA	Annoncér ikke Squeezebox Playere på det lokale netværk i Spotify Connect tilstand. Aktivér denne mulighed, hvis du ikke ønsker, at din Spotify Connect-aktiverede Squeezebox-afspillere skal vises i alle Spotify-apps på dit netværk.
 	DE	Squeezebox Player im Spotify Connect Modus nicht im lokalen Netzwerk bekannt geben. Aktiviere diese Option, falls dein Player im Spotify Connect Modus nur vom Spotify-Konto gesehen werden soll, welches zuletzt für dieses Gerät verwendet wurde.
 	EN	Don't announce Squeezebox players running in Spotify Connect mode in your network. Check this option if you don't want your Spotify Connect enabled Squeezebox player to show up in all Spotify apps in your network.
 	FR	Ne pas annoncer les platines Squeezebox compatibles Spotify Connect sur votre réseau. Cocher cette option si vous ne souhaitez pas que les platines Squeezebox compatibles Spotify Connect apparaissent dans toutes les applications Spotify de votre réseau.
@@ -282,7 +282,7 @@ PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
 
 PLUGIN_SPOTTY_CLEANUP_TAGS
 	CS	Zpřehlednit názvy alb a skladeb (např. odstranit "Deluxe Edition", "Remastered" atd.)
-	DA	Ryd op i albumnavne og -titler (fjern f.eks. "Deluxe Edition", "Remastered" osv.)
+	DA	Ryd op i album- og nummertitler (fjern f.eks. "Deluxe Edition", "Remastered" osv.)
 	DE	Albennamen und Titel bereinigen (z.B. "Deluxe Edition", "Remastered" etc. entfernen)
 	EN	Clean up album and track titles (eg. remove "Deluxe Edition", "Remastered" etc.)
 	FR	Épurer les titres des albums et des morceaux (par exemple, supprimer "Deluxe Edition", "Remastered"...)
@@ -300,7 +300,7 @@ PLUGIN_SPOTTY_HELPER_ERROR
 
 PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE
 	CS	Je mi líto, ale vaše architektura procesoru nebo operační systém s největší pravděpodobností nejsou se Spotty kompatibilní. Přesto jej můžete vyzkoušet. Ale nebuďte překvapeni, když se to nepodaří...
-	DA	Beklager, men højst sandsynligt er din processorarkitektur eller operativsystem ikke kompatibel med Spotty. Du kan stadig give det en chance. Men det forventes at mislykkes...
+	DA	Beklager, men højst sandsynligt er din processorarkitektur eller operativsystemet ikke kompatibel med Spotty. Du kan stadig give det en chance, men det forventes at mislykkes...
 	DE	Tut mir Leid, aber sehr wahrscheinlich ist ihre Prozessorarchitektur oder das Betriebssystem nicht mit Spotty kompatibel. Sie können noch immer einen Versuch wagen. Aber vermutlich wird er fehl schlagen.
 	EN	I'm sorry, but your processor architecture or operating system most likely is not compatible with Spotty. You can still give it a try. But don't be surprised if it fails...
 	FR	Malheureusement, votre architecture de processeur ou votre système d'exploitation n'est probablement pas compatible avec Spotty. Vous pouvez toujours essayer, mais ne soyez pas surpris si cela échoue...
@@ -309,7 +309,7 @@ PLUGIN_SPOTTY_SYSTEM_INCOMPATIBLE
 
 PLUGIN_SPOTTY_MISSING_HELPER
 	CS	Vyskytl se problém se spuštěním pomocné aplikace Spotty. Pravděpodobně není podporován váš operační systém a/nebo platforma. Nahlaste mi prosím následující údaje:
-	DA	Der opstod en fejl under kørsel af Spotty hjælpeprogrammet. Sandsynligvis er dit system ikke understøttet. Kontakt mig venligst med følgende platformoplysninger:
+	DA	Der opstod en fejl under kørsel af Spotty hjælpeprogrammet. Sandsynligvis er dit system ikke understøttet. Kontakt mig venligst og rapportér følgende platformoplysninger:
 	DE	Beim Ausführen der Spotty Helfer-Anwendung ist ein Fehler aufgetreten. Vermutlich wird diese auf ihrem System nicht unterstützt. Bitte wenden Sie sich an mich, unter Angabe der folgenden Plattform-Informationen:
 	EN	There has been a problem running the Spotty helper application. Most likely your operating system and/or platform is not supported. Please report the following details to me:
 	FR	Un problème est survenu lors de l'exécution de l'application Spotty Helper. Il est fort probable que votre système d'exploitation et/ou votre plateforme ne soient pas pris en charge. Merci de me communiquer les informations suivantes :
@@ -558,7 +558,7 @@ PLUGIN_SPOTTY_ADD_STUFF
 
 PLUGIN_SPOTTY_ADD_SONGS
 	CS	Přidejte prosím skladby do své hudební knihovny pro naplnění této sekce.
-	DA	Venligst tilføj sange til dit musikbibliotek for at udfylde dette  afsnit.
+	DA	Venligst tilføj sange til dit musikbibliotek for at udfylde dette afsnit.
 	DE	Fügen Sie Ihrer Musikbibliothek Lieder hinzu, um diesen Abschnitt zu füllen.
 	EN	Please add songs to your music library to populate your this section.
 	FR	Veuillez ajouter des morceaux à votre bibliothèque pour remplir cette section.
@@ -719,7 +719,7 @@ PLUGIN_SPOTTY_ON_SPOTIFY
 
 PLUGIN_SPOTTY_NO_PLAYER_CONNECTED
 	CS	Nelze získat přístup ke Spotify bez připojeného přehrávače.
-	DA	Du kan ikke få adgang til tjenesterne på Spotify med mindre der er tilsluttet en afspiller.
+	DA	Du kan ikke få adgang til tjenesterne på Spotify medmindre der er tilsluttet en afspiller.
 	DE	Sie können sich ohne Player nicht mit Spotify verbinden.
 	EN	Cannot access Spotify services without a player connected.
 	ES	No es posible acceder a servicios Spotify sin un reproductor conectado.
@@ -893,7 +893,7 @@ PLUGIN_SPOTTY_HOME_ITEMS
 	NL	"Home" menu aanpassen
 
 PLUGIN_SPOTTY_HOME_DESC
-	DA	Markér de "Forside" menupunkter, du ønsker at bruge, fjern markeringen fra ​​dem, du vil skjule.
+	DA	Markér de "Forside" menupunkter, du ønsker at bruge, og fjern markeringen fra ​​dem, du ønsker at skjule.
 	DE	Aktiviere die "Start" Menüeinträge, die du sehen willst, deaktiviere jene, die versteckt werden sollen.
 	EN	Check the "Home" menu items you want to use, uncheck those you want to hide.
 	FR	Cocher les éléments que vous souhaitez voir dans le menu "Accueil". Décocher ceux que vous souhaitez masquer.
