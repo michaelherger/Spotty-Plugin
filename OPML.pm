@@ -529,10 +529,10 @@ sub search {
 		elsif ($type eq 'playlist') {
 			push @items, @{playlistList($client, $results)};
 		}
-		elsif ($type eq 'show_audio') {
+		elsif ($type eq 'show') {
 			push @items, @{podcastList($client, $results)};
 		}
-		elsif ($type eq 'episode_audio') {
+		elsif ($type eq 'episode') {
 			push @items, @{episodesList($client, $results)};
 		}
 		else {
@@ -596,8 +596,8 @@ sub _searchItems {
 		[ 'PLAYLISTS', 'playlist', IMG_PLAYLIST ],
 		[ 'SONGS', 'track', IMG_SONG ],
 		# https://github.com/spotify/web-api/issues/551#issuecomment-486898766
-		[ 'PLUGIN_SPOTTY_SHOWS', 'show_audio', IMG_PODCAST ],
-		[ 'PLUGIN_SPOTTY_EPISODES', 'episode_audio', IMG_PODCAST ],
+		[ 'PLUGIN_SPOTTY_SHOWS', 'show', IMG_PODCAST ],
+		[ 'PLUGIN_SPOTTY_EPISODES', 'episode', IMG_PODCAST ],
 		[ 'PLUGIN_SPOTTY_USERS', 'user', IMG_ACCOUNT ]
 	);
 

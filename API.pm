@@ -378,10 +378,9 @@ sub search {
 		limit  => $args->{limit} || DEFAULT_LIMIT
 	};
 
-	if ( $type =~ /album|artist|track|playlist|show_audio|episode_audio/ ) {
+	if ( $type =~ /album|artist|track|playlist|show|episode/ ) {
 		Plugins::Spotty::API::Pipeline->new($self, 'search', sub {
 			my $type = $type . 's';
-			$type =~ s/_audio//;
 
 			my $items = [];
 
