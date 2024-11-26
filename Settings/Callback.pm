@@ -55,7 +55,7 @@ sub init {
 }
 
 sub getRedirectUri {
-	return sprintf('http://%s:%s/%s', Slim::Utils::Network::serverAddr(), preferences('server')->get('httpport'), CALLBACK_PATH);
+	return Slim::Utils::Network::serverURL() . '/' . CALLBACK_PATH;
 }
 
 sub getCallbackUrl { CALLBACK_URL }
