@@ -82,13 +82,13 @@ sub new {
 }
 
 sub getToken {
-	my ( $self, $cb ) = @_;
+	my ( $self, $cb, $args ) = @_;
 
 	if ($cache->get('spotty_rate_limit_exceeded')) {
 		return $cb->(-429) ;
 	}
 
-	Plugins::Spotty::API::Token->get($self, $cb);
+	Plugins::Spotty::API::Token->get($self, $cb, $args);
 }
 
 sub me {
@@ -1164,7 +1164,7 @@ sub browse {
 	$params ||= {};
 	$params->{country} ||= $self->country;
 
- 	my $message;
+	my $message;
 
 	Plugins::Spotty::API::Pipeline->new($self, "browse/$what", sub {
 		my $result = shift;
@@ -1301,6 +1301,12 @@ sub _getTimestamp {
 
 sub _call {
 	my ( $self, $url, $cb, $type, $params ) = @_;
+
+	my $args = {};
+	# https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
+	if ($url =~ m{^browse/|^recommendations|^artists/.*/related-artists|^playlists/.*/tracks}) {
+		$args->{code} = Plugins::Spotty::API::Web::_code();
+	}
 
 	$self->getToken(sub {
 		my ($token) = @_;
@@ -1504,7 +1510,7 @@ sub _call {
 				$http->get(sprintf(API_URL, $url), @headers);
 			}
 		}
-	});
+	}, $args);
 }
 
 # if we get a "rate limit exceeded" error, pause for the given delay
