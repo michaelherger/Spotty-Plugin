@@ -184,17 +184,9 @@ sub handleFeed {
 	$spotty->featuredPlaylists( sub {
 		my ($lists, $message) = @_;
 
-		# if we didn't get any playlists nor token, then something's wrong
+		# if we didn't get any playlists it might be the case that the API endpoint is deprecated :P
 		if ( !($lists && ref $lists && scalar @$lists && $message) ) {
-			$log->warn('Failed to get featured playlists and/or token - do not continue');
-			$cb->({
-				items => [{
-					name => cstring($client, 'PLUGIN_SPOTTY_ERROR_NO_ACCESS_TOKEN') . "\n" . cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
-					type => 'textarea'
-				}]
-			});
-
-			return;
+			$log->warn('Failed to get featured playlists and/or token');
 		}
 
 		# Build main menu structure
