@@ -1217,17 +1217,6 @@ sub categoryPlaylists {
 	$self->browse($cb, 'categories/' . $category . '/playlists', 'playlists');
 }
 
-sub featuredPlaylists {
-	my ( $self, $cb ) = @_;
-
-	my $params = {
-		locale => $self->locale,
-		timestamp => _getTimestamp(),
-	};
-
-	$self->browse($cb, 'featured-playlists', 'playlists', $params);
-}
-
 sub recommendations {
 	my ( $self, $cb, $args ) = @_;
 

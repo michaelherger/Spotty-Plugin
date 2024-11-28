@@ -180,167 +180,151 @@ sub handleFeed {
 	}
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
+	my ($lists, $message) = @_;
 
-	$spotty->featuredPlaylists( sub {
-		my ($lists, $message) = @_;
+	# Build main menu structure
+	my $items = [];
 
-		# if we didn't get any playlists it might be the case that the API endpoint is deprecated :P
-		if ( !($lists && ref $lists && scalar @$lists && $message) ) {
-			$log->warn('Failed to get featured playlists and/or token');
-		}
-
-		# Build main menu structure
-		my $items = [];
-
-		if ( hasRecentSearches() ) {
-			push @{$items}, {
-				name  => cstring($client, 'SEARCH'),
-				type  => 'link',
-				image => IMG_SEARCH,
-				url   => \&recentSearches,
-			};
-		}
-		else {
-			push @{$items}, {
-				name  => cstring($client, 'SEARCH'),
-				type  => 'search',
-				image => IMG_SEARCH,
-				url   => \&search,
-			};
-		}
-
+	if ( hasRecentSearches() ) {
 		push @{$items}, {
-			name  => cstring($client, 'PLUGIN_SPOTTY_WHATS_NEW'),
+			name  => cstring($client, 'SEARCH'),
 			type  => 'link',
-			image => IMG_NEWS,
-			url   => \&whatsNew
-		},
-		{
-			name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
+			image => IMG_SEARCH,
+			url   => \&recentSearches,
+		};
+	}
+	else {
+		push @{$items}, {
+			name  => cstring($client, 'SEARCH'),
+			type  => 'search',
+			image => IMG_SEARCH,
+			url   => \&search,
+		};
+	}
+
+	push @{$items}, {
+		name  => cstring($client, 'PLUGIN_SPOTTY_WHATS_NEW'),
+		type  => 'link',
+		image => IMG_NEWS,
+		url   => \&whatsNew
+	},
+	{
+		name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
+		type  => 'playlist',
+		image => IMG_TOPTRACKS,
+		url   => \&playlist,
+		passthrough => [{
+			uri => $topuri{$spotty->country()} || $topuri{XX}
+		}]
+	},
+	{
+		name  => cstring($client, 'PLUGIN_SPOTTY_GENRES_MOODS'),
+		type  => 'link',
+		image => IMG_GENRES,
+		url   => \&categories
+	};
+
+	my $personalItems = [{
+		name  => cstring($client, 'ALBUMS'),
+		type  => 'link',
+		image => IMG_ALBUM,
+		url  => \&myAlbums,
+	},{
+		name  => cstring($client, 'ARTISTS'),
+		type  => 'link',
+		image => IMG_ARTIST,
+		url   => \&myArtists
+	},{
+		name  => cstring($client, 'PLAYLISTS'),
+		type  => 'link',
+		image => IMG_PLAYLIST,
+		url   => \&playlists
+	}];
+
+	if ( Plugins::Spotty::Helper->getCapability('podcasts') ) {
+		push @$personalItems, {
+			name  => cstring($client, 'PLUGIN_SPOTTY_SHOWS'),
+			type  => 'link',
+			image => IMG_PODCAST,
+			url   => \&shows
+		};
+	}
+
+	# only give access to the tracks list if the user is using his own client ID
+	if ( _enableAdvancedFeatures() ) {
+		unshift @$personalItems, {
+			name  => cstring($client, 'PLUGIN_SPOTTY_SONGS_LIST'),
 			type  => 'playlist',
-			image => IMG_TOPTRACKS,
-			url   => \&playlist,
-			passthrough => [{
-				uri => $topuri{$spotty->country()} || $topuri{XX}
-			}]
-		},
-		{
-			name  => cstring($client, 'PLUGIN_SPOTTY_GENRES_MOODS'),
-			type  => 'link',
-			image => IMG_GENRES,
-			url   => \&categories
-		};
+			image => IMG_SONG,
+			url  => \&mySongs,
+		}
+	}
 
-		if ( $message && $lists && ref $lists && scalar @$lists ) {
+	my $homeItem = {
+		name  => cstring($client, 'PLUGIN_SPOTTY_HOME'),
+		type  => 'link',
+		image => IMG_HOME,
+		url   => \&home,
+	};
+
+	if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
+		my $credentials = Plugins::Spotty::AccountHelper->getAllCredentials();
+
+		foreach my $name ( sort {
+			lc($a) cmp lc($b)
+		} keys %$credentials ) {
 			push @$items, {
-				name  => $message,
-				image => IMG_INBOX,
-				items => playlistList($client, $lists)
-			};
-		}
-
-		my $personalItems = [{
-			name  => cstring($client, 'ALBUMS'),
-			type  => 'link',
-			image => IMG_ALBUM,
-			url  => \&myAlbums,
-		},{
-			name  => cstring($client, 'ARTISTS'),
-			type  => 'link',
-			image => IMG_ARTIST,
-			url   => \&myArtists
-		},{
-			name  => cstring($client, 'PLAYLISTS'),
-			type  => 'link',
-			image => IMG_PLAYLIST,
-			url   => \&playlists
-		}];
-
-		if ( Plugins::Spotty::Helper->getCapability('podcasts') ) {
-			push @$personalItems, {
-				name  => cstring($client, 'PLUGIN_SPOTTY_SHOWS'),
-				type  => 'link',
-				image => IMG_PODCAST,
-				url   => \&shows
-			};
-		}
-
-		# only give access to the tracks list if the user is using his own client ID
-		if ( _enableAdvancedFeatures() ) {
-			unshift @$personalItems, {
-				name  => cstring($client, 'PLUGIN_SPOTTY_SONGS_LIST'),
-				type  => 'playlist',
-				image => IMG_SONG,
-				url  => \&mySongs,
-			}
-		}
-
-		my $homeItem = {
-			name  => cstring($client, 'PLUGIN_SPOTTY_HOME'),
-			type  => 'link',
-			image => IMG_HOME,
-			url   => \&home,
-		};
-
-		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
-			my $credentials = Plugins::Spotty::AccountHelper->getAllCredentials();
-
-			foreach my $name ( sort {
-				lc($a) cmp lc($b)
-			} keys %$credentials ) {
-				push @$items, {
-					name => Plugins::Spotty::AccountHelper->getDisplayName($name),
-					items => [ map {{
-						name => $_->{name},
-						type => $_->{type},
-						image => $_->{image},
-						url => \&_withAccount,
-						passthrough => [{
-							name => $name,
-							cb => $_->{url}
-						}]
-					}} $homeItem, @$personalItems ],
-					image => IMG_ACCOUNT,
-				};
-			}
-		}
-		else {
-			unshift @$items, $homeItem;
-			push @$items, @$personalItems;
-		}
-
-		push @$items, {
-			name  => cstring($client, 'PLUGIN_SPOTTY_TRANSFER'),
-			type  => 'link',
-			image => IMG_TRANSFER,
-			url   => \&transferPlaylist
-		};
-
-		if ( $prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
-			push @$items, {
-				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
-				items => [{
-					name => Plugins::Spotty::AccountHelper->getDisplayName($spotty->username),
-					type => 'text'
-				},{
-					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
-					url   => \&selectAccount,
-				}],
+				name => Plugins::Spotty::AccountHelper->getDisplayName($name),
+				items => [ map {{
+					name => $_->{name},
+					type => $_->{type},
+					image => $_->{image},
+					url => \&_withAccount,
+					passthrough => [{
+						name => $name,
+						cb => $_->{url}
+					}]
+				}} $homeItem, @$personalItems ],
 				image => IMG_ACCOUNT,
 			};
 		}
+	}
+	else {
+		unshift @$items, $homeItem;
+		push @$items, @$personalItems;
+	}
 
-		# unshift @$items, {
-		# 	name => cstring($client, 'PLUGIN_SPOTTY_BROKEN'),
-		# 	type => 'textarea',
-		# };
+	push @$items, {
+		name  => cstring($client, 'PLUGIN_SPOTTY_TRANSFER'),
+		type  => 'link',
+		image => IMG_TRANSFER,
+		url   => \&transferPlaylist
+	};
 
-		$cb->({
+	if ( $prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
+		push @$items, {
+			name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
+			items => [{
+				name => Plugins::Spotty::AccountHelper->getDisplayName($spotty->username),
+				type => 'text'
+			},{
+				name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
+				url   => \&selectAccount,
+			}],
+			image => IMG_ACCOUNT,
+		};
+	}
+
+	# unshift @$items, {
+	# 	name => cstring($client, 'PLUGIN_SPOTTY_BROKEN'),
+	# 	type => 'textarea',
+	# };
+
+	$cb->({
 # XXX - how to refresh the title when the account has changed?
 #			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::AccountHelper->hasMultipleAccounts() ? sprintf(' (%s)', Plugins::Spotty::AccountHelper->getDisplayName($spotty->username)) : ''),
-			items => $items,
-		});
-	} );
+		items => $items,
+	});
 
 	return;
 }
