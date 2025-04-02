@@ -474,14 +474,14 @@ sub _connectEvent {
 			my $clientId = $client->id;
 
 			# if we're playing, got a stop event, and current Connect device is us, then pause
-			if ( $client->isPlaying && ($result->{device}->{id} eq Plugins::Spotty::Connect::DaemonManager->idFromMac($clientId) || $result->{device}->{name} eq $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
+			if ( $client->isPlaying && !$client->isStopped() && !$client->isPaused() && ($result->{device}->{id} eq Plugins::Spotty::Connect::DaemonManager->idFromMac($clientId) || $result->{device}->{name} eq $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause: " . $client->id);
 
 				my $request = Slim::Control::Request->new( $client->id, ['pause', 1] );
 				$request->source(__PACKAGE__);
 				$request->execute();
 			}
-			elsif ( $client->isPlaying && ($result->{device}->{id} ne Plugins::Spotty::Connect::DaemonManager->idFromMac($clientId) && $result->{device}->{name} ne $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
+			elsif ( $client->isPlaying && !$client->isStopped() && !$client->isPaused() && ($result->{device}->{id} ne Plugins::Spotty::Connect::DaemonManager->idFromMac($clientId) && $result->{device}->{name} ne $client->name) && __PACKAGE__->isSpotifyConnect($client) ) {
 				main::INFOLOG && $log->is_info && $log->info("Spotify told us to pause, but current player is no longer the Connect target");
 
 				my $request = Slim::Control::Request->new( $client->id, ['pause', 1] );
