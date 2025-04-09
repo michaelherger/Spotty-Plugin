@@ -249,6 +249,11 @@ sub scanPlaylists { if (main::SCANNER) {
 			$progress->update($account . string('COLON') . ' ' . $playlist->{name});
 			Slim::Schema->forceCommit;
 
+			if (!$playlist->{id}) {
+				$log->error("Received incomplete playlist data: " . Data::Dump::dump($playlist));
+				next;
+			}
+
 			my $tracks = $api->playlistTrackIDs($playlist->{id}, $getFullData);
 			$cache->set('spotty_playlist_tracks_' . $playlist->{id}, $tracks);
 
