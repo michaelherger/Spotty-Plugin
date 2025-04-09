@@ -1217,7 +1217,7 @@ sub trackList {
 				$item->{line1} = '* ' . $item->{line1};
 			}
 			else {
-				$item->{play} = 'spotify://' . $track_uri;
+				$item->{url} = $item->{play} = 'spotify://' . $track_uri;
 				$item->{favorites_url} = $track->{uri};
 				$item->{on_select} = 'play';
 				$item->{duration} = $track->{duration_ms} / 1000;
