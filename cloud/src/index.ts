@@ -20,7 +20,7 @@ interface StoredState {
 }
 
 const app = new Hono()
-const uaStringCheck = new RegExp(/^iTunes.*L(?:yrion|ogitech) M(?:usic|edia) Server/)
+const uaStringCheck = new RegExp(/L(?:yrion|ogitech) M(?:usic|edia) Server/)
 
 const DEFAULT_CACHE_TTL = 60 * 15
 const DEFAULT_REDIRECT = 'https://lyrion.org/invalid/path'
@@ -78,7 +78,7 @@ app.post('/auth/prepare', async (c: Context) => {
     try {
         const body = await c.req.json() as PrepareRequestBody
 
-        if (!uaStringCheck.test(uaString)) throw('Invalid caller UA string')
+        if (!uaStringCheck.test(uaString)) throw(`Invalid caller UA string: ${uaString}`)
         if (!body.url || !body.ua) throw('Invalid Body')
 
         const redirectUri = new URL(body.url)
