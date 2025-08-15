@@ -189,11 +189,6 @@ sub player {
 					$result->{track} = $libraryCache->normalize($result->{item});
 				}
 
-				# keep track of MAC -> ID mapping
-				if ( Plugins::Spotty::Plugin->canSpotifyConnect() ) {
-					Plugins::Spotty::Connect::DaemonManager->checkAPIConnectPlayer($self, $result);
-				}
-
 				$cb->($result);
 				return;
 			}
@@ -205,161 +200,6 @@ sub player {
 			market => 'from_token',
 		}
 	)
-}
-
-sub playerTransfer {
-	my ( $self, $cb, $device ) = @_;
-
-	$self->withIdFromMac(sub {
-		my $deviceId = shift;
-
-		if (!$deviceId) {
-			$cb->() if $cb;
-			return;
-		}
-
-		$self->_call('me/player',
-			sub {
-				$cb->() if $cb;
-			},
-			PUT => {
-				body => encode_json({
-					device_ids => [ $deviceId ],
-					play => 1
-				})
-			}
-		);
-	}, $device);
-}
-
-=pod
-sub playerPlay {
-	my ( $self, $cb, $device, $args ) = @_;
-
-	$self->withIdFromMac(sub {
-		$args ||= {};
-		$args->{device_id} = $_[0] if $_[0];
-
-		$self->_call('me/player/play',
-			sub {
-				$cb->() if $cb;
-			},
-			PUT => $args
-		);
-	}, $device);
-}
-=cut
-
-sub playerPause {
-	my ( $self, $cb, $device ) = @_;
-
-	$self->withIdFromMac(sub {
-		my $args = {};
-		$args->{device_id} = $_[0] if $_[0];
-
-		$self->_call('me/player/pause',
-			sub {
-				$cb->() if $cb;
-			},
-			PUT => $args
-		);
-	}, $device);
-}
-
-sub playerNext {
-	my ( $self, $cb, $device ) = @_;
-
-	$self->withIdFromMac(sub {
-		my $args = {};
-		$args->{device_id} = $_[0] if $_[0];
-
-		$self->_call('me/player/next',
-			sub {
-				$cb->() if $cb;
-			},
-			POST => $args
-		);
-	}, $device);
-}
-
-sub playerSeek {
-	my ( $self, $cb, $device, $songtime ) = @_;
-
-	$self->withIdFromMac(sub {
-		my $args = {
-			position_ms => int($songtime * 1000),
-		};
-
-		$args->{device_id} = $_[0] if $_[0];
-
-		$self->_call('me/player/seek',
-			sub {
-				$cb->() if $cb;
-			},
-			PUT => $args
-		);
-	}, $device);
-}
-
-sub playerVolume {
-	my ( $self, $cb, $device, $volume ) = @_;
-
-	$self->withIdFromMac(sub {
-		my $args = {
-			volume_percent => int($volume),
-		};
-
-		$args->{device_id} = $_[0] if $_[0];
-
-		$self->_call('me/player/volume',
-			sub {
-				$cb->() if $cb;
-			},
-			PUT => $args
-		);
-	}, $device);
-}
-
-sub idFromMac {
-	my ( $class, $mac ) = @_;
-
-	return Plugins::Spotty::Plugin->canSpotifyConnect()
-		&& Plugins::Spotty::Connect::DaemonManager->idFromMac($mac);
-}
-
-sub withIdFromMac {
-	my ( $self, $cb, $mac ) = @_;
-
-	my $id = $self->idFromMac($mac);
-
-	if ( $id || $mac !~ /((?:[a-f0-9]{2}:){5}[a-f0-9]{2})/i ) {
-		$cb->($id || $mac);
-	}
-	else {
-		# ID wasn't in the cache yet, let's get the playerlist
-		$self->devices(sub {
-			$cb->($self->idFromMac($mac));
-		});
-	}
-}
-
-sub devices {
-	my ( $self, $cb ) = @_;
-
-	$self->_call('me/player/devices',
-		sub {
-			my ($result) = @_;
-
-			if ( Plugins::Spotty::Plugin->canSpotifyConnect() ) {
-				Plugins::Spotty::Connect::DaemonManager->checkAPIConnectPlayers($self, $result);
-			}
-
-			$cb->() if $cb;
-		},
-		GET => {
-			_nocache => 1,
-		}
-	);
 }
 
 sub search {
@@ -1548,13 +1388,6 @@ sub canPodcast {
 	return $self->_canPodcast if defined $self->_canPodcast;
 
 	$self->_canPodcast(Plugins::Spotty::Helper->getCapability('podcasts') || 0);
-}
-
-sub doesAutoplay {
-	my $self = $_[0];
-
-	return unless $prefs->client($self->client)->get('enableAutoplay');
-	return Plugins::Spotty::Helper->getCapability('autoplay');
 }
 
 sub _DEFAULT_LIMIT {

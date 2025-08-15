@@ -128,7 +128,7 @@ sub startHelper {
 
 			if (main::INFOLOG && $log->is_info) {
 				push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');
-				$log->info("Starting Spotty Connect deamon: \n$helperPath " . join(' ', @helperArgs));
+				$log->info("Starting Spotty deamon: \n$helperPath " . join(' ', @helperArgs));
 			}
 
 			eval {

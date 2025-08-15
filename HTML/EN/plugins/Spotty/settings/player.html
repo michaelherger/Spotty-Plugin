@@ -31,18 +31,4 @@
 		</select>
 	[% END %]
 
-	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="" %]
-		[% IF errorString %]
-			<div style="color: red">[% errorString %]</div>
-		[% ELSE %]
-			<input type="checkbox" name="pref_enableSpotifyConnect" id="pref_enableSpotifyConnect" value="1" [% prefs.pref_enableSpotifyConnect ? "checked" : "" %]>
-			<label for="pref_enableSpotifyConnect">[% "PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC" | string %]</label>
-			[% IF canAutoplay %]
-				<br/>
-				<input name="pref_enableAutoplay" id="pref_enableAutoplay" type="checkbox" [% IF prefs.pref_enableAutoplay %] checked [% END %]>
-				<label for="pref_enableAutoplay">[% "PLUGIN_SPOTTY_AUTOPLAY_DESC" | string %]</label>
-			[% END %]
-		[% END %]
-	[% END %]
-
 [% PROCESS settings/footer.html %]

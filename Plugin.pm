@@ -18,7 +18,6 @@ use Plugins::Spotty::Helper;
 use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
-use constant CONNECT_HELPER_VERSION => '0.12.0';
 use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 
 my $prefs = preferences('plugin.spotty');
@@ -67,7 +66,6 @@ sub initPlugin {
 		},
 		accountSwitcherMenu => 0,
 		disableDiscovery => 0,
-		checkDaemonConnected => 0,
 		displayNames => {},
 		helper => '',
 		sortSongsAlphabetically => 1,
@@ -103,12 +101,6 @@ sub initPlugin {
 			return 1;
 		});
 	}
-
-	# we probably turned this on for too many users - let's start over
-	$prefs->migrate(2, sub {
-		$prefs->set('checkDaemonConnected', 0);
-		return 1;
-	});
 
 	# Spotty seems to be disabling all those hosts... use fallback by default now...
 	$prefs->migrate(3, sub {
@@ -155,8 +147,6 @@ sub postinitPlugin { if (main::TRANSCODING) {
 
 	# we're going to hijack the Spotify URI schema
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
-
-	$class->canSpotifyConnect();
 
 	# if user has the Don't Stop The Music plugin enabled, register ourselves
 	if ( Slim::Utils::PluginManager->isEnabled('Slim::Plugin::DontStopTheMusic::Plugin')
@@ -322,30 +312,6 @@ sub getAPIHandler {
 	return $api;
 }
 
-sub canSpotifyConnect {
-	my ($class, $dontInit) = @_;
-
-# TODO - fix Connect mode!
-	return 0;
-
-	# we need a minimum helper application version
-	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Helper->getVersion(), CONNECT_HELPER_VERSION, 10) ) {
-		$log->error("Cannot support Spotty Connect, need at least helper version " . CONNECT_HELPER_VERSION);
-		return;
-	}
-
-	require Plugins::Spotty::Connect;
-
-	Plugins::Spotty::Connect->init() unless $dontInit;
-
-	return 1;
-}
-
-sub isSpotifyConnect {
-	my $class = shift;
-	return $class->canSpotifyConnect() && Plugins::Spotty::Connect->isSpotifyConnect(@_);
-}
-
 sub canDiscovery { 1 }
 
 # we only run when transcoding is enabled, but shutdown would be called no matter what
@@ -355,10 +321,6 @@ sub shutdownPlugin { if (main::TRANSCODING) {
 	# make sure we don't leave our helper app running
 	if (main::WEBUI) {
 		Plugins::Spotty::Settings::Auth->shutdownHelper();
-	}
-
-	if (__PACKAGE__->canSpotifyConnect()) {
-		Plugins::Spotty::Connect->shutdown();
 	}
 } }
 

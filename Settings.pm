@@ -44,8 +44,7 @@ sub page {
 }
 
 sub prefs {
-	my @prefs = qw(myAlbumsOnly cleanupTags bitrate iconCode accountSwitcherMenu helper optimizePreBuffer sortAlbumsAlphabetically sortArtistsAlphabetically sortPlaylisttracksByAddition);
-	push @prefs, 'disableDiscovery', 'checkDaemonConnected' if Plugins::Spotty::Plugin->canDiscovery();
+	my @prefs = qw(myAlbumsOnly cleanupTags bitrate iconCode accountSwitcherMenu helper sortAlbumsAlphabetically sortArtistsAlphabetically sortPlaylisttracksByAddition);
 	push @prefs, 'disableAsyncTokenRefresh' if Plugins::Spotty::Helper->getCapability('save-token');
 	push @prefs, 'sortSongsAlphabetically' if !Plugins::Spotty::Plugin->hasDefaultIcon();
 	push @prefs, 'forceFallbackAP' if !Plugins::Spotty::Helper->getCapability('no-ap-port');
@@ -69,10 +68,6 @@ sub handler {
 
 	if ($paramRef->{saveSettings}) {
 		$paramRef->{pref_iconCode} ||= Plugins::Spotty::Plugin->initIcon();
-
-		foreach my $client ( Slim::Player::Client::clients() ) {
-			$prefs->client($client)->set('enableSpotifyConnect', $paramRef->{'connect_' . $client->id} ? 1 : 0);
-		}
 
 		if ($paramRef->{clearPlaylistFolderCache}) {
 			Plugins::Spotty::PlaylistFolders->purgeCache(1);
@@ -119,7 +114,6 @@ sub handler {
 		{
 			name => $_->name,
 			id => $_->id,
-			enabled => $prefs->client($_)->get('enableSpotifyConnect')
 		}
 	} Slim::Player::Client::clients() ];
 
@@ -163,7 +157,6 @@ sub beforeRender {
 
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
-	$paramRef->{canConnect}     = Plugins::Spotty::Plugin->canSpotifyConnect();
 	$paramRef->{canAsyncTokenRefresh} = Plugins::Spotty::API::Token::CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token');
 	$paramRef->{canApPort}      = !Plugins::Spotty::Helper->getCapability('no-ap-port');
 

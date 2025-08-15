@@ -287,24 +287,6 @@ PLUGIN_SPOTTY_HELPER_PORTS
 	HU	Kérjük, győződjön meg arról, hogy a 80-as, 443-as és 4070-es portokon engedélyezi a helper alkalmazás számára az internet elérését.
 	NL	Zorg ervoor dat je toestaat dat de hulptoepassing internettoegang heeft op de poorten 80, 443 en 4070.
 
-PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC
-	CS	Neoznamovat ve své síti přehrávače Squeezebox spuštěné v režimu Spotify Connect. Tuto možnost zaškrtněte, pokud nechcete, aby se váš přehrávač Squeezebox s povoleným režimem Spotify Connect zobrazoval ve všech aplikacích Spotify ve vaší síti.
-	DA	Annoncér ikke Squeezebox Playere på det lokale netværk i Spotify Connect tilstand. Aktivér denne mulighed, hvis du ikke ønsker, at din Spotify Connect-aktiverede Squeezebox-afspillere skal vises i alle Spotify-apps på dit netværk.
-	DE	Squeezebox Player im Spotify Connect Modus nicht im lokalen Netzwerk bekannt geben. Aktiviere diese Option, falls dein Player im Spotify Connect Modus nur vom Spotify-Konto gesehen werden soll, welches zuletzt für dieses Gerät verwendet wurde.
-	EN	Don't announce Squeezebox players running in Spotify Connect mode in your network. Check this option if you don't want your Spotify Connect enabled Squeezebox player to show up in all Spotify apps in your network.
-	FR	Ne pas annoncer les platines Squeezebox compatibles Spotify Connect sur votre réseau. Cocher cette option si vous ne souhaitez pas que les platines Squeezebox compatibles Spotify Connect apparaissent dans toutes les applications Spotify de votre réseau.
-	HU	Ne jelentse be a hálózaton a Spotify Connect módban futó Squeezebox-lejátszókat. Jelölje be ezt a lehetőséget, ha nem szeretné, hogy a Spotify Connect-kompatibilis Squeezebox lejátszója megjelenjen a hálózaton lévő összes Spotify alkalmazásban.
-	NL	Kondig geen Squeezebox muziekspelers aan in de Spotify Connect modus in jouw netwerk. Vink deze optie aan als je niet wilt dat Spotify Connect compatibele Squeezebox muziekspelers in alle Spotify apps op jouw netwerk verschijnen.
-
-PLUGIN_SPOTTY_OPTIMIZE_PRE_BUFFERING
-	CS	Optimalizovat přednačítání - povolte pouze v případě, kdy se zdá, že vaše aplikace Spotify předbíhá přehrávání Spotty v režimu Connect.
-	DA	Optimér mellemlagring - anbefales kun, hvis din Spotify-app i Connect-tilstand ser ud til at være numre foran Spotty-afspilning.
-	DE	Pre-Buffering optimieren - nur empfohlen, wenn die Spotify App im Connect Modus Spotty weit voraus zu sein scheint.
-	EN	Optimize Pre-Buffering - only enable if your Spotify application seems to be tracks ahead of Spotty playback in Connect mode.
-	FR	Optimiser la mise en cache anticipée. A n'activer que si votre application Spotify est en avance sur Spotty en mode Connect.
-	HU	Az előpufferelés optimalizálása – csak akkor kapcsolja be, ha a Spotify-alkalmazás úgy tűnik, hogy a csatlakozási módban a Spotty lejátszás előtt van.
-	NL	Optimaliseer pre-buffering - schakel deze optie alleen in als de Spotify App nummers voorloopt op de Spotty weergave in de Connect modus.
-
 PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
 	CS	Zobrazit pouze alba mé knihovny pro interprety mé knihovny.
 	DA	Vis kun albums i mit bibliotek for kunstnere i mit bibliotek.
@@ -368,15 +350,6 @@ PLUGIN_SPOTTY_LO_POWER_PI
 	HU	Úgy tűnik, a Spotty a legalacsonyabb specifikációjú Raspberry Pi-n (első generációs Pi A/A+/B/B+ vagy Pi Zero) fut. A Spotty valószínűleg nem fog működni ezen a platformon.
 	NL	Het lijkt erop dat je Spotty gebruikt op een Raspberry Pi met de laagste specificatie (eerste generatie Pi A/A+/B/B+ of Pi Zero). Spotty zal waarschijnlijk niet werken op dit platform.
 
-PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED
-	CS	Monitorovat připojení pomocníka Spotty Connect k serverům Spotify. To může být užitečné, pokud vaše zařízení s povolenou funkcí Spotty Connect pravidelně mizí z aplikací Spotify.
-	DA	Overvåg forbindelsen fra Spotty Connect hjælpeprogrammet til Spotify serverne. Dette kan hjælpe, hvis Spotty Connect aktiverede enheder regelmæssigt forsvinder fra Spotify apps.
-	DE	Überwache die Verbindung der Spotty Connect Helferanwendung mit den Spotify Servern. Dies kann helfen, wenn Spotty Connect aktivierte Geräte regelmässig aus den Spotify-Anwendungen verschwinden.
-	EN	Monitor the connection of the Spotty Connect helper with the Spotify servers. This can be useful if your Spotty Connect enabled devices regularly disappear from the Spotify apps.
-	FR	Surveiller la connexion de Spotty Connect Helper avec les serveurs Spotify. Cela peut être utile si vos appareils compatibles Spotty Connect disparaissent régulièrement des applications Spotify.
-	HU	Figyelje a Spotty Connect kapcsolatát a Spotify szerverekkel. Ez akkor lehet hasznos, ha a Spotty Connect-kompatibilis eszközei rendszeresen eltűnnek a Spotify alkalmazásokból.
-	NL	Monitor de verbinding van de Spotty Connect hulptoepassing met de Spotify servers. Dit kan handig zijn als jouw voor Spotty Connect geschikte apparaten regelmatig uit de Spotify apps verdwijnen.
-
 PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH
 	CS	Zakázat asynchronní volání obnovení tokenu. Upozorňujeme, že to může na několik sekund zablokovat Lyrion Music Server.
 	DA	Deaktivér asynkron token-opdatering. Bemærk venligst, at dette kan potentielt blokere din Lyrion Music Server i nogle få sekunder.
@@ -403,24 +376,6 @@ PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC
 	FR	Parfois, les serveurs de Spotify ne répondent pas correctement. Vous pouvez alors tenter d’utiliser le point d’accès de secours.
 	HU	Néha a Spotify egyes hozzáférési pontjai nem válaszolnak megfelelően. Ebben a helyzetben megpróbálhatja helyette a tartalék szervereket használni.
 	NL	Soms reageren de Access Points van Spotify niet correct. In deze situatie kan het helpen om in plaats daarvan de fallback servers te gebruiken.
-
-PLUGIN_SPOTTY_ADVANCED_SETTING
-	CS	Pokročilá nastavení
-	DA	Avancerede indstillinger
-	DE	Erweiterte Einstellungen
-	EN	Advanced Settings
-	FR	Réglages avancés
-	HU	Speciális beállítások
-	NL	Geavanceerde Instellingen
-
-PLUGIN_SPOTTY_ADVANCED_SETTING_DESC
-	CS	Následující nastavení neměňte, pokud přesně nevíte, co děláte, nebo pokud jsem vám to neřekl. Při nesprávném použití mohou mít negativní dopad na zážitek ze Spotty.
-	DA	Venligst kun ændre følgende indstillinger, hvis du ved, hvad du laver, eller bliver bedt om det. Forkerte indstillinger kan have en negativ indvirkning på Spottys drift.
-	DE	Bitte verändere die folgenden Einstellungen nur, wenn du weisst was du tust, oder dazu aufgefordert wirst. Falsche Einstellungen können einen negativen Einfluss haben auf den Betrieb von Spotty.
-	EN	Please don't change the following settings, unless you know exactly what you're doing - or I told you to do so. Used the wrong way they can have a negative impact on the Spotty experience.
-	FR	Veuillez ne pas modifier les paramètres suivants, à moins que vous ne sachiez exactement ce que vous faites (ou que je vous aie dit de le faire). Utilisés de la mauvaise manière, ils peuvent avoir un impact négatif sur l'expérience Spotty.
-	HU	Kérjük, ne változtassa meg a következő beállításokat, hacsak nem tudja pontosan, hogy mit csinál – vagy én mondtam, hogy tegye meg. Rossz módon használva negatív hatással lehetnek a Spotty-élményre.
-	NL	Wijzig de volgende instellingen niet, tenzij je precies weet wat je doet (of als het wordt gevraagd). Als ze op de verkeerde manier worden gebruikt, kunnen ze de Spotty ervaring negatief beïnvloeden.
 
 PLUGIN_SPOTTY_WHATS_NEW
 	CS	Novinky
@@ -674,15 +629,6 @@ PLUGIN_SPOTTY_TRANSFER_DESC
 	HU	A Spotify lejátszást átviheti az alább felsorolt ​​eszközről a Squeezeboxra. Felhívjuk figyelmét, hogy nem mindig lehet pontosan ugyanazt a lejátszási listát visszaállítani.
 	NL	Je kunt de Spotify weergave van het onderstaande apparaat overzetten naar jouw Squeezebox. Houd er rekening mee dat het niet altijd mogelijk is om exact dezelfde afspeellijst te herstellen.
 
-PLUGIN_SPOTTY_TRANSFER_CONNECT_DESC
-	CS	Přehrávání Spotify z níže uvedeného zařízení můžete přenést do Squeezeboxu. Přehrávání bude pokračovat v režimu Spotify Connect. To znamená, že se přehrávání na původním zařízení zastaví.
-	DA	Du kan overføre Spotify-afspilning fra enheden på listen nedenfor til din Squeezebox. Afspilningen fortsætter i Spotify Connect tilstand. Det betyder, at afspilningen på den oprindelige enhed stopper.
-	DE	Sie können die Spotify Wiedergabe vom unten gelisteten Gerät übernehmen. Die Wiedergabe wirde im Spotify Connect Modus weitergeführt. D.h. dass die Wiedergabe auf dem anderen Gerät angehalten wird.
-	EN	You can transfer Spotify playback from below listed device to your Squeezebox. Playback will continue in Spotify Connect mode. This means that playback on the origin device will stop.
-	FR	Vous pouvez transférer la lecture Spotify de l'appareil répertorié ci-dessous vers votre Squeezebox. La lecture se poursuivra en mode Spotify Connect. Cela signifie que la lecture sur le périphérique d'origine s'arrêtera.
-	HU	A Spotify lejátszást átviheti az alább felsorolt ​​eszközről a Squeezeboxra. A lejátszás Spotify Connect módban folytatódik. Ez azt jelenti, hogy a lejátszás az eredeti eszközön leáll.
-	NL	Je kunt de Spotify weergave van het onderstaande apparaat overzetten naar jouw Squeezebox. Het afspelen gaat verder in de Spotify Connect modus. Dit betekent dat het afspelen op het oorspronkelijke apparaat stopt.
-
 PLUGIN_SPOTTY_NO_PLAYER_FOUND
 	CS	Nebylo nalezeno žádné zařízení přehrávající Spotify.
 	DA	Der blev ikke fundet nogen enhed eller afspilleliste.
@@ -888,36 +834,6 @@ PLUGIN_SPOTTY_PLEASE_UPDATE
 	FR	Les informations ne sont pas disponibles. Veuillez mettre à jour Lyrion Music Server vers 7.7.6 ou une version plus récente.
 	HU	Információ nem elérhető. Kérjük, frissítse a LMS 7.7.6 vagy újabb verzióra.
 	NL	Informatie is niet beschikbaar. Update Lyrion Music Server naar versie 7.7.6 of recenter.
-
-PLUGIN_SPOTTY_SPOTIFY_CONNECT
-	EN	Spotify Connect
-
-PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
-	CS	Vyberte přehrávače, které chcete používat se službou Spotify Connect. Mějte na paměti, že každé povolené zařízení spustí proces na pozadí. To může vést k problémům na serverech s nedostatkem paměti.
-	DA	Vælg hvilke afspillere du ønsker at bruge med Spotify Connect. Husk, at hver aktiveret enhed vil starte en baggrundsproces. Dette kan medføre problemer på servere, der løber tør for hukommelse.
-	DE	Wählen Sie aus, welche Geräte als Spotify Connect Endpunkte zur Auswahl stehen sollen. Bitte beachten Sie, dass für jedes Gerät ein Hintergrundprozess gestartet wird. Dies kann auf Geräten mit wenig Speicher u.U. zu Problemen führen.
-	EN	Select which players you'd like to use with Spotify Connect. Please keep in mind that every enabled device will launch a background process. This could potentially lead to issues on servers running low on memory.
-	FR	Sélectionner les platines à utiliser avec Spotify Connect. Garder à l'esprit que chaque appareil activé lancera un processus en arrière-plan. Cela pourrait potentiellement entraîner des problèmes sur des serveurs avec peu de mémoire.
-	HU	Válassza ki, mely lejátszókat szeretné használni a Spotify Connect szolgáltatással. Ne feledje, hogy minden engedélyezett eszköz elindít egy háttérfolyamatot. Ez problémákat okozhat a kiszolgálókon, amelyeknél kevés a memória.
-	NL	Selecteer welke muziekspelers je wilt gebruiken met Spotify Connect. Houd er rekening mee dat er voor elk apparaat een proces start op de achtergrond. Dit kan mogelijk tot problemen leiden op servers met weinig geheugen.
-
-PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
-	CS	Povolit přístupový bod Spotify Connect pro tento přehrávač
-	DA	Aktivér Spotify Connect for denne afspiller
-	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen
-	EN	Enable Spotify Connect endpoint for this player
-	FR	Rendre cette platine disponible pour Spotify Connect
-	HU	Spotify Connect végpont engedélyezése ehhez a lejátszóhoz
-	NL	Schakel Spotify Connect in voor deze muziekspeler
-
-PLUGIN_SPOTTY_NEED_HELPER_UPDATE
-	CS	Spotify Connect není k dispozici.
-	DA	Spotify Connect er ikke tilgængelig.
-	DE	Spotify Connect ist nicht verfügbar.
-	EN	Spotify Connect is not available.
-	FR	Spotify Connect n'est pas disponible.
-	HU	A Spotify Connect nem érhető el.
-	NL	Spotify Connect is niet beschikbaar.
 
 PLUGIN_SPOTTY_HOME_ITEMS
 	DE	"Start" Menüeinträge

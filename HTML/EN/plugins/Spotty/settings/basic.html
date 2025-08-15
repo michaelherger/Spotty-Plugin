@@ -112,49 +112,7 @@
 		<label for="clearSearchHistory">[% "PLUGIN_SPOTTY_CLEAR_SEARCH_HISTORY" | string %]</label>
 	[% END %]
 
-	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG" %]
-		[% IF !canConnect %]
-			[% "PLUGIN_SPOTTY_NEED_HELPER_UPDATE" | string %]
-		[% ELSE %]
-			[% IF players.size == 0 %]
-				[% "NO_PLAYER_FOUND" | string %]
-			[% END %]
-			<table style="border-spacing:0">
-			[% FOREACH player IN players %]
-				[% maxCols = 5 %]
-				[% IF loop.index() % maxCols == 0 %]<tr>[% END %]
-				<td style="padding: 0 10px 2px 0">
-					<input type="checkbox" name="connect_[% player.id %]" id="connect_[% player.id %]" [% IF player.enabled %] checked [% END %] value="1" />
-					<label for="connect_[% player.id %]">[% player.name %]</label>
-				</td>
-				[% IF (loop.index + 1) % maxCols == 0 %]</tr>[% END %]
-			[% END %]
-			</table>
-		[% END %]
-	[% END %]
-
 	[% PROCESS "plugins/Spotty/settings/helpers.html" %]
-
-	[% WRAPPER setting title="PLUGIN_SPOTTY_ADVANCED_SETTING" desc="" %]
-		[% "PLUGIN_SPOTTY_ADVANCED_SETTING_DESC" | string %]
-	[% END %]
-
-	[% IF canConnect; WRAPPER setting title="" desc="" %]
-		<input name="pref_optimizePreBuffer" id="pref_optimizePreBuffer" type="checkbox" [% IF prefs.pref_optimizePreBuffer %] checked [% END %]>
-		<label for="pref_optimizePreBuffer">[% "PLUGIN_SPOTTY_OPTIMIZE_PRE_BUFFERING" | string %]</label>
-	[% END; ELSE %]
-		<input name="pref_optimizePreBuffer" id="pref_optimizePreBuffer" type="hidden" value="[% prefs.pref_optimizePreBuffer %]">
-	[% END %]
-
-	[% IF canConnect && canDiscovery; WRAPPER setting title="" desc="" %]
-		<input name="pref_disableDiscovery" id="pref_disableDiscovery" type="checkbox" [% IF prefs.pref_disableDiscovery %] checked [% END %]>
-		<label for="pref_disableDiscovery">[% "PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC" | string %]</label>
-	[% END; END %]
-
-	[% IF canConnect && canDiscovery; WRAPPER setting title="" desc="" %]
-		<input name="pref_checkDaemonConnected" id="pref_checkDaemonConnected" type="checkbox" [% IF prefs.pref_checkDaemonConnected %] checked [% END %]>
-		<label for="pref_checkDaemonConnected">[% "PLUGIN_SPOTTY_CHECK_DAEMON_IS_CONNECTED" | string %]</label>
-	[% END; END %]
 
 	[% IF canAsyncTokenRefresh; WRAPPER setting title="" desc="" %]
 		<input name="pref_disableAsyncTokenRefresh" id="pref_disableAsyncTokenRefresh" type="checkbox" [% IF prefs.pref_disableAsyncTokenRefresh %] checked [% END %]>
