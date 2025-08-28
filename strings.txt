@@ -835,6 +835,15 @@ PLUGIN_SPOTTY_PLEASE_UPDATE
 	HU	Információ nem elérhető. Kérjük, frissítse a LMS 7.7.6 vagy újabb verzióra.
 	NL	Informatie is niet beschikbaar. Update Lyrion Music Server naar versie 7.7.6 of recenter.
 
+PLUGIN_SPOTTY_SPOTIFY_CONNECT
+	EN	Spotify Connect
+
+PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
+	DE	<b>Was ist mit dem Connect-Modus passiert?</b> Er ist verschwunden. Durch die neuesten API-Änderungen seitens Spotify musste ich die Entwicklung von <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a> einholen. Das ist die Bibliothek, die die Spotify-Wiedergabe ermöglicht. Leider war mein Hack, um den Connect-Modus in Spotty zu implementieren, mit der aktuellen Entwicklung nicht mehr kompatibel. Da der Connect-Modus ohnehin immer "spotty" war, habe ich ihn entfernt. Hoffentlich kann ich in naher Zukunft an einer neuen Implementierung arbeiten.
+	EN	<b>What happened to Connect mode?</b> It's gone. With the latest API changes on Spotify's end I had to catch up with <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a> development. This is the library which does all the magic for the Spotify playback. Unfortunately my hack to implement Connect mode in Spotty was not compatible with their latest development. As Connect mode had been "spotty" anyway, I decided to remove it. Hopefully I'll get back to working on a new implementation in the not too distant future.
+	FR	<b>Qu'est-il arrivé au mode Connect ?</b> Il a disparu. Avec les derniers changements d'API côté Spotify, j'ai dû suivre le développement de <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a>. C'est la bibliothèque qui gère toute la magie de la lecture Spotify. Malheureusement, mon hack pour implémenter le mode Connect dans Spotty n'était plus compatible avec leurs dernières évolutions. Comme le mode Connect était de toute façon instable, j'ai décidé de le retirer. J'espère pouvoir travailler sur une nouvelle version dans un avenir pas trop lointain.
+	NL	<b>Wat is er gebeurd met Connect-modus?</b> Die is verdwenen. Door de laatste API-wijzigingen aan de kant van Spotify moest ik de ontwikkeling van <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a> bijbenen. Dit is de bibliotheek die alle magie voor Spotify-afspelen verzorgt. Helaas was mijn hack om Connect-modus in Spotty te implementeren niet compatibel met hun nieuwste ontwikkelingen. Omdat Connect-modus toch al "spotty" was, heb ik besloten deze te verwijderen. Hopelijk kan ik binnenkort werken aan een nieuwe implementatie.
+
 PLUGIN_SPOTTY_HOME_ITEMS
 	DE	"Start" Menüeinträge
 	DA	Tilpasning af forside menuen

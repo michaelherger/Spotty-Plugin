@@ -65,7 +65,6 @@ sub initPlugin {
 			'recently-played' => -1,
 		},
 		accountSwitcherMenu => 0,
-		disableDiscovery => 0,
 		displayNames => {},
 		helper => '',
 		sortSongsAlphabetically => 1,
