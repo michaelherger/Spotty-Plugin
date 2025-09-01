@@ -11,6 +11,7 @@ use File::Basename;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
+use Slim::Utils::Timers;
 
 use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::API;
@@ -19,6 +20,7 @@ use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
 use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
+use constant KILL_PROCESS_INTERVAL => 3600;
 
 my $prefs = preferences('plugin.spotty');
 my $serverPrefs = preferences('server');
@@ -137,6 +139,7 @@ sub initPlugin {
 	Plugins::Spotty::AccountHelper->purgeCache('init');
 	Plugins::Spotty::AccountHelper->purgeAudioCache(1);
 	Plugins::Spotty::AccountHelper->getAllCredentials();
+	$class->killHangingProcesses(1);
 }
 
 sub postinitPlugin { if (main::TRANSCODING) {
@@ -313,9 +316,40 @@ sub getAPIHandler {
 
 sub canDiscovery { 1 }
 
+# won't work on Windows...
+sub killHangingProcesses { if (!main::ISWINDOWS) {
+	my ($class, $force) = @_;
+
+	Slim::Utils::Timers::killTimers($class, \&killHangingProcesses);
+
+	my $isBusy;
+	for my $client (Slim::Player::Client::clients()) {
+		if ( $client->isPlaying() ) {
+			main::DEBUGLOG && $log->is_debug && $log->debug("Player " . $client->name() . " is busy...");
+			$isBusy = 1;
+			last;
+		}
+	}
+
+	if ($force || !$isBusy) {
+		my $helper = Plugins::Spotty::Helper->get();
+		$helper = basename($helper) if $helper;
+
+		eval {
+			`killall $helper &> /dev/null` if $helper;
+			`killall spotty-custom &> /dev/null`;
+		};
+
+		$@ && $log->warn("Could not kill hanging spotty processes: $@");
+	}
+
+	Slim::Utils::Timers::setTimer($class, time() + KILL_PROCESS_INTERVAL, \&killHangingProcesses);
+} }
+
 # we only run when transcoding is enabled, but shutdown would be called no matter what
 sub shutdownPlugin { if (main::TRANSCODING) {
 	Plugins::Spotty::AccountHelper->purgeAudioCache(1);
+	__PACKAGE__->killHangingProcesses(1);
 
 	# make sure we don't leave our helper app running
 	if (main::WEBUI) {
