@@ -336,8 +336,8 @@ sub killHangingProcesses { if (!main::ISWINDOWS) {
 		$helper = basename($helper) if $helper;
 
 		eval {
-			`killall $helper &> /dev/null` if $helper;
-			`killall spotty-custom &> /dev/null`;
+			`ps ax | fgrep $helper | fgrep -v grep > /dev/null && killall $helper &> /dev/null` if $helper;
+			`ps ax | fgrep spotty-custom | fgrep -v grep > /dev/null && killall spotty-custom &> /dev/null`;
 		};
 
 		$@ && $log->warn("Could not kill hanging spotty processes: $@");
