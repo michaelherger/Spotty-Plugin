@@ -44,6 +44,7 @@ use constant SPOTIFY_SCOPE => join(',', qw(
 
 use constant POLLING_INTERVAL => 0.5;
 use constant TIMEOUT => 15;
+use constant DEFAULT_EXPIRATION => 3600;
 
 # Argh...
 use constant CAN_ASYNC_GET_TOKEN => !main::ISWINDOWS;
@@ -174,7 +175,14 @@ sub _gotTokenInfo {
 
 	if ( $response && ref $response ) {
 		if ( $token = $response->{accessToken} ) {
-			my $expiry = $response->{expiresIn} ? ($response->{expiresIn}->{secs} || 3600) : 3600;
+			my $expiry = DEFAULT_EXPIRATION;
+			if (my $expiresIn = $response->{expiresIn}) {
+				if (ref $expiresIn eq 'HASH') {
+					$expiry = $expiresIn->{secs} || DEFAULT_EXPIRATION;
+				} elsif ($expiresIn =~ /^\d+$/) {
+					$expiry = $expiresIn || DEFAULT_EXPIRATION;
+				}
+			}
 
 			main::DEBUGLOG && $log->is_debug && $log->debug("Received access token: " . Data::Dump::dump($response));
 			main::INFOLOG && $log->is_info && $log->debug("Caching access token for $expiry seconds.");
