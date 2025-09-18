@@ -63,6 +63,18 @@ PLUGIN_SPOTTY_AUTH_NAME
 	HU	Spotify fiók belépés
 	NL	Spotify Autorisatie
 
+PLUGIN_SPOTTY_PREMIUM_REQUIRED
+	DE	Spotify Premium Abo notwendig
+	EN	Spotify Premium Subscription required
+	FR	Abonnement Spotify Premium requis
+	NL	Spotify Premium-abonnement vereist
+
+PLUGIN_SPOTTY_PREMIUM_REQUIRED_DESC
+	DE	Bitte beachten Sie, dass für die Nutzung von Spotty ein Spotify Premium-Abonnement erforderlich ist. Sie können sich zwar auch ohne dieses Abonnement anmelden, aber es wird nicht funktionieren!
+	EN	Please note that a Spotify Premium subscription is required in order to use Spotty. You might be able to sign in without it, but it will not work!
+	FR	Veuillez noter qu'un abonnement Spotify Premium est nécessaire pour utiliser Spotty. Vous pourrez peut-être vous connecter sans cet abonnement, mais cela ne fonctionnera pas !
+	NL	Houd er rekening mee dat een Spotify Premium-abonnement vereist is om Spotty te kunnen gebruiken. Je kunt je misschien wel aanmelden zonder dit abonnement, maar het zal niet werken!
+
 PLUGIN_SPOTTY_AUTH_OAUTH
 	CS	Autorizace Spotify (OAUTH)
 	DE	Spotify Anmeldung (OAUTH)

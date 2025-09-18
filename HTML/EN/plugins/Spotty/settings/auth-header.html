@@ -52,6 +52,10 @@
 		[% IF helperMissing == 1; ""; ELSE; helperMissing; END  %]</div>
 	[% END; END %]
 
+	[% WRAPPER setting title="PLUGIN_SPOTTY_PREMIUM_REQUIRED" desc="" %]
+		<div>[% "PLUGIN_SPOTTY_PREMIUM_REQUIRED_DESC" | string %]</div>
+	[% END %]
+
 	[% WRAPPER setting title="PLUGIN_SPOTTY_AUTH_OAUTH" desc="" %]
 		<div><a href="[% authUrl %]" target="_blank"><img style="width: 189px; margin-bottom: 10px;" src="/plugins/Spotty/html/images/signinwithspotify.png"></a></div>
 		<div>[% "PLUGIN_SPOTTY_AUTH_OAUTH_DESC" | string %]</div>
