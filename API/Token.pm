@@ -191,6 +191,9 @@ sub _gotTokenInfo {
 			$cache->set($cacheKey, $token, $expiry - 300);
 		}
 	}
+	else {
+		$response = {};
+	}
 
 	if (!$token) {
 		$log->error($response->{error} || "Failed to get Spotify access token");
