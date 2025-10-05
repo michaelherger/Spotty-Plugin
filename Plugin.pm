@@ -317,7 +317,7 @@ sub getAPIHandler {
 sub canDiscovery { 1 }
 
 # won't work on Windows...
-sub killHangingProcesses { if (!main::ISWINDOWS) {
+sub killHangingProcesses {
 	my ($class, $force) = @_;
 
 	Slim::Utils::Timers::killTimers($class, \&killHangingProcesses);
@@ -333,18 +333,24 @@ sub killHangingProcesses { if (!main::ISWINDOWS) {
 
 	if ($force || !$isBusy) {
 		my $helper = Plugins::Spotty::Helper->get();
-		$helper = basename($helper) if $helper;
+		my $helperName = basename($helper) if $helper;
 
 		eval {
-			`ps ax | fgrep $helper | fgrep -v grep > /dev/null && killall $helper &> /dev/null` if $helper;
-			`ps ax | fgrep spotty-custom | fgrep -v grep > /dev/null && killall spotty-custom &> /dev/null` unless $helper && $helper =~ /spotty-custom/;
+			if (main::ISWINDOWS) {
+				system("taskkill /IM $helperName /F") if $helperName;
+				system('taskkill /IM spotty-custom.exe /F') unless $helperName && $helper ne 'spotty-custom';
+			}
+			else {
+				`pkill -f $helper` if $helper;
+				`pkill -f spotty-custom` unless $helper && $helper =~ /spotty-custom/;
+			}
 		};
 
 		$@ && $log->warn("Could not kill hanging spotty processes: $@");
 	}
 
 	Slim::Utils::Timers::setTimer($class, time() + KILL_PROCESS_INTERVAL, \&killHangingProcesses);
-} }
+}
 
 # we only run when transcoding is enabled, but shutdown would be called no matter what
 sub shutdownPlugin { if (main::TRANSCODING) {
