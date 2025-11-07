@@ -196,6 +196,14 @@ sub postinitPlugin { if (main::TRANSCODING) {
 		}
 	}
 
+	if ( Slim::Utils::PluginManager->isEnabled('Plugins::MaterialSkin::Plugin') && Plugins::MaterialSkin::Plugin->can('registerHomeExtra') ) {
+		Plugins::MaterialSkin::Plugin->registerHomeExtra('spotty', {
+			title => 'PLUGIN_SPOTTY_HOME_EXTRA_HOME',
+			handler => \&Plugins::Spotty::OPML::homeHeroes,
+			icon => '/material/html/images/spotify.svg'
+		});
+	}
+
 	$class->updateTranscodingTable();
 } }
 

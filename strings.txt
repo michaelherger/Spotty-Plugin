@@ -27,6 +27,12 @@ PLUGIN_SPOTTY_HOME
 	FR	Accueil
 	HU	Kezdő
 
+PLUGIN_SPOTTY_HOME_EXTRA_HOME
+	DA	Spotty Forside
+	DE	Spotty Startseite
+	EN	Spotty Personal
+	FR	Spotty Accueil
+
 PLUGIN_SPOTTY_NOT_AUTHORIZED
 	CS	Chybí přihlašovací údaje ke Spotify
 	DA	Mangler Spotify loginoplysninger

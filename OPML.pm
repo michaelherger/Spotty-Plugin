@@ -122,9 +122,12 @@ sub init {
 #                                                               |  |  |has Tags
 #                                                               |  |  |  |Function to call
 #                                                               C  Q  T  F
-	Slim::Control::Request::addDispatch(['spotty','recentsearches'],
+	Slim::Control::Request::addDispatch(['spotty', 'recentsearches'],
 	                                                            [0, 0, 1, \&_recentSearchesCLI]
 	);
+	# Slim::Control::Request::addDispatch(['spotty', 'homeheroes', '_index', '_quantity'],
+	#                                                             [1, 1, 0, \&_homeHeroCLI]
+	# );
 
 	# enforce initial refresh of users' display names
 	$cache->remove('spotty_got_names');
@@ -180,6 +183,10 @@ sub handleFeed {
 	}
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
+
+	if ($args->{params} && $args->{params}->{menu} && $args->{params}->{menu} eq 'home_heroes') {
+		return home( $client, $cb );
+	}
 
 	$spotty->featuredPlaylists( sub {
 		my ($lists, $message) = @_;
@@ -372,6 +379,18 @@ sub home {
 			$_->{line2} = $taglines{$_->{favorites_url}} if $taglines{$_->{favorites_url}};
 			$_;
 		} @{playlistList($client, $items)} ] });
+	});
+}
+
+sub homeHeroes {
+	my ($client, $cb, $maxItems) = @_;
+
+	my @cmd = ("spotty", "items", 0, $maxItems || 100, "menu:home_heroes");
+	Slim::Control::Request::executeRequest($client || (Slim::Player::Client::clients())[0], \@cmd, sub {
+			my $response = shift;
+			my $results = $response->getResults() || {};
+
+			$cb->($results || {});
 	});
 }
 
