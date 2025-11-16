@@ -13,6 +13,7 @@ SPT
 	EN	Spotty
 
 PLUGIN_SPOTTY_BROKEN
+	CS	Je mi líto, ale zdá se, že Spotty nefunguje kvůli změnám na straně Spotify. Buďte ujištěni, že tvrdě pracuji na tom, abych to co nejdříve opravil. Sám to potřebuji - nebo mě moje děti zabijí.
 	DA	Desværre ser det ud til at Spotty ikke fungerer pga. ændringer i Spotifys ende. Jeg arbejder hårdt på at reparere dette så hurtigt som muligt. Jeg har selv brug for Spotty - ellers vil mine børn plage livet af mig.
 	DE	Tut mir Leid mitteilen zu müssen, dass Spotty auf Grund von Veränderungen auf Spotifys Seite im Moment nicht mehr funktioniert. Aber ich arbeite dran. Ich brauche Spotty - oder meine Kinder bringen mich um.
 	EN	I'm sorry to say that Spotty seems to be broken by a change on Spotify's end. Rest assured that I'm trying hard to get this fixed as soon as possible. I need this back myself - or my kids will kill me.
@@ -64,12 +65,14 @@ PLUGIN_SPOTTY_AUTH_NAME
 	NL	Spotify Autorisatie
 
 PLUGIN_SPOTTY_PREMIUM_REQUIRED
+	CS	Vyžadováno předplatné Spotify Premium
 	DE	Spotify Premium Abo notwendig
 	EN	Spotify Premium Subscription required
 	FR	Abonnement Spotify Premium requis
 	NL	Spotify Premium-abonnement vereist
 
 PLUGIN_SPOTTY_PREMIUM_REQUIRED_DESC
+	CS	Upozorňujeme, že pro použití Spotty je vyžadováno předplatné Spotify Premium. Možná se budete moci přihlásit i bez něj, ale nebude to fungovat!
 	DE	Bitte beachten Sie, dass für die Nutzung von Spotty ein Spotify Premium-Abonnement erforderlich ist. Sie können sich zwar auch ohne dieses Abonnement anmelden, aber es wird nicht funktionieren!
 	EN	Please note that a Spotify Premium subscription is required in order to use Spotty. You might be able to sign in without it, but it will not work!
 	FR	Veuillez noter qu'un abonnement Spotify Premium est nécessaire pour utiliser Spotty. Vous pourrez peut-être vous connecter sans cet abonnement, mais cela ne fonctionnera pas !
@@ -84,12 +87,14 @@ PLUGIN_SPOTTY_AUTH_OAUTH
 	NL	Spotify Autorisatie (OAUTH)
 
 PLUGIN_SPOTTY_AUTH_OAUTH_DESC
+	CS	Pokud ověření pomocí aplikace selže, můžete zkusit webový tok OAUTH pomocí výše uvedeného tlačítka.
 	DE	Falls die App basierte Anmeldung fehlschlägt können Sie den Web basierten OAUTH Flow mit obigem Button starten.
 	EN	If the app based authentication fails, you can try the web based OAUTH flow using the above button.
 	FR	Si l'authentification basée sur l'application échoue, vous pouvez essayer le flux OAUTH basé sur le web en utilisant le bouton ci-dessus.
 	NL	Als de app-gebaseerde authenticatie mislukt, kun je de webgebaseerde OAUTH flow proberen met de bovenstaande knop.
 
 PLUGIN_SPOTTY_AUTH_OAUTH_DESC2
+	CS	Upozorňujeme, že pokud používáte vlastní Client ID, budete muset do seznamu „Redirect URIs“ svého klienta přidat následující URL:
 	DE	Bitte beachten Sie, dass Sie, wenn Sie Ihre eigene Client-ID verwenden, die folgende URL in die Liste der "Redirect URIs" Ihres Clients aufnehmen müssen:
 	EN	Please note that if you are using your own Client ID, you'll have to add the following URL to your client's "Redirect URIs" list:
 	FR	Veuillez noter que si vous utilisez votre propre identifiant client, vous devrez ajouter l'URL suivante à la liste des « Redirect URIs » de votre client :
@@ -123,12 +128,14 @@ PLUGIN_SPOTTY_AUTH_FAILED
 	NL	Autorisatie mislukt
 
 PLUGIN_SPOTTY_AUTH_SUCCESS
+	CS	Autentizace Spotify byla úspěšná! Zavřete prosím tuto stránku a užijte si svou sbírku Spotify v Lyrion Music Serveru.
 	DE	Spotify Anmeldung erfolgreich beendet! Bitte schliessen Sie diese Seite und geniessen Sie ihre Spotify Sammlung in Lyrion Music Server.
 	EN	Spotify authentication succeeded! Please close this page and enjoy your Spotify collection in Lyrion Music Server.
 	FR	L'authentification Spotify a réussi ! Veuillez fermer cette page et profiter de votre collection Spotify dans Lyrion Music Server.
 	NL	Spotify verificatie geslaagd! Sluit deze pagina en geniet van je Spotify-collectie in Lyrion Music Server.
 
 PLUGIN_SPOTTY_RETRY_AUTH
+	CS	Zavřete prosím tuto stránku a zkuste to znovu.
 	DE	Bitte schliessen Sie diese Seite und versuchen Sie es noch einmal.
 	EN	Please close this page and try again.
 	FR	Veuillez fermer cette page et réessayer.
@@ -162,7 +169,7 @@ PLUGIN_SPOTTY_USERS_AND_LOCAL_LIBRARY
 	NL	Lokale muziek en %s
 
 PLUGIN_SPOTTY_INTEGRATE_WITH_LOCAL_LIBRARY
-	CS	Sloučení s "Moje hudba"
+	CS	Sloučení s „Moje hudba“
 	DA	Integrér med "Min musik"
 	DE	In "Meine Musik" anzeigen
 	EN	Merge with "My Music"
@@ -265,7 +272,7 @@ PLUGIN_SPOTTY_HELPER_MISSING
 	NL	Spotify Connect hulptoepassing ontbreekt
 
 PLUGIN_SPOTTY_HELPER_CHOOSE
-	CS	Pokud automatická detekce selže, vyberte pomocnou aplikaci. NEPOUŽÍVEJTE, pokud "Automaticky" selže.
+	CS	Pokud automatická detekce selže, vyberte pomocnou aplikaci. NEPOUŽÍVEJTE, pokud „Automaticky“ selže.
 	DA	Vælg et hjælpeprogram, hvis den automatiske registrering mislykkes. Må IKKE bruges, medmindre "Automatisk" fejler.
 	DE	Wähle eine Helferanwendung, falls die automatische Erkennung fehl schlägt. Bitte nur anwenden, wenn "Automatisch" versagt.
 	EN	Select a helper application if the automatic detection fails. Do NOT use unless "Automatic" fails.
@@ -292,6 +299,7 @@ PLUGIN_SPOTTY_HELPER_MISSING_HELP
 	NL	Niet mogelijk om de Spotify Connect hulptoepassing te starten. Misschien wordt jouw besturingssysteem niet ondersteund?
 
 PLUGIN_SPOTTY_HELPER_PORTS
+	CS	Ujistěte se prosím, že pomocné aplikaci je povoleno přistupovat k internetu na portech 80, 443 a 4070.
 	DA	Sørg for, at hjælpeprogrammet har tilladelse til at få adgang til internettet via porte 80, 443 og 4070.
 	DE	Bitte stellen Sie sicher, dass die Helferanwendung über die Ports 80, 443 und 4070 aufs Internet zugreifen kann.
 	EN	Please make sure you allow the helper application is allowed to reach the internet on ports 80, 443, and 4070.
@@ -300,16 +308,16 @@ PLUGIN_SPOTTY_HELPER_PORTS
 	NL	Zorg ervoor dat je toestaat dat de hulptoepassing internettoegang heeft op de poorten 80, 443 en 4070.
 
 PLUGIN_SPOTTY_SHOW_MY_ALBUMS_ONLY_DESC
-	CS	Zobrazit pouze alba mé knihovny pro interprety mé knihovny.
-	DA	Vis kun albums i mit bibliotek for kunstnere i mit bibliotek.
-	DE	Zeige nur meine Alben unter meinen Interpreten.
-	EN	Only show my library's albums for my library's artists.
-	FR	Afficher uniquement les albums de ma bibliothèque pour les artistes de ma bibliothèque.
-	HU	Csak a könyvtáram albumai jelenjenek meg a könyvtáram előadóitól.
-	NL	Toon alleen mijn albums voor de artiesten uit mijn muziekcollectie.
+	CS	Zobrazit pouze alba mé knihovny pro interprety mé knihovny
+	DA	Vis kun albums i mit bibliotek for kunstnere i mit bibliotek
+	DE	Zeige nur meine Alben unter meinen Interpreten
+	EN	Only show my library's albums for my library's artists
+	FR	Afficher uniquement les albums de ma bibliothèque pour les artistes de ma bibliothèque
+	HU	Csak a könyvtáram albumai jelenjenek meg a könyvtáram előadóitól
+	NL	Toon alleen mijn albums voor de artiesten uit mijn muziekcollectie
 
 PLUGIN_SPOTTY_CLEANUP_TAGS
-	CS	Zpřehlednit názvy alb a skladeb (např. odstranit "Deluxe Edition", "Remastered" atd.)
+	CS	Zpřehlednit názvy alb a skladeb (např. odstranit „Deluxe Edition“, „Remastered“ atd.)
 	DA	Ryd op i album- og nummertitler (fjern f.eks. "Deluxe Edition", "Remastered" osv.)
 	DE	Albennamen und Titel bereinigen (z.B. "Deluxe Edition", "Remastered" etc. entfernen)
 	EN	Clean up album and track titles (eg. remove "Deluxe Edition", "Remastered" etc.)
@@ -762,44 +770,45 @@ PLUGIN_SPOTTY_MISSING_SSL
 	NL	Spotty vereist de Perl-module IO::Socket::SSL. Je kan Spotty NIET gebruiken zonder deze module. Gebruik de pakketbeheerder van uw besturingssysteem om het te installeren.
 
 PLUGIN_SPOTTY_CLIENT_ID
+	CS	Spotify Client ID
 	DA	Spotify klient ID
 	EN	Spotify Client ID
 	FR	Spotify ID Client
 	HU	Spotify ügyfél-azonosító (Client ID)
 
 PLUGIN_SPOTTY_CLIENT_ID_DESC
-	CS	<div>Použití vlastního ID klienta může pomoci, pokud narazíte na problémy s překročením míry přístupů ("chyba 429"). Chcete-li získat vlastní Client ID, postupujte podle následujících jednoduchých kroků:</div>
+	CS	<div>Použití vlastního Client ID může pomoci, pokud narazíte na problémy s překročením míry přístupů („chyba 429“). Chcete-li získat vlastní Client ID, postupujte podle následujících jednoduchých kroků:</div>
 	CS	<ul style="list-style:initial">
 	CS	<li>Přejděte na <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a> a v případě potřeby se přihlaste.</li>
-	CS	<li>Klikněte na možnost "Create An App" a postupujte podle pokynů.</li>
+	CS	<li>Klikněte na možnost „Create app“ a postupujte podle pokynů.</li>
 	CS	<li>Zkopírujte nově vytvořené Client ID do nastavení Spotty.</li>
-	CS	<li>Pokud plánujete se Spotty používat více účtů Spotify (např. rodinný účet), budete je muset přidat do části "Users and Access" v nově vytvořené konfiguraci.</li>
+	CS	<li>Pokud plánujete se Spotty používat více účtů Spotify (např. rodinný účet), budete je muset přidat do části „User Management“ v nově vytvořené konfiguraci.</li>
 	CS	</ul>
 	DA	<div>Brug af et brugerdefineret klient ID kan hjælpe, hvis du støder på problemer med hastighedsbegrænsning ("fejl 429"). Følg disse enkle trin for at få dit eget klient ID:</div>
 	DA	<ul style="list-style:initial">
 	DA	<li>Gå til <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, login hvis nødvendigt.</li>
-	DA	<li>Klik "Create An App", følg instruktionerne.</li>
+	DA	<li>Klik "Create app", følg instruktionerne.</li>
 	DA	<li>Kopier det oprettede klient ID til dine Spotty indstillinger.</li>
 	DA	<li>Hvis du planlægger at bruge flere Spotify-konti med Spotty (f.eks. en familiekonto), skal du tilføje konti til afsnittet "Brugere og adgang" i den nyoprettede konfiguration.</li>
 	DA	</ul>
 	DE	<div>Die Verwendung einer eigenen Client ID kann helfen, falls Sie Probleme mit dem "Rate Limiting" haben (Fehler 429). Um eine solche Client ID zu erhalten, befolgen Sie diese einfachen Schritte:</div>
 	DE	<ul style="list-style:initial">
 	DE	<li>Besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an.</li>
-	DE	<li>Klicken Sie "Create An App", und folgen Sie den Anweisungen.</li>
+	DE	<li>Klicken Sie "Create app", und folgen Sie den Anweisungen.</li>
 	DE	<li>Kopieren Sie die neu erstellte Client ID, und fügen Sie sie in den Spotty Einstellungen ein.</li>
-	DE	<li>Falls Sie einen Familienaccount verwenden, oder sonst mehrere Konten in Spotty verwenden möchten, fügen Sie die entsprechenden Konten bei der neu erstellten Konfiguration unter "Users and Access" hinzu.</li>
+	DE	<li>Falls Sie einen Familienaccount verwenden, oder sonst mehrere Konten in Spotty verwenden möchten, fügen Sie die entsprechenden Konten bei der neu erstellten Konfiguration unter "User Management" hinzu.</li>
 	DE	</ul>
 	EN	<div>Using a custom Client ID can help if you hit issues with rate limiting ("error 429"). In order to get your own Client ID please follow these simple steps:</div>
 	EN	<ul style="list-style:initial">
 	EN	<li>Go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed.</li>
-	EN	<li>Click "Create An App", follow the instructions.</li>
+	EN	<li>Click "Create app", follow the instructions.</li>
 	EN	<li>Copy the newly created Client ID to your Spotty Settings.</li>
-	EN	<li>If you plan to use multiple Spotify accounts with Spotty (eg. a family account), you'll need to add the accounts to the "Users and Access" section in the newly created configuration.</li>
+	EN	<li>If you plan to use multiple Spotify accounts with Spotty (eg. a family account), you'll need to add the accounts to the "User Management" section in the newly created configuration.</li>
 	EN	</ul>
 	FR	<div>L'utilisation d'un ID client personnalisé peut vous aider si vous rencontrez des problèmes de limitation de débit ("erreur 429"). Pour obtenir votre propre identifiant client, veuillez suivre ces étapes simples :</div>
 	FR	<ul style="list-style:initial">
 	FR	<li>Accédez au <a href="https://developer.spotify.com/dashboard/applications" target="_blank">portail des développeurs Spotify</a> et connectez-vous si nécessaire.</li>
-	FR	<li>Cliquez sur "Create An App" et suivez les instructions.</li>
+	FR	<li>Cliquez sur "Create app" et suivez les instructions.</li>
 	FR	<li>Copiez l'ID client nouvellement créé dans vos paramètres Spotty.</li>
 	FR	<li>Si vous prévoyez d'utiliser plusieurs comptes Spotify avec Spotty (par exemple, un compte familial), vous devrez ajouter les comptes à la section "Utilisateurs et accès" dans la configuration nouvellement créée.</li>
 	FR	</ul>
@@ -813,16 +822,17 @@ PLUGIN_SPOTTY_CLIENT_ID_DESC
 	NL	<div>Het gebruik van een aangepaste Client ID kan helpen als er problemen zijn met de snelheidsbeperking ("error 429"). Volg deze eenvoudige stappen om een eigen klant-ID te krijgen:</div>
 	NL	<ul style="list-style:initial">
 	NL	<li>Ga naar <a href="https://developer.spotify.com/dashboard/applications" target="_blank">de Spotify Developer Portal</a>, log indien nodig in.</li>
-	NL	<li>Klik op "Create An App", volg de instructies.</li>
+	NL	<li>Klik op "Create app", volg de instructies.</li>
 	NL	<li>Kopieer de nieuw aangemaakte Client ID naar jouw Spotty instellingen.</li>
 	NL	<li>Als je van plan bent meerdere Spotify accounts met Spotty te gebruiken (bijv. een gezinsaccount), moet je de accounts toevoegen aan het gedeelte 'Gebruikers en toegang' in de nieuw gemaakte configuratie.</li>
 	NL	</ul>
 
 PLUGIN_SPOTTY_ADD_USER_TO_CLIENT_ID
+	CS	Protože používáte vlastní Client ID, budete muset přejít na <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, v případě potřeby se přihlásit a přidat účty do sekce „User Management“.
 	DA	Hvis du bruger dit eget klient ID, skal du gå til <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, login om nødvendigt, og tilføj konti til "Brugere og adgang" afsnittet.
-	DE	Da Sie eine eigent Client ID verwenden, besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an, und fügen Sie die entsprechenden Konten unter "Users and Access" hinzu.
-	EN	As you're using your own Client ID, you'll have to go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed, and add the accounts to the "Users and Access" section.
-	FR	Puisque vous utilisez votre propre identifiant client, vous devez vous rendre sur le <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, vous connecter si nécessaire, et ajouter les comptes appropriés dans "Users and Access".
+	DE	Da Sie eine eigent Client ID verwenden, besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an, und fügen Sie die entsprechenden Konten unter "User Management" hinzu.
+	EN	As you're using your own Client ID, you'll have to go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed, and add the accounts to the "User Management" section.
+	FR	Puisque vous utilisez votre propre identifiant client, vous devez vous rendre sur le <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, vous connecter si nécessaire, et ajouter les comptes appropriés dans "User Management".
 	HU	Mivel saját ügyfél-azonosítóját használja, fel kell lépnie <a href="https://developer.spotify.com/dashboard/applications" target="_blank">a Spotify fejlesztői portáljára</a>. , jelentkezzen be, ha szükséges, és adja hozzá a fiókokat a „Felhasználók és hozzáférés” szakaszhoz.
 	NL	Omdat jij jouw eigen client-ID gebruikt, moet je naar <a href="https://developer.spotify.com/dashboard/applications" target="_blank">de Spotify Developer Portal</a> gaan. Log indien nodig in en voeg de accounts toe aan het gedeelte 'Gebruikers en toegang'.
 
@@ -851,12 +861,14 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT
 	EN	Spotify Connect
 
 PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
+	CS	<b>Co se stalo s režimem Connect?</b> Zmizel. S nejnovějšími změnami API na straně Spotify jsem musel dohnat vývoj <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a>. To je knihovna, která zajišťuje veškerou magii pro přehrávání Spotify. Bohužel můj hack pro implementaci režimu Connect ve Spotty nebyl kompatibilní s jejich nejnovějším vývojem. A protože byl režim Connect stejně vždycky „nestabilní“, rozhodl jsem se ho odstranit. Doufejme, že se v ne příliš vzdálené budoucnosti vrátím k práci na nové implementaci.
 	DE	<b>Was ist mit dem Connect-Modus passiert?</b> Er ist verschwunden. Durch die neuesten API-Änderungen seitens Spotify musste ich die Entwicklung von <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a> einholen. Das ist die Bibliothek, die die Spotify-Wiedergabe ermöglicht. Leider war mein Hack, um den Connect-Modus in Spotty zu implementieren, mit der aktuellen Entwicklung nicht mehr kompatibel. Da der Connect-Modus ohnehin immer "spotty" war, habe ich ihn entfernt. Hoffentlich kann ich in naher Zukunft an einer neuen Implementierung arbeiten.
 	EN	<b>What happened to Connect mode?</b> It's gone. With the latest API changes on Spotify's end I had to catch up with <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a> development. This is the library which does all the magic for the Spotify playback. Unfortunately my hack to implement Connect mode in Spotty was not compatible with their latest development. As Connect mode had been "spotty" anyway, I decided to remove it. Hopefully I'll get back to working on a new implementation in the not too distant future.
 	FR	<b>Qu'est-il arrivé au mode Connect ?</b> Il a disparu. Avec les derniers changements d'API côté Spotify, j'ai dû suivre le développement de <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a>. C'est la bibliothèque qui gère toute la magie de la lecture Spotify. Malheureusement, mon hack pour implémenter le mode Connect dans Spotty n'était plus compatible avec leurs dernières évolutions. Comme le mode Connect était de toute façon instable, j'ai décidé de le retirer. J'espère pouvoir travailler sur une nouvelle version dans un avenir pas trop lointain.
 	NL	<b>Wat is er gebeurd met Connect-modus?</b> Die is verdwenen. Door de laatste API-wijzigingen aan de kant van Spotify moest ik de ontwikkeling van <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a> bijbenen. Dit is de bibliotheek die alle magie voor Spotify-afspelen verzorgt. Helaas was mijn hack om Connect-modus in Spotty te implementeren niet compatibel met hun nieuwste ontwikkelingen. Omdat Connect-modus toch al "spotty" was, heb ik besloten deze te verwijderen. Hopelijk kan ik binnenkort werken aan een nieuwe implementatie.
 
 PLUGIN_SPOTTY_HOME_ITEMS
+	CS	Přizpůsobení nabídky „Domů“
 	DE	"Start" Menüeinträge
 	DA	Tilpasning af forside menuen
 	EN	Home Menu Customization
@@ -865,6 +877,7 @@ PLUGIN_SPOTTY_HOME_ITEMS
 	NL	"Home" menu aanpassen
 
 PLUGIN_SPOTTY_HOME_DESC
+	CS	Zaškrtněte položky nabídky „Domů“, které chcete používat, zrušte zaškrtnutí těch, které chcete skrýt.
 	DA	Markér de "Forside" menupunkter, du ønsker at bruge, og fjern markeringen fra ​​dem, du ønsker at skjule.
 	DE	Aktiviere die "Start" Menüeinträge, die du sehen willst, deaktiviere jene, die versteckt werden sollen.
 	EN	Check the "Home" menu items you want to use, uncheck those you want to hide.
