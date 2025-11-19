@@ -181,12 +181,28 @@ sub handleFeed {
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
 
-	if ($args->{params} && $args->{params}->{menu} && $args->{params}->{menu} eq 'home_heroes') {
-		return home( $client, $cb );
+	if ( $args->{params} && $args->{params}->{menu} && (my ($homeExtra) = $args->{params}->{menu} =~ /^home_heroes_(.*)/) ) {
+		if ($homeExtra eq 'home') {
+			return home( $client, $cb );
+		}
+		elsif ($homeExtra eq 'whatsnew') {
+			return whatsNew( $client, $cb );
+		}
+		elsif ($homeExtra eq 'toptracks') {
+			return playlist( $client, $cb, {
+				uri => $topuri{$spotty->country()} || $topuri{XX}
+			} );
+		}
 	}
 
 	$spotty->featuredPlaylists( sub {
 		my ($lists, $message) = @_;
+
+		if ( $args->{params} && $args->{params}->{menu} && $args->{params}->{menu} eq 'home_heroes_popularplaylists' ) {
+			return $cb->({
+				items => ($message && $lists && ref $lists && scalar @$lists) ? playlistList($client, $lists) : []
+			});
+		}
 
 		# if we didn't get any playlists nor token, then something's wrong
 		if ( !($lists && ref $lists && scalar @$lists && $message) ) {

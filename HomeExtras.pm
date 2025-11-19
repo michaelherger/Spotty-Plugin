@@ -5,33 +5,100 @@ use strict;
 use Plugins::Spotty::OPML;
 
 Plugins::Spotty::HomeExtraHome->initPlugin();
+Plugins::Spotty::HomeExtraWhatsNew->initPlugin();
+Plugins::Spotty::HomeExtraTopTracks->initPlugin();
+Plugins::Spotty::HomeExtraPopularPlaylists->initPlugin();
 
 1;
 
-package Plugins::Spotty::HomeExtraHome;
+package Plugins::Spotty::HomeExtraBase;
 
 use base qw(Plugins::MaterialSkin::HomeExtraBase);
 
 sub initPlugin {
-	my $class = shift;
+	my ($class, %args) = @_;
+
+	my $tag = $args{tag};
 
 	$class->SUPER::initPlugin(
-		feed => \&handleFeed,
-		tag  => 'spottyHomeExtras',
+		feed => sub { handleFeed($tag, @_) },
+		tag  => "SpottyExtras${tag}",
 		extra => {
-			title => 'PLUGIN_SPOTTY_HOME_EXTRA_HOME',
-			icon  => Plugins::Spotty::Plugin->_pluginDataFor('icon'),
+			title => $args{title},
+			icon  => $args{icon} || Plugins::Spotty::Plugin->_pluginDataFor('icon'),
 			needsPlayer => 1,
 		}
 	);
 }
 
 sub handleFeed {
-	my ($client, $cb, $args) = @_;
+	my ($tag, $client, $cb, $args) = @_;
 
-	$args->{params}->{menu} = 'home_heroes';
+	$args->{params}->{menu} = "home_heroes_${tag}";
 
 	Plugins::Spotty::OPML::handleFeed($client, $cb, $args);
 }
 
+package Plugins::Spotty::HomeExtraHome;
+
+use base qw(Plugins::Spotty::HomeExtraBase);
+
+sub initPlugin {
+	my ($class, %args) = @_;
+
+	$class->SUPER::initPlugin(
+		title => 'PLUGIN_SPOTTY_HOME_EXTRA_HOME',
+		tag => 'home'
+	);
+}
+
 1;
+
+
+package Plugins::Spotty::HomeExtraWhatsNew;
+
+use base qw(Plugins::Spotty::HomeExtraBase);
+
+sub initPlugin {
+	my ($class, %args) = @_;
+
+	$class->SUPER::initPlugin(
+		title => 'PLUGIN_SPOTTY_HOME_EXTRA_WHATS_NEW',
+		tag => 'whatsnew'
+	);
+}
+
+1;
+
+
+package Plugins::Spotty::HomeExtraTopTracks;
+
+use base qw(Plugins::Spotty::HomeExtraBase);
+
+sub initPlugin {
+	my ($class, %args) = @_;
+
+	$class->SUPER::initPlugin(
+		title => 'PLUGIN_SPOTTY_HOME_EXTRA_TOP_TRACKS',
+		tag => 'toptracks'
+	);
+}
+
+1;
+
+
+package Plugins::Spotty::HomeExtraPopularPlaylists;
+
+use base qw(Plugins::Spotty::HomeExtraBase);
+
+sub initPlugin {
+	my ($class, %args) = @_;
+
+	$class->SUPER::initPlugin(
+		title => 'PLUGIN_SPOTTY_HOME_EXTRA_POPULAR_PLAYLISTS',
+		tag => 'popularplaylists'
+	);
+}
+
+1;
+
