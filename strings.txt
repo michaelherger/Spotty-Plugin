@@ -28,10 +28,10 @@ PLUGIN_SPOTTY_HOME
 	HU	Kezdő
 
 PLUGIN_SPOTTY_HOME_EXTRA_HOME
-	DA	Spotty Forside
-	DE	Spotty Startseite
-	EN	Spotty Personal
-	FR	Spotty Accueil
+	DA	Forside
+	DE	Startseite
+	EN	Personal
+	FR	Accueil
 
 PLUGIN_SPOTTY_NOT_AUTHORIZED
 	CS	Chybí přihlašovací údaje ke Spotify
@@ -411,22 +411,6 @@ PLUGIN_SPOTTY_WHATS_NEW
 	RU	Новые возможности
 	SV	Nyheter
 
-PLUGIN_SPOTTY_HOME_EXTRA_WHATS_NEW
-	CS	Spotify - Novinky
-	DA	Spotify - Nyheder
-	DE	Spotify - Neuigkeiten
-	EN	Spotify - What's New
-	ES	Spotify - Novedades
-	FI	Spotify - Uutuudet
-	FR	Spotify - Nouveautés
-	HU	Spotify - Újdonságok
-	IT	Spotify - Novità
-	NL	Spotify - Wat is er nieuw?
-	NO	Spotify - Hva er nytt?
-	PL	Spotify - Co nowego
-	RU	Spotify - Новые возможности
-	SV	Spotify - Nyheter
-
 PLUGIN_SPOTTY_TOP_TRACKS
 	CS	Nejlepší skladby
 	DA	Mest populære numre
@@ -443,25 +427,9 @@ PLUGIN_SPOTTY_TOP_TRACKS
 	RU	Лучшие дорожки
 	SV	Toppspår
 
-PLUGIN_SPOTTY_HOME_EXTRA_TOP_TRACKS
-	CS	Spotify - Nejlepší skladby
-	DA	Spotify - Mest populære numre
-	DE	Spotify - Top-Titel
-	EN	Spotify - Top Tracks
-	ES	Spotify - Pistas principales
-	FI	Spotify - Suositut kappaleet
-	FR	Spotify - Meilleurs morceaux
-	HU	Spotify - Legjobb zenék
-	IT	Spotify - Brani più ascoltati
-	NL	Spotify - Topnummers
-	NO	Spotify - Mest populære spor
-	PL	Spotify - Najpopularniejsze utwory
-	RU	Spotify - Лучшие дорожки
-	SV	Spotify - Toppspår
-
 PLUGIN_SPOTTY_HOME_EXTRA_POPULAR_PLAYLISTS
-	DE	Spotify - Aktuell populäre Wiedergabelisten
-	EN	Spotify - Popular Playlists
+	DE	Populäre Wiedergabelisten
+	EN	Popular Playlists
 
 PLUGIN_SPOTTY_RELATED_ARTISTS
 	CS	Související interpreti

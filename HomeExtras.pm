@@ -63,7 +63,7 @@ sub initPlugin {
 	my ($class, %args) = @_;
 
 	$class->SUPER::initPlugin(
-		title => 'PLUGIN_SPOTTY_HOME_EXTRA_WHATS_NEW',
+		title => 'PLUGIN_SPOTTY_WHATS_NEW',
 		tag => 'whatsnew'
 	);
 }
@@ -79,7 +79,7 @@ sub initPlugin {
 	my ($class, %args) = @_;
 
 	$class->SUPER::initPlugin(
-		title => 'PLUGIN_SPOTTY_HOME_EXTRA_TOP_TRACKS',
+		title => 'PLUGIN_SPOTTY_TOP_TRACKS',
 		tag => 'toptracks'
 	);
 }
