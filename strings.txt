@@ -438,6 +438,8 @@ PLUGIN_SPOTTY_TOP_TRACKS
 PLUGIN_SPOTTY_HOME_EXTRA_POPULAR_PLAYLISTS
 	DE	Populäre Wiedergabelisten
 	EN	Popular Playlists
+	FR	Listes de lecture populaires
+	NL	Populaire afspeellijsten
 
 PLUGIN_SPOTTY_RELATED_ARTISTS
 	CS	Související interpreti
