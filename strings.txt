@@ -28,6 +28,12 @@ PLUGIN_SPOTTY_HOME
 	FR	Accueil
 	HU	Kezdő
 
+PLUGIN_SPOTTY_HOME_EXTRA_HOME
+	DA	Forside
+	DE	Startseite
+	EN	Personal
+	FR	Accueil
+
 PLUGIN_SPOTTY_NOT_AUTHORIZED
 	CS	Chybí přihlašovací údaje ke Spotify
 	DA	Mangler Spotify loginoplysninger
@@ -428,6 +434,10 @@ PLUGIN_SPOTTY_TOP_TRACKS
 	PL	Najpopularniejsze utwory
 	RU	Лучшие дорожки
 	SV	Toppspår
+
+PLUGIN_SPOTTY_HOME_EXTRA_POPULAR_PLAYLISTS
+	DE	Populäre Wiedergabelisten
+	EN	Popular Playlists
 
 PLUGIN_SPOTTY_RELATED_ARTISTS
 	CS	Související interpreti

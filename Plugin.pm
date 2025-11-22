@@ -196,6 +196,10 @@ sub postinitPlugin { if (main::TRANSCODING) {
 		}
 	}
 
+	if ( Slim::Utils::PluginManager->isEnabled('Plugins::MaterialSkin::Plugin') && Plugins::MaterialSkin::Plugin->can('registerHomeExtra') ) {
+		require Plugins::Spotty::HomeExtras;
+	}
+
 	$class->updateTranscodingTable();
 } }
 
