@@ -197,7 +197,11 @@ sub postinitPlugin { if (main::TRANSCODING) {
 	}
 
 	if ( Slim::Utils::PluginManager->isEnabled('Plugins::MaterialSkin::Plugin') && Plugins::MaterialSkin::Plugin->can('registerHomeExtra') ) {
-		require Plugins::Spotty::HomeExtras;
+		eval {
+			require Plugins::Spotty::HomeExtras;
+		};
+
+		$log->error("Could not load Spotty Home Extras: $@") if $@;
 	}
 
 	$class->updateTranscodingTable();
