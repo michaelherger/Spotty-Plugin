@@ -4,6 +4,7 @@ use strict;
 
 use Plugins::Spotty::OPML;
 
+Plugins::Spotty::HomeExtraSpotty->initPlugin();
 Plugins::Spotty::HomeExtraHome->initPlugin();
 Plugins::Spotty::HomeExtraWhatsNew->initPlugin();
 Plugins::Spotty::HomeExtraTopTracks->initPlugin();
@@ -38,6 +39,22 @@ sub handleFeed {
 
 	Plugins::Spotty::OPML::handleFeed($client, $cb, $args);
 }
+
+package Plugins::Spotty::HomeExtraSpotty;
+
+use base qw(Plugins::Spotty::HomeExtraBase);
+
+sub initPlugin {
+	my ($class, %args) = @_;
+
+	$class->SUPER::initPlugin(
+		title => 'PLUGIN_SPOTTY',
+		tag => 'spotty'
+	);
+}
+
+1;
+
 
 package Plugins::Spotty::HomeExtraHome;
 
