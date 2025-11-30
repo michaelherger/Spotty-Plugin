@@ -65,6 +65,8 @@ sub _initHomeMenuItems {
 			id => $_->{id},
 			disabled => $ignoreItems->{$_->{id}},
 		};
+	} grep {
+		$_->{id} && $_->{name}
 	} @{ Plugins::Spotty::OPML::sortHomeItems($homeItems) } ];
 
 	$prefs->client($client)->set('ignoreHomeItems', $ignoreItems);
