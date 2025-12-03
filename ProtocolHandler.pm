@@ -168,6 +168,7 @@ sub getMetadataFor {
 			title     => $cached->{name},
 			duration  => $cached->{duration_ms} / 1000,
 			cover     => $cached->{image} || $cached->{album}->{image},
+			year      => $cached->{album}->{release_date} ? substr($cached->{album}->{release_date}, 0, 4) : '',
 		};
 
 		main::INFOLOG && $log->is_info && $log->info("Found cached metadata for $uri");
