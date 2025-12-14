@@ -9,6 +9,12 @@ PLUGIN_SPOTTY
 PLUGIN_SPOTTY_NAME
 	EN	Spotty
 
+PLUGIN_SPOTTY_HOME_EXTRA_SPOTTY_SUBTITLE
+	DE	Das Spotty Hauptmenü
+	EN	Spotty's main menu
+	FR	Menu principal de Spotty
+	NL	Hoofdmenu van Spotty
+
 SPT
 	EN	Spotty
 
@@ -30,9 +36,15 @@ PLUGIN_SPOTTY_HOME
 
 PLUGIN_SPOTTY_HOME_EXTRA_HOME
 	DA	Forside
-	DE	Startseite
-	EN	Personal
+	EN	Made For You
 	FR	Accueil
+
+
+PLUGIN_SPOTTY_HOME_EXTRA_HOME_SUBTITLE
+	DE	Ihre personalisierten Mixe, Wiedergabelisten und Empfehlungen
+	EN	Your customized mixes, playlists, and suggestsions
+	FR	Vos mixages, playlists et suggestions personnalisés
+	NL	Uw aangepaste mixen, afspeellijsten en suggesties
 
 PLUGIN_SPOTTY_NOT_AUTHORIZED
 	CS	Chybí přihlašovací údaje ke Spotify

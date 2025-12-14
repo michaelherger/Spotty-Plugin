@@ -48,7 +48,8 @@ sub initPlugin {
 	my ($class, %args) = @_;
 
 	$class->SUPER::initPlugin(
-		title => 'PLUGIN_SPOTTY',
+		title => 'PLUGIN_SPOTTY_NAME',
+		subtitle => 'PLUGIN_SPOTTY_HOME_EXTRA_SPOTTY_SUBTITLE',
 		tag => 'spotty'
 	);
 }
@@ -65,6 +66,7 @@ sub initPlugin {
 
 	$class->SUPER::initPlugin(
 		title => 'PLUGIN_SPOTTY_HOME_EXTRA_HOME',
+		subtitle => 'PLUGIN_SPOTTY_HOME_EXTRA_HOME_SUBTITLE',
 		tag => 'home'
 	);
 }
