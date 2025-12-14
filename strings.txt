@@ -4,7 +4,7 @@ PLUGIN_SPOTTY
 	EN	Spotty Spotify for Squeezebox
 	FR	Spotty Spotify pour Squeezebox
 	HU	Spotty Spotify a Squeezeboxhoz
-	NL	Spotty Spotify voor Squeezebox
+	NL	Spotty Spotify
 
 PLUGIN_SPOTTY_NAME
 	EN	Spotty
