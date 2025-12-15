@@ -26,6 +26,7 @@ sub initPlugin {
 		tag  => "SpottyExtras${tag}",
 		extra => {
 			title => $args{title},
+			subtitle => $args{subtitle},
 			icon  => $args{icon} || Plugins::Spotty::Plugin->_pluginDataFor('icon'),
 			needsPlayer => 1,
 		}
