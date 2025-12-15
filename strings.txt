@@ -8,6 +8,7 @@ PLUGIN_SPOTTY
 
 PLUGIN_SPOTTY_NAME
 	EN	Spotty
+	NL	Spotty Spotify
 
 PLUGIN_SPOTTY_HOME_EXTRA_SPOTTY_SUBTITLE
 	DE	Das Spotty Hauptmenü
@@ -38,7 +39,7 @@ PLUGIN_SPOTTY_HOME_EXTRA_HOME
 	DA	Forside
 	EN	Made For You
 	FR	Accueil
-
+	NL	Voor Jou
 
 PLUGIN_SPOTTY_HOME_EXTRA_HOME_SUBTITLE
 	DE	Ihre personalisierten Mixe, Wiedergabelisten und Empfehlungen
@@ -441,7 +442,7 @@ PLUGIN_SPOTTY_TOP_TRACKS
 	FR	Meilleurs morceaux
 	HU	Legjobb zenék
 	IT	Brani più ascoltati
-	NL	Topnummers
+	NL	Meest populaire nummers
 	NO	Mest populære spor
 	PL	Najpopularniejsze utwory
 	RU	Лучшие дорожки
