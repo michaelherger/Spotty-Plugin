@@ -1167,9 +1167,10 @@ sub _call {
 
 	my $args = {};
 	# https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
-	if ($url =~ m{^browse/|^recommendations|^artists/.*/related-artists|^playlists/.*/tracks}) {
-		$args->{code} = Plugins::Spotty::API::Web::_code();
-	}
+	# one year later it now looks as if this wouldn't work any more and we'd have to go back to where we were before?!?
+	# if ($url =~ m{^browse/|^recommendations|^artists/.*/related-artists|^playlists/.*/tracks}) {
+	# 	$args->{code} = Plugins::Spotty::API::Web::_code();
+	# }
 
 	my $call = sub {
 		my ($token) = @_;

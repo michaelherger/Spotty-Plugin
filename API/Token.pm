@@ -54,6 +54,7 @@ my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
 
 my %procs;
+my %callbacks;
 
 _cleanupTmpDir();
 
@@ -128,8 +129,8 @@ sub _pollTokenHelper {
 		my $response = read_file($self->_tmpfile);
 		unlink $self->_tmpfile;
 
-		my $token = $self->_gotTokenInfo($response, $self->api->username || 'generic', $args);
-		$self->_callCallbacks($token);
+		# my $token = $self->_gotTokenInfo($response, $self->api->username || 'generic', $args);
+		# $self->_callCallbacks($token);
 	}
 	elsif ($self && $self->_proc && $self->_proc->alive) {
 		Slim::Utils::Timers::setTimer($self, Time::HiRes::time() + POLLING_INTERVAL, \&_pollTokenHelper, $args);
@@ -140,13 +141,12 @@ sub _pollTokenHelper {
 }
 
 sub _callCallbacks {
-	my ($self, $token) = @_;
+	my ($token, $refreshToken) = @_;
 
-	my $cbs = $self->_callbacks();
-	$self->_callbacks([]);
-	foreach (@$cbs) {
+	foreach (@{$callbacks{$refreshToken} || []}) {
 		$_->($token);
 	}
+	delete $callbacks{$refreshToken};
 }
 
 sub _logCommand {
@@ -159,49 +159,47 @@ sub _logCommand {
 }
 
 sub _gotTokenInfo {
-	my ($class, $response, $username, $args) = @_;
-	$args ||= {};
+	# my ($class, $response, $username, $args) = @_;
+	# $args ||= {};
 
-	my $cacheKey = _getCacheKey($args->{code}, $username);
+	# my $token;
 
-	my $token;
+	# eval {
+	# 	main::INFOLOG && $log->is_info && $log->info("Got response: $response");
+	# 	$response = decode_json($response);
+	# };
 
-	eval {
-		main::INFOLOG && $log->is_info && $log->info("Got response: $response");
-		$response = decode_json($response);
-	};
+	# $log->error("Failed to get Spotify access token: $@ \n$response") if $@;
 
-	$log->error("Failed to get Spotify access token: $@ \n$response") if $@;
+	# if ( $response && ref $response ) {
+	# 	if ( $token = $response->{accessToken} ) {
+	# 		my $expiry = DEFAULT_EXPIRATION;
+	# 		if (my $expiresIn = $response->{expiresIn}) {
+	# 			if (ref $expiresIn eq 'HASH') {
+	# 				$expiry = $expiresIn->{secs} || DEFAULT_EXPIRATION;
+	# 			} elsif ($expiresIn =~ /^\d+$/) {
+	# 				$expiry = $expiresIn || DEFAULT_EXPIRATION;
+	# 			}
+	# 		}
 
-	if ( $response && ref $response ) {
-		if ( $token = $response->{accessToken} ) {
-			my $expiry = DEFAULT_EXPIRATION;
-			if (my $expiresIn = $response->{expiresIn}) {
-				if (ref $expiresIn eq 'HASH') {
-					$expiry = $expiresIn->{secs} || DEFAULT_EXPIRATION;
-				} elsif ($expiresIn =~ /^\d+$/) {
-					$expiry = $expiresIn || DEFAULT_EXPIRATION;
-				}
-			}
+	# 		main::DEBUGLOG && $log->is_debug && $log->debug("Received access token: " . Data::Dump::dump($response));
+	# 		main::INFOLOG && $log->is_info && $log->debug("Caching access token for $expiry seconds.");
 
-			main::DEBUGLOG && $log->is_debug && $log->debug("Received access token: " . Data::Dump::dump($response));
-			main::INFOLOG && $log->is_info && $log->debug("Caching access token for $expiry seconds.");
+	# 		# Cache for the given expiry time (less some to be sure...)
+	# 		# $class->cacheAccessToken($args->{code}, $username, $token, $expiry);
+	# 	}
+	# }
+	# else {
+	# 	$response = {};
+	# }
 
-			# Cache for the given expiry time (less some to be sure...)
-			$cache->set($cacheKey, $token, $expiry - 300);
-		}
-	}
-	else {
-		$response = {};
-	}
+	# if (!$token) {
+	# 	$log->error($response->{error} || "Failed to get Spotify access token");
+	# 	# store special value to prevent hammering the backend
+	# 	# $class->cacheAccessToken($args->{code}, $username, $token = -1, 15);
+	# }
 
-	if (!$token) {
-		$log->error($response->{error} || "Failed to get Spotify access token");
-		# store special value to prevent hammering the backend
-		$cache->set($cacheKey, $token = -1, 15);
-	}
-
-	return $token;
+	# return $token;
 }
 
 sub _killTokenHelper {
@@ -212,7 +210,7 @@ sub _killTokenHelper {
 
 	$log->error($msg || 'Timed out waiting for a token') unless $active;
 
-	$self->_callCallbacks() if $self && !$active;
+	# $self->_callCallbacks() if $self && !$active;
 
 	if ($self && $self->_proc) {
 		$self->_proc->die();
@@ -220,9 +218,32 @@ sub _killTokenHelper {
 }
 
 my $startupTime = time();
-sub _getCacheKey {
-	my ($code, $username) = @_;
-	return "spotty_access_token_$startupTime" . ($code || $prefs->get('iconCode')) . Slim::Utils::Unicode::utf8toLatin1Transliterate($username);
+sub _getATCacheKey {
+	my ($code, $username, $tokenId) = @_;
+	return join('_', 'spotty_access_token', $startupTime, $code || $prefs->get('iconCode'), Slim::Utils::Unicode::utf8toLatin1Transliterate($username));
+}
+
+sub _getRTCacheKey {
+	my ($code, $username, $tokenId) = @_;
+	return join('_', 'spotty_refresh_token', $code || $prefs->get('iconCode'), Slim::Utils::Unicode::utf8toLatin1Transliterate($username));
+}
+
+sub cacheAccessToken {
+	my ($class, $code, $username, $token, $expiration) = @_;
+	$expiration ||= DEFAULT_EXPIRATION;
+
+	my $cacheKey = _getATCacheKey($code, $username);
+
+	$expiration = $expiration > 600 ? ($expiration - 300) : $expiration;
+
+	main::INFOLOG && $log->is_info && $log->info("Caching access token for $expiration seconds.");
+
+	$cache->set($cacheKey, $token, $expiration);
+}
+
+sub cacheRefreshToken {
+	my ($class, $code, $username, $token) = @_;
+	$cache->set(_getRTCacheKey($code, $username), $token, '1y') if $token;
 }
 
 # singleton shortcut to the main class
@@ -230,14 +251,16 @@ sub get {
 	my ($class, $api, $cb, $args) = @_;
 	$args ||= {};
 
-	my $cacheKey = _getCacheKey($args->{code}, $args->{accountId} || ($api && $api->username) || (main::SCANNER ? '_scanner' : 'generic'));
+	my $userId = $args->{accountId} || ($api && $api->username) || (main::SCANNER ? '_scanner' : 'generic');
+	my $cacheKey = _getATCacheKey($args->{code}, $userId);
+
 	if (my $token = $cache->get($cacheKey)) {
 		main::INFOLOG && $log->is_info && $log->info("Found cached token: $token");
 		main::DEBUGLOG && $log->is_debug && $log->debug($token);
 		return $cb ? $cb->($token) : $token;
 	}
 	else {
-		main::INFOLOG && $log->is_info && $log->info("Didn't find cached token. Need to refresh. " . ($args->{accountId} || ($api && $api->username) || (main::SCANNER ? '_scanner' : 'generic')));
+		main::INFOLOG && $log->is_info && $log->info("Didn't find cached token. Need to refresh. $userId");
 	}
 
 	if (main::SCANNER) {
@@ -252,36 +275,113 @@ sub get {
 
 		return $class->_gotTokenInfo(`$cmd 2>&1`, $args->{accountId} || '_scanner');
 	}
-	elsif ( (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) && !$prefs->get('disableAsyncTokenRefresh') ) {
-		my $proc = $procs{$api} unless $args->{code};
+	else {
+		my $refreshToken = $cache->get(_getRTCacheKey($args->{code}, $userId));
 
-		if ( !($proc && $proc->_proc && $proc->_proc->alive()) ) {
-			$proc = $class->new($api, $args);
-			# we don't keep a connection around if this is the web token code
-			$procs{$api} = $proc unless $args->{code};
+		if (!$refreshToken) {
+			main::INFOLOG && $log->is_info && $log->info("No refresh token found - can't refresh access token.");
+			$cb->() if $cb;
+			return;
 		}
 
 		if ($cb) {
-			my $cbs = $proc->_callbacks;
-			push @$cbs, $cb;
-			$proc->_callbacks($cbs);
+			$callbacks{$refreshToken} ||= [];
+			push @{$callbacks{$refreshToken}}, $cb;
 		}
-	}
-	else {
-		main::INFOLOG && $log->info("Can't do non-blocking getToken call. Good luck!");
 
-		my $account = Plugins::Spotty::AccountHelper->getAccount($api->client);
+		if ( $cb && scalar(@{$callbacks{$refreshToken}}) > 1 ) {
+			main::INFOLOG && $log->is_info && $log->info("There's already a refresh in progress for this token - queuing callback.");
+			return;
+		}
 
-		my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s"',
-			scalar Plugins::Spotty::Helper->get(),
-			$api->cache || Plugins::Spotty::AccountHelper->cacheFolder($account),
-			$args->{code} || $prefs->get('iconCode'),
-			$args->{scope} || SPOTIFY_SCOPE
+		$api->refreshToken(
+			sub {
+				my $result = shift || {};
+				my $accessToken;
+
+				if ($accessToken = $result->{access_token}) {
+					my $expiresIn = $result->{expires_in} || 3600;
+
+					main::INFOLOG && $log->is_info && $log->info("Refreshed access token for user: $userId");
+
+					$class->cacheAccessToken($args->{code}, $userId, $accessToken, $expiresIn - 300);
+					$class->cacheRefreshToken($args->{code}, $userId, $result->{refresh_token}) if $result->{refresh_token};
+
+					# $cb->($accessToken) if $cb;
+					# return;
+				}
+
+				$log->error("Failed to refresh access token: " . ($result->{error} || 'Unknown error')) if $result->{error} || !$result->{refresh_token};
+				_callCallbacks($accessToken, $refreshToken);
+			},
+			{ refreshToken => $refreshToken }
 		);
 
-		_logCommand($cmd);
+		# my $asyncHelperCall = (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) && !$prefs->get('disableAsyncTokenRefresh');
 
-		$cb->($class->_gotTokenInfo(`$cmd 2>&1`, $api->username || 'generic', $args));
+		# my $proc;
+		# if ($asyncHelperCall) {
+		# 	$proc = $procs{$api} if $args->{code};
+		# }
+
+		# $api->refreshToken(
+		# 	sub {
+		# 		my $result = shift;
+		# 		my $error;
+
+		# 		if ($result && (my $accessToken = $result->{access_token})) {
+		# 			my $expiresIn = $result->{expires_in} || 3600;
+
+		# 			main::INFOLOG && $log->is_info && $log->info("Refreshed access token for user: $userId");
+
+		# 			$class->cacheAccessToken(
+		# 				$args->{code},
+		# 				$userId,
+		# 				$accessToken,
+		# 				$expiresIn - 300
+		# 			);
+
+		# 			$class->cacheRefreshToken($args->{code}, $userId, $result->{refresh_token}) if $result->{refresh_token};
+
+		# 			if ( (CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token')) && !$prefs->get('disableAsyncTokenRefresh') ) {
+
+		# 				if ( !($proc && $proc->_proc && $proc->_proc->alive()) ) {
+		# 					$proc = $class->new($api, $args);
+		# 					# we don't keep a connection around if this is the web token code
+		# 					$procs{$api} = $proc unless $args->{code};
+		# 				}
+
+		# 				if ($cb) {
+		# 					my $cbs = $proc->_callbacks;
+		# 					push @$cbs, $cb;
+		# 					$proc->_callbacks($cbs);
+		# 				}
+		# 			}
+		# 			else {
+		# 				main::INFOLOG && $log->info("Can't do non-blocking getToken call. Good luck!");
+
+		# 				my $account = Plugins::Spotty::AccountHelper->getAccount($api->client);
+
+		# 				my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s"',
+		# 					scalar Plugins::Spotty::Helper->get(),
+		# 					$api->cache || Plugins::Spotty::AccountHelper->cacheFolder($account),
+		# 					$args->{code} || $prefs->get('iconCode'),
+		# 					$args->{scope} || SPOTIFY_SCOPE
+		# 				);
+
+		# 				_logCommand($cmd);
+
+		# 				$cb->($class->_gotTokenInfo(`$cmd 2>&1`, $api->username || 'generic', $args));
+		# 			}
+
+		# 			return;
+		# 		}
+
+		# 		$log->error("Failed to refresh access token: " . ($result->{error} || 'Unknown error'));
+		# 		$class->_callCallbacks();
+		# 	},
+		# 	{ refreshToken => $refreshToken },
+		# );
 	}
 }
 

@@ -13,11 +13,9 @@ use Slim::Utils::Prefs;
 use constant CALLBACK_PATH => 'plugins/Spotty/settings/callback';
 use constant REDIRECT_PATH => 'plugins/Spotty/settings/redirect';
 use constant PKCE_AUTH_URL => 'https://accounts.spotify.com/authorize?client_id=%s&response_type=code&redirect_uri=%s&code_challenge=%s&code_challenge_method=S256&scope=%s&state=%s';
-use constant PKCE_TOKEN_URL => 'https://accounts.spotify.com/api/token';
 use constant PKCE_CODE_VERIFIER_CACHEKEY => 'spotty_auth_code_verifier';
 
 use constant CALLBACK_URL => 'https://api.lms-community.org/auth/callback';
-# use constant REGISTER_CALLBACK_URL => 'http://localhost:8787/auth/prepare';
 use constant REGISTER_CALLBACK_URL => 'https://api.lms-community.org/auth/prepare';
 
 use constant SCOPE => join('+', qw(
@@ -43,7 +41,6 @@ use constant SCOPE => join('+', qw(
 	user-read-playback-position
 	user-read-recently-played
 ));
-
 
 my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.spotty');
@@ -195,13 +192,7 @@ sub oauthCallback {
 
 							main::INFOLOG && $log->is_info && $log->info("Authenticated Spotify user: $username");
 
-							Plugins::Spotty::API::Token->cacheAccessToken(
-								$defaultCode,
-								$username,
-								$accessToken,
-								($meResult->{expires_in} || 3600) - 300
-							);
-
+							Plugins::Spotty::API::Token->cacheAccessToken($defaultCode, $username, $accessToken, $meResult->{expires_in});
 							Plugins::Spotty::API::Token->cacheRefreshToken($defaultCode, $username, $refreshToken);
 
 							# TODO - async token refresh, timeout
