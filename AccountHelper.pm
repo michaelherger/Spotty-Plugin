@@ -169,6 +169,13 @@ sub renameCacheFolder {
 	}
 }
 
+sub removeAllAccounts {
+	my ($class) = @_;
+	foreach ( @{$class->cacheFolders() || []} ) {
+		$class->deleteCacheFolder($_);
+	}
+}
+
 # delete the cache folder for the given ID
 sub deleteCacheFolder {
 	my ($class, $id) = @_;

@@ -1,30 +1,69 @@
-[% PROCESS "plugins/Spotty/settings/auth-header.html" %]
+[% IF useExtJS; extJsScripts = BLOCK %]
+	<script TYPE="text/javascript">
+		Ext.onReady(function() {
+			// check whether credentials have been saved
+			new Ext.util.TaskRunner().start({
+				run: function() {
+					Ext.Ajax.request({
+						url: '/plugins/Spotty/settings/hasCredentials[% IF accountId; "?accountId=" _ accountId; END %]',
+						success: function(response, options){
+							response = Ext.util.JSON.decode(response.responseText);
 
-	[% IF canDiscovery; WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
-		<div style="padding-bottom: 7px;">In order to use your Squeezebox with Spotify, you'll need to authorize
-		Lyrion Music Server using one of Spotify's applications. This can be their desktop
-		client, or one of their mobile apps. Please note that authentication is not possible
-		through Spotify's web client. A Spotify Premium subscription is required!</div>
+							if (response.hasCredentials)
+								window.location.href = 'basic.html';
+						}
+					});
+				},
+				interval: 2000
+			});
+		});
+	</script>
+	<style>
+	<!--
+		div.spotty-instructions {
+			margin: 10px;
+			line-height: 150%;
+		}
 
-		<div style="padding-bottom: 7px;">Spotify uses
-		a random port for listening for connections that changes after reboot, if running LMS
-		in a container you may need to use host network. If running a firewall on the host you
-		may need to disable or come up with a way to dynamically update your rules.</div>
+		ol.spotty {
+			list-style-type: decimal;
+			list-style-position: inside;
+		}
+	-->
+	</style>
+[% END; ELSE %]
+	<script TYPE="text/javascript" language="JavaScript">
+		window.setInterval(function () {
+			new Ajax.Request('/plugins/Spotty/settings/hasCredentials[% IF accountId; "?accountId=" _ accountId; END %]', {
+				onSuccess: function(response) {
+					response = response.responseText.evalJSON();
 
-		<div>Just follow these simple steps:</div>
+					if (response.hasCredentials)
+						window.location.href = 'basic.html';
+				}
+			});
+		}, 2000);
+	</script>
+[% END %]
+[% PROCESS settings/header.html %]
 
-		<div class="spotty-instructions">
-			<ol class="spotty">
-				<li>Start your Spotify client</li>
-				<li>Play some tune in Spotify</li>
-				<li>Open Spotify's list of available devices<br><img src="[% webroot %]plugins/Spotty/html/images/desktop-auth.png"></li>
-				<li>Pick the "[% "PLUGIN_SPOTTY_AUTH_NAME" | string %]" item (music playback might go silence at this point)</li>
-				<li>Wait a few seconds while the application is authorizing Lyrion Music Server to use Spotify</li>
-				<li>Don't panic - sometimes it can take a dozen or two seconds &#x1F603;</li>
-			</ol>
-		</div>
-
-		<div style="padding-bottom: 7px;">That's it! This screen should disappear.</div>
+	[% IF helperMissing; WRAPPER setting title="PLUGIN_SPOTTY_HELPER_MISSING" desc="" %]
+		<div style="color: red">[% "PLUGIN_SPOTTY_HELPER_MISSING_HELP" | string %]<br/>
+		[% IF helperMissing == 1; ""; ELSE; helperMissing; END  %]</div>
 	[% END; END %]
 
-[% PROCESS "plugins/Spotty/settings/auth-footer.html" %]
+	[% WRAPPER setting title="PLUGIN_SPOTTY_PREMIUM_REQUIRED" desc="" %]
+		<div>[% "PLUGIN_SPOTTY_PREMIUM_REQUIRED_DESC" | string %]</div>
+	[% END %]
+
+	[% WRAPPER setting title="PLUGIN_SPOTTY_AUTH_NAME" desc="" %]
+		<div><a href="[% authUrl %]" target="_blank"><img style="width: 189px; margin-bottom: 10px;" src="/plugins/Spotty/html/images/signinwithspotify.png"></a></div>
+		<div>[% "PLUGIN_SPOTTY_AUTH_OAUTH_DESC" | string %] <pre>[% callbackUrl %]</pre></div>
+		<div>
+			<br/><a href="basic.html?forceBasicSettings=1">[% "PLUGIN_SPOTTY_BACK_TO_BASICS" | string %]</a>
+		</div>
+	[% END %]
+
+	<input type="hidden" name="accountId" value="[% accountId %]">
+
+[% PROCESS settings/footer.html %]

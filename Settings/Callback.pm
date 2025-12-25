@@ -106,7 +106,7 @@ sub oauthRedirect {
 					$cache->set(PKCE_CODE_VERIFIER_CACHEKEY, $code_verifier);
 
 					my $url = sprintf(PKCE_AUTH_URL,
-						Plugins::Spotty::Plugin->initIcon(),
+						$prefs->get('iconCode'),
 						CALLBACK_URL,
 						$code_challenge,
 						SCOPE,
@@ -186,6 +186,10 @@ sub oauthCallback {
 						if ($meResult->{name} && $meResult->{name} =~ /error/i) {
 							$error = $result->{name};
 							$log->error("Failed to get user profile");
+						}
+						elsif ($meResult->{product} =~ /free|open/i) {
+							$error = Slim::Utils::Strings::cstring($client, 'PLUGIN_SPOTTY_NEED_PREMIUM');
+							$log->error("Spotify Free account detected");
 						}
 						else {
 							my $username = $meResult->{id};

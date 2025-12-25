@@ -45,7 +45,6 @@ sub page {
 
 sub prefs {
 	my @prefs = qw(myAlbumsOnly cleanupTags bitrate iconCode accountSwitcherMenu helper sortAlbumsAlphabetically sortArtistsAlphabetically sortPlaylisttracksByAddition);
-	push @prefs, 'disableAsyncTokenRefresh' if Plugins::Spotty::Helper->getCapability('save-token');
 	push @prefs, 'sortSongsAlphabetically' if !Plugins::Spotty::Plugin->hasDefaultIcon();
 	push @prefs, 'forceFallbackAP' if !Plugins::Spotty::Helper->getCapability('no-ap-port');
 	return ($prefs, @prefs);
@@ -89,14 +88,11 @@ sub handler {
 		$paramRef->{pref_cleanupTags} ||= 0;
 	}
 
-	if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !Plugins::Spotty::AccountHelper->hasCredentials()) ) {
+	if ( !$paramRef->{helperMissing} && !$paramRef->{forceBasicSettings} && ($paramRef->{addAccount} || !Plugins::Spotty::AccountHelper->hasCredentials()) ) {
 		$response->code(RC_MOVED_TEMPORARILY);
 		$response->header('Location' => 'authentication.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 	}
-
-	# make sure our authentication helper isn't running
-	Plugins::Spotty::Settings::Auth->shutdownHelper();
 
 	$paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
 	$paramRef->{displayNames} = { map {
@@ -157,7 +153,6 @@ sub beforeRender {
 
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
-	$paramRef->{canAsyncTokenRefresh} = Plugins::Spotty::API::Token::CAN_ASYNC_GET_TOKEN || Plugins::Spotty::Helper->getCapability('save-token');
 	$paramRef->{canApPort}      = !Plugins::Spotty::Helper->getCapability('no-ap-port');
 
 	$paramRef->{hasDefaultIcon} = Plugins::Spotty::Plugin->hasDefaultIcon();

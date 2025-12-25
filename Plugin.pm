@@ -84,9 +84,7 @@ sub initPlugin {
 	}, 'cleanupTags');
 
 	$prefs->setChange( sub {
-		# TODO - reset accounts if client ID changes
-		# $paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
-
+		Plugins::Spotty::AccountHelper->removeAllAccounts();
 		$cache->remove('spotty_rate_limit_exceeded');
 	}, 'iconCode');
 
@@ -369,11 +367,6 @@ sub killHangingProcesses {
 sub shutdownPlugin { if (main::TRANSCODING) {
 	Plugins::Spotty::AccountHelper->purgeAudioCache(1);
 	__PACKAGE__->killHangingProcesses(1);
-
-	# make sure we don't leave our helper app running
-	if (main::WEBUI) {
-		Plugins::Spotty::Settings::Auth->shutdownHelper();
-	}
 } }
 
 1;

@@ -114,11 +114,6 @@
 
 	[% PROCESS "plugins/Spotty/settings/helpers.html" %]
 
-	[% IF canAsyncTokenRefresh; WRAPPER setting title="" desc="" %]
-		<input name="pref_disableAsyncTokenRefresh" id="pref_disableAsyncTokenRefresh" type="checkbox" [% IF prefs.pref_disableAsyncTokenRefresh %] checked [% END %]>
-		<label for="pref_disableAsyncTokenRefresh">[% "PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH" | string %]</label>
-	[% END; END %]
-
 	[% IF canApPort; WRAPPER setting title="" desc="PLUGIN_SPOTTY_FORCE_FALLBACK_AP_DESC" %]
 		<input name="pref_forceFallbackAP" id="pref_forceFallbackAP" type="checkbox" [% IF prefs.pref_forceFallbackAP %] checked [% END %]>
 		<label for="pref_forceFallbackAP">[% "PLUGIN_SPOTTY_FORCE_FALLBACK_AP" | string %]</label>
