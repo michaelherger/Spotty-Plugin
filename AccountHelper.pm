@@ -285,7 +285,7 @@ sub getCredentials {
 	}
 
 	if ( my $credentialsFile = $class->hasCredentials($id) ) {
-		my $credentialsFileContent = read_file($credentialsFile);
+		my $credentialsFileContent = read_file($credentialsFile) if -f $credentialsFile;
 
 		if (!$credentialsFileContent) {
 			$log->error("Failed to read credentials file, or credentials file was empty");

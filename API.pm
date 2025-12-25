@@ -120,7 +120,7 @@ sub me {
 			my $result = shift;
 			if ( $result && ref $result ) {
 				$self->country($result->{country});
-				$self->_username($result->{username}) if $result->{username};
+				$self->_username($result->{username} || $result->{id}) if $result->{name} || $result->{id};
 				Plugins::Spotty::AccountHelper->setName($self->username, $result);
 
 				$cb->($result) if $cb;
