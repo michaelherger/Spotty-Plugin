@@ -16,9 +16,9 @@ use constant PKCE_AUTH_URL => 'https://accounts.spotify.com/authorize?client_id=
 use constant PKCE_TOKEN_URL => 'https://accounts.spotify.com/api/token';
 use constant PKCE_CODE_VERIFIER_CACHEKEY => 'spotty_auth_code_verifier';
 
-use constant CALLBACK_URL => 'https://lms-auth-redirector.nixda.workers.dev/auth/callback';
+use constant CALLBACK_URL => 'https://api.lms-community.org/auth/callback';
 # use constant REGISTER_CALLBACK_URL => 'http://localhost:8787/auth/prepare';
-use constant REGISTER_CALLBACK_URL => 'https://lms-auth-redirector.nixda.workers.dev/auth/prepare';
+use constant REGISTER_CALLBACK_URL => 'https://api.lms-community.org/auth/prepare';
 
 use constant SCOPE => join('+', qw(
 	playlist-read
@@ -138,7 +138,7 @@ sub oauthRedirect {
 			$redirectCb->($error);
 		},
 		sub {
-			my ($http, $error, $response) = @_;
+			my ($http, $error) = @_;
 			main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($http));
 
 			$redirectCb->($error);
@@ -161,13 +161,6 @@ sub oauthCallback {
 
 	my $code = $params->{code};
 
-	my $body = sprintf('grant_type=authorization_code&code=%s&redirect_uri=%s&client_id=%s&code_verifier=%s',
-		$code,
-		CALLBACK_URL,
-		Plugins::Spotty::Plugin->initIcon(),
-		$cache->get(PKCE_CODE_VERIFIER_CACHEKEY),
-	);
-
 	my $renderCb = sub {
 		my $error = shift;
 
@@ -176,62 +169,74 @@ sub oauthCallback {
 		feedbackPage($client, $params, $callback, @args)
 	};
 
-	Slim::Networking::SimpleAsyncHTTP->new(
+	main::INFOLOG && $log->is_info && $log->info("Exchange code for access token");
+	my $defaultCode = $prefs->get('iconCode');
+
+	my $api = Plugins::Spotty::API->new({ noProfileUpdate => 1 });
+	$api->codeExchange(
 		sub {
-			my $response = shift;
+			my $result = shift;
 			my $error;
 
-			if ( $response->headers->content_type =~ /json/i ) {
-				my $result = eval { decode_json($response->content) };
+			if ($result && (my $accessToken = $result->{access_token})) {
+				my $refreshToken = $result->{refresh_token};
+				my $url = 'https://api.spotify.com/v1/me';
 
-				$error = $@;
-				$log->error("Failed to parse token exchange response.") if $@;
+				$api->me(
+					sub {
+						my $meResult = shift;
 
-				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
+						if ($meResult->{name} && $meResult->{name} =~ /error/i) {
+							$error = $result->{name};
+							$log->error("Failed to get user profile");
+						}
+						else {
+							my $username = $meResult->{id};
 
-				if ($result && (my $accessToken = $result->{access_token})) {
-					# TODO - async token refresh, timeout
-					my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s" %s',
-						scalar Plugins::Spotty::Helper->get(),
-						Plugins::Spotty::Settings::Auth->_cacheFolder(),
-						Plugins::Spotty::Plugin->initIcon(),
-						SCOPE,
-						'--access-token=' . $accessToken,
-					);
+							main::INFOLOG && $log->is_info && $log->info("Authenticated Spotify user: $username");
 
-					Plugins::Spotty::API::Token::_logCommand($cmd);
+							Plugins::Spotty::API::Token->cacheAccessToken(
+								$defaultCode,
+								$username,
+								$accessToken,
+								($meResult->{expires_in} || 3600) - 300
+							);
 
-					`$cmd 2>&1`;
-				}
-				elsif ($result->{error}) {
-					$error = $result->{error};
-				}
+							Plugins::Spotty::API::Token->cacheRefreshToken($defaultCode, $username, $refreshToken);
+
+							# TODO - async token refresh, timeout
+							my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s" %s',
+								scalar Plugins::Spotty::Helper->get(),
+								Plugins::Spotty::Settings::Auth->_cacheFolder(),
+								$prefs->get('iconCode') || $defaultCode,
+								SCOPE,
+								'--access-token=' . $accessToken,
+							);
+
+							Plugins::Spotty::API::Token::_logCommand($cmd);
+
+							`$cmd 2>&1`;
+						}
+
+						$renderCb->($error);
+					},
+					$accessToken,
+				);
+
+				return;
 			}
-			else {
-				$error = 'Failed to get token';
-				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
+			elsif ($result->{name} && $result->{name} =~ /error/i) {
+				$error = $result->{name};
 			}
-
-			$renderCb->($error);
-		},
-		sub {
-			my ($http, $error, $response) = @_;
-			$log->error("Failed to get token") if $error;
 
 			$renderCb->($error);
 		},
 		{
-			cache => 0,
-			timeout => 10,
-		}
-	)->post(PKCE_TOKEN_URL,
-		'Content-Type' => 'application/x-www-form-urlencoded',
-		$body,
+			code => $params->{code},
+			callbackUrl => CALLBACK_URL,
+			codeVerifier => $cache->get(PKCE_CODE_VERIFIER_CACHEKEY),
+		},
 	);
-
-	main::INFOLOG && $log->is_info && $log->info("Fetching Access Token: " . Data::Dump::dump($body), PKCE_AUTH_URL);
-
-	return;
 }
 
 sub feedbackPage {

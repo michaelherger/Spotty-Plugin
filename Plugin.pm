@@ -76,12 +76,17 @@ sub initPlugin {
 	});
 
 	$prefs->setValidate({ 'validator' => sub { $_[1] =~ /^[a-f0-9]{32}$/i } }, 'iconCode');
+
 	$prefs->setChange( sub {
 		Slim::Music::Import->doQueueScanTasks(1);
 		Slim::Control::Request::executeRequest(undef, ['rescan', 'onlinelibrary']);
 		Slim::Music::Import->doQueueScanTasks(0);
 	}, 'cleanupTags');
+
 	$prefs->setChange( sub {
+		# TODO - reset accounts if client ID changes
+		# $paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
+
 		$cache->remove('spotty_rate_limit_exceeded');
 	}, 'iconCode');
 
