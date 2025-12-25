@@ -19,7 +19,6 @@ use Plugins::Spotty::API::Token;
 
 {
 	__PACKAGE__->mk_accessor( rw => qw(
-		username
 		userid
 	) );
 }
@@ -40,6 +39,7 @@ IO::Socket::SSL::set_defaults(
 );
 
 use constant API_URL => 'https://api.spotify.com/v1/%s';
+use constant TOKEN_URL => 'https://accounts.spotify.com/api/token';
 
 sub new {
 	my ($class, $accountId) = @_;
@@ -61,6 +61,54 @@ sub getToken {
 
 	return Plugins::Spotty::API::Token->get(undef, undef, { accountId => $self->userid });
 }
+
+sub refreshToken {
+	my ( $self, $args ) = @_;
+
+	return unless $args && $args->{refreshToken};
+
+	my $content = sprintf('grant_type=refresh_token&refresh_token=%s&client_id=%s', uri_escape_utf8($args->{refreshToken}), $prefs->get('iconCode') );
+
+	my @headers = (
+		'Accept' => 'application/json',
+		'Content-Length' => length($content),
+		'Content-Type' => 'application/x-www-form-urlencoded',
+	);
+
+	my $response = Slim::Networking::SimpleSyncHTTP->new()->post(
+		TOKEN_URL,
+		@headers,
+		$content,
+	);
+
+	my $result;
+	eval {
+		$result = decode_json(
+			$response->content,
+		);
+	};
+
+	if ($@) {
+		my $error = "Failed to parse JSON response: $@";
+		$log->error($error);
+		main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));
+		return {
+			error => $error
+		};
+	}
+
+	main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
+
+	if ( !$result || (ref $result && ref $result eq 'HASH' && $result->{error}) ) {
+		$result = {
+			error => 'Error: ' . ($result->{error_message} || 'Unknown error')
+		};
+		$log->error($result->{error} . ' (' . TOKEN_URL . ')');
+	}
+
+	return $result;
+}
+
 
 sub myAlbums {
 	my ($self, $args) = @_;
@@ -112,22 +160,6 @@ sub myAlbums {
 
 	return wantarray ? ($albums, $libraryMeta) : $albums;
 }
-
-# sub _albumTracks {
-# 	my ($self, $id, $offset) = @_;
-
-# 	my $response = $self->_call("albums/$id/tracks", {
-# 		offset => $offset || 0,
-# 		limit => SPOTIFY_LIMIT
-# 	});
-
-# 	my $tracks = [];
-# 	if ( $response && $response->{items} && ref $response->{items} ) {
-# 		push @$tracks, @{ $response->{items} };
-# 	}
-
-# 	return $tracks;
-# }
 
 sub myArtists {
 	my ($self, $args) = @_;

@@ -455,7 +455,7 @@ sub _enabledAccounts {
 	my $enabledAccounts = {};
 
 	while (my ($name, $id) = each %$accounts) {
-		$enabledAccounts->{$name} = $id unless $dontImportAccounts->{$id}
+		$enabledAccounts->{$name} = $name unless $dontImportAccounts->{$id}
 	}
 
 	return $enabledAccounts;
