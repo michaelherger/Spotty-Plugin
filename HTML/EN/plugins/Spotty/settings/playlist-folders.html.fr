@@ -57,8 +57,8 @@
 		Si vous souhaitez importer des structures de dossiers de listes de lecture, proc&eacute;dez comme suit :
 		<div class='spotty-instructions'>
 			<ol class="spotty">
-				<li>T&eacute;l&eacute;charger <a href="http://www.herger.net/spotty/findSpotifyFolderFiles.sh.zip" target="_blank">ce script pour
-					Linux/macOS/Unix</a>, ou <a href="http://www.herger.net/spotty/findSpotifyFolderFiles.zip" target="_blank">cet
+				<li>T&eacute;l&eacute;charger <a href="https://github.com/michaelherger/Spotty-Plugin/raw/refs/heads/master/Bin/findSpotifyFolderFiles.sh" target="_blank">ce script pour
+					Linux/macOS/Unix</a>, ou <a href="https://github.com/michaelherger/Spotty-Plugin/raw/refs/heads/master/Bin/MSWin32-x86-multi-thread/findSpotifyFolderFiles.exe" target="_blank">cet
 					utilitaire pour Windows</a> sur l'ordinateur o&ugrave; est install&eacute; Spotify.</li>
 				<li>Extrayez les fichiers t&eacute;l&eacute;charg&eacute;s. Sur Linux/macOS/Unix ex&eacute;cutez <code>chmod a+x findSpotifyFolderFiles.sh</code> dans le
 					dossier t&eacute;l&eacute;charg&eacute; pour rendre le script ex&eacute;cutable.</li>

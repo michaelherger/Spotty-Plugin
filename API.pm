@@ -31,7 +31,6 @@ use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::Helper;
 use Plugins::Spotty::API::Pipeline;
 use Plugins::Spotty::API::Token;
-use Plugins::Spotty::API::Web;
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -135,10 +134,6 @@ sub home {
 	my ($self, $cb) = @_;
 
 	$self->categoryPlaylists($cb, PERSONAL_MIX_CATEGORY );
-}
-
-sub browseWebUrl {
-	Plugins::Spotty::API::Web->browseWebUrl(@_);
 }
 
 # get the username - keep it simple. Shouldn't change, don't want nested async calls...
@@ -986,10 +981,6 @@ sub playlists {
 	}, $cb, {
 		limit  => $limit
 	})->get();
-}
-
-sub getPlaylistHierarchy {
-	Plugins::Spotty::API::Web->getPlaylistHierarchy(@_);
 }
 
 sub addTracksToPlaylist {

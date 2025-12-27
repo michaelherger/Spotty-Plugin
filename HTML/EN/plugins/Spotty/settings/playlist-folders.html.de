@@ -58,8 +58,8 @@
 		Falls du Playlisten Ordnerstruktur Informationen importieren m&ouml;chtest, befolge diese Schritte:
 		<div class='spotty-instructions'>
 			<ol class="spotty">
-				<li>Lade <a href="http://www.herger.net/spotty/findSpotifyFolderFiles.sh.zip" target="_blank">dieses Script f&uuml;r
-					Linux/macOS/Unix</a>, oder <a href="http://www.herger.net/spotty/findSpotifyFolderFiles.zip" target="_blank">diese
+				<li>Lade <a href="https://github.com/michaelherger/Spotty-Plugin/raw/refs/heads/master/Bin/findSpotifyFolderFiles.sh" target="_blank">dieses Script f&uuml;r
+					Linux/macOS/Unix</a>, oder <a href="https://github.com/michaelherger/Spotty-Plugin/raw/refs/heads/master/Bin/MSWin32-x86-multi-thread/findSpotifyFolderFiles.exe" target="_blank">diese
 					Helfer-Anwendung f&uuml;r Windows</a> auf dem Computer herunter, auf welchem Spotify installiert ist.</li>
 				<li>Entpacke die heruntergeladenen Dateien. Auf Linux/macOS/Unix f&uuml;hre <code>chmod a+x findSpotifyFolderFiles.sh</code>
 					im Ordner, in welchem du das Script gespeichert hast, aus, um es ausf&uuml;hrbar zu machen.</li>

@@ -19,6 +19,8 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 
+use constant CACHE_TTL_PLAYLIST_FOLDERS_SCANNED => 3600;
+use constant CACHE_TTL_PLAYLIST_FOLDERS_UPLOADED => 'never';
 use constant MAX_PLAYLIST_FOLDER_FILE_AGE => 86400 * 30;
 use constant MAX_FILE_TO_PARSE => 512 * 1024;
 use constant MAC_PERSISTENT_CACHE_PATH => catdir($ENV{HOME}, 'Library/Application Support/Spotify/PersistentCache/Storage');
@@ -38,7 +40,7 @@ Slim::Web::Pages->addRawFunction("plugins/spotty/uploadPlaylistFolderData", \&ha
 Slim::Web::Pages->addPageFunction("plugins/spotty/playlistFolder", \&handlePage) if main::WEBUI;
 
 sub parse {
-	my ($filename) = @_;
+	my ($filename, $uploaded) = @_;
 
 	return {} unless $filename && -f $filename && -r _ && -s _ < MAX_FILE_TO_PARSE;
 
@@ -69,7 +71,7 @@ sub parse {
 		$item =~ s/(.*?)\r.*/$1/s;
 
 		# the last part of the URI is an ID which must be no longer than 22 characters
-		if ($item =~ /^(laylist:[a-z0-9]{22}).*$/) {
+		if ($item =~ /^(laylist:[a-z0-9]{22}).*$/i) {
 			$map->{"spotify:p$1"} = {
 				parent => $parent,
 				order => $i++
@@ -106,7 +108,7 @@ sub parse {
 		}
 	}
 
-	$cache->set($key, $map, 86400 * 7);
+	$cache->set($key, $map, $uploaded ? CACHE_TTL_PLAYLIST_FOLDERS_UPLOADED : CACHE_TTL_PLAYLIST_FOLDERS_SCANNED);
 	return $map;
 }
 
@@ -249,21 +251,6 @@ sub _cacheKey {
 	return join(':', 'spotty', 2, $file, $size, $mtime);
 }
 
-sub getTree {
-	my ($class, $api, $uris, $cb) = @_;
-
-	$api->getPlaylistHierarchy(sub {
-		my $playlistHierarchy = shift;
-
-		if ($playlistHierarchy && keys %$playlistHierarchy) {
-			$cb->($playlistHierarchy);
-		}
-		else {
-			$class->getTreeFromCache($uris, $cb);
-		}
-	});
-}
-
 sub getTreeFromCache {
 	my ($class, $uris, $cb) = @_;
 
@@ -397,7 +384,7 @@ sub handleUpload {
 		# some cache cleanup
 		__PACKAGE__->purgeCache();
 
-		my $parsed = parse($uploadedFile);
+		my $parsed = parse($uploadedFile, 1);
 		if (!$parsed || !ref $parsed || keys %$parsed < 2) {
 			$result->{error} = 'No playlist items found';
 		}

@@ -410,54 +410,6 @@ sub sortHomeItems {
 	} @{$_[0]} ];
 }
 
-sub browseWebUrl {
-	my ($client, $cb, $params, $args) = @_;
-
-	if ($args && $args->{href}) {
-		Plugins::Spotty::Plugin->getAPIHandler($client)->browseWebUrl(sub {
-			my $results = shift;
-
-			my $items = [ grep { $_ } map {
-				my $type = $_->{type} || '';
-
-				my $innerItem;
-				if ($type eq 'album') {
-					$innerItem = _albumItem($client, $_);
-				}
-				elsif ($type eq 'artist') {
-					$innerItem = _artistItem($client, $_);
-				}
-				elsif ($type eq 'playlist') {
-					$innerItem = _playlistItem($client, $_);
-					if ($_->{description}) {
-						$innerItem->{name2} = $_->{description};
-						$innerItem->{name} .= ' - ' . $_->{description} if $params->{isWeb};
-					}
-				}
-				elsif ($type eq 'show') {
-					$innerItem = _showItem($_);
-				}
-				elsif ($_->{uri} eq 'spotify:collection:tracks') {
-					# "favorite tracks"? /me/tracks
-				}
-				else {
-					$log->warn("Unexpected content type found in home menu structure: $type " . (main::INFOLOG ? Data::Dump::dump($_) : ''));
-				}
-
-				$innerItem;
-			} @$results ];
-
-			$cb->({ items => $items });
-		}, $args->{href});
-	}
-	else {
-		$cb->([{
-			type  => 'text',
-			title => cstring($client, 'EMPTY'),
-		}]);
-	}
-}
-
 sub search {
 	my ($client, $cb, $params, $args) = @_;
 
@@ -814,7 +766,7 @@ sub playlists {
 
 		my $items;
 
-		Plugins::Spotty::PlaylistFolders->getTree($spotty, [ map {
+		Plugins::Spotty::PlaylistFolders->getTreeFromCache([ map {
 			$_->{uri};
 		} @$result ], sub {
 			my $hierarchy = shift;
@@ -1760,7 +1712,7 @@ sub addTrackToPlaylist {
 
 		my $items = [];
 
-		Plugins::Spotty::PlaylistFolders->getTree($spotty, [ map {
+		Plugins::Spotty::PlaylistFolders->getTreeFromCache([ map {
 			$_->{uri};
 		} @$playlists ], sub {
 			my $hierarchy = shift;
