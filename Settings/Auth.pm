@@ -61,6 +61,9 @@ sub handler {
 	$paramRef->{authUrl} = Plugins::Spotty::Settings::Callback->getAuthURL();
 	$paramRef->{callbackUrl} = Plugins::Spotty::Settings::Callback->getCallbackUrl();
 
+	my $osDetails = Slim::Utils::OSDetect::details();
+	$paramRef->{isDocker} = $osDetails->{osName} && $osDetails->{osName} =~ /Docker/;
+
 	return $class->SUPER::handler($client, $paramRef);
 }
 
