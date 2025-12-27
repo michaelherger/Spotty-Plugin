@@ -106,7 +106,9 @@ sub get {
 	my ($class, $api, $cb, $args) = @_;
 	$args ||= {};
 
-	my $userId = $args->{accountId} || ($api && $api->username) || (main::SCANNER ? '_scanner' : 'generic');
+	my $userId = $args->{accountId} || ($api && $api->username);
+	Slim::Utils::Log::logBacktrace("No userId found") if !$userId;
+	$userId ||= (main::SCANNER ? '_scanner' : 'generic');
 	my $cacheKey = _getATCacheKey($args->{code}, $userId);
 
 	if (my $token = $cache->get($cacheKey)) {
