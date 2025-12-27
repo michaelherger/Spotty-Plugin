@@ -84,18 +84,18 @@ PLUGIN_SPOTTY_AUTH_NAME
 	NL	Spotify Autorisatie
 
 PLUGIN_SPOTTY_PREMIUM_REQUIRED
-	CS	Vyžadováno předplatné Spotify Premium
-	DE	Spotify Premium Abo notwendig
-	EN	Spotify Premium Subscription required
-	FR	Abonnement Spotify Premium requis
-	NL	Spotify Premium-abonnement vereist
+	CS	Vyžaduje placené předplatné Spotify
+	DE	Spotify Bezahlabo notwendig
+	EN	Paid Spotify Subscription required
+	FR	Abonnement Spotify payé requis
+	NL	Betaald Spotify-abonnement vereist
 
 PLUGIN_SPOTTY_PREMIUM_REQUIRED_DESC
-	CS	Upozorňujeme, že pro použití Spotty je vyžadováno předplatné Spotify Premium. Možná se budete moci přihlásit i bez něj, ale nebude to fungovat!
-	DE	Für die Nutzung von Spotty ist zwingend ein Spotify Premium-Abonnement erforderlich. Sie können sich zwar auch ohne dieses Abonnement anmelden, aber es wird nicht funktionieren!
-	EN	A Spotify Premium subscription is required in order to use Spotty. You might be able to sign in without it, but it will not work!
-	FR	Un abonnement Spotify Premium est nécessaire pour utiliser Spotty. Vous pourrez peut-être vous connecter sans cet abonnement, mais cela ne fonctionnera pas !
-	NL	Houd er rekening mee dat een Spotify Premium-abonnement vereist is om Spotty te kunnen gebruiken. Je kunt je misschien wel aanmelden zonder dit abonnement, maar het zal niet werken!
+	CS	K používání aplikace Spotty je nutné placené předplatné Spotify (Premium, Family atd.). Bez něj se sice můžete přihlásit, ale aplikace nebude fungovat!
+	DE	Für die Nutzung von Spotty ist zwingend ein bezahltes Spotify Abonnement erforderlich (Premium, Family, etc.). Sie können sich zwar auch ohne dieses Abonnement anmelden, aber es wird nicht funktionieren!
+	EN	A paid Spotify subscription is required in order to use Spotty (Premium, Family, etc.). You might be able to sign in without it, but it will not work!
+	FR	Un abonnement Spotify payant est nécessaire pour utiliser Spotty (Premium, Famille, etc.). Vous pourrez peut-être vous connecter sans abonnement, mais cela ne fonctionnera pas !
+	NL	Om Spotty te kunnen gebruiken, heb je een betaald Spotify-abonnement nodig (Premium, Family, enz.). Je kunt je misschien wel aanmelden zonder abonnement, maar het zal niet werken!
 
 PLUGIN_SPOTTY_AUTH_OAUTH_DESC
 	CS	Upozorňujeme, že pokud používáte vlastní Client ID, budete muset do seznamu „Redirect URIs“ svého klienta přidat následující URL:
@@ -123,10 +123,11 @@ PLUGIN_SPOTTY_AUTH_FAILED
 	NL	Autorisatie mislukt
 
 PLUGIN_SPOTTY_NEED_PREMIUM
-	DE	Spotify Free Konten werden nicht unterstützt. Bitte schliesse ein Premium oder Family Abo ab.
-	EN	Spotify Free accounts are not supported. Please upgrade to Premium.
-	FR	Les comptes Spotify gratuits ne sont pas pris en charge. Veuillez passer à la version Premium.
-	NL	Spotify Free-accounts worden niet ondersteund. Upgrade naar Premium.
+	CS	Účty Spotify Free nejsou podporovány. Prosím, přejděte na Premium nebo Family.
+	DE	Spotify Free Konten werden nicht unterstützt. Bitte schliesse ein bezahltes Premium oder Family Abonnement ab.
+	EN	Spotify Free accounts are not supported. Please upgrade to Premium or Family.
+	FR	Les comptes Spotify gratuits ne sont pas pris en charge. Veuillez passer à la version Premium ou Family.
+	NL	Spotify Free-accounts worden niet ondersteund. Upgrade naar Premium of Family.
 
 PLUGIN_SPOTTY_AUTH_SUCCESS
 	CS	Autentizace Spotify byla úspěšná! Zavřete prosím tuto stránku a užijte si svou sbírku Spotify v Lyrion Music Serveru.
