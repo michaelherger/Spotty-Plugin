@@ -115,7 +115,7 @@ sub get {
 		return $cb ? $cb->($token) : $token;
 	}
 	else {
-		main::INFOLOG && $log->is_info && $log->info("Didn't find cached token. Need to refresh. $userId");
+		$log->warn("Didn't find cached token. Need to refresh. $userId");
 	}
 
 	my $refreshToken = $cache->get(_getRTCacheKey($args->{code}, $userId));
@@ -129,7 +129,7 @@ sub get {
 	}
 	else {
 		if (!$refreshToken) {
-			main::INFOLOG && $log->is_info && $log->info("No refresh token found - can't refresh access token.");
+			$log->warn("No refresh token found - can't refresh access token. $userId");
 			$cb->() if $cb;
 			return;
 		}
@@ -147,6 +147,7 @@ sub get {
 		$api->refreshToken(
 			sub {
 				my $accessToken = _gotTokenInfo(shift, $userId, $args);
+				$log->error("Failed to refresh access token for $userId") if !$accessToken;
 				_callCallbacks($accessToken, $refreshToken);
 			},
 			{ refreshToken => $refreshToken }
