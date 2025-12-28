@@ -335,6 +335,8 @@ sub needsUpdate {
 	my @workers;
 	my $accounts = _enabledAccounts();
 
+	main::INFOLOG && $log->warn("Spotify Accounts to check for updates: ", Data::Dump::dump($accounts));
+
 	foreach my $account (keys %$accounts) {
 		my $accountId = $accounts->{$account};
 		my $api = $apis{$account} ||= Plugins::Spotty::API->new({

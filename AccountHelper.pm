@@ -295,7 +295,7 @@ sub getCredentials {
 		my $credentialsFileContent = read_file($credentialsFile) if -f $credentialsFile;
 
 		if (!$credentialsFileContent) {
-			$log->error("Failed to read credentials file, or credentials file was empty");
+			$log->error("Failed to read credentials file, or credentials file was empty for $id: $credentialsFile");
 		}
 		else {
 			my $credentials = eval { from_json($credentialsFileContent) };

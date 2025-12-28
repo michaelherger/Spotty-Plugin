@@ -72,6 +72,9 @@ sub handler {
 			Plugins::Spotty::PlaylistFolders->purgeCache(1);
 		}
 
+		# need to handle the icon before checking for a redirect below
+		$prefs->set('iconCode', $paramRef->{'pref_iconCode'});
+
 		if ($paramRef->{clearSearchHistory}) {
 			$prefs->set('spotify_recent_search', []);
 		}
