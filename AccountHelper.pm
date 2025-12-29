@@ -291,6 +291,10 @@ sub getCredentials {
 	if ( blessed $id && (my $account = $prefs->client($id)->get('account')) ) {
 		$id = $account;
 	}
+	# we don't have a defined account for this client - just pick one
+	elsif ( blessed $id) {
+		$id = $class->getSomeAccount();
+	}
 
 	if ( my $credentialsFile = $class->hasCredentials($id) ) {
 		my $credentialsFileContent = read_file($credentialsFile) if -f $credentialsFile;

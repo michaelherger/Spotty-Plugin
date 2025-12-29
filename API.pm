@@ -1189,7 +1189,7 @@ sub _call {
 			my $cached;
 			my $cache_key;
 			if (!$params->{_nocache} && $type eq 'GET') {
-				$cache_key = md5_hex($url . ($url =~ /^me\b/ ? $token : ''));
+				$cache_key = md5_hex($url . ($url =~ /^(?:me|browse)\b/ ? $token : ''));
 			}
 
 			main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");
