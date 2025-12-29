@@ -348,7 +348,7 @@ sub handleFeed {
 			push @$items, {
 				name  => cstring($client, 'PLUGIN_SPOTTY_ACCOUNT'),
 				items => [{
-					name => Plugins::Spotty::AccountHelper->getDisplayName($spotty->username),
+					name => Plugins::Spotty::AccountHelper->getDisplayName($spotty->userId),
 					type => 'text'
 				},{
 					name => cstring($client, 'PLUGIN_SPOTTY_SELECT_ACCOUNT'),
@@ -365,7 +365,7 @@ sub handleFeed {
 
 		$cb->({
 # XXX - how to refresh the title when the account has changed?
-#			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::AccountHelper->hasMultipleAccounts() ? sprintf(' (%s)', Plugins::Spotty::AccountHelper->getDisplayName($spotty->username)) : ''),
+#			name  => cstring($client, 'PLUGIN_SPOTTY_NAME') . (Plugins::Spotty::AccountHelper->hasMultipleAccounts() ? sprintf(' (%s)', Plugins::Spotty::AccountHelper->getDisplayName($spotty->userId)) : ''),
 			items => $items,
 		});
 	} );
@@ -1434,17 +1434,17 @@ sub playlistList {
 
 	$lists ||= [];
 
-	my $username = Plugins::Spotty::Plugin->getAPIHandler($client)->username;
+	my $userId = Plugins::Spotty::Plugin->getAPIHandler($client)->userId;
 
 	return [ map {
-		_playlistItem($client, $_, $username);
+		_playlistItem($client, $_, $userId);
 	} @$lists ];
 }
 
 sub _playlistItem {
-	my ($client, $list, $username) = @_;
+	my ($client, $list, $userId) = @_;
 
-	$username ||= '';
+	$userId ||= '';
 
 	my $item = {
 		name  => $list->{name} || $list->{title},
@@ -1460,7 +1460,7 @@ sub _playlistItem {
 	my $creator = $list->{creator};
 	$creator ||= $list->{owner}->{id} if $list->{owner};
 
-	if ( $creator && $creator ne $username ) {
+	if ( $creator && $creator ne $userId ) {
 		$item->{line2} = cstring($client, 'BY') . ' ' . $creator;
 	}
 
@@ -1705,7 +1705,7 @@ sub addTrackToPlaylist {
 	my ($client, $cb, $params, $args) = @_;
 
 	my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client);
-	my $username = $spotty->username;
+	my $userId = $spotty->userId;
 
 	$spotty->playlists(sub {
 		my ($playlists) = @_;
@@ -1724,7 +1724,7 @@ sub addTrackToPlaylist {
 				$creator ||= $list->{owner}->{id} if $list->{owner};
 
 				# ignore other user's playlists we're following
-				if ( $creator && $creator ne $username ) {
+				if ( $creator && $creator ne $userId ) {
 					return;
 				}
 
@@ -1759,7 +1759,7 @@ sub addTrackToPlaylist {
 			});
 		});
 	},{
-		user => $username
+		user => $userId
 	});
 }
 
@@ -1925,12 +1925,12 @@ sub selectAccount {
 	my ($client, $cb, $params) = @_;
 
 	my $items = [];
-	my $username = Plugins::Spotty::Plugin->getAPIHandler($client)->username;
+	my $userId = Plugins::Spotty::Plugin->getAPIHandler($client)->userId;
 
 	foreach ( @{ Plugins::Spotty::AccountHelper->getSortedCredentialTupels() } ) {
 		my ($name, $id) = each %{$_};
 
-		next if $name eq $username;
+		next if $name eq $userId;
 
 		push @$items, {
 			name => Plugins::Spotty::AccountHelper->getDisplayName($name),

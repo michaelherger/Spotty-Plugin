@@ -5,7 +5,7 @@
 			new Ext.util.TaskRunner().start({
 				run: function() {
 					Ext.Ajax.request({
-						url: '/plugins/Spotty/settings/hasCredentials[% IF accountId; "?accountId=" _ accountId; END %]',
+						url: '/plugins/Spotty/settings/hasCredentials',
 						success: function(response, options){
 							response = Ext.util.JSON.decode(response.responseText);
 
@@ -34,7 +34,7 @@
 [% END; ELSE %]
 	<script TYPE="text/javascript" language="JavaScript">
 		window.setInterval(function () {
-			new Ajax.Request('/plugins/Spotty/settings/hasCredentials[% IF accountId; "?accountId=" _ accountId; END %]', {
+			new Ajax.Request('/plugins/Spotty/settings/hasCredentials', {
 				onSuccess: function(response) {
 					response = response.responseText.evalJSON();
 
@@ -67,7 +67,5 @@
 			<br/><a href="basic.html?forceBasicSettings=1">[% "PLUGIN_SPOTTY_BACK_TO_BASICS" | string %]</a>
 		</div>
 	[% END %]
-
-	<input type="hidden" name="accountId" value="[% accountId %]">
 
 [% PROCESS settings/footer.html %]

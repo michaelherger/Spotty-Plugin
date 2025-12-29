@@ -20,24 +20,31 @@
 			<tr>
 				<th>[% "PLUGIN_SPOTTY_ACCOUNT" | string %][% "COLON" | string %]</th>
 				<th>[% "PLUGIN_SPOTTY_IMPORT_LIBRARY"| string %][% "COLON" | string %]</th>
+				<th>[% "PLUGIN_SPOTTY_PRODUCT"| string %][% "COLON" | string %]</th>
 				<th></th>
 			</tr>
 		[% FOREACH creds = credentials %]
-			[% accountName = creds.keys.0; accountId = creds.values.0 %]
+			[% accountName = creds.keys.0; userId = creds.values.0 %]
+			[% freeProduct = freeProduct || (products.$accountName && products.$accountName.match('(?i)free|open')) %]
 			<tr>
 				<td style="vertical-align: middle; padding-right: 10px">[% displayNames.$accountName || accountName %]</td>
 				<td style="vertical-align: middle; padding-right: 10px">
-					<select class="stdedit" name="pref_dontimport_[% accountId %]">
-						<option [% IF !dontImportAccounts.$accountId %]selected [% END %]value="0">[% "YES"| string %]</option>
-						<option [% IF dontImportAccounts.$accountId %]selected [% END %]value="1">[% "NO" | string %]</option>
+					<select class="stdedit" name="pref_dontimport_[% userId %]">
+						<option [% IF !dontImportAccounts.$userId %]selected [% END %]value="0">[% "YES"| string %]</option>
+						<option [% IF dontImportAccounts.$userId %]selected [% END %]value="1">[% "NO" | string %]</option>
 					</select>
 				</td>
+				<td style="vertical-align: middle; padding-right: 10px">[% products.$accountName || accountName %]</td>
 				<td style="vertical-align: middle">
-					<input name="delete_[% accountId %]" type="submit" value="[% "DELETE" | string %]" class="stdclick" />
+					<input name="delete_[% userId %]" type="submit" value="[% "DELETE" | string %]" class="stdclick" />
 				</td>
 			</tr>
 		[% END %]
 		</table>
+
+		[% IF freeProduct %]
+			<p><b>[% "PLUGIN_SPOTTY_NEED_PREMIUM" | string | html %]</b></p>
+		[% END %]
 
 		[% IF credentials.size > 1 && !hasDefaultIcon %]
 			<div>[% "PLUGIN_SPOTTY_ADD_USER_TO_CLIENT_ID" | string %]</div>

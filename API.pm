@@ -51,7 +51,7 @@ my %tokenHandlers;
 	__PACKAGE__->mk_accessor( rw => qw(
 		client
 		cache
-		_username
+		_userId
 		_country
 		_canPodcast
 	) );
@@ -71,7 +71,7 @@ sub new {
 
 	$self->client($args->{client});
 	$self->cache($args->{cache});
-	$self->_username($args->{username});
+	$self->_userId($args->{userId});
 
 	$self->_country($prefs->get('country'));
 
@@ -119,8 +119,9 @@ sub me {
 			my $result = shift;
 			if ( $result && ref $result ) {
 				$self->country($result->{country});
-				$self->_username($result->{username} || $result->{id}) if $result->{name} || $result->{id};
-				Plugins::Spotty::AccountHelper->setName($self->username, $result);
+				$self->_userId($result->{id}) if $result->{id};
+				Plugins::Spotty::AccountHelper->setName($self->userId, $result);
+				Plugins::Spotty::AccountHelper->setProduct($self->userId, $result);
 
 				$cb->($result) if $cb;
 			}
@@ -136,20 +137,20 @@ sub home {
 	$self->categoryPlaylists($cb, PERSONAL_MIX_CATEGORY );
 }
 
-# get the username - keep it simple. Shouldn't change, don't want nested async calls...
-sub username {
-	my ($self, $username) = @_;
+# get the userId - keep it simple. Shouldn't change, don't want nested async calls...
+sub userId {
+	my ($self, $userId) = @_;
 
-	$self->_username($username) if $username;
-	return $self->_username if $self->_username;
+	$self->_userId($userId) if $userId;
+	return $self->_userId if $self->_userId;
 
-	# fall back to default account if no username was given
+	# fall back to default account if no userId was given
 	my $credentials = Plugins::Spotty::AccountHelper->getCredentials($self->client);
 	if ( $credentials && ref $credentials && $credentials->{username} ) {
-		$self->_username($credentials->{username})
+		$self->_userId($credentials->{username})
 	}
 
-	return $self->_username;
+	return $self->_userId;
 }
 
 # get the user's country - keep it simple. Shouldn't change, don't want nested async calls...
@@ -169,18 +170,18 @@ sub locale {
 }
 
 sub user {
-	my ( $self, $cb, $username ) = @_;
+	my ( $self, $cb, $userId ) = @_;
 
-	if (!$username) {
+	if (!$userId) {
 		$cb->([]);
 		return;
 	}
 
 	# usernames must be lower case, and space not URI encoded
-	$username = lc($username);
-	$username =~ s/ /\+/g;
+	$userId = lc($userId);
+	$userId =~ s/ /\+/g;
 
-	$self->_call('users/' . uri_escape_utf8($username),
+	$self->_call('users/' . uri_escape_utf8($userId),
 		sub {
 			my ($result) = @_;
 
@@ -469,7 +470,7 @@ sub playlist {
 
 	my $limit = $args->{limit};
 	# set the limit higher if it's the user's self curated playlist
-	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();
+	$limit ||= lc($user) eq lc($self->userId) ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();
 
 	Plugins::Spotty::API::Pipeline->new($self, 'playlists/' . $id . '/tracks', sub {
 		my $items = [];
@@ -812,7 +813,7 @@ sub myArtists {
 
 	# Getting the artists list is such a pain. Even when fetching every single request from cache,
 	# this would be slow on some systems. Let's just cache the full result...
-	my $cacheKey = 'spotify_my_artists' . Slim::Utils::Unicode::utf8toLatin1Transliterate($self->username || '');
+	my $cacheKey = 'spotify_my_artists' . Slim::Utils::Unicode::utf8toLatin1Transliterate($self->userId || '');
 
 	if ( my $cached = $cache->get($cacheKey) ) {
 		$cb->($cached);
@@ -964,11 +965,11 @@ sub addShowToLibrary {
 sub playlists {
 	my ( $self, $cb, $args ) = @_;
 
-	my $user = $args->{user} || $self->username || 'me';
+	my $user = $args->{user} || $self->userId || 'me';
 
 	my $limit = $args->{limit};
 	# set the limit higher if it's the user's self curated playlist
-	$limit ||= lc($user) eq lc($self->username) ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();
+	$limit ||= lc($user) eq lc($self->userId) ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();
 
 	# usernames must be lower case, and space not URI encoded
 	$user = lc($user);
@@ -1350,7 +1351,7 @@ sub _gotResponse {
 					if ( $user eq 'spotify' || $user eq 'spotifycharts' ) {
 						$ttl = _PLAYLIST_CACHE_TTL();
 					}
-					elsif ( $user ne $self->username ) {
+					elsif ( $user ne $self->userId ) {
 						$ttl = 3600;
 					}
 				}

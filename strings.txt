@@ -149,6 +149,10 @@ PLUGIN_SPOTTY_BACK_TO_BASICS
 	FR	Revenir aux paramètres de base de Spotty.
 	NL	Ga terug naar de basisinstellingen van Spotty.
 
+PLUGIN_SPOTTY_PRODUCT
+	DE	Produkt
+	EN	Product
+
 PLUGIN_SPOTTY_IMPORT_LIBRARY
 	CS	Importovat
 	DA	Importér

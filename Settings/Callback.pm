@@ -187,17 +187,13 @@ sub oauthCallback {
 							$error = $result->{name};
 							$log->error("Failed to get user profile");
 						}
-						elsif ($meResult->{product} =~ /free|open/i) {
-							$error = Slim::Utils::Strings::cstring($client, 'PLUGIN_SPOTTY_NEED_PREMIUM');
-							$log->error("Spotify Free account detected");
-						}
 						else {
-							my $username = $meResult->{id};
+							my $userId = $meResult->{id};
 
-							main::INFOLOG && $log->is_info && $log->info("Authenticated Spotify user: $username");
+							$log->warn(sprintf("Authenticated Spotify user: %s (%s, %s)", $userId, $meResult->{display_name} || 'no display name', $meResult->{product} || 'no product info'));
 
-							Plugins::Spotty::API::Token->cacheAccessToken($defaultCode, $username, $accessToken, $meResult->{expires_in});
-							Plugins::Spotty::API::Token->cacheRefreshToken($defaultCode, $username, $refreshToken);
+							Plugins::Spotty::API::Token->cacheAccessToken($defaultCode, $userId, $accessToken, $meResult->{expires_in});
+							Plugins::Spotty::API::Token->cacheRefreshToken($defaultCode, $userId, $refreshToken);
 
 							# TODO - async token refresh, timeout
 							my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s" %s',

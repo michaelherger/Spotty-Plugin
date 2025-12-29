@@ -19,7 +19,7 @@ use Plugins::Spotty::API::Token;
 
 {
 	__PACKAGE__->mk_accessor( rw => qw(
-		userid
+		userId
 	) );
 }
 
@@ -42,12 +42,12 @@ use constant API_URL => 'https://api.spotify.com/v1/%s';
 use constant TOKEN_URL => 'https://accounts.spotify.com/api/token';
 
 sub new {
-	my ($class, $accountId) = @_;
+	my ($class, $userId) = @_;
 
-	$accountId ||= Plugins::Spotty::AccountHelper->getSomeAccount();
+	$userId ||= Plugins::Spotty::AccountHelper->getSomeAccount();
 
 	my $self = $class->SUPER::new();
-	$self->userid($accountId);
+	$self->userId($userId);
 
 	return $self;
 }
@@ -59,7 +59,7 @@ sub getToken {
 		return -429;
 	}
 
-	return Plugins::Spotty::API::Token->get(undef, undef, { accountId => $self->userid });
+	return Plugins::Spotty::API::Token->get(undef, undef, { userId => $self->userId });
 }
 
 sub refreshToken {

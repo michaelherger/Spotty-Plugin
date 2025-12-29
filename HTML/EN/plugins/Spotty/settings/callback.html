@@ -7,6 +7,9 @@
 		<p>[% "PLUGIN_SPOTTY_RETRY_AUTH" | string | html %]</p>
 	[% ELSE %]
 		<p>[% "PLUGIN_SPOTTY_AUTH_SUCCESS" | string %]</p>
+		[% IF freeProduct %]
+			<p><b>[% "PLUGIN_SPOTTY_NEED_PREMIUM" | string | html %]</b></p>
+		[% END %]
 	[% END %]
 </div>
 

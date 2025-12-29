@@ -102,6 +102,7 @@ sub handler {
 		my ($id) = each %$_;
 		$id => Plugins::Spotty::AccountHelper->getDisplayName($id);
 	} @{$paramRef->{credentials}} };
+	$paramRef->{products}     = $prefs->get('products') || {};
 
 	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
 	$paramRef->{error429}     = Plugins::Spotty::API->hasError429();

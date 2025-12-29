@@ -49,14 +49,15 @@ sub handler {
 
 	my ($helperPath, $helperVersion) = Plugins::Spotty::Helper->get();
 
-	if ( Plugins::Spotty::AccountHelper->hasCredentials(AUTHENTICATE) ) {
-		$class->cleanup();
-		Plugins::Spotty::AccountHelper->getName($client, $paramRef->{username});
+	# TODO - is this legacy from when we entered username/password?
+	# if ( Plugins::Spotty::AccountHelper->hasCredentials(AUTHENTICATE) ) {
+	# 	$class->cleanup();
+	# 	Plugins::Spotty::AccountHelper->getName($client, $paramRef->{username});
 
-		$response->code(RC_MOVED_TEMPORARILY);
-		$response->header('Location' => 'basic.html');
-		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
-	}
+	# 	$response->code(RC_MOVED_TEMPORARILY);
+	# 	$response->header('Location' => 'basic.html');
+	# 	return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
+	# }
 
 	$paramRef->{authUrl} = Plugins::Spotty::Settings::Callback->getAuthURL();
 	$paramRef->{callbackUrl} = Plugins::Spotty::Settings::Callback->getCallbackUrl();

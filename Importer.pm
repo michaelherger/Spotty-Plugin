@@ -52,7 +52,7 @@ sub startScan { if (main::SCANNER) {
 
 	my $accounts = _enabledAccounts();
 
-	if (scalar keys %$accounts) {
+	if (scalar @$accounts) {
 		$dbh ||= Slim::Schema->dbh();
 		$class->initOnlineTracksTable();
 
@@ -76,9 +76,8 @@ sub scanAlbums { if (main::SCANNER) {
 
 	my $progress;
 
-	foreach my $account (keys %$accounts) {
-		my $accountId = $accounts->{$account};
-		my $api = Plugins::Spotty::API::Sync->new($accountId);
+	foreach my $userId (@$accounts) {
+		my $api = Plugins::Spotty::API::Sync->new($userId);
 
 		if ($progress) {
 			$progress->total($progress->total + 1);
@@ -93,19 +92,19 @@ sub scanAlbums { if (main::SCANNER) {
 		}
 
 		my ($libraryId, $accountName);
-		if (scalar keys %$accounts > 1) {
-			$accountName = "spotify:$account";
+		if (scalar @$accounts > 1) {
+			$accountName = "spotify:$userId";
 		}
 
 		my @missingAlbums;
 
 		main::INFOLOG && $log->is_info && $log->info("Reading albums...");
-		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS', $account));
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ALBUMS', $userId));
 
 		my ($albums, $libraryMeta) = $api->myAlbums();
 		$progress->total($progress->total + scalar @$albums + 1);
 
-		$cache->set('spotty_latest_album_update' . $accountId, $class->libraryMetaId($libraryMeta), 86400 * 7);
+		$cache->set('spotty_latest_album_update' . $userId, $class->libraryMetaId($libraryMeta), 86400 * 7);
 
 		main::INFOLOG && $log->is_info && $log->info("Getting missing album information...");
 		foreach (@$albums) {
@@ -117,13 +116,13 @@ sub scanAlbums { if (main::SCANNER) {
 			}
 		}
 
-		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS', $account));
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_TRACKS', $userId));
 		$api->albums(\@missingAlbums);
 
 		main::INFOLOG && $log->is_info && $log->info("Importing album tracks...");
 
 		foreach (@$albums) {
-			$progress->update($account . string('COLON') . ' ' . $_->{name});
+			$progress->update($userId . string('COLON') . ' ' . $_->{name});
 			main::SCANNER && Slim::Schema->forceCommit;
 
 			# Spotify doesn't provide the disc count for an album - use the largest disc number
@@ -164,9 +163,8 @@ sub scanArtists { if (main::SCANNER) {
 		$contributorNameNormalizer = sub { $_[0] };
 	}
 
-	foreach my $account (keys %$accounts) {
-		my $accountId = $accounts->{$account};
-		my $api = Plugins::Spotty::API::Sync->new($accountId);
+	foreach my $userId (@$accounts) {
+		my $api = Plugins::Spotty::API::Sync->new($userId);
 
 		if ($progress) {
 			$progress->total($progress->total + 1);
@@ -181,18 +179,18 @@ sub scanArtists { if (main::SCANNER) {
 		}
 
 		main::INFOLOG && $log->is_info && $log->info("Reading artists...");
-		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ARTISTS', $account));
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_ARTISTS', $userId));
 
 		my ($artists, $libraryMeta) = $api->myArtists();
 
-		$cache->set('spotty_latest_artists_update' . $accountId, $class->libraryMetaId($libraryMeta), 86400 * 7);
+		$cache->set('spotty_latest_artists_update' . $userId, $class->libraryMetaId($libraryMeta), 86400 * 7);
 
 		$progress->total($progress->total + scalar @$artists + 1);
 
 		foreach my $artist (@$artists) {
 			my $name = $artist->{name};
 
-			$progress->update($account . string('COLON') . ' ' . $name);
+			$progress->update($userId . string('COLON') . ' ' . $name);
 			main::SCANNER && Slim::Schema->forceCommit;
 
 			Slim::Schema::Contributor->add({
@@ -223,12 +221,11 @@ sub scanPlaylists { if (main::SCANNER) {
 	my $deletePlaylists_sth = $dbh->prepare_cached("DELETE FROM tracks WHERE url LIKE 'spotify:playlist:%'");
 	$deletePlaylists_sth->execute();
 
-	foreach my $account (keys %$accounts) {
-		my $accountId = $accounts->{$account};
-		my $api = Plugins::Spotty::API::Sync->new($accountId);
+	foreach my $userId (@$accounts) {
+		my $api = Plugins::Spotty::API::Sync->new($userId);
 
 		$progress->total($progress->total + 1);
-		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS', $account));
+		$progress->update(string('PLUGIN_SPOTTY_PROGRESS_READ_PLAYLISTS', $userId));
 
 		main::INFOLOG && $log->is_info && $log->info("Reading playlists...");
 		my $playlists = $api->myPlaylists();
@@ -241,11 +238,11 @@ sub scanPlaylists { if (main::SCANNER) {
 		main::INFOLOG && $log->is_info && $log->info("Getting playlist tracks...");
 
 		# if this is the first scan, then get the full metadata, not only IDs, as the cache will be empty
-		my $getFullData = $libraryCache->get('spotty_initialized_' . $accountId) ? 0 : 1;
+		my $getFullData = $libraryCache->get('spotty_initialized_' . $userId) ? 0 : 1;
 
 		# we need to get the tracks first
 		foreach my $playlist (@{$playlists || []}) {
-			$progress->update($account . string('COLON') . ' ' . $playlist->{name});
+			$progress->update($userId . string('COLON') . ' ' . $playlist->{name});
 			Slim::Schema->forceCommit;
 
 			if (!$playlist->{id}) {
@@ -271,7 +268,7 @@ sub scanPlaylists { if (main::SCANNER) {
 		my $prefix = 'Spotify' . string('COLON') . ' ';
 		# now store the playlists with the tracks
 		foreach my $playlist (@{$playlists || []}) {
-			$progress->update($account . string('COLON') . ' ' . $playlist->{name});
+			$progress->update($userId . string('COLON') . ' ' . $playlist->{name});
 			my $playlistObj = Slim::Schema->updateOrCreate({
 				url        => $playlist->{uri},
 				playlist   => 1,
@@ -294,8 +291,8 @@ sub scanPlaylists { if (main::SCANNER) {
 			$_->{id} => ($_->{creator} eq 'spotify' ? $timestamp : $_->{snapshot_id})
 		} @$playlists };
 
-		$cache->set('spotty_snapshot_ids' . $accountId, $snapshotIds, 86400 * 7);
-		$libraryCache->set('spotty_initialized_' . $accountId, 1);
+		$cache->set('spotty_snapshot_ids' . $userId, $snapshotIds, 86400 * 7);
+		$libraryCache->set('spotty_initialized_' . $userId, 1);
 
 		main::INFOLOG && $log->is_info && $log->info("Done, finally!");
 		Slim::Schema->forceCommit;
@@ -337,11 +334,10 @@ sub needsUpdate {
 
 	main::INFOLOG && $log->warn("Spotify Accounts to check for updates: ", Data::Dump::dump($accounts));
 
-	foreach my $account (keys %$accounts) {
-		my $accountId = $accounts->{$account};
-		my $api = $apis{$account} ||= Plugins::Spotty::API->new({
-			username => $account,
-			cache => Plugins::Spotty::AccountHelper->cacheFolder($accountId)
+	foreach my $userId (@$accounts) {
+		my $api = $apis{$userId} ||= Plugins::Spotty::API->new({
+			userId => $userId,
+			cache => Plugins::Spotty::AccountHelper->cacheFolder($userId)
 		}) || next;
 
 		if (!$class->_ignorePlaylists) {
@@ -351,7 +347,7 @@ sub needsUpdate {
 				# don't run any further test in the queue if we already have a result
 				return $acb->($result) if $result;
 
-				my $snapshotIds = $cache->get('spotty_snapshot_ids' . $accountId);
+				my $snapshotIds = $cache->get('spotty_snapshot_ids' . $userId);
 				main::INFOLOG && $log->is_info && $log->info("Got playlist snapshot IDs: " . Data::Dump::dump($snapshotIds));
 
 				$api->playlists(sub {
@@ -388,7 +384,7 @@ sub needsUpdate {
 			# don't run any further test in the queue if we already have a result
 			return $acb->($result) if $result;
 
-			my $lastUpdateData = $cache->get('spotty_latest_album_update' . $accountId) || '';
+			my $lastUpdateData = $cache->get('spotty_latest_album_update' . $userId) || '';
 
 			$api->myAlbumsMeta(sub {
 				my $latestUpdateData = $class->libraryMetaId($_[0]);
@@ -408,7 +404,7 @@ sub needsUpdate {
 			# don't run any further test in the queue if we already have a result
 			return $acb->($result) if $result;
 
-			my $lastUpdateData = $cache->get('spotty_latest_artists_update' . $accountId) || '';
+			my $lastUpdateData = $cache->get('spotty_latest_artists_update' . $userId) || '';
 
 			$api->myArtists(sub {
 				my $artists = shift;
@@ -454,13 +450,9 @@ sub _enabledAccounts {
 	my $accounts = Plugins::Spotty::AccountHelper->getAllCredentials() || {};
 	my $dontImportAccounts = $prefs->get('dontImportAccounts');
 
-	my $enabledAccounts = {};
-
-	while (my ($name, $id) = each %$accounts) {
-		$enabledAccounts->{$name} = $name unless $dontImportAccounts->{$id}
-	}
-
-	return $enabledAccounts;
+	return [ grep {
+		!$dontImportAccounts->{$_}
+	} keys %$accounts ];
 }
 
 sub _prepareTrack {

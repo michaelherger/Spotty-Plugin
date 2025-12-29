@@ -128,6 +128,7 @@ sub renameCacheFolder {
 	my ($class, $oldId, $newId) = @_;
 
 	if ( !$newId && (my $credentials = $class->getCredentials($oldId)) ) {
+		# librespot stores the user ID as "username"
 		$newId = substr( md5_hex(Slim::Utils::Unicode::utf8toLatin1Transliterate($credentials->{username} || '')), 0, 8 );
 	}
 
@@ -375,16 +376,26 @@ sub getDisplayName {
 
 sub setName {
 	my ($class, $userId, $result) = @_;
+	$class->setAccountDetail($userId, 'display_name', 'displayNames', $result);
+}
 
-	if ($result && $result->{display_name}) {
-		my $names = $prefs->get('displayNames');
+sub setProduct {
+	my ($class, $userId, $result) = @_;
+	$class->setAccountDetail($userId, 'product', 'products', $result);
+}
 
-		my $oldName = $names->{$userId};
-		my $newName = $result->{display_name};
+sub setAccountDetail {
+	my ($class, $userId, $key, $prefKey, $result) = @_;
 
-		if (!$oldName || ($oldName ne $newName)) {
-			$names->{$userId} = $result->{display_name};
-			$prefs->set('displayNames', $names);
+	if ($result && exists $result->{$key}) {
+		my $details = $prefs->get($prefKey) || {};
+
+		my $oldValue = $details->{$userId};
+		my $newValue = $result->{$key};
+
+		if (!$oldValue || ($oldValue ne $newValue)) {
+			$details->{$userId} = $newValue;
+			$prefs->set($prefKey, $details);
 		}
 	}
 }

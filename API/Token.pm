@@ -74,31 +74,32 @@ sub _gotTokenInfo {
 
 my $startupTime = time();
 sub _getATCacheKey {
-	my ($code, $username, $tokenId) = @_;
-	return join('_', 'spotty_access_token', $startupTime, $code || $prefs->get('iconCode'), Slim::Utils::Unicode::utf8toLatin1Transliterate($username));
+	my ($code, $userId, $tokenId) = @_;
+	return join('_', 'spotty_access_token', $startupTime, $code || $prefs->get('iconCode'), Slim::Utils::Unicode::utf8toLatin1Transliterate($userId));
 }
 
 sub _getRTCacheKey {
-	my ($code, $username, $tokenId) = @_;
-	return join('_', 'spotty_refresh_token', $code || $prefs->get('iconCode'), Slim::Utils::Unicode::utf8toLatin1Transliterate($username));
+	my ($code, $userId, $tokenId) = @_;
+	return join('_', 'spotty_refresh_token', $code || $prefs->get('iconCode'), Slim::Utils::Unicode::utf8toLatin1Transliterate($userId));
 }
 
 sub cacheAccessToken {
-	my ($class, $code, $username, $token, $expiration) = @_;
+	my ($class, $code, $userId, $token, $expiration) = @_;
 	$expiration ||= DEFAULT_EXPIRATION;
 
-	my $cacheKey = _getATCacheKey($code, $username);
+	my $cacheKey = _getATCacheKey($code, $userId);
 
 	$expiration = $expiration > 600 ? ($expiration - 300) : $expiration;
 
-	main::INFOLOG && $log->is_info && $log->info("Caching access token for $expiration seconds.");
+	main::INFOLOG && $log->is_info && $log->info("Caching access token for $userId for $expiration seconds.");
 
 	$cache->set($cacheKey, $token, $expiration);
 }
 
 sub cacheRefreshToken {
-	my ($class, $code, $username, $token) = @_;
-	$cache->set(_getRTCacheKey($code, $username), $token, '1y') if $token;
+	my ($class, $code, $userId, $token) = @_;
+	main::INFOLOG && $log->is_info && $log->info("Caching refresh token for $userId.");
+	$cache->set(_getRTCacheKey($code, $userId), $token, '1y') if $token;
 }
 
 # singleton shortcut to the main class
@@ -106,7 +107,7 @@ sub get {
 	my ($class, $api, $cb, $args) = @_;
 	$args ||= {};
 
-	my $userId = $args->{accountId} || ($api && $api->username);
+	my $userId = $args->{userId} || ($api && $api->userId);
 	Slim::Utils::Log::logBacktrace("No userId found") if !$userId;
 	$userId ||= (main::SCANNER ? '_scanner' : 'generic');
 	my $cacheKey = _getATCacheKey($args->{code}, $userId);

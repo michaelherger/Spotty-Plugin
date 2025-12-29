@@ -68,6 +68,7 @@ sub initPlugin {
 		},
 		accountSwitcherMenu => 0,
 		displayNames => {},
+		products => {},
 		helper => '',
 		sortSongsAlphabetically => 1,
 		sortAlbumsAlphabetically => 1,
