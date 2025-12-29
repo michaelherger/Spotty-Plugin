@@ -42,7 +42,7 @@ use constant SCOPE => join('+', qw(
 	user-read-recently-played
 ));
 
-my $cache = Slim::Utils::Cache->new();
+my $cache = Slim::Utils::Cache->new('spotty', 0);
 my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
 

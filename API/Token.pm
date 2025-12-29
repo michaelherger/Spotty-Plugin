@@ -28,7 +28,7 @@ use constant SPOTIFY_SCOPE => join(',', qw(
 
 use constant DEFAULT_EXPIRATION => 3600;
 
-my $cache = Slim::Utils::Cache->new();
+my $cache = Slim::Utils::Cache->new('spotty', 0);
 my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
 
