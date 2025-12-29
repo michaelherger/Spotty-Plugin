@@ -67,7 +67,8 @@ sub _gotTokenInfo {
 		__PACKAGE__->cacheRefreshToken($args->{code}, $userId, $result->{refresh_token}) if $result->{refresh_token};
 	}
 
-	$log->error("Failed to refresh access token: " . ($result->{error} || 'Unknown error')) if $result->{error} || !$result->{refresh_token};
+	# Spotify may not return a refresh_token on refresh_token grant. Only treat as failure if no access_token.
+	$log->error("Failed to refresh access token: " . ($result->{error} || 'Unknown error')) if $result->{error} || !$accessToken;
 
 	return $accessToken;
 }

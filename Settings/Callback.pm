@@ -192,7 +192,7 @@ sub oauthCallback {
 
 							$log->warn(sprintf("Authenticated Spotify user: %s (%s, %s)", $userId, $meResult->{display_name} || 'no display name', $meResult->{product} || 'no product info'));
 
-							Plugins::Spotty::API::Token->cacheAccessToken($defaultCode, $userId, $accessToken, $meResult->{expires_in});
+							Plugins::Spotty::API::Token->cacheAccessToken($defaultCode, $userId, $accessToken, $result->{expires_in});
 							Plugins::Spotty::API::Token->cacheRefreshToken($defaultCode, $userId, $refreshToken);
 
 							# TODO - async token refresh, timeout
