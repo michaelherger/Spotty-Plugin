@@ -9,6 +9,8 @@ use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
+use Plugins::Spotty::API::Cache;
+
 # override the scope list hard-coded in to the spotty helper application
 use constant SPOTIFY_SCOPE => join(',', qw(
   playlist-modify-private
@@ -29,6 +31,7 @@ use constant SPOTIFY_SCOPE => join(',', qw(
 use constant DEFAULT_EXPIRATION => 3600;
 
 my $cache = Slim::Utils::Cache->new();
+my $spottyCache = Plugins::Spotty::API::Cache->new();
 my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
 
@@ -67,7 +70,7 @@ sub _gotTokenInfo {
 		__PACKAGE__->cacheRefreshToken($args->{code}, $userId, $result->{refresh_token}) if $result->{refresh_token};
 	}
 
-	$log->error("Failed to refresh access token: " . ($result->{error} || 'Unknown error')) if $result->{error} || !$result->{refresh_token};
+	$log->error("Failed to refresh access token: " . ($result->{error} || 'Unknown error')) if $result->{error} || !$result->{access_token};
 
 	return $accessToken;
 }
@@ -99,7 +102,7 @@ sub cacheAccessToken {
 sub cacheRefreshToken {
 	my ($class, $code, $userId, $token) = @_;
 	main::INFOLOG && $log->is_info && $log->info("Caching refresh token for $userId.");
-	$cache->set(_getRTCacheKey($code, $userId), $token, '1y') if $token;
+	$spottyCache->set(_getRTCacheKey($code, $userId), $token) if $token;
 }
 
 # singleton shortcut to the main class
@@ -110,9 +113,9 @@ sub get {
 	my $userId = $args->{userId} || ($api && $api->userId);
 	Slim::Utils::Log::logBacktrace("No userId found") if !$userId;
 	$userId ||= (main::SCANNER ? '_scanner' : 'generic');
-	my $cacheKey = _getATCacheKey($args->{code}, $userId);
+	my $atCacheKey = _getATCacheKey($args->{code}, $userId);
 
-	if (my $token = $cache->get($cacheKey)) {
+	if (my $token = $cache->get($atCacheKey)) {
 		main::INFOLOG && $log->is_info && $log->info("Found cached token: $token");
 		main::DEBUGLOG && $log->is_debug && $log->debug($token);
 		return $cb ? $cb->($token) : $token;
@@ -121,7 +124,9 @@ sub get {
 		$log->warn("Didn't find cached token. Need to refresh. $userId");
 	}
 
-	my $refreshToken = $cache->get(_getRTCacheKey($args->{code}, $userId));
+	my $rtCacheKey = _getRTCacheKey($args->{code}, $userId);
+	# temporary fallback code: from global to app own cache
+	my $refreshToken = $spottyCache->get($rtCacheKey) || $cache->get($rtCacheKey);
 
 	if (main::SCANNER) {
 		my $tokenInfo = Plugins::Spotty::API::Sync->refreshToken(

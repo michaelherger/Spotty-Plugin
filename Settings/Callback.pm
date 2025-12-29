@@ -192,8 +192,8 @@ sub oauthCallback {
 
 							$log->warn(sprintf("Authenticated Spotify user: %s (%s, %s)", $userId, $meResult->{display_name} || 'no display name', $meResult->{product} || 'no product info'));
 
-							Plugins::Spotty::API::Token->cacheAccessToken($defaultCode, $userId, $accessToken, $meResult->{expires_in});
-							Plugins::Spotty::API::Token->cacheRefreshToken($defaultCode, $userId, $refreshToken);
+							Plugins::Spotty::API::Token->cacheAccessToken($defaultCode, $userId, $accessToken, $result->{expires_in});
+							Plugins::Spotty::API::Token->cacheRefreshToken($defaultCode, $userId, $refreshToken) if $refreshToken;
 
 							# TODO - async token refresh, timeout
 							my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s" %s',
