@@ -18,6 +18,7 @@ use Plugins::Spotty::API;
 use Plugins::Spotty::Helper;
 use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
+use Plugins::Spotty::API::RateLimit;
 
 use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 use constant KILL_PROCESS_INTERVAL => 3600;
@@ -86,7 +87,7 @@ sub initPlugin {
 
 	$prefs->setChange( sub {
 		Plugins::Spotty::AccountHelper->removeAllAccounts();
-		$cache->remove('spotty_rate_limit_exceeded');
+		Plugins::Spotty::API::RateLimit->clearRateLimit();
 	}, 'iconCode');
 
 	# disable spt-flc transcoding on non-x86 platforms - don't transcode unless needed

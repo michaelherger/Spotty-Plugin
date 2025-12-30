@@ -14,6 +14,8 @@ use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
+use Plugins::Spotty::API::RateLimit;
+
 use Plugins::Spotty::API::Cache;
 use Plugins::Spotty::API::Token;
 
@@ -55,7 +57,7 @@ sub new {
 sub getToken {
 	my ($self) = @_;
 
-	if ($cache->get('spotty_rate_limit_exceeded')) {
+	if (Plugins::Spotty::API::RateLimit->isRateLimited()) {
 		return -429;
 	}
 

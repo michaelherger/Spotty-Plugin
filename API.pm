@@ -31,6 +31,7 @@ use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::Helper;
 use Plugins::Spotty::API::Pipeline;
 use Plugins::Spotty::API::Token;
+use Plugins::Spotty::API::RateLimit;
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -84,8 +85,8 @@ sub new {
 sub getToken {
 	my ( $self, $cb, $args ) = @_;
 
-	if ($cache->get('spotty_rate_limit_exceeded')) {
-		return $cb->(-429) ;
+	if (Plugins::Spotty::API::RateLimit->isRateLimited()) {
+		return $cb->(-429);
 	}
 
 	Plugins::Spotty::API::Token->get($self, $cb, $args);
@@ -1434,9 +1435,10 @@ sub error429 {
 	my $headers = $response->headers || {};
 
 	# set special token to tell _call not to proceed
-	$cache->set('spotty_rate_limit_exceeded', 1, $headers->{'retry-after'} || 5);
+	my $retryAfter = $headers->{'retry-after'} || 5;
+	Plugins::Spotty::API::RateLimit->setRateLimit($retryAfter);
 
-	$error429 = sprintf(string('PLUGIN_SPOTTY_ERROR_429_DESC'), $url, $headers->{'retry-after'} || 5);
+	$error429 = sprintf(string('PLUGIN_SPOTTY_ERROR_429_DESC'), $url, $retryAfter);
 
 	if ( main::DEBUGLOG && $log->is_debug ) {
 		$log->debug("Access rate exceeded: " . Data::Dump::dump($response));
