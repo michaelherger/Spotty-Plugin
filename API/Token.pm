@@ -46,15 +46,6 @@ sub _callCallbacks {
 	delete $callbacks{$refreshToken};
 }
 
-sub _logCommand {
-	if (main::INFOLOG && $log->is_info) {
-		my ($cmd) = @_;
-		$cmd =~ s/--client-id [a-f0-9]+/--client-id ***/;
-		$cmd =~ s/(access_token|refresh_token)=\w+/$1=***/g;
-		$log->info("Trying to get access token: $cmd");
-	}
-}
-
 sub _gotTokenInfo {
 	my ($result, $userId, $args) = @_;
 
@@ -116,8 +107,7 @@ sub get {
 	my $atCacheKey = _getATCacheKey($args->{code}, $userId);
 
 	if (my $token = $cache->get($atCacheKey)) {
-		main::INFOLOG && $log->is_info && $log->info("Found cached token: $token");
-		main::DEBUGLOG && $log->is_debug && $log->debug($token);
+		main::INFOLOG && $log->is_info && $log->info("Found cached access token");
 		return $cb ? $cb->($token) : $token;
 	}
 	else {

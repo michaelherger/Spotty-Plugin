@@ -1248,7 +1248,7 @@ sub _tokenCall {
 	push @$headers, 'Content-Type' => 'application/x-www-form-urlencoded';
 
 	main::INFOLOG && $log->is_info && $log->info("Auth Token API call: " . $params->{grant_type});
-	main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
+	main::DEBUGLOG && $content && $log->is_debug && logSensitive($content);
 
 	my $req = Plugins::Spotty::API::AsyncRequest->new(
 		\&_gotResponse,
@@ -1443,6 +1443,16 @@ sub error429 {
 	}
 	else {
 		$log->error($error429);
+	}
+}
+
+sub logSensitive {
+	if (main::INFOLOG && $log->is_info) {
+		my ($line) = @_;
+		$line =~ s/--client-id ["a-f0-9]+/--client-id ***/;
+		$line =~ s/(client_id=)[a-f0-9]+/$1=***/;
+		$line =~ s/(access[-_]token|refresh[-_]token)=[-_\w]+/$1=***/g;
+		$log->info("Trying to get access token: $line");
 	}
 }
 

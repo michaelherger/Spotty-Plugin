@@ -204,7 +204,7 @@ sub oauthCallback {
 								'--access-token=' . $accessToken,
 							);
 
-							Plugins::Spotty::API::Token::_logCommand($cmd);
+							Plugins::Spotty::API::logSensitive($cmd);
 
 							`$cmd 2>&1`;
 						}
