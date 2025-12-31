@@ -13,7 +13,8 @@ use Plugins::Spotty::Plugin;
 my $log = logger('plugin.spotty');
 
 sub init 	{
-	Slim::Plugin::DontStopTheMusic::Plugin->registerHandler('PLUGIN_SPOTTY_RECOMMENDATIONS', \&dontStopTheMusic);
+	# Don't Stop The Music disabled - Spotify recommendations API deprecated  
+	# Slim::Plugin::DontStopTheMusic::Plugin->registerHandler('PLUGIN_SPOTTY_RECOMMENDATIONS', \&dontStopTheMusic);
 }
 
 sub dontStopTheMusic {

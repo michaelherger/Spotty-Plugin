@@ -232,7 +232,8 @@ sub myPlaylists {
 
 	do {
 		my $response = $self->_call('me/playlists', {
-			offset => $offset
+			offset => $offset,
+			limit => SPOTIFY_LIMIT,  # Request 50 items per page
 		});
 
 		$offset = 0;
@@ -242,6 +243,8 @@ sub myPlaylists {
 			($offset) = $response->{'next'} =~ /offset=(\d+)/;
 		}
 	} while $offset;
+
+	main::INFOLOG && $log->is_info && $log->info("myPlaylists() retrieved " . scalar(@$playlists) . " playlists");
 
 	return $playlists;
 }

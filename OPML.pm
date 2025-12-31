@@ -189,9 +189,8 @@ sub handleFeed {
 			return whatsNew( $client, $cb );
 		}
 		elsif ($homeExtra eq 'toptracks') {
-			return playlist( $client, $cb, {
-				uri => $topuri{$spotty->country()} || $topuri{XX}
-			} );
+			# Use the topTracks function which calls /me/top/tracks API
+			return topTracks( $client, $cb );
 		}
 	}
 
@@ -245,12 +244,9 @@ sub handleFeed {
 		},
 		{
 			name  => cstring($client, 'PLUGIN_SPOTTY_TOP_TRACKS'),
-			type  => 'playlist',
+			type  => 'link',
 			image => IMG_TOPTRACKS,
-			url   => \&playlist,
-			passthrough => [{
-				uri => $topuri{$spotty->country()} || $topuri{XX}
-			}]
+			url   => \&topTracks,
 		},
 		{
 			name  => cstring($client, 'PLUGIN_SPOTTY_GENRES_MOODS'),
@@ -259,13 +255,8 @@ sub handleFeed {
 			url   => \&categories
 		};
 
-		if ( $message && $lists && ref $lists && scalar @$lists ) {
-			push @$items, {
-				name  => $message,
-				image => IMG_INBOX,
-				items => playlistList($client, $lists)
-			};
-		}
+		# Note: The dynamic "featured playlists" / "New Albums" menu is removed
+		# since it shows the same content as "What's New" after the API deprecation.
 
 		my $personalItems = [{
 			name  => cstring($client, 'ALBUMS'),
@@ -594,7 +585,7 @@ sub topTracks {
 	Plugins::Spotty::Plugin->getAPIHandler($client)->topTracks(sub {
 		my ($tracks) = @_;
 
-		my $items = tracksList($client, $tracks);
+		my $items = trackList($client, $tracks);
 
 		$cb->({ items => $items });
 	});
@@ -955,13 +946,6 @@ sub _gotArtistData {
 	} if @{$artistInfo->{tracks}};
 
 	push @$items, {
-		type => 'playlist',
-		on_select => 'play',
-		name => cstring($client, 'PLUGIN_SPOTTY_ARTIST_RADIO'),
-		icon => IMG_RADIO,
-		url  => \&artistRadio,
-		passthrough => [{ uri => $artistURI }],
-	},{
 		name => cstring($client, 'PLUGIN_SPOTTY_RELATED_ARTISTS'),
 		icon => IMG_ARTIST,
 		url  => \&relatedArtists,
@@ -1627,12 +1611,6 @@ sub _objInfoMenu {
 		}
 
 		push @$items, {
-			type => 'playlist',
-			on_select => 'play',
-			name => cstring($client, 'PLUGIN_SPOTTY_TITLE_RADIO'),
-			url  => \&trackRadio,
-			passthrough => [{ uri => $uri }],
-		},{
 			name => cstring($client, 'PLUGIN_SPOTTY_ADD_TRACK_TO_PLAYLIST'),
 			type => 'link',
 			url  => \&addTrackToPlaylist,
@@ -1780,28 +1758,37 @@ sub _addTrackToPlaylist {
 
 sub trackRadio {
 	my ($client, $cb, $params, $args) = @_;
-	$args->{type} = 'seed_tracks';
-	_radio($client, $cb, $params, $args);
+	
+	# Track Radio functionality removed - Spotify /recommendations API deprecated
+	$cb->({ 
+		items => [{
+			name => cstring($client, 'PLUGIN_SPOTTY_FEATURE_UNAVAILABLE'),
+			type => 'text'
+		}]
+	});
 }
 
 sub artistRadio {
 	my ($client, $cb, $params, $args) = @_;
-	$args->{type} = 'seed_artists';
-	_radio($client, $cb, $params, $args);
+	
+	# Artist Radio functionality removed - Spotify /recommendations API deprecated  
+	$cb->({ 
+		items => [{
+			name => cstring($client, 'PLUGIN_SPOTTY_FEATURE_UNAVAILABLE'),
+			type => 'text'
+		}]
+	});
 }
 
 sub _radio {
 	my ($client, $cb, $params, $args) = @_;
-
-	my $type = delete $args->{type};
-
-	my $id = $params->{uri} || $args->{uri};
-	$id =~ s/.*://;
-
-	Plugins::Spotty::Plugin->getAPIHandler($client)->recommendations(sub {
-		$cb->({ items => trackList($client, shift) });
-	},{
-		$type => $id
+	
+	# Radio functionality removed - Spotify /recommendations API deprecated
+	$cb->({ 
+		items => [{
+			name => cstring($client, 'PLUGIN_SPOTTY_FEATURE_UNAVAILABLE'),
+			type => 'text'
+		}]
 	});
 }
 

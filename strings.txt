@@ -431,6 +431,20 @@ PLUGIN_SPOTTY_WHATS_NEW
 	RU	Новые возможности
 	SV	Nyheter
 
+PLUGIN_SPOTTY_NEW_ALBUMS
+	DE	Neue Alben
+	EN	New Albums
+	ES	Nuevos Álbumes
+	FR	Nouveaux Albums
+	IT	Nuovi Album
+
+PLUGIN_SPOTTY_FEATURE_UNAVAILABLE
+	DE	Funktion nicht verfügbar (Spotify API veraltet)
+	EN	Feature not available (Spotify API deprecated)
+	ES	Función no disponible (API de Spotify obsoleta)
+	FR	Fonctionnalité non disponible (API Spotify dépréciée)
+	IT	Funzione non disponibile (API Spotify deprecata)
+
 PLUGIN_SPOTTY_TOP_TRACKS
 	CS	Nejlepší skladby
 	DA	Mest populære numre

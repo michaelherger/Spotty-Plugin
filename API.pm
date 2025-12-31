@@ -135,7 +135,10 @@ sub me {
 sub home {
 	my ($self, $cb) = @_;
 
-	$self->categoryPlaylists($cb, PERSONAL_MIX_CATEGORY );
+	# The /browse/categories/{id}/playlists endpoint (used for "Made for You") is deprecated.
+	# Fall back to user's playlists - OPML.pm's sortHomeItems will sort Daily Mixes etc. to the top
+	# Don't pass a limit - let playlists() use LIBRARY_LIMIT (500) for user's own playlists
+	$self->playlists($cb);
 }
 
 # get the userId - keep it simple. Shouldn't change, don't want nested async calls...
@@ -969,14 +972,26 @@ sub playlists {
 	my $user = $args->{user} || $self->userId || 'me';
 
 	my $limit = $args->{limit};
+	my $isCurrentUser = !$args->{user} || lc($user) eq 'me' || lc($user) eq lc($self->userId);
+	
 	# set the limit higher if it's the user's self curated playlist
-	$limit ||= lc($user) eq lc($self->userId) ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();
+	$limit ||= $isCurrentUser ? max(LIBRARY_LIMIT, _DEFAULT_LIMIT()) : _DEFAULT_LIMIT();
 
-	# usernames must be lower case, and space not URI encoded
-	$user = lc($user);
-	$user =~ s/ /\+/g;
+	# Use /me/playlists for current user (recommended), /users/{id}/playlists for others
+	my $endpoint;
+	if ($isCurrentUser) {
+		$endpoint = 'me/playlists';
+	}
+	else {
+		# usernames must be lower case, and space not URI encoded
+		$user = lc($user);
+		$user =~ s/ /\+/g;
+		$endpoint = 'users/' . uri_escape_utf8($user) . '/playlists';
+	}
 
-	Plugins::Spotty::API::Pipeline->new($self, 'users/' . uri_escape_utf8($user) . '/playlists', sub {
+	main::INFOLOG && $log->is_info && $log->info("playlists() called: endpoint=$endpoint, limit=$limit, isCurrentUser=$isCurrentUser");
+
+	Plugins::Spotty::API::Pipeline->new($self, $endpoint, sub {
 		if ( $_[0] && $_[0]->{items} && ref $_[0]->{items} ) {
 			return [ map { $libraryCache->normalize($_) } @{ $_[0]->{items} } ], $_[0]->{total}, $_[0]->{'next'};
 		}
@@ -1070,60 +1085,163 @@ sub categories {
 
 sub categoryPlaylists {
 	my ( $self, $cb, $category ) = @_;
-	$self->browse($cb, 'categories/' . $category . '/playlists', 'playlists');
+
+	# The /browse/categories/{id}/playlists endpoint is deprecated and returns 404.
+	# Unfortunately there's no direct replacement for this endpoint.
+	# Fall back to returning an empty list, which will show an empty category.
+	# The caller should handle empty results gracefully.
+	main::INFOLOG && $log->info("categoryPlaylists called for '$category' - endpoint deprecated, returning empty result");
+	$cb->([]);
 }
 
 sub featuredPlaylists {
 	my ( $self, $cb ) = @_;
 
+	# The /browse/featured-playlists endpoint is deprecated and returns 404.
+	# Fall back to /browse/new-releases which still works, and return albums
+	# as a substitute for "featured playlists" with a synthetic message.
 	my $params = {
-		locale => $self->locale,
-		timestamp => _getTimestamp(),
+		country => $self->country,
 	};
 
-	$self->browse($cb, 'featured-playlists', 'playlists', $params);
+	$self->browse(sub {
+		my ($albums, $originalMessage, @rest) = @_;
+
+		# Use "New Albums" as the message to differentiate from "What's New" menu item
+		# The message field is used to validate the API is working
+		my $message = $originalMessage || Slim::Utils::Strings::string('PLUGIN_SPOTTY_NEW_ALBUMS');
+
+		$cb->($albums, $message, @rest);
+	}, 'new-releases', 'albums', $params);
+}
+
+sub topTracks {
+	my ( $self, $cb, $args ) = @_;
+
+	# Uses /me/top/tracks to get personalized tracks based on user's listening history
+	my $limit = ($args && $args->{limit}) || 50;
+	my $time_range = ($args && $args->{time_range}) || 'medium_term';
+
+	my $params = {
+		limit => $limit,
+		time_range => $time_range,
+	};
+
+	Plugins::Spotty::API::Pipeline->new($self, "me/top/tracks", sub {
+		my $result = shift;
+
+		if ($result && $result->{items}) {
+			my $items = [ map { $libraryCache->normalize($_) } grep { $self->_isPlayable($_) } @{$result->{items}} ];
+			return $items, scalar @$items;
+		}
+
+		return [], 0;
+	}, $cb, $params)->get();
 }
 
 sub recommendations {
 	my ( $self, $cb, $args ) = @_;
 
-	if ( !$args || (!$args->{seed_artists} && !$args->{seed_tracks} && !$args->{seed_genres}) ) {
-		$cb->({ error => 'missing parameters' });
+	# The /recommendations endpoint is deprecated and returns 404.
+	# Implement alternatives based on the seed type:
+	# - seed_artists: Get related artists and their top tracks
+	# - seed_tracks/other: Fall back to user's top tracks
+
+	my $limit = ($args && $args->{limit}) || 25;
+
+	# Handle artist radio by getting related artists' top tracks
+	if ($args->{seed_artists}) {
+		my $artistId = $args->{seed_artists};
+		
+		# Get related artists for the seed artist
+		$self->relatedArtists(sub {
+			my ($relatedArtists) = @_;
+			
+			if (!$relatedArtists || !@$relatedArtists) {
+				# Fallback to top tracks if no related artists found
+				return $self->_getTopTracksRecommendations($cb, $limit);
+			}
+			
+			# Get top tracks from the first few related artists
+			my @trackCollections;
+			my $remaining = scalar(@$relatedArtists) > 5 ? 5 : scalar(@$relatedArtists);
+			
+		my $collectTracks;
+		$collectTracks = sub {
+			my $artist = shift @$relatedArtists;
+			$remaining--;
+			
+			if ($artist && $artist->{uri}) {
+				$self->artistTracks(sub {
+					my ($tracks) = @_;
+					push @trackCollections, @{$tracks || []};
+					
+					if ($remaining > 0 && @$relatedArtists) {
+						$collectTracks->();
+					} else {
+						# Shuffle and limit the collected tracks
+						if (@trackCollections > 1) {
+							for (my $i = $#trackCollections; $i > 0; $i--) {
+								my $j = int(rand($i + 1));
+								@trackCollections[$i, $j] = @trackCollections[$j, $i];
+							}
+						}
+						splice(@trackCollections, $limit) if @trackCollections > $limit;
+						$cb->(\@trackCollections);
+					}
+				}, { uri => $artist->{uri} });
+			} elsif ($remaining > 0 && @$relatedArtists) {
+					$collectTracks->();
+				} else {
+					# Done collecting or no more artists
+					if (@trackCollections > 1) {
+						for (my $i = $#trackCollections; $i > 0; $i--) {
+							my $j = int(rand($i + 1));
+							@trackCollections[$i, $j] = @trackCollections[$j, $i];
+						}
+					}
+					splice(@trackCollections, $limit) if @trackCollections > $limit;
+					$cb->(\@trackCollections);
+				}
+			};
+			
+			$collectTracks->();
+			
+		}, "spotify:artist:$artistId");
+		
 		return;
 	}
+	
+	# For other cases (seed_tracks, no seeds, etc.), use top tracks
+	$self->_getTopTracksRecommendations($cb, $limit);
+}
 
+sub _getTopTracksRecommendations {
+	my ($self, $cb, $limit) = @_;
+	
 	my $params = {
-		_chunkSize => RECOMMENDATION_LIMIT
+		limit => $limit,
+		time_range => 'medium_term',
 	};
 
-	# copy seed information to params hash
-	while ( my ($k, $v) = each %$args) {
-		next if $k eq 'offset';
-
-		if ( $k =~ /seed_(?:artists|tracks|genres)/ || $k =~ /^(?:min|max)_/ || $k =~ /^(?:limit)$/ ) {
-			$params->{$k} = ref $v ? join(',', @$v) : $v;
-		}
-	}
-
-	$params->{market} ||= $self->country;
-
-	Plugins::Spotty::API::Pipeline->new($self, "recommendations", sub {
+	Plugins::Spotty::API::Pipeline->new($self, "me/top/tracks", sub {
 		my $result = shift;
 
- 		if ($result && $result->{tracks}) {
-			my $items = [ map { $libraryCache->normalize($_) } grep { $self->_isPlayable($_) } @{$result->{tracks}} ];
+		if ($result && $result->{items}) {
+			my $items = [ map { $libraryCache->normalize($_) } grep { $self->_isPlayable($_) } @{$result->{items}} ];
 
-			my $total = scalar @$items;
-
-			if ( my $seeds = $result->{seeds} ) {
-				# see what the smallest pool size is - stop if we've reached it
-				$total = min(map {
-					min($_->{initialPoolSize}, $_->{afterFilteringSize}, $_->{afterRelinkingSize})
-				} @$seeds) || 0;
+			# Shuffle the results to add variety (since top tracks are ordered by popularity)
+			if (scalar @$items > 1) {
+				for (my $i = scalar @$items - 1; $i > 0; $i--) {
+					my $j = int(rand($i + 1));
+					@{$items}[$i, $j] = @{$items}[$j, $i];
+				}
 			}
 
- 			return $items, $total;
- 		}
+			return $items, scalar @$items;
+		}
+
+		return [], 0;
 	}, $cb, $params)->get();
 }
 
@@ -1403,7 +1521,7 @@ sub _gotError {
 	my $self   = $http->params('self');
 
 	# log call if it hasn't been logged already
-	if (!$log->is_info) {
+	if ( !$log->is_info ) {
 		$log->warn("API call: $url");
 		my $content = $response->request->content;
 		$content && $log->warn($content);
