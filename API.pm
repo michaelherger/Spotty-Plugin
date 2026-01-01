@@ -1216,6 +1216,7 @@ sub _call {
 					self => $self,
 					cb => $cb,
 					cache_key => $cache_key,
+					method => $type,
 				},
 			);
 
@@ -1258,6 +1259,7 @@ sub _tokenCall {
 			timeout => 30,
 			self => $self,
 			cb => $cb,
+			method => 'POST',
 		},
 	);
 
@@ -1369,7 +1371,7 @@ sub _gotResponse {
 			}
 		}
 	}
-	elsif ( $response->request->method =~ /PUT|POST/ && $response->code =~ /^20\d/ ) {
+	elsif ( ($params->{method} || '') =~ /^(?:PUT|POST)$/ && $response->code =~ /^20\d/ ) {
 		# ignore - v1/me/following doesn't return anything but 204 on success
 		# ignore me/albums?ids=...
 	}
@@ -1396,15 +1398,15 @@ sub _gotResponse {
 sub _gotError {
 	my ($http, $error, $response) = @_;
 
-	my $request = $response->request;
-	my $url    = $request->uri;
+	my $request = eval { $response->request } if $response;
+	my $url     = $request ? $request->uri : eval { $http->url } || '';
 	my $cb     = $http->params('cb');
 	my $self   = $http->params('self');
 
 	# log call if it hasn't been logged already
 	if (!$log->is_info) {
 		$log->warn("API call: $url");
-		my $content = $response->request->content;
+		my $content = $request ? $request->content : undef;
 		$content && $log->warn($content);
 	}
 
