@@ -1068,6 +1068,15 @@ sub transferPlaylist {
 sub _doTransferPlaylist {
 	my ($client, $cb, $params, $args) = @_;
 
+	my $respond = sub {
+		my ($payload) = @_;
+		if ($cb && ref $cb eq 'CODE') {
+			$cb->($payload);
+			return;
+		}
+		return $payload;
+	};
+
 	if ($args && ref $args && $args->{context}) {
 		Plugins::Spotty::Plugin->getAPIHandler($client)->trackURIsFromURI(sub {
 			my $idx;
@@ -1083,11 +1092,11 @@ sub _doTransferPlaylist {
 			if ( @$tracks ) {
 				$client->execute(['playlist', 'clear']);
 				$client->execute(['playlist', 'play', $tracks]);
-				$client->execute(['playlist', 'jump', $idx]) if $idx;
-				$client->execute(['time', $args->{progress}]) if $args->{progress};
+				$client->execute(['playlist', 'jump', $idx]) if defined $idx;
+				$client->execute(['time', $args->{progress}]) if defined $args->{progress};
 			}
 
-			$cb->({
+			$respond->({
 				nextWindow => 'nowPlaying'
 			});
 		}, $args->{context}->{uri});
@@ -1097,8 +1106,11 @@ sub _doTransferPlaylist {
 
 	$log->warn("Incomplete Spotify playback data received?\n" . (main::INFOLOG ? Data::Dump::dump($args) : ''));
 
-	$cb->({
-		name => cstring($client, 'PLUGIN_SPOTTY_NO_PLAYER_FOUND'),
+	return $respond->({
+		items => [{
+			name => cstring($client, 'PLUGIN_SPOTTY_NO_PLAYER_FOUND'),
+			type => 'textarea',
+		}]
 	});
 }
 
