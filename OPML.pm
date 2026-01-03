@@ -73,6 +73,7 @@ my %topuri = (
 );
 
 my $nextNameCheck = 0;
+my $customClientLimitations;
 
 sub init {
 	Slim::Menu::TrackInfo->registerInfoProvider( spotty => (
@@ -198,23 +199,20 @@ sub handleFeed {
 	$spotty->featuredPlaylists( sub {
 		my ($lists, $message) = @_;
 
+		# if we didn't get any playlists nor token, then something's wrong
+		if ( !($lists && ref $lists && scalar @$lists && $message) ) {
+			$log->warn('Failed to get featured playlists and/or token - skip some features') unless $customClientLimitations++;
+			$lists = [];
+			$message = undef;
+		}
+		else {
+			$customClientLimitations = 0;
+		}
+
 		if ( $args->{params} && $args->{params}->{menu} && $args->{params}->{menu} eq 'home_heroes_popularplaylists' ) {
 			return $cb->({
 				items => ($message && $lists && ref $lists && scalar @$lists) ? playlistList($client, $lists) : []
 			});
-		}
-
-		# if we didn't get any playlists nor token, then something's wrong
-		if ( !($lists && ref $lists && scalar @$lists && $message) ) {
-			$log->warn('Failed to get featured playlists and/or token - do not continue');
-			$cb->({
-				items => [{
-					name => cstring($client, 'PLUGIN_SPOTTY_ERROR_NO_ACCESS_TOKEN') . "\n" . cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),
-					type => 'textarea'
-				}]
-			});
-
-			return;
 		}
 
 		# Build main menu structure
@@ -257,7 +255,7 @@ sub handleFeed {
 			type  => 'link',
 			image => IMG_GENRES,
 			url   => \&categories
-		};
+		} unless $customClientLimitations;
 
 		if ( $message && $lists && ref $lists && scalar @$lists ) {
 			push @$items, {
@@ -308,7 +306,7 @@ sub handleFeed {
 			type  => 'link',
 			image => IMG_HOME,
 			url   => \&home,
-		};
+		} unless $customClientLimitations;
 
 		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
 			my $credentials = Plugins::Spotty::AccountHelper->getAllCredentials();
@@ -327,13 +325,13 @@ sub handleFeed {
 							name => $name,
 							cb => $_->{url}
 						}]
-					}} $homeItem, @$personalItems ],
+					}} grep { $_ } $homeItem, @$personalItems ],
 					image => IMG_ACCOUNT,
 				};
 			}
 		}
 		else {
-			unshift @$items, $homeItem;
+			unshift @$items, $homeItem if $homeItem;
 			push @$items, @$personalItems;
 		}
 
