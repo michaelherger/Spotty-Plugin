@@ -1369,19 +1369,10 @@ sub _gotResponse {
 			}
 		}
 	}
-	elsif ( $response->request->method =~ /PUT|POST/ && $response->code =~ /^20\d/ ) {
+	elsif ( $response->type =~ /PUT|POST/ && $response->code =~ /^20\d/ ) {
 		# ignore - v1/me/following doesn't return anything but 204 on success
 		# ignore me/albums?ids=...
 	}
-	# requires us to enable cache - which leads to other issues
-	# if request fails, then we're f...ed, there's not much we can do
-	# elsif ( $type eq 'GET' && $response->code =~ /^20\d/
-	# 	&& $response->cachedResponse && ($response->cachedResponse->{code} || 0) =~ /^20\d/
-	# 	&& (my $json = eval { decode_json($response->cachedResponse->{content}) })
-	# ) {
-	# 	$log->warn("$url returned an unexpected code (" . $response->code . "). Using cached result instead");
-	# 	$result = $json;
-	# }
 	else {
 		$log->error("Invalid data: " . ($response->code || ''));
 		main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($response));

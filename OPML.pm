@@ -1068,6 +1068,8 @@ sub transferPlaylist {
 sub _doTransferPlaylist {
 	my ($client, $cb, $params, $args) = @_;
 
+	return unless $cb;
+
 	if ($args && ref $args && $args->{context}) {
 		Plugins::Spotty::Plugin->getAPIHandler($client)->trackURIsFromURI(sub {
 			my $idx;
