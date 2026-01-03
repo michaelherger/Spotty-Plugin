@@ -306,7 +306,7 @@ sub handleFeed {
 			type  => 'link',
 			image => IMG_HOME,
 			url   => \&home,
-		};
+		} unless $customClientLimitations;
 
 		if ( !$prefs->get('accountSwitcherMenu') && Plugins::Spotty::AccountHelper->hasMultipleAccounts() ) {
 			my $credentials = Plugins::Spotty::AccountHelper->getAllCredentials();
@@ -325,13 +325,13 @@ sub handleFeed {
 							name => $name,
 							cb => $_->{url}
 						}]
-					}} $homeItem, @$personalItems ],
+					}} grep { $_ } $homeItem, @$personalItems ],
 					image => IMG_ACCOUNT,
 				};
 			}
 		}
 		else {
-			unshift @$items, $homeItem;
+			unshift @$items, $homeItem if $homeItem;
 			push @$items, @$personalItems;
 		}
 
