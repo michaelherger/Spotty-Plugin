@@ -173,7 +173,7 @@ sub user {
 	my ( $self, $cb, $userId ) = @_;
 
 	if (!$userId) {
-		$cb->([]);
+		$cb->({});
 		return;
 	}
 
@@ -1387,19 +1387,17 @@ sub _gotResponse {
 sub _gotError {
 	my ($http, $error, $response) = @_;
 
-	my $request = $response->request;
-	my $url    = $request->uri;
+	my $url    = $http->url;
 	my $cb     = $http->params('cb');
 	my $self   = $http->params('self');
 
 	# log call if it hasn't been logged already
 	if (!$log->is_info) {
 		$log->warn("API call: $url");
-		my $content = $response->request->content;
-		$content && $log->warn($content);
+		$http->contentRef && $log->warn(${ $http->contentRef });
 	}
 
-	$log->warn("error: $error");
+	$log->error("error: $error");
 
 	if ($error =~ /429/ || ($response && $response->code == 429)) {
 		$self->error429($response, $url);

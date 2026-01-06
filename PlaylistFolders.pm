@@ -108,6 +108,8 @@ sub parse {
 		}
 	}
 
+	main::INFOLOG && $log->is_info && $log->info("Parsed Playlistfolder Hierarchy: " . Data::Dump::dump($map));
+
 	$cache->set($key, $map, $uploaded ? CACHE_TTL_PLAYLIST_FOLDERS_UPLOADED : CACHE_TTL_PLAYLIST_FOLDERS_SCANNED);
 	return $map;
 }
@@ -177,7 +179,7 @@ sub render {
 		}
 	}
 
-	main::DEBUGLOG && $log->is_debug && $log->debug("Final playlist folder order " . Data::Dump::dump($tree{'/'}));
+	main::INFOLOG && $log->is_info && $log->info("Final playlist folder order: " . Data::Dump::dump($tree{'/'}));
 	return $tree{'/'};
 }
 
@@ -228,7 +230,7 @@ sub findAllCachedFiles {
 			else {
 				my $data = read_file($file, scalar_ref => 1);
 				if ($$data =~ /\bstart-group\b/) {
-					main::DEBUGLOG && $log->is_debug && $log->debug("Found candidate: $file");
+					main::INFOLOG && $log->is_info && $log->info("Found candidate: $file");
 					$cache->set($key, 1, 86400 * 7);
 					push @$candidates, $file;
 				}
@@ -298,8 +300,8 @@ sub getTreeFromCache {
 		$treeCache{$key} = $winner->{data};
 		return $cb->($winner->{data});
 	}
-	elsif (main::INFOLOG && $log->is_info) {
-		$log->info("Didn't find any likely matching hierarchy: best ratio is $winner->{ratio}");
+	elsif ($winner && ref $winner) {
+		$log->warn("Didn't find any likely matching hierarchy: best ratio is $winner->{ratio}");
 	}
 
 	$cb->();
@@ -324,7 +326,7 @@ sub handleUpload {
 
 	if ( $request->content_length > MAX_FILE_TO_PARSE ) {
 		$result = {
-			error => string('PLUGIN_DNDPLAY_FILE_TOO_LARGE', formatKB($request->content_length), formatKB(MAX_FILE_TO_PARSE)),
+			error => string('PLUGIN_SPOTTY_PLAYLIST_FOLDER_FILE_TOO_LARGE', formatKB($request->content_length), formatKB(MAX_FILE_TO_PARSE)),
 			code  => 413,
 		};
 	}

@@ -1053,6 +1053,17 @@ PLUGIN_SPOTTY_CLEAR_PLAYLIST_FOLDERS_CACHE
 	HU	Tárolt lejátszási lista mappainformációinak törlése (<a href="playlist-folders.html">további információ</a>)
 	NL	Opgeslagen mapgegevens voor afspeellijsten wissen (<a href="playlist-folders.html">meer informatie</a>)
 
+PLUGIN_SPOTTY_PLAYLIST_FOLDER_FILE_TOO_LARGE
+	CS	Velikost souboru (%s) přesahuje maximální velikost pro odesílání (%s).
+	DA	Filstørrelsen (%s) overstiger den maksimale tilladte størrelse (%s).
+	DE	Die Dateigrösse (%s) überschreitet die maximal erlaubte Upload-Grösse (%s).
+	EN	File size (%s) exceeds maximum upload size (%s).
+	FR	La taille du fichier (%s) dépasse la taille de téléchargement maximale (%s).
+	HU	A fájl mérete (%s) meghaladja a maximális feltöltési méretet (%s).
+	NL	Bestandsgrootte (%s) is groter dan de maximale uploadgrootte (%s).
+	NO	Filstørrelse (%s) overstiger maksimal opplastingsstørrelse (%s).
+	PL	Rozmiar pliku (%s) przekracza dozwolony rozmiar (%s).
+
 PLUGIN_SPOTTY_FILE_NOT_FOUND
 	CS	Soubor nenalezen
 	DA	Filen blev ikke fundet

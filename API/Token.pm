@@ -110,8 +110,8 @@ sub get {
 		main::INFOLOG && $log->is_info && $log->info("Found cached access token");
 		return $cb ? $cb->($token) : $token;
 	}
-	else {
-		$log->warn("Didn't find cached token. Need to refresh. $userId");
+	elsif (main::INFOLOG && $log->is_info) {
+		$log->info("Didn't find cached token. Need to refresh. $userId");
 	}
 
 	my $rtCacheKey = _getRTCacheKey($args->{code}, $userId);
@@ -127,7 +127,7 @@ sub get {
 	}
 	else {
 		if (!$refreshToken) {
-			$log->warn("No refresh token found - can't refresh access token. $userId");
+			$log->error("No refresh token found - can't refresh access token. $userId");
 			$cb->() if $cb;
 			return;
 		}
