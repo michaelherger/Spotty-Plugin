@@ -45,7 +45,7 @@ PLUGIN_SPOTTY_HOME_EXTRA_HOME_SUBTITLE
 	DE	Ihre personalisierten Mixe, Wiedergabelisten und Empfehlungen
 	EN	Your customized mixes, playlists, and suggestsions
 	FR	Vos mixages, playlists et suggestions personnalisés
-	NL	Uw aangepaste mixen, afspeellijsten en suggesties
+	NL	Jouw aangepaste mixen, afspeellijsten en suggesties
 
 PLUGIN_SPOTTY_NOT_AUTHORIZED
 	CS	Chybí přihlašovací údaje ke Spotify
@@ -152,6 +152,7 @@ PLUGIN_SPOTTY_BACK_TO_BASICS
 PLUGIN_SPOTTY_PRODUCT
 	DE	Produkt
 	EN	Product
+	NL	Product
 
 PLUGIN_SPOTTY_IMPORT_LIBRARY
 	CS	Importovat
@@ -386,7 +387,7 @@ PLUGIN_SPOTTY_DOCKER_NETWORK_HINT
 	DE	⚠️ Sie scheinen Lyrion Music Server in einem Docker-Container auszuführen. Stellen Sie sicher, dass Sie ihn im Host-Modus betreiben oder den Parameter "advertiseaddr" definiert haben (siehe <a href="https://hub.docker.com/r/lmscommunity/lyrionmusicserver#define-the-services-ip-address" target="_blank">Docker Readme</a>). Andernfalls funktioniert die Authentifizierung nicht.
 	EN	⚠️ You seem to be running Lyrion Music Server in a Docker container. Make sure you run it in host mode, or have the "advertiseaddr" parameter defined (see <a href="https://hub.docker.com/r/lmscommunity/lyrionmusicserver#define-the-services-ip-address" target="_blank">Docker readme</a>). Otherwise authentication will not work.
 	FR	⚠️ Il semble que vous exécutiez Lyrion Music Server dans un conteneur Docker. Assurez-vous de l'exécuter en mode "host" ou d'avoir défini le paramètre "advertiseaddr" (voir <a href="https://hub.docker.com/r/lmscommunity/lyrionmusicserver#define-the-services-ip-address" target="_blank">Docker readme</a>). Sinon, l'authentification ne fonctionnera pas.
-	NL	⚠️ Het lijkt erop dat u Lyrion Music Server in een Docker-container draait. Zorg dat u het in host-modus draait of dat de parameter "advertiseaddr" is ingesteld (zie <a href="https://hub.docker.com/r/lmscommunity/lyrionmusicserver#define-the-services-ip-address" target="_blank">Docker readme</a>). Anders werkt de authenticatie niet.
+	NL	⚠️ Het lijkt erop dat je Lyrion Music Server in een Docker-container draait. Zorg dat het in host-modus draait of dat de parameter "advertiseaddr" is ingesteld (zie <a href="https://hub.docker.com/r/lmscommunity/lyrionmusicserver#define-the-services-ip-address" target="_blank">Docker readme</a>). Anders werkt de authenticatie niet.
 
 PLUGIN_SPOTTY_DISABLE_ASYNC_TOKEN_REFRESH
 	CS	Zakázat asynchronní volání obnovení tokenu. Upozorňujeme, že to může na několik sekund zablokovat Lyrion Music Server.
