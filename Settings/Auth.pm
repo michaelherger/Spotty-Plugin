@@ -7,7 +7,6 @@ use File::Path qw(mkpath);
 use File::Spec::Functions qw(catdir);
 use HTTP::Status qw(RC_MOVED_TEMPORARILY);
 use JSON::XS::VersionOneAndTwo;
-use Proc::Background;
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
