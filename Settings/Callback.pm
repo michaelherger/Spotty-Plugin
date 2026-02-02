@@ -48,7 +48,7 @@ my $prefs = preferences('plugin.spotty');
 
 sub init {
 	Slim::Web::Pages->addPageFunction(Slim::Web::HTTP::CSRF->protectURI(REDIRECT_PATH), \&oauthRedirect);
-	Slim::Web::Pages->addPageFunction(Slim::Web::HTTP::CSRF->protectURI(CALLBACK_PATH), \&oauthCallback);
+	Slim::Web::Pages->addPageFunction(CALLBACK_PATH, \&oauthCallback);
 }
 
 sub getRedirectUri {
