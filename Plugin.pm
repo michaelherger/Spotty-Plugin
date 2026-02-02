@@ -325,7 +325,6 @@ sub getAPIHandler {
 
 sub canDiscovery { 1 }
 
-# won't work on Windows...
 sub killHangingProcesses {
 	my ($class, $force) = @_;
 
@@ -346,8 +345,8 @@ sub killHangingProcesses {
 
 		eval {
 			if (main::ISWINDOWS) {
-				system("taskkill /IM $helperName /F") if $helperName;
-				system('taskkill /IM spotty-custom.exe /F') unless $helperName && $helper ne 'spotty-custom';
+				system("taskkill /IM $helperName /F 1>nul 2>&1") if $helperName;
+				system('taskkill /IM spotty-custom.exe /F 1>nul 2>&1') unless $helperName && $helper ne 'spotty-custom';
 			}
 			else {
 				`pkill -f $helper` if $helper;
