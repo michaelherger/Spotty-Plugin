@@ -20,6 +20,7 @@ my $serverPrefs = preferences('server');
 use constant IMG_TRACK => '/html/images/cover.png';
 
 # https://open.spotify.com/album/4qpB1EXFCmq0a209JGCsZt
+# https://open.spotify.com/intl-de/album/3xN9KNcFz7zgjfNu6mQD6M?si=pYVY9S1WTSmVT0qLT5WY7Q
 use constant PAGE_URL_REGEXP => qr{open.spotify.com/(.+)/([a-z0-9]+)};
 Slim::Player::ProtocolHandlers->registerURLHandler(PAGE_URL_REGEXP, __PACKAGE__) if Slim::Player::ProtocolHandlers->can('registerURLHandler');
 

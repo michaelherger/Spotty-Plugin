@@ -525,6 +525,11 @@ sub parseUri {
 	if ($uri =~ m|open.spotify.com/(.+)/([a-z0-9]+)|i) {
 		$type = $1;
 		$id   = $2;
+
+		# sometimes we'd get some language or local indicator
+		# https://open.spotify.com/intl-de/album/3xN9KNcFz7zgjfNu6mQD6M?si=pYVY9S1WTSmVT0qLT5WY7Q
+		$type = (split m{/}, $type)[-1];
+
 		$uri  = "spotify:$type:$id";
 	}
 	elsif ($uri =~ /^spotify:(.+?):([a-z0-9]+)$/i) {
@@ -548,6 +553,8 @@ sub parseUri {
 sub _searchItems {
 	my ($client, $query) = @_;
 
+	my $canPodcasts = Plugins::Spotty::Helper->getCapability('podcasts');
+
 	my @items = map {
 		{
 			name  => cstring($client, $_->[0]),
@@ -559,7 +566,7 @@ sub _searchItems {
 			}]
 		}
 	} grep {
-		Plugins::Spotty::Helper->getCapability('podcasts') || $_->[1] !~ /^(?:show|episode)_/;
+		$canPodcasts || $_->[1] !~ /^(?:show|episode)_/;
 	} (
 		[ 'ARTISTS', 'artist', IMG_ARTIST ],
 		[ 'ALBUMS', 'album', IMG_ALBUM ],
