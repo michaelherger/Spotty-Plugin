@@ -42,6 +42,8 @@ use constant SCOPE => join('+', qw(
 	user-read-recently-played
 ));
 
+use constant PLUGIN_PACKAGE => __PACKAGE__ =~ s/Settings::Callback$/Plugin/r;
+
 my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.spotty');
 my $prefs = preferences('plugin.spotty');
@@ -145,6 +147,7 @@ sub oauthRedirect {
 			timeout => 10,
 		}
 	)->post(REGISTER_CALLBACK_URL,
+		'X-LMS-Plugin-ID' => PLUGIN_PACKAGE,
 		to_json($body),
 	);
 
