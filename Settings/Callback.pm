@@ -147,7 +147,7 @@ sub oauthRedirect {
 			timeout => 10,
 		}
 	)->post(REGISTER_CALLBACK_URL,
-		'X-LMS-Plugin-ID' => PLUGIN_PACKAGE,
+		Slim::Utils::Misc->can('apiHeaders') ? Slim::Utils::Misc::apiHeaders(PLUGIN_PACKAGE) : ('X-LMS-Plugin-ID' => PLUGIN_PACKAGE),
 		to_json($body),
 	);
 
