@@ -24,6 +24,12 @@ sub init {
 
 	$prefs->setChange ( sub {
 		$helper = $helperVersion = $helperCapabilities = undef;
+
+		# can't call this immediately, as it would trigger another onChange event
+		Slim::Utils::Timers::setTimer(undef, time() + 1, sub {
+			Plugins::Spotty::Connect->init();
+		}) if Plugins::Spotty::Plugin->canSpotifyConnect();
+
 	}, 'helper') if !main::SCANNER;
 }
 

@@ -132,13 +132,12 @@ sub renameCacheFolder {
 		$newId = substr( md5_hex(Slim::Utils::Unicode::utf8toLatin1Transliterate($credentials->{username} || '')), 0, 8 );
 	}
 
-	main::INFOLOG && $log->info("Trying to rename $oldId to $newId");
-
 	if (main::DEBUGLOG && $log->is_debug && !$newId) {
 		Slim::Utils::Log::logBacktrace("No newId found in '$oldId'");
 	}
 
 	if ($oldId && $newId) {
+		main::INFOLOG && $log->info("Trying to rename $oldId to $newId");
 		my $from = $class->cacheFolder($oldId);
 
 		if (!-e $from) {
