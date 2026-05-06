@@ -182,4 +182,66 @@ sub sendCachedResponse {
 # /SPOTTY
 
 
+# SPOTTY-NG instrumentation (Phase 1, plan 04 / D-09 — mirror of AsyncRequest.pm).
+# Dead code on Lyrion 8.5.1+ (which uses the modern AsyncRequest.pm). Kept text-equivalent
+# to the modern implementation so the upstream PR diff is symmetric. Wiring outcome:
+# FALLBACK — helper subs added below; the legacy onError/onBody callback dispatch is NOT
+# wrapped, because doing so requires rewriting Slim::Networking::SimpleAsyncHTTP::onBody
+# (a SUPER::-class method invoked by Slim::Networking::Async::HTTP::send_request, not a
+# closure we can swap). On modern LMS this file is not loaded at all, so the gap has zero
+# runtime impact on the dev box. See 01-04-SUMMARY.md for the recorded outcome.
+
+use POSIX qw(strftime);
+use Time::HiRes ();
+
+sub _spottyNgEmitRes {
+	my ($http, $errStr, $maybeResponse) = @_;
+	return unless main::DEBUGLOG && $spottyLog->is_debug;
+	my $params      = $http->_params || {};
+	my $issuedAt    = $params->{_spottyNgIssuedAt} || 0;
+	my $pipeId      = $params->{_spottyNgPipeId}   || '--------';
+	my $pipe        = $params->{_spottyNgPipe};
+	my $perPipe     = (ref $pipe && $pipe->can('_inflight')) ? $pipe->_inflight : 0;
+	my $global      = Plugins::Spotty::API::_spottyNgGlobalInflight();
+	my $now         = int(Time::HiRes::time() * 1000);
+	my $dtMs        = $issuedAt ? ($now - $issuedAt) : 0;
+	my $code        = eval { $http->code };
+	my $status      = (defined $code && $code) ? $code : (defined $errStr ? 'ERR' : 'unknown');
+	my $retryAfter  = '-';
+	my $headers     = eval { $http->headers };
+	if ($headers) {
+		my $ra = $headers->header('Retry-After');
+		$retryAfter = $ra if defined $ra && $ra ne '';
+	}
+	my $bodyField = '<omitted>';
+	my $isSuccess = (defined $status && $status =~ /^2\d\d$/);
+	if (!$isSuccess) {
+		my $contentRef = eval { $http->contentRef };
+		my $bodyLen    = $contentRef ? length($$contentRef) : 0;
+		if ($bodyLen > 0) {
+			my $excerpt = substr($$contentRef, 0, 2048);
+			$excerpt =~ s/[\x00-\x08\x0A-\x1F\x7F]/./g;
+			$bodyField = $excerpt . ($bodyLen > 2048 ? sprintf(' ... [truncated, body=%d bytes total]', $bodyLen) : '');
+		}
+		elsif (defined $errStr) {
+			$bodyField = "<error: $errStr>";
+		}
+	}
+	my $ts = strftime('%Y-%m-%dT%H:%M:%S', localtime) . sprintf('.%03dZ', $now % 1000);
+	$spottyLog->debug(sprintf('[%s] [SPOTTY-NG pipe=%s inflight=%d/%d dt=%dms] RES %s retry_after=%s body=%s',
+		$ts, $pipeId, $perPipe, $global, $dtMs, $status, $retryAfter, $bodyField));
+}
+
+sub _spottyNgDecCounters {
+	my ($http) = @_;
+	Plugins::Spotty::API::_spottyNgDecGlobalInflight();
+	my $params = $http->_params || {};
+	my $pipe   = $params->{_spottyNgPipe};
+	if (ref $pipe && $pipe->can('_inflight')) {
+		my $cur = $pipe->_inflight || 0;
+		$pipe->_inflight($cur > 0 ? $cur - 1 : 0);
+	}
+}
+
+
 1;

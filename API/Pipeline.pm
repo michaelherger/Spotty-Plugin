@@ -72,6 +72,9 @@ sub get {
 	}
 	# otherwise grabe the first chunk and decide whether to continue or not
 	else {
+		# SPOTTY-NG instrumentation (Phase 1, plan 05) — increment counter for the first/probe chunk (D-10).
+		$self->_inflight(($self->_inflight || 0) + 1);
+
 		# SPOTTY-NG (Phase 1, plan 03): forward Pipeline ref so API::_call can correlate (D-11).
 		$self->spottyAPI->_call($self->method, sub {
 			my ($result, $response) = @_;
@@ -115,6 +118,9 @@ sub _iterateChunks {
 	# clone data, as it might get altered in the called methods
 	my $chunks = Storable::dclone($self->_chunks);
 	while (my ($id, $params) = each %$chunks) {
+		# SPOTTY-NG instrumentation (Phase 1, plan 05) — per-Pipeline inflight increment (D-10).
+		# Decrement is owned by AsyncRequest's wrapped onComplete/onError (plan 04).
+		$self->_inflight(($self->_inflight || 0) + 1);
 		$self->_call($self->method, sub {
 			$self->_extract($id, shift);
 			delete $self->_chunks->{$id};
@@ -133,7 +139,11 @@ sub _iterateChunks {
 
 sub _followAfter {
 	my ($self, $id) = @_;
-	
+
+	# SPOTTY-NG instrumentation (Phase 1, plan 05) — increment counter on cursor-paginated dispatch (D-10).
+	# Cursor pagination is serial (one chunk at a time), so this hovers at 1 per Pipeline.
+	$self->_inflight(($self->_inflight || 0) + 1);
+
 	$self->spottyAPI->_call($self->method, sub {
 		my ($count, $next) = $self->_extract($id, shift);
 
