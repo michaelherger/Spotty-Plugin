@@ -20,9 +20,21 @@ __PACKAGE__->mk_accessor( rw => qw(
 	method limit params
 	extractorCb	cb
 	_data _chunks
+	_pipeId _inflight
 ) );
 
 my $log = logger('plugin.spotty');
+
+# SPOTTY-NG instrumentation (Phase 1, plan 03) — per-Pipeline correlation ID generator (D-11).
+# Renders as 8 hex chars; collision risk negligible within a single LMS session.
+my $_spottyNgPipeCounter = 0;
+sub _spottyNgGenPipeId {
+	my $self = shift;
+	$_spottyNgPipeCounter++;
+	require Scalar::Util;
+	my $mix = (Scalar::Util::refaddr($self) || 0) ^ ($_spottyNgPipeCounter * 0x9E3779B1);
+	return sprintf('%08x', $mix & 0xFFFFFFFF);
+}
 
 sub new {
 	my $class = shift;
@@ -42,7 +54,11 @@ sub new {
 	
 	$self->_data({});
 	$self->_chunks(delete $self->params->{chunks} || {});
-	
+
+	# SPOTTY-NG instrumentation (Phase 1, plan 03)
+	$self->_pipeId( $self->_spottyNgGenPipeId() );
+	$self->_inflight(0);
+
 	return $self;
 }
 
@@ -56,16 +72,17 @@ sub get {
 	}
 	# otherwise grabe the first chunk and decide whether to continue or not
 	else {
+		# SPOTTY-NG (Phase 1, plan 03): forward Pipeline ref so API::_call can correlate (D-11).
 		$self->spottyAPI->_call($self->method, sub {
 			my ($result, $response) = @_;
-			
+
 			# tell follow-up queries to return cached data without re-validation, if we got a cached result back
 			if ($response && ref $response && $response->headers && ref $response->headers && $response->headers->{'x-spotty-cached-response'}) {
 				$self->params->{_no_revalidate} = 1;
 			}
-			
+
 			my ($count, $next) = $self->_extract(0, $result);
-			
+
 #			warn Data::Dump::dump($count, $self->params->{limit}, $self->limit, SPOTIFY_LIMIT, $next);
 			# no need to run more requests if there's no more than the received results
 			if ( $count <= $self->params->{limit} || $self->limit <= $self->params->{limit} ) {
@@ -85,7 +102,7 @@ sub get {
 			else {
 				$self->_followOffset($count);
 			}
-		}, GET => $self->params);
+		}, GET => { %{$self->params}, _pipeline => $self });
 	}
 }
 
@@ -119,7 +136,7 @@ sub _followAfter {
 	
 	$self->spottyAPI->_call($self->method, sub {
 		my ($count, $next) = $self->_extract($id, shift);
-		
+
 		if ( $next && $next !~ /\boffset=/ && $next =~ /\bafter=([a-zA-Z0-9]{22})\b/ ) {
 			$self->_followAfter($1);
 		}
@@ -129,6 +146,7 @@ sub _followAfter {
 	}, GET => {
 		%{$self->params},
 		after => $id,
+		_pipeline => $self,    # SPOTTY-NG (Phase 1, plan 03)
 	})
 }
 
@@ -171,7 +189,12 @@ sub _followOffset {
 
 sub _call {
 	my $self = shift;
-	$self->spottyAPI->_call(@_);
+	# SPOTTY-NG (Phase 1, plan 03): tag params with this Pipeline's ref so API::_call can correlate
+	# via params->{_pipeline} (D-10, D-11). Args shape: ($method, $cb, $type, $params).
+	my ($method, $cb, $type, $params) = @_;
+	$params ||= {};
+	$params->{_pipeline} = $self;
+	$self->spottyAPI->_call($method, $cb, $type, $params);
 }
 
 # sort data by offset number to get the original sort order back

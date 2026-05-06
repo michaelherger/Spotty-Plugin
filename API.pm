@@ -28,6 +28,7 @@ use JSON::XS::VersionOneAndTwo;
 use List::Util qw(min max);
 use POSIX qw(strftime);
 use Scalar::Util qw(blessed);
+use Time::HiRes ();    # SPOTTY-NG (Phase 1, plan 03) — ms-resolution timestamps for REQ/RES correlation
 use URI::Escape qw(uri_escape_utf8);
 
 use Plugins::Spotty::Plugin;
@@ -50,6 +51,13 @@ my $libraryCache = Plugins::Spotty::API::Cache->new();
 my $prefs = preferences('plugin.spotty');
 my $error429;
 my %tokenHandlers;
+
+# SPOTTY-NG instrumentation (Phase 1, plan 03) — plugin-global inflight counter (D-10).
+# Incremented just before AsyncRequest fires; decremented in _gotResponse / _gotError (plan 04).
+my $_spottyNgGlobalInflight = 0;
+sub _spottyNgGlobalInflight    { $_spottyNgGlobalInflight }
+sub _spottyNgIncGlobalInflight { $_spottyNgGlobalInflight++ }
+sub _spottyNgDecGlobalInflight { $_spottyNgGlobalInflight-- if $_spottyNgGlobalInflight > 0 }
 
 {
 	__PACKAGE__->mk_accessor( rw => qw(
@@ -1216,6 +1224,26 @@ sub _call {
 				main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
 			}
 
+			# SPOTTY-NG instrumentation (Phase 1, plan 03) — REQ-side log emission (D-08, D-16).
+			# Gated on DEBUG of plugin.spotty so default WARN produces zero output (D-14).
+			my $_spottyNgPipe   = $params->{_pipeline};
+			my $_spottyNgPipeId = (ref $_spottyNgPipe && $_spottyNgPipe->can('_pipeId')) ? $_spottyNgPipe->_pipeId : '--------';
+			my $_spottyNgPerPipeInflight = (ref $_spottyNgPipe && $_spottyNgPipe->can('_inflight')) ? $_spottyNgPipe->_inflight : 0;
+			my $_spottyNgIssuedAt = int(Time::HiRes::time() * 1000);    # ms-resolution
+
+			Plugins::Spotty::API::_spottyNgIncGlobalInflight();
+
+			if ( main::DEBUGLOG && $log->is_debug ) {
+				my $_ts = strftime('%Y-%m-%dT%H:%M:%S', localtime) . sprintf('.%03dZ', $_spottyNgIssuedAt % 1000);
+				my $_method = uc($type || 'GET');
+				my $_fullUrl = sprintf(API_URL, $url);
+				my $_hdrs = _spottyNgFormatHeaders($headers);
+				# Format per D-16 — single line, exact prefix `[SPOTTY-NG ...]`, fields paired by pipe= for plan 04 RES match.
+				$log->debug(sprintf('[%s] [SPOTTY-NG pipe=%s inflight=%d/%d] REQ %s %s hdrs=%s',
+					$_ts, $_spottyNgPipeId, $_spottyNgPerPipeInflight + 1, $_spottyNgGlobalInflight,
+					$_method, $_fullUrl, $_hdrs));
+			}
+
 			my $http = Plugins::Spotty::API::AsyncRequest->new(
 				\&_gotResponse,
 				\&_gotError,
@@ -1227,6 +1255,10 @@ sub _call {
 					self => $self,
 					cb => $cb,
 					cache_key => $cache_key,
+					# SPOTTY-NG (Phase 1, plan 03) — for response-side log correlation (plan 04).
+					_spottyNgIssuedAt => $_spottyNgIssuedAt,
+					_spottyNgPipeId   => $_spottyNgPipeId,
+					_spottyNgPipe     => $_spottyNgPipe,
 				},
 			);
 
@@ -1273,6 +1305,23 @@ sub _tokenCall {
 	);
 
 	$req->post(TOKEN_URL, @$headers, $content);
+}
+
+# SPOTTY-NG instrumentation (Phase 1, plan 03) — render headers for log without leaking the bearer (D-17).
+sub _spottyNgFormatHeaders {
+	my ($headers) = @_;
+	return '' unless ref $headers eq 'ARRAY';
+	my @rendered;
+	for (my $i = 0; $i < @$headers; $i += 2) {
+		my ($k, $v) = ($headers->[$i], $headers->[$i+1]);
+		if ($k eq 'Authorization') {
+			push @rendered, "$k: Bearer <redacted>";
+		}
+		else {
+			push @rendered, "$k: $v";
+		}
+	}
+	return join(', ', @rendered);
 }
 
 sub _prepareCall {
