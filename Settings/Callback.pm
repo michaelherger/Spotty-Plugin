@@ -10,6 +10,12 @@ use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
+# SPOTTY-NG (Phase 2, plan 04 follow-up / FIX-11) — needed for initIcon() in the
+# flavor-aware OAuth cache write below. Plugin.pm is normally loaded before any
+# Settings page is rendered; the explicit `use` makes the dependency visible to
+# perl -c and avoids relying on import ordering.
+use Plugins::Spotty::Plugin;
+
 use constant CALLBACK_PATH => 'plugins/Spotty/settings/callback';
 use constant REDIRECT_PATH => 'plugins/Spotty/settings/redirect';
 use constant PKCE_AUTH_URL => 'https://accounts.spotify.com/authorize?client_id=%s&response_type=code&redirect_uri=%s&code_challenge=%s&code_challenge_method=S256&scope=%s&state=%s';
@@ -236,7 +242,7 @@ sub oauthCallback {
 								Plugins::Spotty::API::NEEDS_BUNDLED_AUTH_KEY_PREFIX() . $userId
 							) if $userId;
 
-						# Flavor decision overlay. When ?flavor=bundled flowed through state-JSON,
+							# Flavor decision overlay. When ?flavor=bundled flowed through state-JSON,
 							# $params->{flavor} is 'bundled' and we land the RT under the bundled-flavor
 							# cache key irrespective of what iconCode happens to be set to right now.
 							# When the param is absent (legacy callbacks, manual OAuth), fall back to
