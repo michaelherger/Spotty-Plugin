@@ -66,12 +66,22 @@ my @KNOWN_DEPRECATED_FAMILIES = (
 	qr{^users/[^/?]+/playlists\b},
 	qr{^artists/[^/?]+/top-tracks\b},
 	qr{^artists/[^/?]+/related-artists\b},
-	# SPOTTY-NG (Phase 2 plan-07 follow-up) — Spotify-curated playlists (Mix der Woche,
-	# Release Radar, Discover Weekly, etc.) return 404 to dev-mode apps for both the
-	# playlist metadata AND the tracks. \b after [^/?]+ matches /, ?, and end-of-string,
-	# so this single anchor covers playlists/{id}, playlists/{id}/tracks, and any future
-	# subpath. User-owned playlists succeed under own and never reach this fallback path.
-	qr{^playlists/[^/?]+\b},
+	# SPOTTY-NG (Phase 2.6 plan-02 / HARDEN-03 / closes 02-REVIEW.md CR-03) — Spotify-curated
+	# playlists (Mix der Woche, Release Radar, Discover Weekly, Daily Mix, "Made For You",
+	# Genre/Mood charts) consistently use the `37i9` ID prefix as the editorial-content
+	# subnamespace (stable since ~2016, with sub-prefixes like `37i9dQZ` for personalised
+	# mixes). User-owned playlist IDs are random base62 — the narrowed regex matches ONLY
+	# the curated `37i9` subnamespace, so a deleted user playlist 404 STAYS ON OWN FLAVOR
+	# and surfaces the 404 to the caller as before (per the invariant documented at the
+	# comment block in the _call body, line ~1383). Collision probability between random
+	# base62 and the `37i9` prefix is ~1 in 14.7M; even on collision the user-owned
+	# playlist returns 200 under own with no harm done. The broader `37i9` prefix (rather
+	# than the narrower `37i9dQZ`) is intentional — it covers all curated subnamespaces
+	# including future sub-prefixes Spotify might introduce while keeping `37i9` stable.
+	# Per D2.6-10: if Spotify changes the curated prefix scheme, fail gracefully — bundled
+	# retries simply won't fire on the new scheme until the regex is updated. No proactive
+	# detection logic.
+	qr{^playlists/37i9[A-Za-z0-9]+\b},
 );
 
 # 24h TTL — long enough to avoid burning the 2x cost on every Start-menu browse,
@@ -1377,9 +1387,15 @@ sub _call {
 			# discovered when browse/featured-playlists started consistently returning
 			# `RES 404 body=<error: 404 Not Found>` under own Dev ID. To avoid false
 			# positives on legitimate "resource not found" responses, 404 only triggers
-			# the fallback when the URL matches @KNOWN_DEPRECATED_FAMILIES (e.g. an
-			# arbitrary `playlists/{id}` returning 404 because the playlist was deleted
-			# stays on own flavor and surfaces the 404 to the caller as before).
+			# the fallback when the URL matches @KNOWN_DEPRECATED_FAMILIES.
+			#
+			# SPOTTY-NG (Phase 2.6 plan-02 / HARDEN-03): the playlists/{id} entry was
+			# narrowed to the `37i9` Spotify-curated subnamespace prefix (Mix der Woche,
+			# Release Radar, Discover Weekly, Daily Mix, etc. — including sub-prefixes
+			# like `37i9dQZ`). See the regex comment in @KNOWN_DEPRECATED_FAMILIES at
+			# the top of this file. A user-owned playlist 404 (e.g. a deleted playlist)
+			# NO LONGER triggers a bundled retry, eliminating the contradiction the
+			# comment had with the pre-2.6 broad regex.
 			my $is404Deprecated = 0;
 			if ($code eq '404' && !$isMeFamily) {
 				for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
@@ -1398,17 +1414,35 @@ sub _call {
 					return $userCb->($result, $response);
 				}
 
-				# Cache the URL pattern hint so subsequent calls skip own-attempt.
-				_spottyNgRememberBundledHint($cleanUrl);
-
 				main::INFOLOG && $log->is_info &&
 					$log->info(sprintf('[SPOTTY-NG] retrying under bundled flavor: status=%s url=%s', $code, $cleanUrl));
+
+				# SPOTTY-NG (Phase 2.6, plan 02 / HARDEN-02 / closes 02-REVIEW.md CR-02) — wrap the
+				# bundled-attempt $cb so we cache the URL pattern hint ONLY when the bundled retry
+				# actually succeeds (HTTP 2xx). Pre-fix code wrote the hint unconditionally before
+				# the retry ran, which violated D-06's self-healing TTL semantic ("when a 403/410 →
+				# bundled-fallback succeeds, cache the URL pattern hint for 24h"): a transient
+				# bundled-side failure (revoked RT, 5xx, network blip) would lock the URL pattern
+				# in cache for 24h and route subsequent calls to a known-broken bundled path.
+				#
+				# $userCb is still invoked exactly once via the $userCbCalled guard at the top of
+				# this closure; $bundledCb is just an interceptor on the way to $userCb.
+				my $bundledCb = sub {
+					my ($bundledResult, $bundledResponse) = @_;
+					my $bundledCode = $bundledResponse ? eval { $bundledResponse->code } : undef;
+					if (defined $bundledCode && $bundledCode =~ /^2\d\d$/) {
+						# Bundled retry succeeded — cache the URL pattern hint so subsequent calls
+						# skip own-attempt and go straight to bundled.
+						_spottyNgRememberBundledHint($cleanUrl);
+					}
+					$userCb->($bundledResult, $bundledResponse);
+				};
 
 				# Retry under bundled flavor. Issue a fresh getToken call to fetch the
 				# bundled-flavor bearer; do NOT recurse into _call (Pitfall #2).
 				Plugins::Spotty::API::Token->get($self, sub {
 					my ($bundledToken) = @_;
-					return _callOneShot($self, $bundledToken, $url, $userCb, $type,
+					return _callOneShot($self, $bundledToken, $url, $bundledCb, $type,
 					                    { %$attemptParams, _spottyNgFlavor => 'bundled' });
 				}, { %$args, flavor => 'bundled' });
 				return;
