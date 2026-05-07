@@ -60,11 +60,18 @@ my %tokenHandlers;
 my @KNOWN_DEPRECATED_FAMILIES = (
 	qr{^browse/featured-playlists\b},
 	qr{^browse/categories/[^/?]+/playlists\b},
+	qr{^browse/categories\b},
 	qr{^browse/new-releases\b},
 	qr{^recommendations\b},
 	qr{^users/[^/?]+/playlists\b},
 	qr{^artists/[^/?]+/top-tracks\b},
 	qr{^artists/[^/?]+/related-artists\b},
+	# SPOTTY-NG (Phase 2 plan-07 follow-up) — Spotify-curated playlists (Mix der Woche,
+	# Release Radar, Discover Weekly, etc.) return 404 to dev-mode apps for both the
+	# playlist metadata AND the tracks. \b after [^/?]+ matches /, ?, and end-of-string,
+	# so this single anchor covers playlists/{id}, playlists/{id}/tracks, and any future
+	# subpath. User-owned playlists succeed under own and never reach this fallback path.
+	qr{^playlists/[^/?]+\b},
 );
 
 # 24h TTL — long enough to avoid burning the 2x cost on every Start-menu browse,
