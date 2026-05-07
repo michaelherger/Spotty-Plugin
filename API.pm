@@ -1176,6 +1176,20 @@ sub _getTimestamp {
 sub _call {
 	my ( $self, $url, $cb, $type, $params ) = @_;
 
+	$params ||= {};
+
+	# Restore the spotty_rate_limit_exceeded cooldown gate at the head of _call.
+	# Pre-Phase-2 _call ended with $self->getToken(...), and getToken checks this flag
+	# and short-circuits with $cb->(-429). The try-own-then-fallback rewrite routed
+	# token resolution through Plugins::Spotty::API::Token->get directly, bypassing
+	# the gate. This restores the reactive 429 contract: every paged me/* and browse
+	# call honors a captured cooldown without racing for another 429.
+	# _callOneShot recognises -429 as a sentinel and produces the same
+	# PLUGIN_SPOTTY_ERROR_429 user-facing reply that tracks() takes from getToken.
+	if ($cache->get('spotty_rate_limit_exceeded')) {
+		return _callOneShot($self, '-429', $url, $cb, $type, $params);
+	}
+
 	my $args = {};
 	# https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
 	# one year later it now looks as if this wouldn't work any more and we'd have to go back to where we were before?!?
