@@ -136,9 +136,17 @@ sub codeExchange {
 sub refreshToken {
 	my ( $self, $cb, $args ) = @_;
 
+	# SPOTTY-NG (Phase 2, plan 05 follow-up / FIX-11 / D-07) — propagate the caller's
+	# `_client_id` override into the params handed to _tokenCall so the flavor-correct
+	# Client ID lands on Spotify's /api/token endpoint. Without this, bundled-flavor
+	# refresh tokens (minted under the bundled-default Client ID) get sent with the
+	# user's own Dev ID, and Spotify replies 400 Bad Request — the bundled-fallback
+	# silently fails and OPML.pm:204 sets $customClientLimitations++ on the empty
+	# featuredPlaylists() result. Discovered during plan-07 validation.
 	$self->_tokenCall($cb, {
 		grant_type => 'refresh_token',
 		refresh_token => $args->{refreshToken},
+		_client_id => $args->{_client_id},
 	}, $cb);
 }
 
