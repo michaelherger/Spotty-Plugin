@@ -1401,7 +1401,10 @@ sub _call {
 sub _tokenCall {
 	my ( $self, $cb, $params ) = @_;
 
-	$params->{client_id} = $prefs->get('iconCode');
+	# SPOTTY-NG (Phase 2, plan 05 / D-07 / FIX-11) — honor caller-injected _client_id for
+	# flavor-aware OAuth refresh. Token.pm (plan 04) passes `_client_id => <bundled-icon>`
+	# when refreshing under flavor='bundled'; absent override, today's behavior is preserved.
+	$params->{client_id} = delete $params->{_client_id} || $prefs->get('iconCode');
 	my ($url, $content, $headers) = _prepareCall('POST', '', $params);
 
 	push @$headers, 'Content-Type' => 'application/x-www-form-urlencoded';
