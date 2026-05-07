@@ -1361,11 +1361,26 @@ sub _call {
 			my $code = $response ? eval { $response->code } : undef;
 			$code //= '';
 
-			# If we just dispatched under own flavor and got 403/410, AND the URL is
+			# If we just dispatched under own flavor and got 403/410/404, AND the URL is
 			# NOT me/* (defense-in-depth — already gated above but cheap to re-assert),
 			# AND we haven't already retried, attempt the bundled fallback.
+			#
+			# SPOTTY-NG (Phase 2 plan-07 follow-up): empirically, post-Feb-2026 Spotify
+			# returns 404 (not 403/410) on the dev-mode-deprecated browse/* endpoints —
+			# discovered when browse/featured-playlists started consistently returning
+			# `RES 404 body=<error: 404 Not Found>` under own Dev ID. To avoid false
+			# positives on legitimate "resource not found" responses, 404 only triggers
+			# the fallback when the URL matches @KNOWN_DEPRECATED_FAMILIES (e.g. an
+			# arbitrary `playlists/{id}` returning 404 because the playlist was deleted
+			# stays on own flavor and surfaces the 404 to the caller as before).
+			my $is404Deprecated = 0;
+			if ($code eq '404' && !$isMeFamily) {
+				for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
+					if ($cleanUrl =~ $rx) { $is404Deprecated = 1; last; }
+				}
+			}
 			if (!$isRetry && $flavor eq 'own' && !$isMeFamily
-					&& ($code eq '403' || $code eq '410')) {
+					&& ($code eq '403' || $code eq '410' || $is404Deprecated)) {
 				# D-09: probe BEFORE attempting bundled retry. If bundled refresh token
 				# is missing, surface the original 403/410 to the caller and log a
 				# structured sentinel — DO NOT trigger inline OAuth (Phase 2.5 owns that).
