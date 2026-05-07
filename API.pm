@@ -1324,6 +1324,30 @@ sub _call {
 	my ( $self, $url, $cb, $type, $params ) = @_;
 
 	$params ||= {};
+
+	# SPOTTY-NG (Phase 2.6, plan 02 / HARDEN-01 / closes 02-REVIEW.md CR-01) — restore the
+	# `spotty_rate_limit_exceeded` cooldown gate at the head of _call. Pre-Phase-2 _call
+	# ended with `$self->getToken(...)`, and getToken (still at line ~135) checks this flag
+	# and short-circuits with `$cb->(-429)`. Phase 2's plan-05 routed token resolution
+	# through `Plugins::Spotty::API::Token->get(...)` directly, bypassing the gate. This
+	# gate restores the pre-Phase-2 reactive 429 contract: every paged me/* and browse
+	# call honors a captured cooldown without racing for another 429.
+	#
+	# Per D2.6-04: gate is placed at the head of _call (before any flavor decision); per
+	# D2.6-05: ordering — gate fires before hint-cache lookup so we don't waste a
+	# `$cache->get` on a known-rate-limited account.
+	#
+	# `_callOneShot` already recognises a leading-`-(\d+)` $token as a sentinel (see its
+	# own body, line ~1226-1234) and converts `-429` to the user-facing
+	# PLUGIN_SPOTTY_ERROR_429 reply via `string()` lookup — same path that
+	# `tracks()` (the only existing `getToken` caller post-Phase-2) takes when it sees
+	# the same `-429` value out of `getToken`. So routing the cooldown response through
+	# `_callOneShot` here keeps the user-facing error symmetrical with the pre-Phase-2
+	# behavior without re-implementing the lookup.
+	if ($cache->get('spotty_rate_limit_exceeded')) {
+		return _callOneShot($self, '-429', $url, $cb, $type, $params);
+	}
+
 	my $args = {};
 	# https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
 	# one year later it now looks as if this wouldn't work any more and we'd have to go back to where we were before?!?
