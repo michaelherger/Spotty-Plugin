@@ -230,22 +230,33 @@ sub sendCachedResponse {
 use POSIX qw(strftime);
 use Time::HiRes ();
 
+# SPOTTY-NG (Phase 2.6, plan 04 / HARDEN-15 / closes 02-REVIEW.md IN-07): the function body
+# of `_spottyNgEmitRes` below is byte-equivalent to AsyncRequest.pm's `_spottyNgEmitRes`
+# (modulo the inherent `$log` vs `$spottyLog` lexical and whitespace differences). Verify
+# with: awk '/^sub _spottyNgEmitRes /,/^}/' on each file, normalize $spottyLog → $log in
+# the legacy extract, then diff — non-whitespace diff should be empty.
 sub _spottyNgEmitRes {
 	my ($http, $errStr, $maybeResponse) = @_;
+
 	return unless main::DEBUGLOG && $spottyLog->is_debug;
+
+	# Pull the SPOTTY-NG correlation fields stashed at issue time (plan 03).
 	my $params      = $http->_params || {};
 	my $issuedAt    = $params->{_spottyNgIssuedAt} || 0;
 	my $pipeId      = $params->{_spottyNgPipeId}   || '--------';
 	my $pipe        = $params->{_spottyNgPipe};
 	my $perPipe     = (ref $pipe && $pipe->can('_inflight')) ? $pipe->_inflight : 0;
 	my $global      = Plugins::Spotty::API::_spottyNgGlobalInflight();
-	my $now         = int(Time::HiRes::time() * 1000);
-	my $dtMs        = $issuedAt ? ($now - $issuedAt) : 0;
+
+	# dt in ms, computed against high-res clock (Time::HiRes is core perl).
+	my $now    = int(Time::HiRes::time() * 1000);
+	my $dtMs   = $issuedAt ? ($now - $issuedAt) : 0;
+
 	# status: from $http->code on the success path; on the error path
 	# ($http->code unpopulated) fall back to $maybeResponse->code (HTTP::Response
 	# passed by Slim::Networking::SimpleAsyncHTTP::onError as the third callback
 	# arg) and finally to a leading 3-digit token in $errStr.
-	# SPOTTY-NG (Phase 2, plan 03 / D-13 / FIX-12 / mirror of AsyncRequest.pm per FIX-06).
+	# SPOTTY-NG (Phase 2, plan 03 / D-13 / FIX-12) — closes Phase 1 SC4 instrumentation gap.
 	my $code = eval { $http->code };
 	if (!defined $code || !$code) {
 		$code = eval { $maybeResponse && $maybeResponse->code };
@@ -257,13 +268,15 @@ sub _spottyNgEmitRes {
 
 	# Retry-After header — present on 429 (rate limit) and may be absent on 403/410.
 	# On error path, $http->headers is empty; use $maybeResponse->headers as fallback.
-	# SPOTTY-NG (Phase 2, plan 03 / D-13 / FIX-12 / mirror of AsyncRequest.pm per FIX-06).
+	# SPOTTY-NG (Phase 2, plan 03 / D-13 / FIX-12) — same gap close as $status above.
 	my $retryAfter = '-';
 	my $headers = eval { $http->headers } || eval { $maybeResponse && $maybeResponse->headers };
 	if ($headers) {
 		my $ra = $headers->header('Retry-After');
 		$retryAfter = $ra if defined $ra && $ra ne '';
 	}
+
+	# Body capture: first 2KB on non-2xx, omitted on 2xx (D-12). Don't dump huge JSON arrays.
 	my $bodyField = '<omitted>';
 	my $isSuccess = (defined $status && $status =~ /^2\d\d$/);
 	if (!$isSuccess) {
@@ -271,6 +284,7 @@ sub _spottyNgEmitRes {
 		my $bodyLen    = $contentRef ? length($$contentRef) : 0;
 		if ($bodyLen > 0) {
 			my $excerpt = substr($$contentRef, 0, 2048);
+			# Strip control chars except space/tab to keep the log line readable.
 			$excerpt =~ s/[\x00-\x08\x0A-\x1F\x7F]/./g;
 			$bodyField = $excerpt . ($bodyLen > 2048 ? sprintf(' ... [truncated, body=%d bytes total]', $bodyLen) : '');
 		}
@@ -278,7 +292,10 @@ sub _spottyNgEmitRes {
 			$bodyField = "<error: $errStr>";
 		}
 	}
+
 	my $ts = strftime('%Y-%m-%dT%H:%M:%S', localtime) . sprintf('.%03dZ', $now % 1000);
+
+	# Format per D-16 — exact line schema for greppability.
 	$spottyLog->debug(sprintf('[%s] [SPOTTY-NG pipe=%s inflight=%d/%d dt=%dms] RES %s retry_after=%s body=%s',
 		$ts, $pipeId, $perPipe, $global, $dtMs, $status, $retryAfter, $bodyField));
 }

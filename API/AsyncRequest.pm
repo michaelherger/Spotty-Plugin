@@ -63,6 +63,11 @@ sub sendCachedResponse {
 	return;
 }
 
+# SPOTTY-NG (Phase 2.6, plan 04 / HARDEN-15 / closes 02-REVIEW.md IN-07): the function body
+# of `_spottyNgEmitRes` below is byte-equivalent to AsyncRequestLegacy.pm's `_spottyNgEmitRes`
+# (modulo the inherent `$log` vs `$spottyLog` lexical and whitespace differences). Verify
+# with: awk '/^sub _spottyNgEmitRes /,/^}/' on each file, normalize $spottyLog → $log in
+# the legacy extract, then diff — non-whitespace diff should be empty.
 # SPOTTY-NG: emit the per-response RES line (D-12, D-16, D-17). NOT a class method by design —
 # called from the wrapped callback closures. Always guarded by main::DEBUGLOG && $log->is_debug.
 sub _spottyNgEmitRes {
