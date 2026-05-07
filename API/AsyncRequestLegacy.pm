@@ -205,10 +205,25 @@ sub _spottyNgEmitRes {
 	my $global      = Plugins::Spotty::API::_spottyNgGlobalInflight();
 	my $now         = int(Time::HiRes::time() * 1000);
 	my $dtMs        = $issuedAt ? ($now - $issuedAt) : 0;
-	my $code        = eval { $http->code };
-	my $status      = (defined $code && $code) ? $code : (defined $errStr ? 'ERR' : 'unknown');
-	my $retryAfter  = '-';
-	my $headers     = eval { $http->headers };
+	# status: from $http->code on the success path; on the error path
+	# ($http->code unpopulated) fall back to $maybeResponse->code (HTTP::Response
+	# passed by Slim::Networking::SimpleAsyncHTTP::onError as the third callback
+	# arg) and finally to a leading 3-digit token in $errStr.
+	# SPOTTY-NG (Phase 2, plan 03 / D-13 / FIX-12 / mirror of AsyncRequest.pm per FIX-06).
+	my $code = eval { $http->code };
+	if (!defined $code || !$code) {
+		$code = eval { $maybeResponse && $maybeResponse->code };
+	}
+	if ((!defined $code || !$code) && defined $errStr && $errStr =~ /^(\d{3})\b/) {
+		$code = $1;
+	}
+	my $status = (defined $code && $code) ? $code : (defined $errStr ? 'ERR' : 'unknown');
+
+	# Retry-After header — present on 429 (rate limit) and may be absent on 403/410.
+	# On error path, $http->headers is empty; use $maybeResponse->headers as fallback.
+	# SPOTTY-NG (Phase 2, plan 03 / D-13 / FIX-12 / mirror of AsyncRequest.pm per FIX-06).
+	my $retryAfter = '-';
+	my $headers = eval { $http->headers } || eval { $maybeResponse && $maybeResponse->headers };
 	if ($headers) {
 		my $ra = $headers->header('Retry-After');
 		$retryAfter = $ra if defined $ra && $ra ne '';
