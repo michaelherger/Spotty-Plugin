@@ -123,7 +123,6 @@ sub get {
 
 	# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor extraction and bundled-code resolution.
 	my $flavor = $args->{flavor} || 'own';
-	$args->{flavor} = $flavor;   # normalize back into $args so _gotTokenInfo sees it
 
 	my $userId = $args->{userId} || ($api && $api->userId);
 	Slim::Utils::Log::logBacktrace("No userId found") if !$userId;
@@ -135,7 +134,15 @@ sub get {
 	if (!$code && $flavor eq 'bundled') {
 		$code = Plugins::Spotty::Plugin->initIcon();
 	}
-	$args->{code} = $code if $code;   # normalize into $args so _gotTokenInfo writes under same code
+
+	# SPOTTY-NG (Phase 2.6, plan 03 / HARDEN-08 / closes 02-REVIEW.md WR-05) — build a local
+	# copy of $args carrying the resolved flavor + code, so we don't mutate the caller's hash.
+	# Pre-fix code wrote the resolved flavor and code values back into $args, which surprised
+	# callers passing long-lived or shared hashes (none today, but a future change could). All
+	# downstream callees (_gotTokenInfo, $api->refreshToken) read these from the args/argsref
+	# they receive, so passing $localArgs preserves behavior bit-for-bit.
+	my $localArgs = { %$args, flavor => $flavor };
+	$localArgs->{code} = $code if $code;
 
 	my $atCacheKey = _getATCacheKey($code, $userId, $flavor);
 
@@ -158,7 +165,7 @@ sub get {
 			{ refreshToken => $refreshToken }
 		);
 
-		return _gotTokenInfo($tokenInfo, $userId, $args);
+		return _gotTokenInfo($tokenInfo, $userId, $localArgs);
 	}
 	else {
 		if (!$refreshToken) {
@@ -181,7 +188,7 @@ sub get {
 		# can override the iconCode pref lookup with the flavor-correct Client ID.
 		$api->refreshToken(
 			sub {
-				my $accessToken = _gotTokenInfo(shift, $userId, $args);
+				my $accessToken = _gotTokenInfo(shift, $userId, $localArgs);
 				$log->error("Failed to refresh access token for user=$userId flavor=$flavor") if !$accessToken;
 				_callCallbacks($accessToken, $refreshToken);
 			},
