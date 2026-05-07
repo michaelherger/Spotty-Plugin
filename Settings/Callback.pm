@@ -253,7 +253,13 @@ sub oauthCallback {
 	};
 
 	main::INFOLOG && $log->is_info && $log->info("Exchange code for access token");
-	my $defaultCode = $prefs->get('iconCode');
+
+	# SPOTTY-NG (Phase 2.6, plan 06 / HARDEN-13 / closes 02-REVIEW.md IN-04) — re-read iconCode
+	# AT OAUTH COMPLETION (inside the me-callback below), NOT at OAuth start. Pre-fix code
+	# captured the iconCode pref value here, which becomes stale if the user flips iconCode
+	# mid-OAuth — exactly what the documented bundled-OAuth side-trip workflow requires
+	# (flip -> bundled -> OAuth -> flip back). The flavor decision below now uses the iconCode
+	# pref value at the moment the decision is made.
 
 	my $api = Plugins::Spotty::API->new({ noProfileUpdate => 1 });
 	$api->codeExchange(
