@@ -49,7 +49,6 @@ my $libraryCache = Plugins::Spotty::API::Cache->new();
 
 my $prefs = preferences('plugin.spotty');
 my $error429;
-my %tokenHandlers;
 
 {
 	__PACKAGE__->mk_accessor( rw => qw(
@@ -1169,11 +1168,6 @@ sub _call {
 	my ( $self, $url, $cb, $type, $params ) = @_;
 
 	my $args = {};
-	# https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
-	# one year later it now looks as if this wouldn't work any more and we'd have to go back to where we were before?!?
-	# if ($url =~ m{^browse/|^recommendations|^artists/.*/related-artists|^playlists/.*/tracks}) {
-	# 	$args->{code} = Plugins::Spotty::API::Web::_code();
-	# }
 
 	my $call = sub {
 		my ($token) = @_;
@@ -1483,6 +1477,3 @@ sub _PLAYLIST_CACHE_TTL {
 }
 
 1;
-
-__DATA__
-3635623730383037336663303438306561393261303737323333636138376264
