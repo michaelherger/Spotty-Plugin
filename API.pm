@@ -51,6 +51,33 @@ my $prefs = preferences('plugin.spotty');
 my $error429;
 my %tokenHandlers;
 
+# `@KNOWN_DEPRECATED_FAMILIES` is the canonical pattern-key derivation list for the URL-pattern
+# hint cache. The hint cache is NOT pre-warmed at init — these regexes are used only to derive
+# a stable pattern KEY when a 403/410 leads to a bundled-fallback success at runtime, so similar
+# URLs hit the cached hint on subsequent calls. First call after server restart pays the 2x cost
+# (own attempt → 403/410 → bundled retry); subsequent calls within 24h hit bundled directly.
+# The `me/*` family is NOT here — `me/*` MUST stay on own flavor.
+my @KNOWN_DEPRECATED_FAMILIES = (
+	qr{^browse/featured-playlists\b},
+	qr{^browse/categories/[^/?]+/playlists\b},
+	qr{^browse/new-releases\b},
+	qr{^recommendations\b},
+	qr{^users/[^/?]+/playlists\b},
+	qr{^artists/[^/?]+/top-tracks\b},
+	qr{^artists/[^/?]+/related-artists\b},
+);
+
+# 24h TTL — long enough to avoid burning the 2x cost on every Start-menu browse,
+# short enough to self-heal if Spotify reverses a deprecation.
+use constant SPOTTY_NG_BUNDLED_HINT_TTL => 86400;
+use constant SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX => 'spotty_ng_bundled_hint_';
+
+# me/* family guard for the routing decision.
+# Matches v1/me, v1/me/*, v1/me?... — i.e. the userId-scoped endpoint family that MUST
+# stay on own flavor (Liked Songs, Saved Albums, etc.). Tested AT THE TOP of _call's
+# routing decision so a transient 403 on me/tracks (e.g. Spotify glitch) cannot fall
+# back to bundled and silently return wrong data.
+my $_spottyNgMeFamilyRegex = qr{^me(?:$|/|\?)};
 {
 	__PACKAGE__->mk_accessor( rw => qw(
 		client
