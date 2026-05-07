@@ -148,6 +148,11 @@ sub onError {
 
 		$log->warn("Failed to connect to $uri, using cached copy. ($error)");
 
+		# SPOTTY-NG (Phase 2.6, plan 04 / HARDEN-06): note — the cached-response branch
+		# delegates to $self->sendCachedResponse(), which itself is overridden in this
+		# file to call _spottyNgDecCounters. We therefore do NOT decrement counters
+		# here directly; doing so would double-decrement. The override is responsible
+		# for the counter accounting on this path.
 		return $self->sendCachedResponse();
 	}
 	else {
@@ -157,6 +162,16 @@ sub onError {
 	$self->error( $error );
 
 	main::PERFMON && (my $now = AnyEvent->time);
+
+	# SPOTTY-NG (Phase 2.6, plan 04 / HARDEN-06 / closes 02-REVIEW.md WR-03): emit RES log
+	# line + decrement plugin-global and per-pipeline inflight counters BEFORE invoking
+	# the user error-callback. Pre-fix legacy onError dispatched directly to $self->ecb,
+	# leaving _spottyNgGlobalInflight monotonically incremented (since _callOneShot
+	# always increments at REQ time). The completion path (onBody) is NOT wrapped here —
+	# see the file's docstring above for why; the partial fix gives correct counter
+	# values on every error case, which is the case where the leak was fastest.
+	_spottyNgEmitRes($http, $error, $http->response);
+	_spottyNgDecCounters($http);
 
 	# return the response object in addition to the standard values from SimpleAsyncHTTP
 	# SPOTTY
@@ -175,6 +190,14 @@ sub sendCachedResponse {
 
 	$self->cachedResponse->{headers}->{'x-spotty-cached-response'} = 1;
 
+	# SPOTTY-NG (Phase 2.6, plan 04 / HARDEN-06): decrement counters before delegating
+	# to SUPER — this closes the cached-response success branch which would otherwise
+	# leak counters monotonically (REQ was incremented at _callOneShot time; without
+	# this dec, the cached response never balances the increment). $self IS-A
+	# Slim::Networking::SimpleAsyncHTTP so $self->_params is the correct accessor for
+	# the SPOTTY-NG correlation params stashed at issue time.
+	_spottyNgDecCounters($self);
+
 	$self->SUPER::sendCachedResponse();
 
 	return;
@@ -184,12 +207,25 @@ sub sendCachedResponse {
 
 # SPOTTY-NG instrumentation (Phase 1, plan 04 / D-09 — mirror of AsyncRequest.pm).
 # Dead code on Lyrion 8.5.1+ (which uses the modern AsyncRequest.pm). Kept text-equivalent
-# to the modern implementation so the upstream PR diff is symmetric. Wiring outcome:
-# FALLBACK — helper subs added below; the legacy onError/onBody callback dispatch is NOT
-# wrapped, because doing so requires rewriting Slim::Networking::SimpleAsyncHTTP::onBody
-# (a SUPER::-class method invoked by Slim::Networking::Async::HTTP::send_request, not a
-# closure we can swap). On modern LMS this file is not loaded at all, so the gap has zero
-# runtime impact on the dev box. See 01-04-SUMMARY.md for the recorded outcome.
+# to the modern implementation so the upstream PR diff is symmetric.
+#
+# SPOTTY-NG (Phase 2.6, plan 04 / HARDEN-06 / closes 02-REVIEW.md WR-03 — partial): the
+# `onError` callback path AND the `sendCachedResponse` override in this file ARE wrapped —
+# they directly invoke `_spottyNgEmitRes` and `_spottyNgDecCounters` before dispatching
+# downstream. This restores counter balance on the legacy LMS path (<8.5.1) for both
+# error branches (network failure, HTTP-error response with no cached fallback) AND for
+# the cached-response success branch.
+#
+# KNOWN GAP: the network-success `onBody` path is NOT wrapped — that's a SUPER::-class
+# method invoked from `Slim::Networking::Async::HTTP::send_request`, and wrapping it
+# without rewriting `Slim::Networking::SimpleAsyncHTTP::onBody` is impractical. Per
+# WR-03 review note ("simplest fix is `onError` + `sendCachedResponse`; the success
+# path is harder; document the gap if you can't close it"), this partial coverage is
+# the accepted scope for Phase 2.6. On modern LMS (this dev box, 9.2.0) this file is
+# not loaded at all, so the gap has zero runtime impact in the v1 milestone. Phase 3
+# daily-use validation may surface whether the legacy success-path leak is reachable;
+# if so, a follow-up patch can rewrap onBody. See 01-04-SUMMARY.md for the original
+# wiring outcome.
 
 use POSIX qw(strftime);
 use Time::HiRes ();
