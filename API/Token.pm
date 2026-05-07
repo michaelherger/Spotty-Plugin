@@ -38,13 +38,19 @@ my $prefs = preferences('plugin.spotty');
 
 my %callbacks;
 
+# SPOTTY-NG (Phase 2.6, plan 03 / HARDEN-09 / closes 02-REVIEW.md WR-06) — dedup map is keyed
+# on the (refreshToken, flavor) tuple via "$rt|$flavor" so a future cosmetic-collision case
+# where own and bundled refresh tokens are identical (theoretically possible but practically
+# impossible — Spotify RTs are unique per (user, app) pair) never conflates callbacks across
+# flavors. CONTEXT.md `<code_context>` already documented this as the intent; this change
+# brings the code in line with the documentation.
 sub _callCallbacks {
-	my ($token, $refreshToken) = @_;
+	my ($token, $dedupKey) = @_;
 
-	foreach (@{$callbacks{$refreshToken} || []}) {
+	foreach (@{$callbacks{$dedupKey} || []}) {
 		$_->($token);
 	}
-	delete $callbacks{$refreshToken};
+	delete $callbacks{$dedupKey};
 }
 
 sub _gotTokenInfo {
@@ -174,12 +180,16 @@ sub get {
 			return;
 		}
 
+		# SPOTTY-NG (Phase 2.6, plan 03 / HARDEN-09 / closes 02-REVIEW.md WR-06) — dedup key is
+		# now the (refreshToken, flavor) tuple, not refreshToken alone.
+		my $dedupKey = "$refreshToken|$flavor";
+
 		if ($cb) {
-			$callbacks{$refreshToken} ||= [];
-			push @{$callbacks{$refreshToken}}, $cb;
+			$callbacks{$dedupKey} ||= [];
+			push @{$callbacks{$dedupKey}}, $cb;
 		}
 
-		if ( $cb && scalar(@{$callbacks{$refreshToken}}) > 1 ) {
+		if ( $cb && scalar(@{$callbacks{$dedupKey}}) > 1 ) {
 			main::INFOLOG && $log->is_info && $log->info("There's already a refresh in progress for this token - queuing callback.");
 			return;
 		}
@@ -190,7 +200,7 @@ sub get {
 			sub {
 				my $accessToken = _gotTokenInfo(shift, $userId, $localArgs);
 				$log->error("Failed to refresh access token for user=$userId flavor=$flavor") if !$accessToken;
-				_callCallbacks($accessToken, $refreshToken);
+				_callCallbacks($accessToken, $dedupKey);
 			},
 			{ refreshToken => $refreshToken, _client_id => $code }
 		);
