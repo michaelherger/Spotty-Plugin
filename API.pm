@@ -1192,89 +1192,210 @@ sub _getTimestamp {
 	return $timestamp;
 }
 
+# SPOTTY-NG (Phase 2, plan 05 / D-05 / FIX-09) — single-shot HTTP dispatch helper.
+# Extracted from the body of _call's inner $call closure (Phase-1 shape) so the
+# try-own-then-fallback retry path can re-dispatch with a different flavor without
+# recursing back into _call (which would re-trigger the hint-cache lookup, response
+# cache check, Pipeline correlation, etc. — Pitfall #2 in 02-RESEARCH.md).
+#
+# Caller contract:
+# - $token: the bearer string already obtained for the chosen flavor
+# - $self, $url, $cb, $type, $params: same as _call
+# - $params->{_spottyNgFlavor}: flavor in use ('own' | 'bundled') for log/REQ correlation
+sub _callOneShot {
+	my ($self, $token, $url, $cb, $type, $params) = @_;
+
+	if ( !$token || $token =~ /^-(\d+)$/ ) {
+		my $error = $1 || 'NO_ACCESS_TOKEN';
+		$error = 'NO_ACCESS_TOKEN' if $error !~ /429/;
+		$cb->({
+			name => string('PLUGIN_SPOTTY_ERROR_' . $error),
+			type => 'text'
+		});
+		return;
+	}
+
+	$type ||= 'GET';
+	$url =~ s/^\///;
+
+	my ($content, $headers);
+	($url, $content, $headers) = _prepareCall($type, $url, $params);
+	push @$headers, 'Authorization' => 'Bearer ' . $token;
+
+	my $cached;
+	my $cache_key;
+	if (!$params->{_nocache} && $type eq 'GET') {
+		$cache_key = md5_hex($url . ($url =~ /^(?:me|browse)\b/ ? $token : ''));
+	}
+
+	main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");
+
+	if ( $cache_key && ($cached = $cache->get($cache_key)) ) {
+		main::INFOLOG && $log->is_info && $log->info("Returning cached data for $url");
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
+		$cb->($cached);
+		return;
+	}
+	elsif ( main::INFOLOG && $log->is_info ) {
+		$log->info("API call: $url");
+		main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
+	}
+
+	# SPOTTY-NG instrumentation (Phase 1, plan 03) — REQ-side log emission (D-08, D-16).
+	# Gated on DEBUG of plugin.spotty so default WARN produces zero output (D-14).
+	my $_spottyNgPipe   = $params->{_pipeline};
+	my $_spottyNgPipeId = (ref $_spottyNgPipe && $_spottyNgPipe->can('_pipeId')) ? $_spottyNgPipe->_pipeId : '--------';
+	my $_spottyNgPerPipeInflight = (ref $_spottyNgPipe && $_spottyNgPipe->can('_inflight')) ? $_spottyNgPipe->_inflight : 0;
+	my $_spottyNgIssuedAt = int(Time::HiRes::time() * 1000);    # ms-resolution
+
+	Plugins::Spotty::API::_spottyNgIncGlobalInflight();
+
+	if ( main::DEBUGLOG && $log->is_debug ) {
+		my $_ts = strftime('%Y-%m-%dT%H:%M:%S', localtime) . sprintf('.%03dZ', $_spottyNgIssuedAt % 1000);
+		my $_method = uc($type || 'GET');
+		my $_fullUrl = sprintf(API_URL, $url);
+		my $_hdrs = _spottyNgFormatHeaders($headers);
+		my $_flavor = $params->{_spottyNgFlavor} || 'own';
+		# SPOTTY-NG (Phase 2, plan 05 / D-15 / FIX-14) — drop the `+ 1` over-count; Pipeline._inflight
+		# is already incremented by plan-05 wiring upstream of this emit, so the as-of-emission value
+		# IS the right one to render.
+		# SPOTTY-NG (Phase 2, plan 05 / D-05) — append flavor=<own|bundled> field for log readability;
+		# this is in addition to (not replacing) the AUTH redaction that _spottyNgFormatHeaders does.
+		$log->debug(sprintf('[%s] [SPOTTY-NG pipe=%s inflight=%d/%d flavor=%s] REQ %s %s hdrs=%s',
+			$_ts, $_spottyNgPipeId, $_spottyNgPerPipeInflight, $_spottyNgGlobalInflight,
+			$_flavor, $_method, $_fullUrl, $_hdrs));
+	}
+
+	my $http = Plugins::Spotty::API::AsyncRequest->new(
+		\&_gotResponse,
+		\&_gotError,
+		{
+			cache => $params->{_nocache} ? 0 : 1,
+			expires => $params->{_expires} || 3600,
+			timeout => 30,
+			no_revalidate => $params->{_no_revalidate},
+			self => $self,
+			cb => $cb,
+			cache_key => $cache_key,
+			# SPOTTY-NG (Phase 1, plan 03) — for response-side log correlation (plan 04).
+			_spottyNgIssuedAt => $_spottyNgIssuedAt,
+			_spottyNgPipeId   => $_spottyNgPipeId,
+			_spottyNgPipe     => $_spottyNgPipe,
+		},
+	);
+
+	if ( $type eq 'POST' ) {
+		$http->post(sprintf(API_URL, $url), @$headers, $content);
+	}
+	elsif ( $type eq 'PUT' ) {
+		$http->put(sprintf(API_URL, $url), @$headers, $content);
+	}
+	else {
+		$http->get(sprintf(API_URL, $url), @$headers);
+	}
+}
+
 sub _call {
 	my ( $self, $url, $cb, $type, $params ) = @_;
 
+	$params ||= {};
 	my $args = {};
 	# https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
 	# one year later it now looks as if this wouldn't work any more and we'd have to go back to where we were before?!?
 	# if ($url =~ m{^browse/|^recommendations|^artists/.*/related-artists|^playlists/.*/tracks}) {
 	# 	$args->{code} = Plugins::Spotty::API::Web::_code();
 	# }
+	# NOTE: superseded by Phase 2 try-own-then-fallback dispatch (D-05); the static
+	# routing above predates the dual-auth approach. The runtime hint cache learns
+	# the same family set dynamically.
 
-	my $call = sub {
-		my ($token) = @_;
+	# If the caller injected a literal token (extremely rare path), preserve today's
+	# behavior and bypass the routing — they're explicitly asking to use *that* token.
+	if ($params->{_token}) {
+		return _callOneShot($self, $params->{_token}, $url, $cb, $type, $params);
+	}
 
-		if ( !$token || $token =~ /^-(\d+)$/ ) {
-			my $error = $1 || 'NO_ACCESS_TOKEN';
-			$error = 'NO_ACCESS_TOKEN' if $error !~ /429/;
+	# SPOTTY-NG (Phase 2, plan 05 / D-05 / D-06 / FIX-09 / FIX-10 / FIX-13) — try-own-then-fallback dispatch.
+	# Strip leading slash so URL matches the @KNOWN_DEPRECATED_FAMILIES regex anchors.
+	my $cleanUrl = $url;
+	$cleanUrl =~ s/^\///;
 
-			$cb->({
-				name => string('PLUGIN_SPOTTY_ERROR_' . $error),
-				type => 'text'
-			});
-		}
-		else {
-			$type ||= 'GET';
+	# Step 0: me/* family guard. me/* MUST stay on own — Pitfall #1 in 02-RESEARCH.md.
+	# If the URL is in the me/* family, dispatch under own flavor and SKIP the retry path.
+	my $isMeFamily = ($cleanUrl =~ $_spottyNgMeFamilyRegex);
 
-			# $uri must not have a leading slash
-			$url =~ s/^\///;
+	# Step 1: hint-cache lookup — for non-me URLs only. If the URL pattern was
+	# learned in a previous bundled-fallback success, dispatch directly to bundled.
+	my $hintFlavor = $isMeFamily ? undef : _spottyNgLookupBundledHint($cleanUrl);
+	my $startFlavor = $hintFlavor || 'own';
 
-			my ($content, $headers);
-			($url, $content, $headers) = _prepareCall($type, $url, $params);
-			push @$headers, 'Authorization' => 'Bearer ' . $token;
-
-			my $cached;
-			my $cache_key;
-			if (!$params->{_nocache} && $type eq 'GET') {
-				$cache_key = md5_hex($url . ($url =~ /^(?:me|browse)\b/ ? $token : ''));
-			}
-
-			main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");
-
-			if ( $cache_key && ($cached = $cache->get($cache_key)) ) {
-				main::INFOLOG && $log->is_info && $log->info("Returning cached data for $url");
-				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
-				$cb->($cached);
-				return;
-			}
-			elsif ( main::INFOLOG && $log->is_info ) {
-				$log->info("API call: $url");
-				main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
-			}
-
-			my $http = Plugins::Spotty::API::AsyncRequest->new(
-				\&_gotResponse,
-				\&_gotError,
-				{
-					cache => $params->{_nocache} ? 0 : 1,
-					expires => $params->{_expires} || 3600,
-					timeout => 30,
-					no_revalidate => $params->{_no_revalidate},
-					self => $self,
-					cb => $cb,
-					cache_key => $cache_key,
-				},
-			);
-
-			if ( $type eq 'POST' ) {
-				$http->post(sprintf(API_URL, $url), @$headers, $content);
-			}
-			elsif ( $type eq 'PUT' ) {
-				$http->put(sprintf(API_URL, $url), @$headers, $content);
-			}
-			else {
-				$http->get(sprintf(API_URL, $url), @$headers);
-			}
-		}
+	# Closure-wrapped retry: invoke once with $startFlavor; on 403/410 from the
+	# own-flavor result (and ONLY 403/410), re-issue under bundled flavor. Always
+	# call user $cb exactly once via the $userCbCalled guard.
+	my ($callOnce, $userCb);
+	my $userCbCalled = 0;
+	$userCb = sub {
+		return if $userCbCalled++;
+		$cb->(@_);
 	};
 
-	if ($params->{_token}) {
-		$call->($params->{_token});
-	}
-	else {
-		$self->getToken($call, $args);
-	}
+	$callOnce = sub {
+		my ($flavor, $isRetry) = @_;
+		$isRetry //= 0;
+
+		# Build a per-attempt $params copy that carries the flavor marker for the
+		# REQ-emit log line. Shallow copy preserves _pipeline ref (gotcha #6).
+		my $attemptParams = { %$params, _spottyNgFlavor => $flavor };
+
+		# Build the inner $cb that intercepts 403/410 and decides to retry or surface.
+		my $interceptCb = sub {
+			my ($result, $response) = @_;
+			my $code = $response ? eval { $response->code } : undef;
+			$code //= '';
+
+			# If we just dispatched under own flavor and got 403/410, AND the URL is
+			# NOT me/* (defense-in-depth — already gated above but cheap to re-assert),
+			# AND we haven't already retried, attempt the bundled fallback.
+			if (!$isRetry && $flavor eq 'own' && !$isMeFamily
+					&& ($code eq '403' || $code eq '410')) {
+				# D-09: probe BEFORE attempting bundled retry. If bundled refresh token
+				# is missing, surface the original 403/410 to the caller and log a
+				# structured sentinel — DO NOT trigger inline OAuth (Phase 2.5 owns that).
+				if (!Plugins::Spotty::API::Token->hasRefreshToken($self, flavor=>'bundled')) {
+					$log->error(sprintf(
+						'[SPOTTY-NG] bundled-fallback unavailable: no refresh token under flavor=bundled for user=%s url=%s',
+						($self->userId // '<unknown>'), $cleanUrl));
+					return $userCb->($result, $response);
+				}
+
+				# Cache the URL pattern hint so subsequent calls skip own-attempt.
+				_spottyNgRememberBundledHint($cleanUrl);
+
+				main::INFOLOG && $log->is_info &&
+					$log->info(sprintf('[SPOTTY-NG] retrying under bundled flavor: status=%s url=%s', $code, $cleanUrl));
+
+				# Retry under bundled flavor. Issue a fresh getToken call to fetch the
+				# bundled-flavor bearer; do NOT recurse into _call (Pitfall #2).
+				Plugins::Spotty::API::Token->get($self, sub {
+					my ($bundledToken) = @_;
+					return _callOneShot($self, $bundledToken, $url, $userCb, $type,
+					                    { %$attemptParams, _spottyNgFlavor => 'bundled' });
+				}, { %$args, flavor => 'bundled' });
+				return;
+			}
+
+			# Not a 403/410 retry-trigger (or we already retried, or me/*). Surface.
+			$userCb->($result, $response);
+		};
+
+		# Fetch the flavor-correct bearer and dispatch.
+		Plugins::Spotty::API::Token->get($self, sub {
+			my ($token) = @_;
+			return _callOneShot($self, $token, $url, $interceptCb, $type, $attemptParams);
+		}, { %$args, flavor => $flavor });
+	};
+
+	$callOnce->($startFlavor, 0);
 }
 
 sub _tokenCall {
