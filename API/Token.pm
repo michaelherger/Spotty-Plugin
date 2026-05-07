@@ -99,6 +99,36 @@ sub _getRTCacheKey {
 	                 $flavor);
 }
 
+# SPOTTY-NG (Phase 2, plan 04 follow-up / FIX-11) — pre-04 3-segment RT cache key shape.
+# Used only for the legacy-key read fallback in _lookupRefreshToken below; never written.
+sub _getRTCacheKeyLegacy {
+	my ($code, $userId) = @_;
+	return join('_', 'spotty_refresh_token',
+	                 $code || $prefs->get('iconCode'),
+	                 Slim::Utils::Unicode::utf8toLatin1Transliterate($userId));
+}
+
+# SPOTTY-NG (Phase 2, plan 04 follow-up / FIX-11) — graceful migration of pre-04 RT cache entries.
+# Looks up the new 4-segment key first; on miss, falls back to the legacy 3-segment key for
+# flavor='own' only (the pre-04 default), and on legacy hit opportunistically writes the value
+# under the new key so subsequent reads are direct. Best-effort migration: a write failure
+# does not block the read. Bundled flavor never has a legacy entry, so the fallback is skipped.
+sub _lookupRefreshToken {
+	my ($code, $userId, $flavor) = @_;
+	$flavor ||= 'own';
+	my $newKey = _getRTCacheKey($code, $userId, $flavor);
+	my $rt = $spottyCache->get($newKey) || $cache->get($newKey);
+	return $rt if defined($rt) && length($rt);
+	return undef unless $flavor eq 'own';
+	my $legacyKey = _getRTCacheKeyLegacy($code, $userId);
+	$rt = $spottyCache->get($legacyKey) || $cache->get($legacyKey);
+	if (defined($rt) && length($rt)) {
+		eval { $spottyCache->set($newKey, $rt) };
+		main::INFOLOG && $log->is_info && $log->info("Migrated legacy 3-segment RT key for user=$userId to flavor=own");
+	}
+	return $rt;
+}
+
 # SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware access-token cache writer.
 sub cacheAccessToken {
 	my ($class, $code, $userId, $token, $expiration, $flavor) = @_;
@@ -160,9 +190,9 @@ sub get {
 		$log->info("Didn't find cached token. Need to refresh. $userId");
 	}
 
-	my $rtCacheKey = _getRTCacheKey($code, $userId, $flavor);
-	# temporary fallback code: from global to app own cache
-	my $refreshToken = $spottyCache->get($rtCacheKey) || $cache->get($rtCacheKey);
+	# SPOTTY-NG (Phase 2, plan 04 follow-up) — _lookupRefreshToken handles new-key first,
+	# legacy 3-segment fallback for flavor='own', and opportunistic key migration on legacy hit.
+	my $refreshToken = _lookupRefreshToken($code, $userId, $flavor);
 
 	if (main::SCANNER) {
 		# Synchronous path — UNTOUCHED per D-16 / FIX-07. Bit-preserved from the pre-patch state:
@@ -221,8 +251,8 @@ sub hasRefreshToken {
 	if (!$code && $flavor eq 'bundled') {
 		$code = Plugins::Spotty::Plugin->initIcon();
 	}
-	my $rtCacheKey = _getRTCacheKey($code, $userId, $flavor);
-	my $rt = $spottyCache->get($rtCacheKey) || $cache->get($rtCacheKey);
+	# SPOTTY-NG (Phase 2, plan 04 follow-up) — share the legacy-fallback lookup with get().
+	my $rt = _lookupRefreshToken($code, $userId, $flavor);
 	return defined($rt) && length($rt);
 }
 
