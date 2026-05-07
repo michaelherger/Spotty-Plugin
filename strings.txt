@@ -823,7 +823,7 @@ PLUGIN_SPOTTY_CLIENT_ID_DESC
 	DE	<li>Kopieren Sie die neu erstellte Client ID, und fügen Sie sie in den Spotty Einstellungen ein.</li>
 	DE	<li>Falls Sie einen Familienaccount verwenden, oder sonst mehrere Konten in Spotty verwenden möchten, fügen Sie die entsprechenden Konten bei der neu erstellten Konfiguration unter "User Management" hinzu.</li>
 	DE	</ul>
-	EN	<div>Using a custom Client ID can help if you hit issues with rate limiting ("error 429"). In order to get your own Client ID please follow these simple steps:</div>
+	EN	<div>Using your own Spotify Developer Client ID gives you a separate API quota bucket from the bundled Spotty default — useful if you share Spotty with multiple accounts (e.g. family plans). Note: Spotify's dev-mode apps have a smaller quota and some endpoints (curated browse, recommendations, dynamic playlists) are restricted; Spotty automatically routes those calls through the bundled default Client ID. To get your own Client ID:</div>
 	EN	<ul style="list-style:initial">
 	EN	<li>Go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed.</li>
 	EN	<li>Click "Create app", follow the instructions.</li>
