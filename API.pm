@@ -1302,6 +1302,49 @@ sub _tokenCall {
 	$req->post(TOKEN_URL, @$headers, $content);
 }
 
+# URL-pattern hint cache lookup.
+# Returns 'bundled' if (a) the URL matches one of the known-deprecated families AND
+# (b) we've previously seen a successful 403/410 → bundled-fallback for that family
+# within SPOTTY_NG_BUNDLED_HINT_TTL seconds. Otherwise returns undef (caller proceeds
+# to the own-flavor first attempt). Tested AFTER the me/* guard, NEVER for me/* URLs.
+sub _spottyNgLookupBundledHint {
+	my ($url) = @_;
+	return undef unless defined $url && length $url;
+
+	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
+		if ($url =~ $rx) {
+			my $patternKey = "$rx";   # stringify the qr{} for use in cache key
+			return 'bundled' if $cache->get(SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX . $patternKey);
+			return undef;     # known family but not yet learned at runtime
+		}
+	}
+	return undef;
+}
+
+# URL-pattern hint cache write.
+# Called after a 403/410 → bundled-fallback succeeds. Caches the matching pattern
+# key for SPOTTY_NG_BUNDLED_HINT_TTL seconds (24h) so subsequent matching URLs hit
+# bundled directly. If the URL doesn't match any known family, log a warn line —
+# Spotify likely deprecated a NEW endpoint family and the regex list needs updating.
+sub _spottyNgRememberBundledHint {
+	my ($url) = @_;
+	return unless defined $url && length $url;
+
+	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
+		if ($url =~ $rx) {
+			my $patternKey = "$rx";
+			$cache->set(SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX . $patternKey,
+			            1, SPOTTY_NG_BUNDLED_HINT_TTL);
+			main::INFOLOG && $log->is_info &&
+				$log->info(sprintf('cached bundled-hint pattern=%s ttl=%ds (matched url=%s)',
+					$patternKey, SPOTTY_NG_BUNDLED_HINT_TTL, $url));
+			return;
+		}
+	}
+	$log->warn(sprintf('bundled-fallback succeeded for url=%s — no matching pattern key in @KNOWN_DEPRECATED_FAMILIES; hint NOT cached. Spotify may have deprecated a new endpoint family — review regex list.', $url));
+}
+
+
 sub _prepareCall {
 	my ($type, $url, $params) = @_;
 
