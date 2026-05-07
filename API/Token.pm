@@ -10,6 +10,7 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
 use Plugins::Spotty::API::Cache;
+use Plugins::Spotty::Plugin;
 
 # override the scope list hard-coded in to the spotty helper application
 use constant SPOTIFY_SCOPE => join(',', qw(
@@ -67,33 +68,51 @@ sub _gotTokenInfo {
 }
 
 my $startupTime = time();
+# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware access-token cache key.
+# Backward-compat: callers omitting the third arg get $flavor='own', producing the
+# same key shape as before plus an `_own` suffix; existing cached entries (no suffix)
+# fall through to a refresh on first read after upgrade — graceful migration.
 sub _getATCacheKey {
-	my ($code, $userId, $tokenId) = @_;
-	return join('_', 'spotty_access_token', $startupTime, $code || $prefs->get('iconCode'), Slim::Utils::Unicode::utf8toLatin1Transliterate($userId));
+	my ($code, $userId, $flavor) = @_;
+	$flavor ||= 'own';
+	return join('_', 'spotty_access_token', $startupTime,
+	                 $code || $prefs->get('iconCode'),
+	                 Slim::Utils::Unicode::utf8toLatin1Transliterate($userId),
+	                 $flavor);
 }
 
+# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware refresh-token cache key.
+# Same backward-compat pattern as _getATCacheKey above.
 sub _getRTCacheKey {
-	my ($code, $userId, $tokenId) = @_;
-	return join('_', 'spotty_refresh_token', $code || $prefs->get('iconCode'), Slim::Utils::Unicode::utf8toLatin1Transliterate($userId));
+	my ($code, $userId, $flavor) = @_;
+	$flavor ||= 'own';
+	return join('_', 'spotty_refresh_token',
+	                 $code || $prefs->get('iconCode'),
+	                 Slim::Utils::Unicode::utf8toLatin1Transliterate($userId),
+	                 $flavor);
 }
 
+# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware access-token cache writer.
 sub cacheAccessToken {
-	my ($class, $code, $userId, $token, $expiration) = @_;
+	my ($class, $code, $userId, $token, $expiration, $flavor) = @_;
+	$flavor ||= 'own';
 	$expiration ||= DEFAULT_EXPIRATION;
 
-	my $cacheKey = _getATCacheKey($code, $userId);
+	my $cacheKey = _getATCacheKey($code, $userId, $flavor);
 
 	$expiration = $expiration > 600 ? ($expiration - 300) : $expiration;
 
-	main::INFOLOG && $log->is_info && $log->info("Caching access token for $userId for $expiration seconds.");
+	main::INFOLOG && $log->is_info && $log->info("Caching access token for $userId (flavor=$flavor) for $expiration seconds.");
 
 	$cache->set($cacheKey, $token, $expiration);
 }
 
+# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware refresh-token cache writer.
 sub cacheRefreshToken {
-	my ($class, $code, $userId, $token) = @_;
-	main::INFOLOG && $log->is_info && $log->info("Caching refresh token for $userId.");
-	$spottyCache->set(_getRTCacheKey($code, $userId), $token) if $token;
+	my ($class, $code, $userId, $token, $flavor) = @_;
+	$flavor ||= 'own';
+	main::INFOLOG && $log->is_info && $log->info("Caching refresh token for $userId (flavor=$flavor).");
+	$spottyCache->set(_getRTCacheKey($code, $userId, $flavor), $token) if $token;
 }
 
 # singleton shortcut to the main class
