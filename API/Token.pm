@@ -123,8 +123,26 @@ sub _lookupRefreshToken {
 	my $legacyKey = _getRTCacheKeyLegacy($code, $userId);
 	$rt = $spottyCache->get($legacyKey) || $cache->get($legacyKey);
 	if (defined($rt) && length($rt)) {
+		# SPOTTY-NG (Phase 2.6, plan 03 / HARDEN-10 / closes 02-REVIEW.md WR-07) — opportunistically
+		# migrate the value forward AND remove the legacy entry. Pre-fix code only wrote forward
+		# and left the legacy key indefinitely; on a future Spotify RT rotation, _gotTokenInfo
+		# writes the new RT only to the 4-segment key, leaving the legacy key holding a stale
+		# (now-revoked-by-Spotify) RT. A user rolling back to pre-Phase-2 code would read the
+		# legacy entry, get a 401 from Spotify, and be forced to re-authorize. Removing the
+		# legacy key after migration eliminates that rollback hazard and tidies up bundled-OAuth
+		# side-trip flush sequences.
+		#
+		# Implementation note: Plugins::Spotty::API::Cache (the namespaced wrapper bound to
+		# $spottyCache) does not expose ->remove; its internal Slim::Utils::Cache instance does
+		# (proxied through the standard `remove` method). Reach through the documented
+		# `cache` slot of the wrapper, plus the module-level $cache (the default LMS namespace)
+		# in case a legacy entry was historically read from there too. Both removes are
+		# best-effort under eval — a remove failure does not block the read.
 		eval { $spottyCache->set($newKey, $rt) };
-		main::INFOLOG && $log->is_info && $log->info("Migrated legacy 3-segment RT key for user=$userId to flavor=own");
+		eval { $spottyCache->{cache}->remove($legacyKey) if $spottyCache->{cache} };
+		eval { $cache->remove($legacyKey) };
+		main::INFOLOG && $log->is_info &&
+			$log->info("Migrated legacy 3-segment RT key for user=$userId to flavor=own (legacy key removed)");
 	}
 	return $rt;
 }
