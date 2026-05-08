@@ -275,6 +275,20 @@ sub oauthCallback {
 							Plugins::Spotty::API::logSensitive($cmd);
 
 							`$cmd 2>&1`;
+
+							# SPOTTY-NG (Phase 2.5 / D-2.5-02(2) / SETUP-07) — post-OAuth probe. When this
+							# completion was an OWN-flavor OAuth (the user just configured their own Dev-ID
+							# for the first time, or re-OAuthed under their own Dev-ID), check whether they
+							# have a bundled-flavor RT cached. If not, set the needs-bundled-auth flag so the
+							# next Settings render surfaces the "Authorize browsing" link without requiring
+							# the user to first hit a 403/410 on a deprecated browse endpoint.
+							# Skip when this completion was itself a bundled OAuth — the flag was already
+							# cleared above and the user is fine.
+							if ($oauthFlavor eq 'own' && $userId
+									&& !Plugins::Spotty::API::Token->hasRefreshToken(
+											$api, flavor => 'bundled', userId => $userId)) {
+								Plugins::Spotty::API::_spottyNgRememberNeedsBundledAuth($userId);
+							}
 						}
 
 						$renderCb->($error);
