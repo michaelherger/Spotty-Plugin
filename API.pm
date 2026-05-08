@@ -1325,23 +1325,31 @@ sub _call {
 
 	$params ||= {};
 
-	# SPOTTY-NG (Phase 2.6, plan 02 / HARDEN-01 / closes 02-REVIEW.md CR-01) — restore the
-	# `spotty_rate_limit_exceeded` cooldown gate at the head of _call. Pre-Phase-2 _call
-	# ended with `$self->getToken(...)`, and getToken (still at line ~135) checks this flag
-	# and short-circuits with `$cb->(-429)`. Phase 2's plan-05 routed token resolution
-	# through `Plugins::Spotty::API::Token->get(...)` directly, bypassing the gate. This
-	# gate restores the pre-Phase-2 reactive 429 contract: every paged me/* and browse
-	# call honors a captured cooldown without racing for another 429.
+	# SPOTTY-NG (Phase 3, plan 01 / POLISH-01 / closes 02.6-REVIEW.md WR-01) — `_call`
+	# cooldown gate: blocks ALL `_call` entries during cooldown, including the
+	# `_token`-injected literal-token bypass below and `me/*` calls (which previously
+	# could reuse a cached access token without going through token resolution). This
+	# is BROADER than the pre-Phase-2 `getToken`-only gate — intentional, for
+	# conservative 429 backoff: every observed 429 from Spotify is a clear signal
+	# from the server that we should stop sending traffic for the Retry-After window,
+	# even traffic that would technically reuse pre-cached state. The flag setter in
+	# `error429` / `_gotResponse` is unchanged from Phase 2.
 	#
-	# Per D2.6-04: gate is placed at the head of _call (before any flavor decision); per
-	# D2.6-05: ordering — gate fires before hint-cache lookup so we don't waste a
+	# Originally landed in Phase 2.6 (HARDEN-01 / closes 02-REVIEW.md CR-01); the prior
+	# comment described this gate as "restoring the pre-Phase-2 reactive 429 contract"
+	# which understated the scope (pre-Phase-2 cooldown only fired during AT/RT
+	# resolve, not during cached-AT reuse). See 02.6-REVIEW.md WR-01 for the rationale
+	# of widening the documentation to match the implementation.
+	#
+	# Per D2.6-04: gate is placed at the head of _call (before any flavor decision);
+	# per D2.6-05: ordering — gate fires before hint-cache lookup so we don't waste a
 	# `$cache->get` on a known-rate-limited account.
 	#
-	# `_callOneShot` already recognises a leading-`-(\d+)` $token as a sentinel (see its
-	# own body, line ~1226-1234) and converts `-429` to the user-facing
-	# PLUGIN_SPOTTY_ERROR_429 reply via `string()` lookup — same path that
-	# `tracks()` (the only existing `getToken` caller post-Phase-2) takes when it sees
-	# the same `-429` value out of `getToken`. So routing the cooldown response through
+	# `_callOneShot` already recognises a leading-`-(\d+)` $token as a sentinel (see
+	# its own body, line ~1232-1242) and converts `-429` to the user-facing
+	# PLUGIN_SPOTTY_ERROR_429 reply via `string()` lookup — same path that `tracks()`
+	# (the only existing `getToken` caller post-Phase-2) takes when it sees the same
+	# `-429` value out of `getToken`. Routing the cooldown response through
 	# `_callOneShot` here keeps the user-facing error symmetrical with the pre-Phase-2
 	# behavior without re-implementing the lookup.
 	if ($cache->get('spotty_rate_limit_exceeded')) {
@@ -1553,7 +1561,7 @@ sub _spottyNgRememberBundledHint {
 			return;
 		}
 	}
-	$log->warn(sprintf('bundled-fallback succeeded for url=%s — no matching pattern key in @KNOWN_DEPRECATED_FAMILIES; hint NOT cached. Spotify may have deprecated a new endpoint family — review regex list.', $url));
+	$log->warn(sprintf('bundled-fallback succeeded for url=%s — no matching pattern; hint NOT cached. Either the bundled retry was triggered by a non-deprecation 403/410 (e.g. permission), or Spotify deprecated a new endpoint family — review regex list.', $url));
 }
 
 
