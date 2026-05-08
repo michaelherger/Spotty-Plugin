@@ -1356,15 +1356,6 @@ sub _call {
 		return _callOneShot($self, '-429', $url, $cb, $type, $params);
 	}
 
-	my $args = {};
-	# https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
-	# one year later it now looks as if this wouldn't work any more and we'd have to go back to where we were before?!?
-	# if ($url =~ m{^browse/|^recommendations|^artists/.*/related-artists|^playlists/.*/tracks}) {
-	# 	$args->{code} = Plugins::Spotty::API::Web::_code();
-	# }
-	# NOTE: superseded by Phase 2 try-own-then-fallback dispatch (D-05); the static
-	# routing above predates the dual-auth approach. The runtime hint cache learns
-	# the same family set dynamically.
 
 	# If the caller injected a literal token (extremely rare path), preserve today's
 	# behavior and bypass the routing — they're explicitly asking to use *that* token.
@@ -1476,7 +1467,7 @@ sub _call {
 					my ($bundledToken) = @_;
 					return _callOneShot($self, $bundledToken, $url, $bundledCb, $type,
 					                    { %$attemptParams, _spottyNgFlavor => 'bundled' });
-				}, { %$args, flavor => 'bundled' });
+				}, { flavor => 'bundled' });
 				return;
 			}
 
@@ -1488,7 +1479,7 @@ sub _call {
 		Plugins::Spotty::API::Token->get($self, sub {
 			my ($token) = @_;
 			return _callOneShot($self, $token, $url, $interceptCb, $type, $attemptParams);
-		}, { %$args, flavor => $flavor });
+		}, { flavor => $flavor });
 	};
 
 	$callOnce->($startFlavor, 0);
