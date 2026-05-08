@@ -16,12 +16,17 @@
 	[% END; END %]
 
 	[% IF credentials; WRAPPER setting desc="" %]
+		[%# SPOTTY-NG (Phase 2.5 / D-2.5-03 / SETUP-03) — summary when an account needs bundled-default OAuth %]
+		[% IF needsBundledAuth.keys.size %]
+			<div style="color: orange">[% "PLUGIN_SPOTTY_BUNDLED_AUTH_NEEDED_SUMMARY" | string %]</div>
+		[% END %]
 		<table>
 			<tr>
 				<th>[% "PLUGIN_SPOTTY_ACCOUNT" | string %][% "COLON" | string %]</th>
 				<th>[% "PLUGIN_SPOTTY_IMPORT_LIBRARY"| string %][% "COLON" | string %]</th>
 				<th>[% "PLUGIN_SPOTTY_PRODUCT"| string %][% "COLON" | string %]</th>
 				<th></th>
+				[% IF needsBundledAuth.keys.size %]<th></th>[% END %]
 			</tr>
 		[% FOREACH creds = credentials %]
 			[% accountName = creds.keys.0; userId = creds.values.0 %]
@@ -38,6 +43,13 @@
 				<td style="vertical-align: middle">
 					<input name="delete_[% userId %]" type="submit" value="[% "DELETE" | string %]" class="stdclick" />
 				</td>
+				[% IF needsBundledAuth.keys.size %]
+					<td style="vertical-align: middle">
+						[% IF needsBundledAuth.${userId} %]
+							<a href="/plugins/Spotty/settings/redirect?flavor=bundled&amp;forUser=[% userId | uri %]">[% "PLUGIN_SPOTTY_BUNDLED_AUTH_LINK_LABEL" | string %]</a>
+						[% END %]
+					</td>
+				[% END %]
 			</tr>
 		[% END %]
 		</table>
