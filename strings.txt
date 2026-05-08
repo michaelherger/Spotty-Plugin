@@ -1192,3 +1192,23 @@ PLUGIN_SPOTTY_PLAYLIST_TRACKS
 	FR	Morceaux de la liste de lecture
 	HU	Lejátszási lista zeneszámok
 	NL	Afspeellijst Nummers
+
+# SPOTTY-NG (Phase 2.5 / D-2.5-10) — needs-bundled-default-OAuth UI in basic.html.
+# CS/DA/FR/HU/NL translations are best-effort; pending upstream review per HARDEN-04 pattern.
+PLUGIN_SPOTTY_BUNDLED_AUTH_NEEDED_SUMMARY
+	CS	Některé účty vyžadují další autorizaci pro plné zpřístupnění nabídky procházení (Mix týdne, Release Radar, Discover Weekly atd.).
+	DA	Nogle konti kræver yderligere godkendelse for at aktivere den fulde browsermenuen (Ugens mix, Release Radar, Discover Weekly osv.).
+	DE	Einige Konten benötigen eine zusätzliche Autorisierung, um das vollständige Stöbern-Menü zu aktivieren (Mix der Woche, Release Radar, Discover Weekly usw.).
+	EN	Some accounts need additional authorization to enable the full browse menu (Mix of the Week, Release Radar, Discover Weekly etc.).
+	FR	Certains comptes nécessitent une autorisation supplémentaire pour activer le menu de navigation complet (Mix de la semaine, Release Radar, Discover Weekly, etc.).
+	HU	Néhány fiókhoz további engedélyezés szükséges a teljes böngészési menü aktiválásához (Heti mix, Release Radar, Discover Weekly stb.).
+	NL	Sommige accounts hebben aanvullende autorisatie nodig om het volledige browsmenu te activeren (Mix van de week, Release Radar, Discover Weekly enz.).
+
+PLUGIN_SPOTTY_BUNDLED_AUTH_LINK_LABEL
+	CS	Autorizovat procházení
+	DA	Autoriser browsing
+	DE	Stöbern autorisieren
+	EN	Authorize browsing
+	FR	Autoriser la navigation
+	HU	Böngészés engedélyezése
+	NL	Browsen autoriseren
