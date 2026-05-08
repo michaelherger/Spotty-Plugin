@@ -4,7 +4,7 @@ use strict;
 
 use Digest::SHA;
 use JSON::XS::VersionOneAndTwo;
-use MIME::Base64 qw(encode_base64);
+use MIME::Base64 qw(encode_base64 decode_base64);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
