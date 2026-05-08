@@ -1230,9 +1230,23 @@ sub _getTimestamp {
 sub _callOneShot {
 	my ($self, $token, $url, $cb, $type, $params) = @_;
 
-	if ( !$token || $token =~ /^-(\d+)$/ ) {
-		my $error = $1 || 'NO_ACCESS_TOKEN';
+	# SPOTTY-NG (Phase 3, plan 01 / POLISH-03 / closes 02.6-REVIEW.md WR-03) — restructure
+	# the `$1` capture so it's only read inside the branch where the regex actually
+	# matched. Pre-fix code used `if (!$token || $token =~ /^-(\d+)$/) { my $error = $1 || ... }`
+	# which relies on Perl's dynamic-scope `$1` carrying whatever the previous regex match
+	# in the same scope last captured when the LHS short-circuit fired (i.e. when $token was
+	# empty/undef, the regex on the RHS never ran). Practically safe today (no other regex
+	# in _callOneShot's frame), but a future refactor adding any regex match earlier would
+	# silently change the value of $1. Make the capture intent explicit.
+	my $error;
+	if (!$token) {
+		$error = 'NO_ACCESS_TOKEN';
+	}
+	elsif ($token =~ /^-(\d+)$/) {
+		$error = $1;
 		$error = 'NO_ACCESS_TOKEN' if $error !~ /429/;
+	}
+	if ($error) {
 		$cb->({
 			name => string('PLUGIN_SPOTTY_ERROR_' . $error),
 			type => 'text'
