@@ -1448,10 +1448,15 @@ sub _call {
 			# the top of this file. A user-owned playlist 404 (e.g. a deleted playlist)
 			# NO LONGER triggers a bundled retry, eliminating the contradiction the
 			# comment had with the pre-2.6 broad regex.
+			# SPOTTY-NG (Phase 3, plan 01 / POLISH-05 / closes 02.6-REVIEW.md IN-02) —
+			# capture the matched regex object so the success-path `_spottyNgRememberBundledHint`
+			# call below doesn't re-walk @KNOWN_DEPRECATED_FAMILIES. Cosmetic; impact is
+			# microscopic (the inner `for` loop iterates 3-9 entries on an HTTP-retry path).
 			my $is404Deprecated = 0;
+			my $matchedRx;
 			if ($code eq '404' && !$isMeFamily) {
 				for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
-					if ($cleanUrl =~ $rx) { $is404Deprecated = 1; last; }
+					if ($cleanUrl =~ $rx) { $is404Deprecated = 1; $matchedRx = $rx; last; }
 				}
 			}
 			if (!$isRetry && $flavor eq 'own' && !$isMeFamily
@@ -1487,8 +1492,12 @@ sub _call {
 					my $bundledCode = $bundledResponse ? eval { $bundledResponse->code } : undef;
 					if (defined $bundledCode && $bundledCode =~ /^2\d\d$/) {
 						# Bundled retry succeeded — cache the URL pattern hint so subsequent calls
-						# skip own-attempt and go straight to bundled.
-						_spottyNgRememberBundledHint($cleanUrl);
+						# skip own-attempt and go straight to bundled. POLISH-05: pass the already-
+						# matched regex (captured in the $is404Deprecated iteration above) so the
+						# helper can skip its own iteration. $matchedRx may be undef on the
+						# 403/410 path (the iteration is gated on $code eq '404'); the helper
+						# falls back to its own iteration when $matchedRx is undef.
+						_spottyNgRememberBundledHint($cleanUrl, $matchedRx);
 					}
 					$userCb->($bundledResult, $bundledResponse);
 				};
@@ -1565,14 +1574,31 @@ sub _spottyNgLookupBundledHint {
 }
 
 # URL-pattern hint cache write.
-# Called after a 403/410 → bundled-fallback succeeds. Caches the matching pattern
+# Called after a 403/410/404 → bundled-fallback succeeds. Caches the matching pattern
 # key for SPOTTY_NG_BUNDLED_HINT_TTL seconds (24h) so subsequent matching URLs hit
-# bundled directly. If the URL doesn't match any known family, log a warn line —
-# Spotify likely deprecated a NEW endpoint family and the regex list needs updating.
+# bundled directly. If the URL doesn't match any known family, log a warn line.
+#
+# SPOTTY-NG (Phase 3, plan 01 / POLISH-05 / closes 02.6-REVIEW.md IN-02) — accepts an optional
+# pre-matched regex object from the caller's closure scope. When provided, the iteration over
+# @KNOWN_DEPRECATED_FAMILIES is skipped; the helper writes the hint key derived from $matchedRx
+# directly. When undef (e.g. the caller didn't capture it, like the 403/410 trigger path), the
+# helper falls back to its own iteration. Backward-compatible — the 1-arg call shape still works.
 sub _spottyNgRememberBundledHint {
-	my ($url) = @_;
+	my ($url, $matchedRx) = @_;
 	return unless defined $url && length $url;
 
+	# Fast path: caller already matched a regex; trust it and skip the iteration.
+	if (defined $matchedRx) {
+		my $patternKey = "$matchedRx";
+		$cache->set(SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX . $patternKey,
+		            1, SPOTTY_NG_BUNDLED_HINT_TTL);
+		main::INFOLOG && $log->is_info &&
+			$log->info(sprintf('[SPOTTY-NG] cached bundled-hint pattern=%s ttl=%ds (matched url=%s, fast-path)',
+				$patternKey, SPOTTY_NG_BUNDLED_HINT_TTL, $url));
+		return;
+	}
+
+	# Slow path: caller didn't pre-match; iterate ourselves.
 	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
 		if ($url =~ $rx) {
 			my $patternKey = "$rx";
