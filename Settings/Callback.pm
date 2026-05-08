@@ -220,8 +220,27 @@ sub oauthCallback {
 
 							$log->warn(sprintf("Authenticated Spotify user: %s (%s, %s)", $userId, $meResult->{display_name} || 'no display name', $meResult->{product} || 'no product info'));
 
-							Plugins::Spotty::API::Token->cacheAccessToken($defaultCode, $userId, $accessToken, $result->{expires_in});
-							Plugins::Spotty::API::Token->cacheRefreshToken($defaultCode, $userId, $refreshToken) if $refreshToken;
+						# Re-read iconCode at OAuth completion so the flavor decision uses
+							# the live pref value, not a captured-at-start snapshot.
+							my $currentCode = $prefs->get('iconCode');
+
+							# Flush the bundled-hint cache. A successful OAuth completion means the
+							# routing identity has just changed. Routing decisions previously cached
+							# in the bundled-hint cache may no longer be correct under the new identity.
+							Plugins::Spotty::API::_flushBundledHints();
+
+							# Clear the needs-bundled-auth flag on successful OAuth completion.
+							# The render-time probe in Settings.pm is authoritative; clearing the flag
+							# here avoids a brief flicker of stale prompt on the next Settings render.
+							$cache->remove(
+								Plugins::Spotty::API::NEEDS_BUNDLED_AUTH_KEY_PREFIX() . $userId
+							) if $userId;
+
+							# Flavor-aware OAuth cache write. If $currentCode equals the bundled-default
+							# iconCode, this is a bundled OAuth; otherwise it is an own-Dev-ID OAuth.
+							my $oauthFlavor = ($currentCode eq Plugins::Spotty::Plugin->initIcon()) ? 'bundled' : 'own';
+							Plugins::Spotty::API::Token->cacheAccessToken($currentCode, $userId, $accessToken, $result->{expires_in}, $oauthFlavor);
+							Plugins::Spotty::API::Token->cacheRefreshToken($currentCode, $userId, $refreshToken, $oauthFlavor) if $refreshToken;
 
 							# TODO - async token refresh, timeout
 							my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s" %s',
