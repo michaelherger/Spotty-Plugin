@@ -1178,14 +1178,21 @@ sub _call {
 
 	$params ||= {};
 
-	# Restore the spotty_rate_limit_exceeded cooldown gate at the head of _call.
-	# Pre-Phase-2 _call ended with $self->getToken(...), and getToken checks this flag
-	# and short-circuits with $cb->(-429). The try-own-then-fallback rewrite routed
-	# token resolution through Plugins::Spotty::API::Token->get directly, bypassing
-	# the gate. This restores the reactive 429 contract: every paged me/* and browse
-	# call honors a captured cooldown without racing for another 429.
-	# _callOneShot recognises -429 as a sentinel and produces the same
-	# PLUGIN_SPOTTY_ERROR_429 user-facing reply that tracks() takes from getToken.
+	# Cooldown gate at the head of _call: blocks ALL _call entries during the
+	# rate-limit cooldown window, including the _token-injected literal-token bypass
+	# and me/* calls that would reuse a cached access token. This is BROADER than
+	# the pre-Phase-2 getToken-only gate — intentional for conservative 429 backoff:
+	# every observed 429 from Spotify signals that we should stop sending traffic for
+	# the Retry-After window, even traffic that would technically reuse pre-cached
+	# state. The flag is set by error429 / _gotResponse; the flag setter is unchanged.
+	#
+	# Gate is placed at the head of _call (before any flavor decision) so it fires
+	# before the hint-cache lookup and avoids a wasted $cache->get.
+	#
+	# _callOneShot recognises a leading -(\d+) $token as a sentinel and converts -429
+	# to the user-facing PLUGIN_SPOTTY_ERROR_429 reply via string() lookup — same path
+	# that tracks() takes from getToken. Routing through _callOneShot keeps the
+	# user-facing error symmetrical with the pre-Phase-2 behavior.
 	if ($cache->get('spotty_rate_limit_exceeded')) {
 		return _callOneShot($self, '-429', $url, $cb, $type, $params);
 	}
