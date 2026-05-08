@@ -89,6 +89,13 @@ my @KNOWN_DEPRECATED_FAMILIES = (
 use constant SPOTTY_NG_BUNDLED_HINT_TTL => 86400;
 use constant SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX => 'spotty_ng_bundled_hint_';
 
+# Sentinel cache flag for "this user needs bundled-default OAuth".
+# 7d TTL = long enough to span an evening-after-morning gap, short enough that any flag we
+# miss-clearing self-heals within a week. Authoritative source is the render-time probe in
+# Settings.pm; this flag is belt-and-suspenders, not load-bearing.
+use constant SPOTTY_NG_NEEDS_BUNDLED_AUTH_TTL        => 7 * 24 * 3600;
+use constant SPOTTY_NG_NEEDS_BUNDLED_AUTH_KEY_PREFIX => 'spotty_ng_needs_bundled_auth_';
+
 # me/* family guard for the routing decision.
 # Matches v1/me, v1/me/*, v1/me?... — i.e. the userId-scoped endpoint family that MUST
 # stay on own flavor (Liked Songs, Saved Albums, etc.). Tested AT THE TOP of _call's
@@ -1456,6 +1463,9 @@ sub _call {
 					$log->error(sprintf(
 						'[SPOTTY-NG] bundled-fallback unavailable: no refresh token under flavor=bundled for user=%s url=%s',
 						($self->userId // '<unknown>'), $cleanUrl));
+					# SPOTTY-NG (Phase 2.5 / D-2.5-02(1)) — flag this user as needing bundled-default OAuth
+					# so the next Settings render surfaces an "Authorize browsing" link in the credentials table.
+					_spottyNgRememberNeedsBundledAuth($self->userId) if $self->userId;
 					return $userCb->($result, $response);
 				}
 
@@ -1575,6 +1585,20 @@ sub _spottyNgRememberBundledHint {
 		}
 	}
 	$log->warn(sprintf('bundled-fallback succeeded for url=%s — no matching pattern; hint NOT cached. Either the bundled retry was triggered by a non-deprecation 403/410 (e.g. permission), or Spotify deprecated a new endpoint family — review regex list.', $url));
+}
+
+# Flag a user as needing bundled-default OAuth. Called when bundled retry would have been
+# attempted but no bundled refresh token is cached, and after own-flavor OAuth completes
+# but bundled RT is still absent. Best-effort signal — the render-time probe in Settings.pm
+# is authoritative. Self-clears on successful bundled-OAuth via $cache->remove.
+sub _spottyNgRememberNeedsBundledAuth {
+	my ($userId) = @_;
+	return unless defined $userId && length $userId;
+	my $key = SPOTTY_NG_NEEDS_BUNDLED_AUTH_KEY_PREFIX . $userId;
+	$cache->set($key, 1, SPOTTY_NG_NEEDS_BUNDLED_AUTH_TTL);
+	main::INFOLOG && $log->is_info &&
+		$log->info(sprintf('flagged user=%s as needing bundled-default OAuth (ttl=%ds)',
+			$userId, SPOTTY_NG_NEEDS_BUNDLED_AUTH_TTL));
 }
 
 # Flush all bundled-hint cache entries. Called at OAuth completion so any successful
