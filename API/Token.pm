@@ -175,6 +175,19 @@ sub get {
 	my ($class, $api, $cb, $args) = @_;
 	$args ||= {};
 
+	# SPOTTY-NG (Phase 3, plan 02 / POLISH-02 / closes 02.6-REVIEW.md WR-02) — defense-in-depth
+	# cooldown gate. Mirrors the API.pm::getToken pattern at lines 140-148. Pre-Phase-2,
+	# Token::get was only invoked through getToken (which gates on cooldown); Phase 2's
+	# plan-05 made Token::get directly callable from _call's closure (and from $bundledCb's
+	# bundled-flavor token resolve), so the gate must apply at this level too. The check
+	# must respect the `$cb`-may-be-undef contract — same as the existing cached-AT
+	# early-return at lines 201-206 (`return $cb ? $cb->($token) : $token;`). Returns the
+	# `-429` sentinel that all callers of Token::get (or its API.pm wrappers) already
+	# recognise via _callOneShot's `^-(\d+)$` test (API.pm:1235-1242).
+	if ($cache->get('spotty_rate_limit_exceeded')) {
+		return $cb ? $cb->(-429) : -429;
+	}
+
 	# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor extraction and bundled-code resolution.
 	my $flavor = $args->{flavor} || 'own';
 
