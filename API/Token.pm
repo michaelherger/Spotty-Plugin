@@ -139,7 +139,26 @@ sub _lookupRefreshToken {
 		# in case a legacy entry was historically read from there too. Both removes are
 		# best-effort under eval — a remove failure does not block the read.
 		eval { $spottyCache->set($newKey, $rt) };
-		eval { $spottyCache->{cache}->remove($legacyKey) if $spottyCache->{cache} };
+		# SPOTTY-NG (Phase 3, plan 02 / POLISH-09 / closes 02.6-REVIEW.md IN-04) — soft fix
+		# for the encapsulation breach. Pre-fix code reaches into `$spottyCache->{cache}` to
+		# call `->remove`, which works today (Plugins::Spotty::API::Cache exposes the slot)
+		# but would silently regress to a no-op if a future refactor renames or hides the
+		# slot. The clean fix is to add a `remove` method to Plugins::Spotty::API::Cache and
+		# proxy through it — but that expands the file scope to Spotty-Plugin/API/Cache.pm,
+		# which D3-13 explicitly forbids in Phase 3. Instead, surface a WARN log when the
+		# slot is unreachable so a future regression doesn't go silent. (Eval-wrap stays so
+		# any other failure mode — e.g. a Slim::Utils::Cache implementation that throws on
+		# remove of a non-existent key — also doesn't kill the migration write.)
+		if (!defined $spottyCache->{cache}) {
+			$log->warn('[SPOTTY-NG] _lookupRefreshToken: cannot remove legacy RT key — '
+			          . 'Plugins::Spotty::API::Cache internal `cache` slot is undef. Encapsulation '
+			          . 'changed in a way that hides the slot; legacy keys will accumulate. '
+			          . 'See 02.6-REVIEW.md IN-04 / 03-PATTERNS.md POLISH-09 for the clean-fix '
+			          . 'option (add a public ->remove method to Plugins::Spotty::API::Cache).');
+		}
+		else {
+			eval { $spottyCache->{cache}->remove($legacyKey) };
+		}
 		eval { $cache->remove($legacyKey) };
 		main::INFOLOG && $log->is_info &&
 			$log->info("Migrated legacy 3-segment RT key for user=$userId to flavor=own (legacy key removed)");
