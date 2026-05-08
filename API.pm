@@ -1577,6 +1577,26 @@ sub _spottyNgRememberBundledHint {
 	$log->warn(sprintf('bundled-fallback succeeded for url=%s — no matching pattern; hint NOT cached. Either the bundled retry was triggered by a non-deprecation 403/410 (e.g. permission), or Spotify deprecated a new endpoint family — review regex list.', $url));
 }
 
+# Flush all bundled-hint cache entries. Called at OAuth completion so any successful
+# re-OAuth (own or bundled) invalidates routing decisions made under the previous identity.
+# Slim::Utils::Cache does NOT expose a prefix-iterate method; we iterate
+# @KNOWN_DEPRECATED_FAMILIES (same list the writer uses) to derive keys — guaranteeing
+# no orphaned hint rows. Best-effort: remove() returns undef on missing key without throwing.
+sub _spottyNgFlushBundledHints {
+	my $removed = 0;
+	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
+		my $patternKey = "$rx";
+		my $cacheKey = SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX . $patternKey;
+		if (defined $cache->get($cacheKey)) {
+			$cache->remove($cacheKey);
+			$removed++;
+		}
+	}
+	main::INFOLOG && $log->is_info &&
+		$log->info(sprintf('flushed %d bundled-hint cache row(s) (called from OAuth completion)', $removed));
+	return $removed;
+}
+
 
 sub _prepareCall {
 	my ($type, $url, $params) = @_;
