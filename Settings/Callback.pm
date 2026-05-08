@@ -174,6 +174,18 @@ sub oauthCallback {
 
 	my $code = $params->{code};
 
+	# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05) — decode the OAuth state param to recover
+	# the flavor query-param oauthRedirect encoded into state JSON at lines 121-126. Spotify
+	# echoes `state` verbatim per OAuth 2.0 spec; pre-Phase-2.5 callbacks (no flavor in state)
+	# leave $params->{flavor} undef and the downstream flavor decision falls through to
+	# HARDEN-13's iconCode-vs-initIcon test (backward-compat preserved).
+	if ($params->{state}) {
+		my $decodedState = eval { from_json(decode_base64($params->{state})) };
+		if (ref $decodedState eq 'HASH' && defined $decodedState->{flavor}) {
+			$params->{flavor} = $decodedState->{flavor};
+		}
+	}
+
 	my $renderCb = sub {
 		my $error = shift;
 
