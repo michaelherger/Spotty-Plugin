@@ -74,15 +74,33 @@ sub _gotTokenInfo {
 	return $accessToken;
 }
 
-my $startupTime = time();
 # SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware access-token cache key.
 # Backward-compat: callers omitting the third arg get $flavor='own', producing the
 # same key shape as before plus an `_own` suffix; existing cached entries (no suffix)
 # fall through to a refresh on first read after upgrade — graceful migration.
+#
+# SPOTTY-NG (Phase 3, plan 02 / POLISH-12 / closes 02-REVIEW.md IN-05 / promoted from
+# .planning/todos/pending/HARDEN-DEFER-IN-05.md) — drop the per-process startup-time
+# segment from the AT cache key shape. The AT TTL (`expires_in - 300` seconds, set in
+# cacheAccessToken below) already provides correct expiration; per-startup separation
+# was belt-and-suspenders that costs disk space (orphaned `spotty_access_token_*` rows
+# accumulate across LMS restarts until their natural ~55min TTL expires). Dropping it
+# makes the key shape:
+#   spotty_access_token_<code>_<userId>_<flavor>
+# instead of:
+#   spotty_access_token_<startup_epoch>_<code>_<userId>_<flavor>
+#
+# Migration semantics on first read after upgrade:
+# - Old keys (with startup-time segment) become unreachable but are NOT removed proactively;
+#   they expire naturally via TTL (≤ 55min) — same graceful-miss pattern HARDEN-10
+#   used for legacy 3-segment RT keys.
+# - First Token::get call after upgrade will look up the new key shape, miss, and
+#   trigger a normal AT refresh against Spotify. This is identical to the cold-cache
+#   first-read behavior on every LMS startup — no user-visible change.
 sub _getATCacheKey {
 	my ($code, $userId, $flavor) = @_;
 	$flavor ||= 'own';
-	return join('_', 'spotty_access_token', $startupTime,
+	return join('_', 'spotty_access_token',
 	                 $code || $prefs->get('iconCode'),
 	                 Slim::Utils::Unicode::utf8toLatin1Transliterate($userId),
 	                 $flavor);
