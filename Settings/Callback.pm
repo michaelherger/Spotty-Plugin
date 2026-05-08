@@ -107,13 +107,26 @@ sub oauthRedirect {
 
 					$cache->set(PKCE_CODE_VERIFIER_CACHEKEY, $code_verifier);
 
+					# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05) — flavor-aware client_id selection without
+					# pref mutation. When ?flavor=bundled query-param is present (the basic.html "Authorize
+					# browsing" link, plan-03), build the PKCE-AUTH-URL with the bundled-default Client ID
+					# rather than the user's iconCode pref. $prefs is NOT touched — per-request override only.
+					my $flavor   = (($params->{flavor} // '') eq 'bundled') ? 'bundled' : 'own';
+					my $clientId = ($flavor eq 'bundled')
+						? Plugins::Spotty::Plugin->initIcon()
+						: $prefs->get('iconCode');
+
 					my $url = sprintf(PKCE_AUTH_URL,
-						$prefs->get('iconCode'),
+						$clientId,
 						CALLBACK_URL,
 						$code_challenge,
 						SCOPE,
+						# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05) — thread flavor into the state JSON so
+						# the value survives the OAuth round-trip. Spotify echoes `state` verbatim per OAuth
+						# 2.0 spec; oauthCallback decodes the JSON and recovers $params->{flavor}.
 						encode_base64(to_json({
-							nonce => $nonce
+							nonce  => $nonce,
+							flavor => $flavor,
 						})),
 					);
 
