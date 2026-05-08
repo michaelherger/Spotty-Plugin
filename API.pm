@@ -1264,7 +1264,15 @@ sub _callOneShot {
 	my $cached;
 	my $cache_key;
 	if (!$params->{_nocache} && $type eq 'GET') {
-		$cache_key = md5_hex($url . ($url =~ /^(?:me|browse)\b/ ? $token : ''));
+		# SPOTTY-NG (Phase 3, plan 01 / POLISH-11 / closes 02-REVIEW.md IN-01 / promoted from
+		# .planning/todos/pending/HARDEN-DEFER-IN-01.md) — strip the bearer from the cache key
+		# for `browse/*` URLs. Pre-fix code keyed `me|browse` URLs by token, which under the
+		# Phase 2 try-own-then-fallback dispatch caused browse responses to be cached TWICE
+		# (once under the own-flavor bearer's MD5, once under the bundled-flavor bearer's MD5).
+		# Browse responses are functionally identical across flavor (only the routing differs);
+		# `me/*` continues to scope by token (different users see different Liked Songs).
+		# Post-fix: bundled and own browse responses share a single cache row.
+		$cache_key = md5_hex($url . ($url =~ /^me\b/ ? $token : ''));
 	}
 
 	main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");
