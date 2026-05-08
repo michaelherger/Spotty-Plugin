@@ -236,17 +236,38 @@ sub oauthCallback {
 								Plugins::Spotty::API::NEEDS_BUNDLED_AUTH_KEY_PREFIX() . $userId
 							) if $userId;
 
-							# Flavor-aware OAuth cache write. If $currentCode equals the bundled-default
-							# iconCode, this is a bundled OAuth; otherwise it is an own-Dev-ID OAuth.
-							my $oauthFlavor = ($currentCode eq Plugins::Spotty::Plugin->initIcon()) ? 'bundled' : 'own';
-							Plugins::Spotty::API::Token->cacheAccessToken($currentCode, $userId, $accessToken, $result->{expires_in}, $oauthFlavor);
-							Plugins::Spotty::API::Token->cacheRefreshToken($currentCode, $userId, $refreshToken, $oauthFlavor) if $refreshToken;
+						# Flavor decision overlay. When ?flavor=bundled flowed through state-JSON,
+							# $params->{flavor} is 'bundled' and we land the RT under the bundled-flavor
+							# cache key irrespective of what iconCode happens to be set to right now.
+							# When the param is absent (legacy callbacks, manual OAuth), fall back to
+							# comparing $currentCode vs initIcon().
+							my $oauthFlavor = ((($params->{flavor} // '') eq 'bundled')
+								? 'bundled'
+								: (($currentCode eq Plugins::Spotty::Plugin->initIcon()) ? 'bundled' : 'own'));
+
+							# When bundled-flavor, the cache-key $code segment MUST equal what
+							# Token::hasRefreshToken(flavor=>'bundled') derives at probe time
+							# (Plugin->initIcon() per Token.pm). Otherwise the bundled RT lands
+							# under <ownDevID>_<userId>_bundled but the probe looks under
+							# <bundledIcon>_<userId>_bundled -> permanent miss.
+							# $prefs is NOT mutated; this is a per-call $code arg override only.
+							my $oauthCode = ($oauthFlavor eq 'bundled')
+								? Plugins::Spotty::Plugin->initIcon()
+								: $currentCode;
+							Plugins::Spotty::API::Token->cacheAccessToken($oauthCode, $userId, $accessToken, $result->{expires_in}, $oauthFlavor);
+							Plugins::Spotty::API::Token->cacheRefreshToken($oauthCode, $userId, $refreshToken, $oauthFlavor) if $refreshToken;
+
+							# When flavor=bundled, the spotty helper subprocess MUST receive the bundled
+							# Client ID so the cached AT it stores is keyed under the bundled flavor too.
+							my $helperClientId = ($oauthFlavor eq 'bundled')
+								? Plugins::Spotty::Plugin->initIcon()
+								: $currentCode;
 
 							# TODO - async token refresh, timeout
 							my $cmd = sprintf('"%s" -n "Squeezebox" -c "%s" --client-id "%s" --disable-discovery --get-token --scope "%s" %s',
 								scalar Plugins::Spotty::Helper->get(),
 								Plugins::Spotty::Settings::Auth->_cacheFolder(),
-								$prefs->get('iconCode') || $defaultCode,
+							$helperClientId,
 								SCOPE,
 								'--access-token=' . $accessToken,
 							);
