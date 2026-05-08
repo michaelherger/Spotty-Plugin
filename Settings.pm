@@ -98,6 +98,27 @@ sub handler {
 	}
 
 	$paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
+
+	# Render-time probe for missing bundled refresh tokens. Template gates on
+	# [% IF needsBundledAuth.keys.size %] (basic.html summary block) and on
+	# [% IF needsBundledAuth.${userId} %] (per-row cell). Probe runs on every render.
+	my $needsBundledAuth = {};
+	for my $cred (@{$paramRef->{credentials} || []}) {
+		# cred is { spotifyUsername => cacheFolderName } (from AccountHelper::getSortedCredentialTupels).
+		# hasRefreshToken needs the Spotify username (the KEY) to build the correct cache-key shape.
+		# The template keys needsBundledAuth on the cache-folder name (the VALUE), so we populate
+		# the hash with the VALUE but probe with the KEY.
+		my ($spotifyUsername) = keys %$cred;
+		my ($cacheFolder)     = values %$cred;
+		next unless $cacheFolder;
+		if (!Plugins::Spotty::API::Token->hasRefreshToken(
+				undef, flavor => 'bundled', userId => $spotifyUsername)) {
+			$needsBundledAuth->{$cacheFolder} = 1;
+		}
+	}
+	$paramRef->{needsBundledAuth} = $needsBundledAuth;
+
+
 	$paramRef->{displayNames} = { map {
 		my ($id) = each %$_;
 		$id => Plugins::Spotty::AccountHelper->getDisplayName($id);
