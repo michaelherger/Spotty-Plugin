@@ -20,6 +20,14 @@ use constant CALLBACK_PATH => 'plugins/Spotty/settings/callback';
 use constant REDIRECT_PATH => 'plugins/Spotty/settings/redirect';
 use constant PKCE_AUTH_URL => 'https://accounts.spotify.com/authorize?client_id=%s&response_type=code&redirect_uri=%s&code_challenge=%s&code_challenge_method=S256&scope=%s&state=%s';
 use constant PKCE_CODE_VERIFIER_CACHEKEY => 'spotty_auth_code_verifier';
+# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — flavor is also cached
+# server-side because api.lms-community.org's relay strips Spotify's `state` query
+# parameter when bouncing the callback to LMS (only `code` survives). The state-JSON
+# decode in oauthCallback therefore cannot recover the flavor in the relayed path;
+# this cache key acts as a server-side fallback. TTL covers a typical OAuth
+# click-through (login + MFA + consent + relay hop).
+use constant OAUTH_PENDING_FLAVOR_CACHEKEY => 'spotty_ng_oauth_pending_flavor';
+use constant OAUTH_PENDING_FLAVOR_TTL      => 600;  # seconds; one-shot, cleared in oauthCallback
 
 use constant CALLBACK_URL => 'https://api.lms-community.org/auth/callback';
 use constant REGISTER_CALLBACK_URL => 'https://api.lms-community.org/auth/prepare';
@@ -122,6 +130,15 @@ sub oauthRedirect {
 						? Plugins::Spotty::Plugin->initIcon()
 						: $prefs->get('iconCode');
 
+					# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — server-side flavor
+					# cache. The state-JSON encoded below is sent to Spotify's /authorize and survives
+					# Spotify's echo, but api.lms-community.org's auth/callback relay strips state
+					# when bouncing the request to LMS (it only forwards code). Cache the flavor
+					# locally so oauthCallback can recover it from the LMS-side cache. Single-OAuth
+					# concurrency is already an implicit assumption (PKCE_CODE_VERIFIER_CACHEKEY is
+					# also a global non-nonce-keyed entry). One-shot — cleared in oauthCallback.
+					$cache->set(OAUTH_PENDING_FLAVOR_CACHEKEY, $flavor, OAUTH_PENDING_FLAVOR_TTL);
+
 					# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05 / closes 02.5-REVIEW.md CR-01 + WR-02) —
 					# Build the OAuth state value as URL-safe base64 with NO embedded newlines.
 					# CR-01: encode_base64 with default eol='\n' inserts \n every 76 chars; HTTP::Response
@@ -213,6 +230,19 @@ sub oauthCallback {
 			$params->{flavor} = $decodedState->{flavor};
 		}
 	}
+
+	# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — relay-strip fallback.
+	# api.lms-community.org's auth/callback relay strips Spotify's `state` parameter
+	# when forwarding the callback to LMS (only `code` survives). When state is gone,
+	# the decode block above leaves $params->{flavor} undef. Recover the flavor from
+	# the LMS-side cache that oauthRedirect populated before redirecting to Spotify.
+	# One-shot: clear the cache entry whether it was set or not, so a future race
+	# can't read a stale value.
+	if (!defined $params->{flavor}) {
+		my $cachedFlavor = $cache->get(OAUTH_PENDING_FLAVOR_CACHEKEY);
+		$params->{flavor} = $cachedFlavor if defined $cachedFlavor && length $cachedFlavor;
+	}
+	$cache->remove(OAUTH_PENDING_FLAVOR_CACHEKEY);
 
 	my $renderCb = sub {
 		my $error = shift;
