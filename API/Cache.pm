@@ -55,6 +55,19 @@ sub get {
 	return $self->{cache}->get($uri);
 }
 
+# SPOTTY-NG (Phase 4 / D-4-08 / closes 02.6-REVIEW.md IN-04 follow-up + supports UAT-3) —
+# public remove primitive. Wraps the underlying Slim::Utils::Cache->remove the same way
+# get/set wrap their underlying primitives. Used by Plugins::Spotty::API::Token's new
+# removeRefreshToken helper (D-4-07) for the account-delete orphan-state scrub. Resolves
+# the encapsulation smell at Token.pm:170-178 (the existing `eval { $spottyCache->{cache}->remove }`
+# reach-into pattern) by surfacing remove as a first-class API of this wrapper class. The
+# existing reach-into site stays as-is for the legacy-migration path — its WARN-on-undef
+# slot is a useful regression sentinel (D-4-19 explicit defer).
+sub remove {
+	my ($self, $key) = @_;
+	return $self->{cache}->remove($key) if $self->{cache};
+}
+
 sub set {
 	my ($self, $uri, $data, $fast) = @_;
 
