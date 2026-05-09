@@ -207,6 +207,20 @@ sub cacheRefreshToken {
 	$spottyCache->set(_getRTCacheKey($code, $userId, $flavor), $token) if $token;
 }
 
+# SPOTTY-NG (Phase 4 / D-4-07 / closes UAT-3 hookup primitive) — flavor-aware refresh-token
+# cache remover. Mirror of cacheRefreshToken above. Called by AccountHelper::deleteCacheFolder
+# (twice — once each for 'own' and 'bundled' flavors) so AccountHelper.pm stays agnostic to
+# Token cache-key internals. Best-effort: cache-remove failures never block the caller.
+# Does NOT chase the legacy 3-segment RT key shape (D-4-09) — those are 'own'-only by
+# construction and age out via natural lifecycle / _lookupRefreshToken's opportunistic
+# migration (HARDEN-10).
+sub removeRefreshToken {
+	my ($class, $code, $userId, $flavor) = @_;
+	$flavor ||= 'own';
+	main::INFOLOG && $log->is_info && $log->info("Removing refresh token for $userId (flavor=$flavor).");
+	$spottyCache->remove(_getRTCacheKey($code, $userId, $flavor));
+}
+
 # singleton shortcut to the main class
 sub get {
 	my ($class, $api, $cb, $args) = @_;
