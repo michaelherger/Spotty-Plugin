@@ -1,5 +1,9 @@
 package Plugins::Spotty::API;
 
+# Spotify API deprecations:
+# https://developer.spotify.com/blog/2026-02-06-update-on-developer-access-and-platform-security
+# https://developer.spotify.com/documentation/web-api/references/changes/february-2026
+
 use strict;
 use Exporter::Lite;
 
@@ -169,6 +173,7 @@ sub locale {
 	cstring($_[0]->client, 'LOCALE');
 }
 
+# XXX SPOTIFY DEPRECATION
 sub user {
 	my ( $self, $cb, $userId ) = @_;
 
@@ -398,6 +403,7 @@ sub artists {
 	})->get();
 }
 
+# XXX SPOTIFY DEPRECATION ???
 sub relatedArtists {
 	my ( $self, $cb, $uri ) = @_;
 
@@ -414,6 +420,7 @@ sub relatedArtists {
 	}, $cb)->get();
 }
 
+# XXX SPOTIFY DEPRECATION
 sub artistTracks {
 	my ( $self, $cb, $args ) = @_;
 
@@ -820,6 +827,7 @@ sub myArtists {
 		return;
 	}
 
+# XXX - SPOTIFY DEPRECATION ???
 	Plugins::Spotty::API::Pipeline->new($self, 'me/following', sub {
 		if ( $_[0] && $_[0]->{artists} && $_[0]->{artists} && (my $artists = $_[0]->{artists}) ) {
 			return [ map { $libraryCache->normalize($_, 'fast') } @{ $artists->{items} } ], $artists->{total}, $artists->{'next'};
@@ -962,6 +970,7 @@ sub addShowToLibrary {
 	);
 }
 
+# XXX SPOTIFY DEPRECATION
 sub playlists {
 	my ( $self, $cb, $args ) = @_;
 
@@ -1011,6 +1020,7 @@ sub addTracksToPlaylist {
 	}
 }
 
+# XXX SPOTIFY DEPRECATION
 sub browse {
 	my ( $self, $cb, $what, $key, $params ) = @_;
 
@@ -1083,6 +1093,7 @@ sub featuredPlaylists {
 	$self->browse($cb, 'featured-playlists', 'playlists', $params);
 }
 
+# XXX SPOTIFY DEPRECATION ???
 sub recommendations {
 	my ( $self, $cb, $args ) = @_;
 
@@ -1397,7 +1408,7 @@ sub _gotError {
 		$http->contentRef && $log->warn(${ $http->contentRef });
 	}
 
-	$log->error("error: $error");
+	$log->error("error: $error ($url)");
 
 	if ($error =~ /429/ || ($response && $response->code == 429)) {
 		$self->error429($response, $url);
