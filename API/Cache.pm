@@ -8,6 +8,7 @@ use lib catdir($Bin, 'Plugins', 'Spotty', 'lib');
 use Hash::Merge qw(merge);
 
 use Slim::Utils::Cache;
+use Slim::Utils::Log;
 
 use constant CACHE_TTL => 86400 * 7;
 use constant TTL => 86400 * 90;
@@ -65,7 +66,18 @@ sub get {
 # slot is a useful regression sentinel (D-4-19 explicit defer).
 sub remove {
 	my ($self, $key) = @_;
-	return $self->{cache}->remove($key) if $self->{cache};
+	# Symmetry with the WARN-on-undef regression sentinel at Token.pm:170-176.
+	# `new` always sets $self->{cache}; an undef slot here means a future
+	# encapsulation regression, and silently no-opping would defeat the purpose
+	# of the sentinel pattern. Surface it instead.
+	if (!$self->{cache}) {
+		logger('plugin.spotty')->warn(
+			'[SPOTTY-NG] Plugins::Spotty::API::Cache::remove: internal `cache` slot is undef. '
+		  . 'Encapsulation regression — see 02.6-REVIEW.md IN-04.'
+		);
+		return;
+	}
+	return $self->{cache}->remove($key);
 }
 
 sub set {
