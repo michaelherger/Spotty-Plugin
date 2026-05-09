@@ -132,6 +132,17 @@ sub renameCacheFolder {
 		$newId = substr( md5_hex(Slim::Utils::Unicode::utf8toLatin1Transliterate($credentials->{username} || '')), 0, 8 );
 	}
 
+	# SPOTTY-NG (Phase 4 / D-4-10 / closes UAT-5) — silence the misleading backtrace when
+	# Settings::Auth::cleanup() invokes us with the __AUTHENTICATE__ sentinel after the
+	# OAuth-pre-completion subdir was already removed: there is no credentials.json to read,
+	# the getCredentials-derivation block above produced no $newId, and the rename is a
+	# no-op anyway. Pre-fix code logged a backtrace at line 137-139 that confused
+	# ops/forensics on log review (UAT 2026-05-09 Case D-1). Defensive — also protects
+	# future callers that might invoke renameCacheFolder($SENTINEL) without credentials.
+	# The existing __AUTHENTICATE__ rmtree special-case at lines 153-155 stays untouched
+	# (different code path: $oldId='__AUTHENTICATE__' WITH derived $newId).
+	return if $oldId && $oldId eq '__AUTHENTICATE__' && !$newId;
+
 	main::INFOLOG && $log->info("Trying to rename $oldId to $newId");
 
 	if (main::DEBUGLOG && $log->is_debug && !$newId) {
