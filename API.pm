@@ -1406,6 +1406,25 @@ sub _call {
 	my $hintFlavor = $isMeFamily ? undef : _spottyNgLookupBundledHint($cleanUrl);
 	my $startFlavor = $hintFlavor || 'own';
 
+	# SPOTTY-NG (Phase 3 follow-up / Case-A UAT 2026-05-09 regression close) —
+	# Standard-User-mode dispatch bypass. When the user has NOT configured their
+	# own Spotify Developer App (`iconCode == initIcon()`), no own-flavor refresh
+	# token is ever cached: HARDEN-13's cache-write side at
+	# Settings/Callback.pm:331-333 lands OAuth output under flavor=bundled in this
+	# mode. Without this override, $startFlavor='own' here causes
+	# Token::get(flavor=>'own') to hard-fail at API/Token.pm:275-279, the user
+	# callback is invoked with undef, me/* and featuredPlaylists return empty, and
+	# OPML.pm:204 increments customClientLimitations (hides "Start"). Mirroring the
+	# write-side predicate (iconCode == initIcon → flavor=bundled) here restores
+	# upstream-equivalent behavior for default-bundled installs without affecting
+	# the Power-User flow (hasDefaultIcon() returns 0 when own iconCode is set).
+	# Placed AFTER the me-family guard and the hint-cache lookup so me/* calls in
+	# Standard-User mode also dispatch directly under bundled (the only flavor
+	# with a cached RT in this mode).
+	if (Plugins::Spotty::Plugin->hasDefaultIcon()) {
+		$startFlavor = 'bundled';
+	}
+
 	# Closure-wrapped retry: invoke once with $startFlavor; on 403/410 from the
 	# own-flavor result (and ONLY 403/410), re-issue under bundled flavor. Always
 	# call user $cb exactly once via the $userCbCalled guard.
