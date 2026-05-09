@@ -217,6 +217,14 @@ sub cacheRefreshToken {
 sub removeRefreshToken {
 	my ($class, $code, $userId, $flavor) = @_;
 	$flavor ||= 'own';
+	# Mirror the bundled-code derivation already in Token::get (lines 251-254) and
+	# Token::hasRefreshToken (lines 332-335). Bundled-flavor RTs are written under a
+	# key derived from initIcon(), not iconCode; once a user configures their own
+	# Spotify Developer App Client ID (the canonical setup), iconCode != initIcon()
+	# and a fallback to iconCode would target a key that was never written.
+	if (!$code && $flavor eq 'bundled') {
+		$code = Plugins::Spotty::Plugin->initIcon();
+	}
 	main::INFOLOG && $log->is_info && $log->info("Removing refresh token for $userId (flavor=$flavor).");
 	$spottyCache->remove(_getRTCacheKey($code, $userId, $flavor));
 }
