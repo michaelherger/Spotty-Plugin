@@ -122,18 +122,29 @@ sub oauthRedirect {
 						? Plugins::Spotty::Plugin->initIcon()
 						: $prefs->get('iconCode');
 
+					# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05 / closes 02.5-REVIEW.md CR-01 + WR-02) —
+					# Build the OAuth state value as URL-safe base64 with NO embedded newlines.
+					# CR-01: encode_base64 with default eol='\n' inserts \n every 76 chars; HTTP::Response
+					# folds those into obs-fold continuations in the Location: header, producing a URL
+					# with an embedded space mid-base64. The empty-string second arg suppresses all \n.
+					# WR-02: base64 alphabet contains +, /, = which collide with URL syntax (+ -> space
+					# under x-www-form-urlencoded); translate to base64url (-, _) and strip = padding
+					# before placing in the query string. The decode side at oauthCallback reverses
+					# the translation and restores padding.
+					my $stateJson = to_json({
+						nonce  => $nonce,
+						flavor => $flavor,
+					});
+					my $stateB64 = encode_base64($stateJson, '');
+					$stateB64 =~ tr|+/|-_|;
+					$stateB64 =~ s/=+\z//;
+
 					my $url = sprintf(PKCE_AUTH_URL,
 						$clientId,
 						CALLBACK_URL,
 						$code_challenge,
 						SCOPE,
-						# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05) — thread flavor into the state JSON so
-						# the value survives the OAuth round-trip. Spotify echoes `state` verbatim per OAuth
-						# 2.0 spec; oauthCallback decodes the JSON and recovers $params->{flavor}.
-						encode_base64(to_json({
-							nonce  => $nonce,
-							flavor => $flavor,
-						})),
+						$stateB64,
 					);
 
 					my $response = $args[1];
@@ -186,7 +197,18 @@ sub oauthCallback {
 	# leave $params->{flavor} undef and the downstream flavor decision falls through to
 	# HARDEN-13's iconCode-vs-initIcon test (backward-compat preserved).
 	if ($params->{state}) {
-		my $decodedState = eval { from_json(decode_base64($params->{state})) };
+		# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05 / closes 02.5-REVIEW.md CR-01 + WR-02
+		# decode side) — symmetric to the oauthRedirect encode-side base64url substitution.
+		# Spotify echoes the state value verbatim per OAuth 2.0 spec, so the value we
+		# receive here is the URL-safe form ([A-Za-z0-9_-], no = padding) the encode site
+		# produced. Reverse the translation and restore = padding before decode_base64;
+		# the eval-wrap + ref/defined guards survive malformed payloads (legacy callbacks,
+		# attacker-injected garbage) by leaving $params->{flavor} undef so the downstream
+		# decision falls through to HARDEN-13's iconCode-vs-initIcon test.
+		my $b64 = $params->{state};
+		$b64 =~ tr|-_|+/|;
+		$b64 .= '=' x ((4 - length($b64) % 4) % 4);
+		my $decodedState = eval { from_json(decode_base64($b64)) };
 		if (ref $decodedState eq 'HASH' && defined $decodedState->{flavor}) {
 			$params->{flavor} = $decodedState->{flavor};
 		}
