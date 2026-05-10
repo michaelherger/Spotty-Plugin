@@ -207,26 +207,27 @@ sub cacheRefreshToken {
 	$spottyCache->set(_getRTCacheKey($code, $userId, $flavor), $token) if $token;
 }
 
-# SPOTTY-NG (Phase 4 / D-4-07 / closes UAT-3 hookup primitive) — flavor-aware refresh-token
-# cache remover. Mirror of cacheRefreshToken above. Called by AccountHelper::deleteCacheFolder
-# (twice — once each for 'own' and 'bundled' flavors) so AccountHelper.pm stays agnostic to
-# Token cache-key internals. Best-effort: cache-remove failures never block the caller.
-# Does NOT chase the legacy 3-segment RT key shape (D-4-09) — those are 'own'-only by
-# construction and age out via natural lifecycle / _lookupRefreshToken's opportunistic
-# migration (HARDEN-10).
+# Flavor-aware refresh-token cache remover. Mirror of cacheRefreshToken above. Called by
+# AccountHelper::deleteCacheFolder (twice — once each for 'own' and 'bundled' flavors) so
+# AccountHelper.pm stays agnostic to Token cache-key internals. Best-effort: the eval-wrap
+# around the cache remove ensures cache-layer failures never block the caller (e.g. half-
+# completed account-delete). Does NOT chase the legacy 3-segment RT key shape — those are
+# 'own'-only by construction and age out via natural lifecycle plus _lookupRefreshToken's
+# opportunistic migration on next read.
 sub removeRefreshToken {
 	my ($class, $code, $userId, $flavor) = @_;
 	$flavor ||= 'own';
-	# Mirror the bundled-code derivation already in Token::get (lines 251-254) and
-	# Token::hasRefreshToken (lines 332-335). Bundled-flavor RTs are written under a
-	# key derived from initIcon(), not iconCode; once a user configures their own
-	# Spotify Developer App Client ID (the canonical setup), iconCode != initIcon()
-	# and a fallback to iconCode would target a key that was never written.
+	# Mirror the bundled-code derivation in Token::get and Token::hasRefreshToken.
+	# Bundled-flavor RTs are written under a key derived from initIcon(), not iconCode;
+	# once a user configures their own Spotify Developer App Client ID (the canonical
+	# setup), iconCode != initIcon() and a fallback to iconCode would target a key
+	# that was never written.
 	if (!$code && $flavor eq 'bundled') {
 		$code = Plugins::Spotty::Plugin->initIcon();
 	}
 	main::INFOLOG && $log->is_info && $log->info("Removing refresh token for $userId (flavor=$flavor).");
-	$spottyCache->remove(_getRTCacheKey($code, $userId, $flavor));
+	eval { $spottyCache->remove(_getRTCacheKey($code, $userId, $flavor)) };
+	$log->warn("removeRefreshToken: cache layer threw on remove for $userId (flavor=$flavor): $@") if $@;
 }
 
 # singleton shortcut to the main class
