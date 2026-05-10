@@ -326,6 +326,11 @@ sub getCredentials {
 
 				require File::Copy;
 				File::Copy::copy($credentialsFile, $backupName);
+				# Remove the corrupted credentials file before recursive cleanup. deleteCacheFolder
+				# calls getCredentials($id) to read the username for orphan-state scrub; without this
+				# unlink the recursive call would re-enter this corruption block on the same content
+				# (File::Copy::copy leaves the original in place), looping until stack exhaustion.
+				unlink $credentialsFile;
 
 				$class->deleteCacheFolder($id);
 			}
