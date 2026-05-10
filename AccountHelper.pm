@@ -141,7 +141,7 @@ sub renameCacheFolder {
 	# future callers that might invoke renameCacheFolder($SENTINEL) without credentials.
 	# The existing __AUTHENTICATE__ rmtree special-case at lines 153-155 stays untouched
 	# (different code path: $oldId='__AUTHENTICATE__' WITH derived $newId).
-	return if $oldId && $oldId eq '__AUTHENTICATE__' && !$newId;
+	return if defined($oldId) && $oldId eq '__AUTHENTICATE__' && !$newId;
 
 	main::INFOLOG && $log->info("Trying to rename $oldId to $newId");
 
