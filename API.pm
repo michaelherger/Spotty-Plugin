@@ -272,6 +272,22 @@ sub playerPause {
 	}, $device);
 }
 
+sub playerNext {
+	my ( $self, $cb, $device ) = @_;
+
+	$self->withIdFromMac(sub {
+		my $args = {};
+		$args->{device_id} = $_[0] if $_[0];
+
+		$self->_call('me/player/next',
+			sub {
+				$cb->() if $cb;
+			},
+			POST => $args
+		);
+	}, $device);
+}
+
 sub playerVolume {
 	my ( $self, $cb, $device, $volume ) = @_;
 

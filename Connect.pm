@@ -230,10 +230,10 @@ sub cacheFolder {
 		Plugins::Spotty::AccountHelper->getAccount($clientId)
 	);
 
-	# Create a temporary per-player account folder using the player's MAC address.
-	# This implements REG-02 credentials.json isolation: prevents conflicts between
-	# the Connect daemon and --single-track streaming processes (T-08-07).
-	if (Plugins::Spotty::Plugin->canDiscovery() && !$prefs->get('disableDiscovery')) {
+	# Per-player credentials folder — always created regardless of discovery mode.
+	# REG-02: prevents the Connect daemon from writing to the main account folder
+	# (which --single-track streaming processes share).
+	if ($clientId) {
 		my $id = $clientId;
 		$id =~ s/://g;
 
