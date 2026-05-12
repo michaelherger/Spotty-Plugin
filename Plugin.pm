@@ -19,6 +19,7 @@ use Plugins::Spotty::Helper;
 use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
+use constant CONNECT_HELPER_VERSION => '2.1.0';
 use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 use constant KILL_PROCESS_INTERVAL => 3600;
 
@@ -67,6 +68,8 @@ sub initPlugin {
 			'recently-played' => -1,
 		},
 		accountSwitcherMenu => 0,
+		disableDiscovery => 0,
+		checkDaemonConnected => 0,
 		displayNames => {},
 		products => {},
 		helper => '',
