@@ -154,6 +154,8 @@ sub postinitPlugin { if (main::TRANSCODING) {
 
 	Plugins::Spotty::OPML->init();
 
+	$class->canSpotifyConnect();
+
 	# we're going to hijack the Spotify URI schema
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
 
@@ -328,6 +330,27 @@ sub getAPIHandler {
 
 sub canDiscovery { 1 }
 
+sub canSpotifyConnect {
+	my ($class, $dontInit) = @_;
+
+	# we need a minimum helper application version
+	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Helper->getVersion(), CONNECT_HELPER_VERSION, 10) ) {
+		$log->error("Cannot support Spotty Connect, need at least helper version " . CONNECT_HELPER_VERSION);
+		return;
+	}
+
+	require Plugins::Spotty::Connect;
+
+	Plugins::Spotty::Connect->init() unless $dontInit;
+
+	return 1;
+}
+
+sub isSpotifyConnect {
+	my $class = shift;
+	return $class->canSpotifyConnect(1) && Plugins::Spotty::Connect->isSpotifyConnect(@_);
+}
+
 sub killHangingProcesses {
 	my ($class, $force) = @_;
 
@@ -346,14 +369,32 @@ sub killHangingProcesses {
 		my $helper = Plugins::Spotty::Helper->get();
 		my $helperName = basename($helper) if $helper;
 
+		# REG-01: collect active Connect daemon PIDs to exclude them from the kill
+		my %connectPids;
+		if ( $class->canSpotifyConnect(1) ) {
+			require Plugins::Spotty::Connect::DaemonManager;
+			my $instances = Plugins::Spotty::Connect::DaemonManager->helperInstances() || {};
+			for my $pid (values %$instances) {
+				$connectPids{$pid} = 1 if $pid;
+			}
+		}
+
 		eval {
 			if (main::ISWINDOWS) {
 				system("taskkill /IM $helperName /F 1>nul 2>&1") if $helperName;
 				system('taskkill /IM spotty-custom.exe /F 1>nul 2>&1') unless $helperName && $helper ne 'spotty-custom';
 			}
 			else {
-				`pkill -f $helper` if $helper;
-				`pkill -f spotty-custom` unless $helper && $helper =~ /spotty-custom/;
+				if ($helper) {
+					my @pids = split /\n/, `pgrep -f $helper 2>/dev/null`;
+					my @orphans = grep { $_ && !$connectPids{$_} } @pids;
+					kill('TERM', @orphans) if @orphans;
+				}
+				unless ($helper && $helper =~ /spotty-custom/) {
+					my @pids = split /\n/, `pgrep -f spotty-custom 2>/dev/null`;
+					my @orphans = grep { $_ && !$connectPids{$_} } @pids;
+					kill('TERM', @orphans) if @orphans;
+				}
 			}
 		};
 
@@ -366,6 +407,11 @@ sub killHangingProcesses {
 # we only run when transcoding is enabled, but shutdown would be called no matter what
 sub shutdownPlugin { if (main::TRANSCODING) {
 	Plugins::Spotty::AccountHelper->purgeAudioCache(1);
+
+	if (__PACKAGE__->canSpotifyConnect(1)) {
+		Plugins::Spotty::Connect->shutdown();
+	}
+
 	__PACKAGE__->killHangingProcesses(1);
 } }
 
