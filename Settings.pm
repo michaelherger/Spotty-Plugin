@@ -45,6 +45,7 @@ sub page {
 
 sub prefs {
 	my @prefs = qw(myAlbumsOnly cleanupTags bitrate iconCode accountSwitcherMenu helper sortAlbumsAlphabetically sortArtistsAlphabetically sortPlaylisttracksByAddition);
+	push @prefs, 'disableDiscovery' if Plugins::Spotty::Plugin->canDiscovery();
 	push @prefs, 'sortSongsAlphabetically' if !Plugins::Spotty::Plugin->hasDefaultIcon();
 	push @prefs, 'forceFallbackAP' if !Plugins::Spotty::Helper->getCapability('no-ap-port');
 	return ($prefs, @prefs);
@@ -104,7 +105,8 @@ sub handler {
 	} @{$paramRef->{credentials}} };
 	$paramRef->{products}     = $prefs->get('products') || {};
 
-	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
+	$paramRef->{canDiscovery}     = Plugins::Spotty::Plugin->canDiscovery();
+	$paramRef->{canSpotifyConnect} = Plugins::Spotty::Plugin->canSpotifyConnect(1);
 	$paramRef->{error429}     = Plugins::Spotty::API->hasError429();
 	$paramRef->{isLowCaloriesPi} = Plugins::Spotty::Helper->isLowCaloriesPi();
 
