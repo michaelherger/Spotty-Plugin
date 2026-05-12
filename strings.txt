@@ -892,6 +892,24 @@ PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG
 	FR	<b>Qu'est-il arrivé au mode Connect ?</b> Il a disparu. Avec les derniers changements d'API côté Spotify, j'ai dû suivre le développement de <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a>. C'est la bibliothèque qui gère toute la magie de la lecture Spotify. Malheureusement, mon hack pour implémenter le mode Connect dans Spotty n'était plus compatible avec leurs dernières évolutions. Comme le mode Connect était de toute façon instable, j'ai décidé de le retirer. J'espère pouvoir travailler sur une nouvelle version dans un avenir pas trop lointain.
 	NL	<b>Wat is er gebeurd met Connect-modus?</b> Die is verdwenen. Door de laatste API-wijzigingen aan de kant van Spotify moest ik de ontwikkeling van <a href="https://github.com/librespot-org/librespot/" target="_blank">librespot</a> bijbenen. Dit is de bibliotheek die alle magie voor Spotify-afspelen verzorgt. Helaas was mijn hack om Connect-modus in Spotty te implementeren niet compatibel met hun nieuwste ontwikkelingen. Omdat Connect-modus toch al "spotty" was, heb ik besloten deze te verwijderen. Hopelijk kan ik binnenkort werken aan een nieuwe implementatie.
 
+PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC
+	CS	Povolit přístupový bod Spotify Connect pro tento přehrávač
+	DA	Aktivér Spotify Connect for denne afspiller
+	DE	Dieses Gerät für Spotify Connect zur Verfügung stellen
+	EN	Enable Spotify Connect endpoint for this player
+	FR	Rendre cette platine disponible pour Spotify Connect
+	HU	Spotify Connect végpont engedélyezése ehhez a lejátszóhoz
+	NL	Schakel Spotify Connect in voor deze muziekspeler
+
+PLUGIN_SPOTTY_NEED_HELPER_UPDATE
+	CS	Spotify Connect není k dispozici.
+	DA	Spotify Connect er ikke tilgængelig.
+	DE	Spotify Connect ist nicht verfügbar.
+	EN	Spotify Connect is not available.
+	FR	Spotify Connect n'est pas disponible.
+	HU	A Spotify Connect nem érhető el.
+	NL	Spotify Connect is niet beschikbaar.
+
 PLUGIN_SPOTTY_HOME_ITEMS
 	CS	Přizpůsobení nabídky „Domů“
 	DE	"Start" Menüeinträge
@@ -1192,3 +1210,30 @@ PLUGIN_SPOTTY_PLAYLIST_TRACKS
 	FR	Morceaux de la liste de lecture
 	HU	Lejátszási lista zeneszámok
 	NL	Afspeellijst Nummers
+
+PLUGIN_SPOTTY_BUNDLED_AUTH_NEEDED_SUMMARY
+	CS	Některé účty vyžadují další autorizaci pro plné zpřístupnění nabídky procházení (Mix týdne, Release Radar, Discover Weekly atd.).
+	DA	Nogle konti kræver yderligere godkendelse for at aktivere den fulde browsermenuen (Ugens mix, Release Radar, Discover Weekly osv.).
+	DE	Einige Konten benötigen eine zusätzliche Autorisierung, um das vollständige Stöbern-Menü zu aktivieren (Mix der Woche, Release Radar, Discover Weekly usw.).
+	EN	Some accounts need additional authorization to enable the full browse menu (Mix of the Week, Release Radar, Discover Weekly etc.).
+	FR	Certains comptes nécessitent une autorisation supplémentaire pour activer le menu de navigation complet (Mix de la semaine, Release Radar, Discover Weekly, etc.).
+	HU	Néhány fiókhoz további engedélyezés szükséges a teljes böngészési menü aktiválásához (Heti mix, Release Radar, Discover Weekly stb.).
+	NL	Sommige accounts hebben aanvullende autorisatie nodig om het volledige browsmenu te activeren (Mix van de week, Release Radar, Discover Weekly enz.).
+
+PLUGIN_SPOTTY_BUNDLED_AUTH_LINK_LABEL
+	CS	Autorizovat procházení
+	DA	Autoriser browsing
+	DE	Stöbern autorisieren
+	EN	Authorize browsing
+	FR	Autoriser la navigation
+	HU	Böngészés engedélyezése
+	NL	Browsen autoriseren
+
+PLUGIN_SPOTTY_DISABLE_DISCOVERY_DESC
+	CS	Neoznamovat ve své síti přehrávače Squeezebox spuštěné v režimu Spotify Connect. Tuto možnost zaškrtněte, pokud nechcete, aby se váš přehrávač Squeezebox s povoleným režimem Spotify Connect zobrazoval ve všech aplikacích Spotify ve vaší síti.
+	DA	Annoncér ikke Squeezebox Playere på det lokale netværk i Spotify Connect tilstand. Aktivér denne mulighed, hvis du ikke ønsker, at din Spotify Connect-aktiverede Squeezebox-afspillere skal vises i alle Spotify-apps på dit netværk.
+	DE	Squeezebox Player im Spotify Connect Modus nicht im lokalen Netzwerk bekannt geben. Aktiviere diese Option, falls dein Player im Spotify Connect Modus nur vom Spotify-Konto gesehen werden soll, welches zuletzt für dieses Gerät verwendet wurde.
+	EN	Don't announce Squeezebox players running in Spotify Connect mode in your network. Check this option if you don't want your Spotify Connect enabled Squeezebox player to show up in all Spotify apps in your network.
+	FR	Ne pas annoncer les platines Squeezebox compatibles Spotify Connect sur votre réseau. Cocher cette option si vous ne souhaitez pas que les platines Squeezebox compatibles Spotify Connect apparaissent dans toutes les applications Spotify de votre réseau.
+	HU	Ne jelentse be a hálózaton a Spotify Connect módban futó Squeezebox-lejátszókat. Jelölje be ezt a lehetőséget, ha nem szeretné, hogy a Spotify Connect-kompatibilis Squeezebox lejátszója megjelenjen a hálózaton lévő összes Spotify alkalmazásban.
+	NL	Kondig geen Squeezebox muziekspelers aan in de Spotify Connect modus in jouw netwerk. Vink deze optie aan als je niet wilt dat Spotify Connect compatibele Squeezebox muziekspelers in alle Spotify apps op jouw netwerk verschijnen.
