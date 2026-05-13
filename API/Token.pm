@@ -320,12 +320,33 @@ sub get {
 		$api->refreshToken(
 			sub {
 				my $accessToken = _gotTokenInfo(shift, $userId, $localArgs);
+
+				if (!$accessToken) {
+					$accessToken = _keymasterFallback($userId, $localArgs);
+				}
+
 				$log->error("Failed to refresh access token for user=$userId flavor=$flavor") if !$accessToken;
 				_callCallbacks($accessToken, $dedupKey);
 			},
 			{ refreshToken => $refreshToken, _client_id => $code }
 		);
 	}
+}
+
+sub _keymasterFallback {
+	my ($userId, $args) = @_;
+
+	my $cacheDir = Plugins::Spotty::AccountHelper->cacheFolder();
+	my $result = Plugins::Spotty::Helper->getKeymasterToken($cacheDir);
+
+	if ($result && $result->{accessToken}) {
+		$log->warn("PKCE refresh failed — recovered via binary keymaster token for user=$userId");
+		my $expiresIn = $result->{expiresIn} || DEFAULT_EXPIRATION;
+		__PACKAGE__->cacheAccessToken($args->{code}, $userId, $result->{accessToken}, $expiresIn, $args->{flavor});
+		return $result->{accessToken};
+	}
+
+	return;
 }
 
 # SPOTTY-NG (Phase 2, plan 04 / D-09 / FIX-13) — probe helper for try-own-then-fallback dispatch.
