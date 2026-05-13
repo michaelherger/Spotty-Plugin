@@ -441,16 +441,23 @@ sub _onVolume {
 	my $request = shift;
 
 	# Source-marking loop prevention (Pattern 2, T-08-08): skip our own requests
-	return if $request->source && $request->source eq __PACKAGE__;
+	if ($request->source && $request->source eq __PACKAGE__) {
+		main::DEBUGLOG && $log->is_debug && $log->debug("_onVolume: skipping own source");
+		return;
+	}
 
 	my $client = $request->client();
-	return if !defined $client
-		|| ($client->hasDigitalOut && $serverPrefs->client($client)->get('digitalVolumeControl'));
+	if (!defined $client) {
+		main::DEBUGLOG && $log->is_debug && $log->debug("_onVolume: no client");
+		return;
+	}
 
 	$client = $client->master;
-	return if $client->hasDigitalOut && $serverPrefs->client($client)->get('digitalVolumeControl');
 
-	return if !__PACKAGE__->isSpotifyConnect($client);
+	if (!__PACKAGE__->isSpotifyConnect($client)) {
+		main::DEBUGLOG && $log->is_debug && $log->debug("_onVolume: not in Connect mode for " . $client->id);
+		return;
+	}
 
 	my $volume = $client->volume;
 

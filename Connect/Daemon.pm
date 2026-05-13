@@ -69,7 +69,7 @@ sub start {
 		'-n', $self->name,
 		'--disable-audio-cache',
 		'--player-mac', $self->mac,
-		'--lms', Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'),
+		'--lms', '127.0.0.1:' . preferences('server')->get('httpport'),
 	);
 
 	# D-01: Discovery ON as default; only disable if canDiscovery() is false or user opted out
