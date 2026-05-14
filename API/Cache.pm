@@ -64,7 +64,7 @@ sub set {
 	return if ($fast && $cached);
 
 	my $merged;
-	if ($cached) {
+	if ($cached && ref $data && ref $cached) {
 		$merged = merge($cached, $data);
 	}
 
