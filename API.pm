@@ -288,6 +288,28 @@ sub playerNext {
 	}, $device);
 }
 
+sub playerQueue {
+	my ( $self, $cb ) = @_;
+
+	$self->_call('me/player/queue',
+		sub {
+			my $result = $_[0];
+
+			if ($result && ref $result && ref $result->{queue} eq 'ARRAY'
+				&& scalar @{$result->{queue}})
+			{
+				$cb->($result->{queue}->[0]);
+				return;
+			}
+
+			$cb->();
+		},
+		GET => {
+			_nocache => 1,
+		}
+	);
+}
+
 sub playerVolume {
 	my ( $self, $cb, $device, $volume ) = @_;
 

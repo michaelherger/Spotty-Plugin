@@ -285,6 +285,7 @@ sub _getNextTrack {
 	Slim::Utils::Timers::killTimers($client, \&_syncController);
 	Slim::Utils::Timers::killTimers($client, \&_getNextTrack);
 
+
 	if (!$client->isPlaying() || !$class->isSpotifyConnect($client)) {
 		main::INFOLOG && $log->is_info && $log->info(
 			"Don't get next track, we're no longer playing or not in Connect mode"
@@ -309,29 +310,30 @@ sub _getNextTrack {
 		return;
 	}
 
-	$spotty->playerNext(sub {
-		$spotty->player(sub {
-			my ($result) = @_;
+	# Peek at the queue to find the next track without advancing Spotify's state.
+	# The daemon will advance Spotify naturally when the track ends.
+	$spotty->playerQueue(sub {
+		my ($nextItem) = @_;
 
-			if ($result && ref $result && (my $uri = $result->{item}->{uri})) {
-				main::INFOLOG && $log->is_info && $log->info("Got a new track to be played next: $uri");
+		if ($nextItem && (my $uri = $nextItem->{uri})) {
+			my $url = uri2url($uri);
 
-				$uri = uri2url($uri);
+			main::INFOLOG && $log->is_info && $log->info("Queue peek: next track is $uri");
 
-				# Stop if we've played this track before (loop detection)
-				if ($song->pluginData('context')->hasPlay($uri)
-					&& !($result->{repeat_state} && $result->{repeat_state} eq 'on'))
-				{
-					$class->_delayedStop($client);
-				}
-				else {
-					$song->streamUrl($uri);
-					$class->setSpotifyConnect($client, $result);
-				}
-
-				$successCb->();
+			if ($song->pluginData('context')->hasPlay($url)) {
+				$class->_delayedStop($client);
 			}
-		});
+			else {
+				$song->streamUrl($uri);
+			}
+
+			$successCb->();
+		}
+		else {
+			main::INFOLOG && $log->is_info && $log->info("Queue empty — end of context");
+			$class->_delayedStop($client);
+			$successCb->();
+		}
 	});
 }
 
@@ -364,7 +366,9 @@ sub _sendPause {
 	Slim::Utils::Timers::killTimers($client, \&_sendPause);
 	$client->pluginData(newTrack => 0);
 	$class->getAPIHandler($client)->playerPause(sub {
-		$client->execute(['stop']);
+		my $stopReq = Slim::Control::Request->new($client->id, ['stop']);
+		$stopReq->source(__PACKAGE__);
+		$stopReq->execute();
 	}, $client->id);
 }
 
@@ -399,6 +403,7 @@ sub _onNewSong {
 	$client->pluginData(SpotifyConnect => 0);
 	Slim::Utils::Timers::killTimers($client, \&_syncController);
 	Slim::Utils::Timers::killTimers($client, \&_getNextTrack);
+
 	__PACKAGE__->getAPIHandler($client)->playerPause(undef, $client->id);
 }
 
@@ -534,6 +539,15 @@ sub _connectEvent {
 			main::INFOLOG && $log->is_info && $log->info("Seek to $position");
 			$client->execute(['time', int($position)]);
 		}
+		return;
+	}
+
+	# Ignore stop events while _getNextTrack is orchestrating a track transition —
+	# playerNext causes the daemon to emit stop before the next track starts.
+	if ($cmd eq 'stop' && $client->pluginData('newTrack')) {
+		main::INFOLOG && $log->is_info && $log->info(
+			"Ignoring stop event while fetching next track"
+		);
 		return;
 	}
 
