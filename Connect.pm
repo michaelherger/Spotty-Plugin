@@ -29,10 +29,6 @@ use constant PRE_BUFFER_TIME => 7;
 # Seconds; safety-net sync interval — poll /me/player to catch track drift
 use constant SYNC_POLL_INTERVAL => 15;
 
-# Seconds; suppress spurious stop events during session setup (mid-playback transfer)
-use constant CONNECT_START_GRACE => 12;
-
-
 # Bytes; threshold for the large-buffer pre-buffer optimisation
 use constant PRE_BUFFER_SIZE_THRESHOLD => 10 * 1024 * 1024;
 
@@ -390,6 +386,57 @@ sub _syncController {
 	__PACKAGE__->getAPIHandler($client)->playerSeek(undef, $client->id, $songtime) if $songtime;
 }
 
+# Safety-net: periodic poll of /me/player to catch track drift that the
+# binary's event stream missed (e.g. playlist jumps via Spotify Web API).
+sub _syncPoll {
+	my ($client) = @_;
+
+	Slim::Utils::Timers::killTimers($client, \&_syncPoll);
+
+	return unless __PACKAGE__->isSpotifyConnect($client);
+	return unless $client->isPlaying;
+
+	my $spotty = __PACKAGE__->getAPIHandler($client);
+	return unless $spotty;
+
+	$spotty->player(sub {
+		my ($result) = @_;
+		$result ||= {};
+
+		# Re-schedule before doing anything — guarantees the poll keeps running
+		Slim::Utils::Timers::killTimers($client, \&_syncPoll);
+		Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + SYNC_POLL_INTERVAL, \&_syncPoll)
+			if __PACKAGE__->isSpotifyConnect($client) && $client->isPlaying;
+
+		return unless ref $result->{track} && $result->{track}->{uri};
+		return unless $result->{is_playing};
+
+		my $song      = $client->playingSong();
+		my $streamUrl = ($song ? $song->streamUrl : '') || '';
+		$streamUrl =~ s/\/\///;
+
+		if ($streamUrl ne $result->{track}->{uri}) {
+			main::INFOLOG && $log->is_info && $log->info(sprintf(
+				"Sync drift detected: LMS=%s Spotify=%s — switching",
+				$streamUrl, $result->{track}->{uri}
+			));
+
+			Slim::Utils::Timers::killTimers($client, \&_firePlayerNext);
+
+			$client->pluginData(SpotifyConnect => 1);
+			$client->pluginData(newTrack       => 1);
+
+			my $playReq = $client->execute([
+				'playlist', 'play',
+				sprintf("spotify://connect-%u", Time::HiRes::time() * 1000)
+			]);
+			$playReq->source(__PACKAGE__);
+
+			$song && $song->pluginData('context') && $song->pluginData('context')->reset();
+		}
+	});
+}
+
 sub _delayedStop {
 	my ($class, $client) = @_;
 
@@ -433,7 +480,9 @@ sub _onNewSong {
 		# If we're in Connect mode and have a seek position, go there
 		if ($client && (my $progress = $client->pluginData('progress'))) {
 			$client->pluginData(progress => 0);
-			$client->execute(['time', int($progress)]);
+			my $seekReq = Slim::Control::Request->new($client->id, ['time', int($progress)]);
+			$seekReq->source(__PACKAGE__);
+			$seekReq->execute();
 		}
 		return;
 	}
@@ -447,6 +496,7 @@ sub _onNewSong {
 	$client->pluginData(SpotifyConnect => 0);
 	Slim::Utils::Timers::killTimers($client, \&_syncController);
 	Slim::Utils::Timers::killTimers($client, \&_getNextTrack);
+	Slim::Utils::Timers::killTimers($client, \&_syncPoll);
 
 	__PACKAGE__->getAPIHandler($client)->playerPause(undef, $client->id);
 }
@@ -682,6 +732,7 @@ sub _connectEvent {
 		# change-to-start upgrade (Pitfall 5):
 		# If the current stream URL differs from the result track URI (and Spotify says
 		# it's playing), or if we're not currently in Connect mode, this is really a start.
+		my $wasChange = 0;
 		if ($cmd eq 'change' && ref $result->{track}
 			&& (($streamUrl ne $result->{track}->{uri} && $result->{is_playing})
 				|| !__PACKAGE__->isSpotifyConnect($client)))
@@ -689,6 +740,7 @@ sub _connectEvent {
 			main::INFOLOG && $log->is_info && $log->info(
 				"Got a $cmd event, but actually this is a play next track event"
 			);
+			$wasChange = 1;
 			$cmd = 'start';
 		}
 		elsif ($cmd eq 'change' && !$client->isPlaying && ref $result->{track}
@@ -726,6 +778,10 @@ sub _connectEvent {
 					$spotty->playerVolume(undef, $client->id, $client->volume);
 				}
 
+				# Cancel any pending track-advance timer — the binary already
+				# advanced; firing playerNext would double-skip.
+				Slim::Utils::Timers::killTimers($client, \&_firePlayerNext);
+
 				# Mark Connect mode on the client
 				$client->pluginData(SpotifyConnect   => 1);
 				$client->pluginData(newTrack         => 1);
@@ -745,11 +801,18 @@ sub _connectEvent {
 				# Reset play history on interactive Connect use
 				$song && $song->pluginData('context') && $song->pluginData('context')->reset();
 
-				$result->{progress} ||= ($result->{progress_ms} / 1000) if $result->{progress_ms};
+				# Start safety-net sync poll
+				Slim::Utils::Timers::killTimers($client, \&_syncPoll);
+				Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + SYNC_POLL_INTERVAL, \&_syncPoll);
 
-				# If playback is already more than 10s in, seek to the current position
-				if ($result->{progress} && $result->{progress} > 10) {
-					$song && $client->pluginData(progress => $result->{progress});
+				# Only seek to mid-track progress on genuine initial transfers
+				# (not change→start upgrades where progress_ms may be stale)
+				if (!$wasChange) {
+					$result->{progress} ||= ($result->{progress_ms} / 1000) if $result->{progress_ms};
+
+					if ($result->{progress} && $result->{progress} > 10) {
+						$song && $client->pluginData(progress => $result->{progress});
+					}
 				}
 			}
 			elsif (!$client->isPlaying) {
@@ -806,6 +869,7 @@ sub _connectEvent {
 				# Reset Connect status
 				$client->playingSong()->pluginData(context       => 0);
 				$client->pluginData(SpotifyConnect => 0);
+				Slim::Utils::Timers::killTimers($client, \&_syncPoll);
 			}
 			elsif ($client->isPlaying) {
 				main::INFOLOG && $log->is_info && $log->info(
@@ -813,12 +877,15 @@ sub _connectEvent {
 				);
 				$client->playingSong()->pluginData(context => 0);
 				$client->pluginData(SpotifyConnect => 0);
+				Slim::Utils::Timers::killTimers($client, \&_syncPoll);
 			}
 			}
 		}
 
-		# Change: seek detection — only if we're still playing and have progress data
+		# Change: the binary reports a track change — cancel any pending advance
+		# timer to prevent double-skipping.
 		elsif ($cmd eq 'change') {
+			Slim::Utils::Timers::killTimers($client, \&_firePlayerNext);
 			if ($client->isPlaying && defined $result->{progress}
 				&& abs($result->{progress} - Slim::Player::Source::songTime($client)) > SEEK_THRESHOLD)
 			{
