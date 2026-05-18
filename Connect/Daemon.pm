@@ -72,7 +72,7 @@ sub start {
 		'--lms', '127.0.0.1:' . preferences('server')->get('httpport'),
 	);
 
-	# D-01: Discovery ON as default; only disable if canDiscovery() is false or user opted out
+	# Discovery is enabled by default; disable only when canDiscovery() returns false or the user opted out
 	if ( !Plugins::Spotty::Plugin->canDiscovery() || $prefs->get('disableDiscovery') ) {
 		push @helperArgs, '--disable-discovery';
 	}

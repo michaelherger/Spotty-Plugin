@@ -58,10 +58,10 @@ sub init {
 	# Listen to playlist change events so we know when Spotify Connect mode ends
 	Slim::Control::Request::subscribe(\&_onNewSong, [['playlist'], ['newsong']]);
 
-	# Tell the Spotify controller to pause playback when we pause locally (D-05)
+	# Forward local pause/stop to the Spotify controller for bidirectional state sync
 	Slim::Control::Request::subscribe(\&_onPause, [['playlist'], ['pause', 'stop']]);
 
-	# Forward local volume changes to Spotify (D-05)
+	# Forward local volume changes to Spotify for bidirectional state sync
 	Slim::Control::Request::subscribe(\&_onVolume, [['mixer'], ['volume']]);
 
 	# Forward local seeks to Spotify so the app stays in sync
