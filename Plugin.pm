@@ -69,6 +69,7 @@ sub initPlugin {
 		},
 		accountSwitcherMenu => 0,
 		disableDiscovery => 0,
+		disableSpotifyConnect => 0,
 		checkDaemonConnected => 0,
 		displayNames => {},
 		products => {},
@@ -332,6 +333,9 @@ sub canDiscovery { 1 }
 
 sub canSpotifyConnect {
 	my ($class, $dontInit) = @_;
+
+	# global master switch — if disabled, short-circuit before any binary check
+	return if $prefs->get('disableSpotifyConnect');
 
 	# we need a minimum helper application version
 	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Helper->getVersion(), CONNECT_HELPER_VERSION, 10) ) {
