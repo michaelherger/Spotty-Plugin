@@ -26,6 +26,13 @@ use constant VOLUME_GRACE_PERIOD => 20;
 # Seconds; pre-buffer optimisation lookahead
 use constant PRE_BUFFER_TIME => 7;
 
+# Seconds; safety-net sync interval — poll /me/player to catch track drift
+use constant SYNC_POLL_INTERVAL => 15;
+
+# Seconds; suppress spurious stop events during session setup (mid-playback transfer)
+use constant CONNECT_START_GRACE => 12;
+
+
 # Bytes; threshold for the large-buffer pre-buffer optimisation
 use constant PRE_BUFFER_SIZE_THRESHOLD => 10 * 1024 * 1024;
 
@@ -151,6 +158,16 @@ sub getNextTrack {
 					$class->setSpotifyConnect($client, $state);
 				}, $uri);
 			}
+
+			# Stale-API fallback: if /me/player returned no item, use the
+			# track URI we captured from the binary's event.
+			if (!$state->{item} && (my $eventUri = $client->pluginData('eventTrackUri'))) {
+				main::INFOLOG && $log->is_info && $log->info(
+					"getNextTrack: API stale, using stored event URI: $eventUri"
+				);
+				$state->{item} = { uri => $eventUri };
+			}
+			$client->pluginData(eventTrackUri => '');
 
 			$song->streamUrl($state->{item}->{uri});
 			$class->setSpotifyConnect($client, $state);
@@ -665,6 +682,17 @@ sub _connectEvent {
 			$cmd = 'start';
 		}
 
+		# Stale-API fallback for start: if API returned no track but the
+		# event carries a track_id in _p2, synthesize the track info.
+		if ($cmd eq 'start' && !$result->{track} && (my $startTrackId = $request->getParam('_p2'))) {
+			my $startUri = "spotify:track:$startTrackId";
+			main::INFOLOG && $log->is_info && $log->info(
+				"API returned no track on start, using event track_id: $startUri"
+			);
+			$result->{track} = { uri => $startUri };
+			$result->{is_playing} = 1;
+		}
+
 		# Start: assign synthetic Connect URL to LMS player
 		if ($cmd eq 'start' && $result->{track}) {
 			if ($streamUrl ne $result->{track}->{uri} || !__PACKAGE__->isSpotifyConnect($client)) {
@@ -672,14 +700,18 @@ sub _connectEvent {
 					"Got a new track to be played: " . $result->{track}->{uri}
 				);
 
+				# Store event track URI for getNextTrack fallback (stale API)
+				$client->pluginData(eventTrackUri => $result->{track}->{uri});
+
 				# Sync volume to Spotify on initial connect (before setting the flag)
 				if (!$client->pluginData('SpotifyConnect')) {
 					$spotty->playerVolume(undef, $client->id, $client->volume);
 				}
 
 				# Mark Connect mode on the client
-				$client->pluginData(SpotifyConnect => 1);
-				$client->pluginData(newTrack       => 1);
+				$client->pluginData(SpotifyConnect   => 1);
+				$client->pluginData(newTrack         => 1);
+				$client->pluginData(connectStartTime => Time::HiRes::time());
 
 				# Remember episode URI for getNextTrack (Spotify won't return it in player status)
 				$client->pluginData(episodeUri => $result->{track}->{uri})
@@ -712,9 +744,22 @@ sub _connectEvent {
 		}
 
 		# Stop: pause LMS player if we are the current Connect device
-		elsif ($cmd eq 'stop' && $result->{device}) {
-			my $clientId = $client->id;
-			my $deviceId = Plugins::Spotty::Connect::DaemonManager->idFromMac($clientId);
+		elsif ($cmd eq 'stop') {
+			# Grace period: ignore spurious stop events (is_playing=0, no track)
+			# that arrive during mid-playback session setup. These are librespot
+			# session transition artifacts, not real user pauses.
+			if (!$result->{is_playing} && !$result->{track}
+				&& (Time::HiRes::time() - ($client->pluginData('connectStartTime') || 0)) < CONNECT_START_GRACE)
+			{
+				main::INFOLOG && $log->is_info && $log->info(
+					"Ignoring spurious stop during Connect session setup grace period"
+				);
+				return;
+			}
+
+			if ($result->{device}) {
+				my $clientId = $client->id;
+				my $deviceId = Plugins::Spotty::Connect::DaemonManager->idFromMac($clientId);
 
 			if ($client->isPlaying
 				&& ($result->{device}->{id} eq ($deviceId || '')
@@ -750,6 +795,7 @@ sub _connectEvent {
 				);
 				$client->playingSong()->pluginData(context => 0);
 				$client->pluginData(SpotifyConnect => 0);
+			}
 			}
 		}
 
