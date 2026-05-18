@@ -661,6 +661,24 @@ sub _connectEvent {
 			$result->{track} = { uri => $uri };
 		}
 
+		# Stale-API fallback: the binary's event carries the new track_id in _p2.
+		# If the API returned the same track we already have but the event says
+		# otherwise, trust the event — the API is lagging behind.
+		if ($cmd eq 'change' && (my $eventTrackId = $request->getParam('_p2'))) {
+			my $eventUri = "spotify:track:$eventTrackId";
+			if (ref $result->{track} && $result->{track}->{uri}
+				&& $result->{track}->{uri} eq $streamUrl
+				&& $eventUri ne $streamUrl)
+			{
+				main::INFOLOG && $log->is_info && $log->info(
+					"API returned stale track, using event track_id: $eventUri"
+				);
+				$result->{track} = { uri => $eventUri };
+				$result->{is_playing} = 1;
+				$result->{progress} = 0;
+			}
+		}
+
 		# change-to-start upgrade (Pitfall 5):
 		# If the current stream URL differs from the result track URI (and Spotify says
 		# it's playing), or if we're not currently in Connect mode, this is really a start.
