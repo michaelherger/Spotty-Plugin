@@ -303,11 +303,11 @@ sub _getNextTrack {
 	main::INFOLOG && $log->is_info && $log->info("We're approaching the end of a track - get the next track");
 	$client->pluginData(newTrack => 1);
 
-	# Add current track to history
-	$song->pluginData('context')->addPlay($song->streamUrl);
+	# Add current track to history (uri2url for consistent format with Context.pm)
+	$song->pluginData('context')->addPlay(uri2url($song->streamUrl));
 
 	# For playlists/albums we may know the last track — stop if so and no autoplay
-	if ($song->pluginData('context')->isLastTrack($song->streamUrl)
+	if ($song->pluginData('context')->isLastTrack(uri2url($song->streamUrl))
 		&& !($spotty->can('doesAutoplay') && $spotty->doesAutoplay))
 	{
 		$class->_delayedStop($client);
@@ -672,6 +672,11 @@ sub _connectEvent {
 					"Got a new track to be played: " . $result->{track}->{uri}
 				);
 
+				# Sync volume to Spotify on initial connect (before setting the flag)
+				if (!$client->pluginData('SpotifyConnect')) {
+					$spotty->playerVolume(undef, $client->id, $client->volume);
+				}
+
 				# Mark Connect mode on the client
 				$client->pluginData(SpotifyConnect => 1);
 				$client->pluginData(newTrack       => 1);
@@ -686,11 +691,6 @@ sub _connectEvent {
 					sprintf("spotify://connect-%u", Time::HiRes::time() * 1000)
 				]);
 				$playReq->source(__PACKAGE__);
-
-				# Sync volume to Spotify on initial connect
-				if (!$client->pluginData('SpotifyConnect')) {
-					$spotty->playerVolume(undef, $client->id, $client->volume);
-				}
 
 				# Reset play history on interactive Connect use
 				$song && $song->pluginData('context') && $song->pluginData('context')->reset();

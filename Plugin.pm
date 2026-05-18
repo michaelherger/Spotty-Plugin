@@ -373,8 +373,7 @@ sub killHangingProcesses {
 		my %connectPids;
 		if ( $class->canSpotifyConnect(1) ) {
 			require Plugins::Spotty::Connect::DaemonManager;
-			my $instances = Plugins::Spotty::Connect::DaemonManager->helperInstances() || {};
-			for my $pid (values %$instances) {
+			for my $pid (Plugins::Spotty::Connect::DaemonManager->helperPids()) {
 				$connectPids{$pid} = 1 if $pid;
 			}
 		}
