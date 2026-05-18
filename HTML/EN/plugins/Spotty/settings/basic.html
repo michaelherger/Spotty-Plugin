@@ -130,8 +130,11 @@
 		<input name="pref_iconCode" id="pref_iconCode" type="text" value="[% IF !hasDefaultIcon; prefs.pref_iconCode; END %]" class="stdedit" size="40">
 	[% END %]
 
-	[% WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="" %]
-		[% "PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG" | string %]
-	[% END %]
+	[% IF canSpotifyConnect; WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="PLUGIN_SPOTTY_SPOTIFY_CONNECT_DESC_LONG" %]
+		<input name="pref_disableSpotifyConnect" id="pref_disableSpotifyConnect" type="checkbox" [% IF prefs.pref_disableSpotifyConnect %] checked [% END %]>
+		<label for="pref_disableSpotifyConnect">[% "PLUGIN_SPOTTY_DISABLE_SPOTIFYCONNECT_DESC" | string %]</label>
+	[% END; ELSE; WRAPPER setting title="PLUGIN_SPOTTY_SPOTIFY_CONNECT" desc="" %]
+		[% "PLUGIN_SPOTTY_NEED_HELPER_UPDATE" | string %]
+	[% END; END %]
 
 [% PROCESS settings/footer.html %]
