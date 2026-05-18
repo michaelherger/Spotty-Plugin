@@ -64,6 +64,9 @@ sub init {
 	# Forward local volume changes to Spotify (D-05)
 	Slim::Control::Request::subscribe(\&_onVolume, [['mixer'], ['volume']]);
 
+	# Forward local seeks to Spotify so the app stays in sync
+	Slim::Control::Request::subscribe(\&_onSeek, [['time']]);
+
 	# Enable pre-buffer optimisation for players with very large buffers
 	Slim::Control::Request::subscribe(sub {
 		my $request = shift;
@@ -261,6 +264,7 @@ sub shutdown {
 		Slim::Control::Request::unsubscribe(\&_onNewSong);
 		Slim::Control::Request::unsubscribe(\&_onPause);
 		Slim::Control::Request::unsubscribe(\&_onVolume);
+		Slim::Control::Request::unsubscribe(\&_onSeek);
 
 		$initialized = 0;
 	}
@@ -284,6 +288,7 @@ sub _getNextTrack {
 
 	Slim::Utils::Timers::killTimers($client, \&_syncController);
 	Slim::Utils::Timers::killTimers($client, \&_getNextTrack);
+	Slim::Utils::Timers::killTimers($client, \&_firePlayerNext);
 
 
 	if (!$client->isPlaying() || !$class->isSpotifyConnect($client)) {
@@ -310,10 +315,12 @@ sub _getNextTrack {
 		return;
 	}
 
-	# Peek at the queue to find the next track without advancing Spotify's state.
-	# The daemon will advance Spotify naturally when the track ends.
+	# Peek at the queue to find the next track for pre-buffering, then schedule
+	# playerNext at track end to advance Spotify in sync with LMS.
 	$spotty->playerQueue(sub {
 		my ($nextItem) = @_;
+
+		$client->pluginData(newTrack => 0);
 
 		if ($nextItem && (my $uri = $nextItem->{uri})) {
 			my $url = uri2url($uri);
@@ -325,6 +332,19 @@ sub _getNextTrack {
 			}
 			else {
 				$song->streamUrl($uri);
+
+				# Schedule playerNext to fire when the track actually ends,
+				# so Spotify advances in sync with LMS.
+				my $remaining = ($client->controller()->playingSongDuration() || 0)
+					- (Slim::Player::Source::songTime($client) || 0);
+				if ($remaining > 0) {
+					main::INFOLOG && $log->is_info && $log->info(
+						"Scheduling playerNext in ${remaining}s (at track end)"
+					);
+					Slim::Utils::Timers::killTimers($client, \&_firePlayerNext);
+					Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + $remaining,
+						\&_firePlayerNext, $spotty);
+				}
 			}
 
 			$successCb->();
@@ -335,6 +355,13 @@ sub _getNextTrack {
 			$successCb->();
 		}
 	});
+}
+
+sub _firePlayerNext {
+	my ($client, $spotty) = @_;
+	Slim::Utils::Timers::killTimers($client, \&_firePlayerNext);
+	main::INFOLOG && $log->is_info && $log->info("Advancing Spotify to next track (at track end)");
+	$spotty->playerNext(undef);
 }
 
 sub _syncController {
@@ -479,6 +506,33 @@ sub _bufferedSetVolume {
 	__PACKAGE__->getAPIHandler($client)->playerVolume(undef, $client->id, $volume);
 }
 
+sub _onSeek {
+	my $request = shift;
+
+	return if $request->source && $request->source eq __PACKAGE__;
+
+	my $client = $request->client();
+	return if !defined $client;
+	$client = $client->master;
+
+	return if $client->pluginData('newTrack');
+
+	return if !__PACKAGE__->isSpotifyConnect($client);
+
+	my $position = Slim::Player::Source::songTime($client) || 0;
+
+	Slim::Utils::Timers::killTimers($client, \&_bufferedSeek);
+	Slim::Utils::Timers::setTimer($client, Time::HiRes::time() + 0.3, \&_bufferedSeek, $position);
+}
+
+sub _bufferedSeek {
+	my ($client, $position) = @_;
+	main::INFOLOG && $log->is_info && $log->info(
+		"Forwarding LMS seek to Spotify Connect: ${position}s"
+	);
+	__PACKAGE__->getAPIHandler($client)->playerSeek(undef, $client->id, $position);
+}
+
 # ---------------------------------------------------------------------------
 # spottyconnect JSON-RPC dispatch handler
 #
@@ -532,12 +586,14 @@ sub _connectEvent {
 		return;
 	}
 
-	# Seek handler — execute time-seek directly; no /me/player poll needed
+	# Seek handler — source-marked so _onSeek doesn't echo it back to Spotify
 	if ($cmd eq 'seek') {
 		my $position = $request->getParam('_p2');
 		if (defined $position && $position ne '') {
 			main::INFOLOG && $log->is_info && $log->info("Seek to $position");
-			$client->execute(['time', int($position)]);
+			my $seekReq = Slim::Control::Request->new($client->id, ['time', int($position)]);
+			$seekReq->source(__PACKAGE__);
+			$seekReq->execute();
 		}
 		return;
 	}
@@ -705,7 +761,9 @@ sub _connectEvent {
 				main::INFOLOG && $log->is_info && $log->info(
 					"Seek triggered by change event: " . $result->{progress}
 				);
-				$client->execute(['time', int($result->{progress})]);
+				my $seekReq = Slim::Control::Request->new($client->id, ['time', int($result->{progress})]);
+				$seekReq->source(__PACKAGE__);
+				$seekReq->execute();
 			}
 		}
 

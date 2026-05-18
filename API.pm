@@ -310,6 +310,25 @@ sub playerQueue {
 	);
 }
 
+sub playerSeek {
+	my ( $self, $cb, $device, $positionS ) = @_;
+
+	$self->withIdFromMac(sub {
+		my $args = {
+			position_ms => int($positionS * 1000),
+		};
+
+		$args->{device_id} = $_[0] if $_[0];
+
+		$self->_call('me/player/seek',
+			sub {
+				$cb->() if $cb;
+			},
+			PUT => $args
+		);
+	}, $device);
+}
+
 sub playerVolume {
 	my ( $self, $cb, $device, $volume ) = @_;
 
