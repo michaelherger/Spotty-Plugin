@@ -70,6 +70,9 @@ sub init {
 	# Forward local seeks to Spotify so the app stays in sync
 	Slim::Control::Request::subscribe(\&_onSeek, [['time']]);
 
+	# Forward local skip next/prev to Spotify instead of letting LMS handle it
+	Slim::Control::Request::subscribe(\&_onPlaylistJump, [['playlist'], ['jump', 'index']]);
+
 	# Enable pre-buffer optimisation for players with very large buffers
 	Slim::Control::Request::subscribe(sub {
 		my $request = shift;
@@ -434,6 +437,21 @@ sub _syncPoll {
 
 			$song && $song->pluginData('context') && $song->pluginData('context')->reset();
 		}
+		else {
+			my $spotifyProgress = ($result->{progress_ms} || 0) / 1000;
+			my $lmsProgress     = Slim::Player::Source::songTime($client) || 0;
+			my $drift           = abs($spotifyProgress - $lmsProgress);
+
+			if ($spotifyProgress > 10 && $drift > 30) {
+				main::INFOLOG && $log->is_info && $log->info(sprintf(
+					"Position drift detected: LMS=%.1fs Spotify=%.1fs (drift=%.1fs) — seeking",
+					$lmsProgress, $spotifyProgress, $drift
+				));
+				my $seekReq = Slim::Control::Request->new($client->id, ['time', int($spotifyProgress)]);
+				$seekReq->source(__PACKAGE__);
+				$seekReq->execute();
+			}
+		}
 	});
 }
 
@@ -598,6 +616,34 @@ sub _bufferedSeek {
 		"Forwarding LMS seek to Spotify Connect: ${position}s"
 	);
 	__PACKAGE__->getAPIHandler($client)->playerSeek(undef, $client->id, $position);
+}
+
+sub _onPlaylistJump {
+	my $request = shift;
+
+	return if $request->source && $request->source eq __PACKAGE__;
+
+	my $client = $request->client();
+	return if !defined $client;
+	$client = $client->master;
+
+	return if !__PACKAGE__->isSpotifyConnect($client);
+
+	my $index = $request->getParam('_index');
+	return if !defined $index;
+
+	if ($index eq '+1') {
+		main::INFOLOG && $log->is_info && $log->info(
+			"Connect mode: forwarding skip-next to Spotify API"
+		);
+		__PACKAGE__->getAPIHandler($client)->playerNext(undef, $client->id);
+	}
+	elsif ($index eq '-1' || $index eq '+0') {
+		main::INFOLOG && $log->is_info && $log->info(
+			"Connect mode: forwarding skip-previous to Spotify API"
+		);
+		__PACKAGE__->getAPIHandler($client)->playerPrevious(undef, $client->id);
+	}
 }
 
 # ---------------------------------------------------------------------------

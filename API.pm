@@ -288,6 +288,22 @@ sub playerNext {
 	}, $device);
 }
 
+sub playerPrevious {
+	my ( $self, $cb, $device ) = @_;
+
+	$self->withIdFromMac(sub {
+		my $args = {};
+		$args->{device_id} = $_[0] if $_[0];
+
+		$self->_call('me/player/previous',
+			sub {
+				$cb->() if $cb;
+			},
+			POST => $args
+		);
+	}, $device);
+}
+
 sub playerQueue {
 	my ( $self, $cb ) = @_;
 

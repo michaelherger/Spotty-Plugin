@@ -63,6 +63,16 @@ sub formatOverride {
 
 sub canDirectStream { 0 }
 
+sub canDoAction {
+	my ($class, $client, $url, $action) = @_;
+
+	if (Plugins::Spotty::Plugin->isSpotifyConnect($client)) {
+		return 0 if $action eq 'stop';
+	}
+
+	return 1;
+}
+
 sub isRepeatingStream {
 	my ( undef, $song ) = @_;
 
