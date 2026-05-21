@@ -25,14 +25,14 @@ __PACKAGE__->mk_accessor( rw => qw(
 
 my $log = logger('plugin.spotty');
 
-# SPOTTY-NG instrumentation (Phase 1, plan 03) — per-Pipeline correlation ID generator (D-11).
+# Per-Pipeline correlation ID generator for debug request/response tracing.
 # Renders as 8 hex chars; collision risk negligible within a single LMS session.
-my $_spottyNgPipeCounter = 0;
-sub _spottyNgGenPipeId {
+my $_pipeCounter = 0;
+sub _genPipeId {
 	my $self = shift;
-	$_spottyNgPipeCounter++;
+	$_pipeCounter++;
 	require Scalar::Util;
-	my $mix = (Scalar::Util::refaddr($self) || 0) ^ ($_spottyNgPipeCounter * 0x9E3779B1);
+	my $mix = (Scalar::Util::refaddr($self) || 0) ^ ($_pipeCounter * 0x9E3779B1);
 	return sprintf('%08x', $mix & 0xFFFFFFFF);
 }
 
@@ -55,8 +55,7 @@ sub new {
 	$self->_data({});
 	$self->_chunks(delete $self->params->{chunks} || {});
 
-	# SPOTTY-NG instrumentation (Phase 1, plan 03)
-	$self->_pipeId( $self->_spottyNgGenPipeId() );
+	$self->_pipeId( $self->_genPipeId() );
 	$self->_inflight(0);
 
 	return $self;
@@ -72,10 +71,9 @@ sub get {
 	}
 	# otherwise grabe the first chunk and decide whether to continue or not
 	else {
-		# SPOTTY-NG instrumentation (Phase 1, plan 05) — increment counter for the first/probe chunk (D-10).
 		$self->_inflight(($self->_inflight || 0) + 1);
 
-		# SPOTTY-NG (Phase 1, plan 03): forward Pipeline ref so API::_call can correlate (D-11).
+		# Forward Pipeline ref so API::_call can correlate REQ/RES trace lines by pipe ID.
 		$self->spottyAPI->_call($self->method, sub {
 			my ($result, $response) = @_;
 
@@ -118,8 +116,7 @@ sub _iterateChunks {
 	# clone data, as it might get altered in the called methods
 	my $chunks = Storable::dclone($self->_chunks);
 	while (my ($id, $params) = each %$chunks) {
-		# SPOTTY-NG instrumentation (Phase 1, plan 05) — per-Pipeline inflight increment (D-10).
-		# Decrement is owned by AsyncRequest's wrapped onComplete/onError (plan 04).
+		# Increment per-Pipeline inflight counter; decremented by AsyncRequest's wrapped callbacks.
 		$self->_inflight(($self->_inflight || 0) + 1);
 		$self->_call($self->method, sub {
 			$self->_extract($id, shift);
@@ -140,8 +137,7 @@ sub _iterateChunks {
 sub _followAfter {
 	my ($self, $id) = @_;
 
-	# SPOTTY-NG instrumentation (Phase 1, plan 05) — increment counter on cursor-paginated dispatch (D-10).
-	# Cursor pagination is serial (one chunk at a time), so this hovers at 1 per Pipeline.
+	# Cursor pagination is serial (one chunk at a time), so inflight hovers at 1 per Pipeline.
 	$self->_inflight(($self->_inflight || 0) + 1);
 
 	$self->spottyAPI->_call($self->method, sub {
@@ -156,7 +152,7 @@ sub _followAfter {
 	}, GET => {
 		%{$self->params},
 		after => $id,
-		_pipeline => $self,    # SPOTTY-NG (Phase 1, plan 03)
+		_pipeline => $self,    # forward Pipeline ref for REQ/RES trace correlation
 	})
 }
 
@@ -199,8 +195,8 @@ sub _followOffset {
 
 sub _call {
 	my $self = shift;
-	# SPOTTY-NG (Phase 1, plan 03): tag params with this Pipeline's ref so API::_call can correlate
-	# via params->{_pipeline} (D-10, D-11). Args shape: ($method, $cb, $type, $params).
+	# Tag params with this Pipeline's ref so API::_call can emit correlated REQ/RES trace lines.
+	# Args shape: ($method, $cb, $type, $params).
 	my ($method, $cb, $type, $params) = @_;
 	$params ||= {};
 	$params->{_pipeline} = $self;
