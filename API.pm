@@ -149,11 +149,21 @@ sub getToken {
 sub codeExchange {
 	my ( $self, $cb, $args ) = @_;
 
+	# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — propagate the
+	# caller's `_client_id` override into the params handed to _tokenCall, so the
+	# flavor-correct Client ID lands on Spotify's /api/token endpoint at
+	# code-exchange time. Mirrors the existing refreshToken fix below (Phase 2-07
+	# follow-up commit 7e233a6). Without this, a bundled-flavor authorization_code
+	# (minted at /authorize under the bundled-default Client ID via oauthRedirect)
+	# gets exchanged with the user's own Dev ID — Spotify rejects with 400 Bad
+	# Request because /api/token requires the same client_id at code exchange as
+	# was used at /authorize. Discovered during Phase 2.5 Probe 5 (HUMAN-UAT).
 	$self->_tokenCall($cb, {
 		grant_type => 'authorization_code',
 		code => $args->{code},
 		redirect_uri => $args->{callbackUrl},
 		code_verifier => $args->{codeVerifier},
+		_client_id => $args->{_client_id},
 	}, $cb);
 }
 
