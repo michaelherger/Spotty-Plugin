@@ -32,6 +32,10 @@ use constant SYNC_POLL_INTERVAL => 15;
 # Bytes; threshold for the large-buffer pre-buffer optimisation
 use constant PRE_BUFFER_SIZE_THRESHOLD => 10 * 1024 * 1024;
 
+# Seconds; ignore spurious stop events (is_playing=0, no track) during this window
+# after Connect session setup begins. Librespot emits these as session transition artifacts.
+use constant CONNECT_START_GRACE => 10;
+
 my $prefs       = preferences('plugin.spotty');
 my $serverPrefs = preferences('server');
 my $log         = logger('plugin.spotty');
