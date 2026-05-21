@@ -12,7 +12,6 @@ use Scalar::Util qw(blessed);
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
-# SPOTTY-NG (Phase 4 / D-4-05 / closes UAT-3) — needed for ->removeRefreshToken in deleteCacheFolder.
 use Plugins::Spotty::API::Token;
 
 use constant CACHE_PURGE_INTERVAL => 86400;
@@ -184,24 +183,16 @@ sub removeAllAccounts {
 sub deleteCacheFolder {
 	my ($class, $id) = @_;
 
-	# SPOTTY-NG (Phase 4 / D-4-05 / closes UAT-3 + UAT-4) — orphan-state scrub for the
-	# deleted account: (a) drop refresh-token cache rows in spotty.db for this account's
-	# userId under both 'own' and 'bundled' flavors; (b) scrub `_client:<MAC>: account: <id>`
-	# bindings on any player roster entry currently bound to this id. credentials.json
-	# MUST be read BEFORE unlink to extract the username; if it was already gone (the
-	# Settings::Auth::cleanup → __AUTHENTICATE__ call site, or a re-entry after a prior
-	# delete), the whole orphan-scrub block silently no-ops. Inherited automatically by
-	# Settings.pm:66, Settings/Auth.pm:93, and removeAllAccounts (no caller-side touch).
+	# Orphan-state scrub for the deleted account:
+	# (a) Drop refresh-token cache rows for this account's userId under both 'own' and
+	#     'bundled' flavors via Token->removeRefreshToken — AccountHelper stays agnostic
+	#     to Token cache-key internals.
+	# (b) Scrub `account` bindings on any player roster entry currently bound to this id
+	#     via $prefs->client($client)->remove('account') — the canonical no-binding primitive.
+	#     Players reconcile to a default account on next play via getAccount's lazy-fallback.
 	#
-	# Token-cache scrub goes through Plugins::Spotty::API::Token->removeRefreshToken
-	# (D-4-07) which wraps Plugins::Spotty::API::Cache->remove (D-4-08). AccountHelper.pm
-	# stays agnostic to Token cache-key internals.
-	#
-	# Player-prefs scrub uses $prefs->client($client)->remove('account') — the documented
-	# cleanup primitive (see setAccount line 34 / getAccount line 57). Players reconcile
-	# to a default account on next play via getAccount's lazy-fallback (lines 51-62).
-	# NOT direct YAML rewrite of spotty.prefs (D-4-06 — collision with concurrent prefs
-	# writes). NOT set('account','') (remove is the canonical no-binding primitive).
+	# credentials.json MUST be read BEFORE unlink to extract the username; if it was
+	# already gone, the whole orphan-scrub block silently no-ops.
 	my $credentials = $class->getCredentials($id);
 	my $userId = $credentials && ref $credentials ? $credentials->{username} : undef;
 
@@ -211,7 +202,7 @@ sub deleteCacheFolder {
 	}
 
 	if ($userId) {
-		main::INFOLOG && $log->is_info && $log->info("[SPOTTY-NG] (D-4-05) account-delete orphan-state scrub starting: id=$id userId=$userId");
+		main::INFOLOG && $log->is_info && $log->info("account-delete orphan-state scrub starting: id=$id userId=$userId");
 
 		# (a) Refresh-token cache scrub — both flavors.
 		Plugins::Spotty::API::Token->removeRefreshToken(undef, $userId, 'own');
@@ -226,7 +217,7 @@ sub deleteCacheFolder {
 
 			$prefs->client($client)->remove('account');
 			$client->pluginData( api => '' );
-			main::INFOLOG && $log->is_info && $log->info("[SPOTTY-NG] (D-4-05) cleared _client account binding: client=" . $client->id . " (was bound to $id)");
+			main::INFOLOG && $log->is_info && $log->info("cleared account binding: client=" . $client->id . " (was bound to $id)");
 		}
 	}
 

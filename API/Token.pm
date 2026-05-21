@@ -38,12 +38,10 @@ my $prefs = preferences('plugin.spotty');
 
 my %callbacks;
 
-# SPOTTY-NG (Phase 2.6, plan 03 / HARDEN-09 / closes 02-REVIEW.md WR-06) — dedup map is keyed
-# on the (refreshToken, flavor) tuple via "$rt|$flavor" so a future cosmetic-collision case
-# where own and bundled refresh tokens are identical (theoretically possible but practically
-# impossible — Spotify RTs are unique per (user, app) pair) never conflates callbacks across
-# flavors. CONTEXT.md `<code_context>` already documented this as the intent; this change
-# brings the code in line with the documentation.
+# Dedup map is keyed on the (refreshToken, flavor) tuple via "$rt|$flavor" so a future
+# cosmetic-collision case where own and bundled refresh tokens are identical (theoretically
+# possible but practically impossible — Spotify RTs are unique per (user, app) pair) never
+# conflates callbacks across flavors.
 sub _callCallbacks {
 	my ($token, $dedupKey) = @_;
 
@@ -64,7 +62,7 @@ sub _gotTokenInfo {
 
 		main::INFOLOG && $log->is_info && $log->info("Refreshed access token for user: $userId");
 
-		# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — propagate flavor from $args into the cache writers.
+		# Propagate flavor from $args into the cache writers.
 		__PACKAGE__->cacheAccessToken($args->{code}, $userId, $accessToken, $expiresIn, $args->{flavor});
 		__PACKAGE__->cacheRefreshToken($args->{code}, $userId, $result->{refresh_token}, $args->{flavor}) if $result->{refresh_token};
 	}
@@ -74,29 +72,15 @@ sub _gotTokenInfo {
 	return $accessToken;
 }
 
-# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware access-token cache key.
+# Flavor-aware access-token cache key.
 # Backward-compat: callers omitting the third arg get $flavor='own', producing the
 # same key shape as before plus an `_own` suffix; existing cached entries (no suffix)
 # fall through to a refresh on first read after upgrade — graceful migration.
 #
-# SPOTTY-NG (Phase 3, plan 02 / POLISH-12 / closes 02-REVIEW.md IN-05 / promoted from
-# .planning/todos/pending/HARDEN-DEFER-IN-05.md) — drop the per-process startup-time
-# segment from the AT cache key shape. The AT TTL (`expires_in - 300` seconds, set in
-# cacheAccessToken below) already provides correct expiration; per-startup separation
-# was belt-and-suspenders that costs disk space (orphaned `spotty_access_token_*` rows
-# accumulate across LMS restarts until their natural ~55min TTL expires). Dropping it
-# makes the key shape:
-#   spotty_access_token_<code>_<userId>_<flavor>
-# instead of:
-#   spotty_access_token_<startup_epoch>_<code>_<userId>_<flavor>
-#
-# Migration semantics on first read after upgrade:
-# - Old keys (with startup-time segment) become unreachable but are NOT removed proactively;
-#   they expire naturally via TTL (≤ 55min) — same graceful-miss pattern HARDEN-10
-#   used for legacy 3-segment RT keys.
-# - First Token::get call after upgrade will look up the new key shape, miss, and
-#   trigger a normal AT refresh against Spotify. This is identical to the cold-cache
-#   first-read behavior on every LMS startup — no user-visible change.
+# Key shape: spotty_access_token_<code>_<userId>_<flavor>
+# (startup-time segment dropped — AT TTL already provides correct expiration;
+# per-startup separation was belt-and-suspenders that caused orphaned cache entries
+# on LMS restart; first call after upgrade graceful-misses and re-refreshes).
 sub _getATCacheKey {
 	my ($code, $userId, $flavor) = @_;
 	$flavor ||= 'own';
@@ -106,8 +90,7 @@ sub _getATCacheKey {
 	                 $flavor);
 }
 
-# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware refresh-token cache key.
-# Same backward-compat pattern as _getATCacheKey above.
+# Flavor-aware refresh-token cache key. Same backward-compat pattern as _getATCacheKey above.
 sub _getRTCacheKey {
 	my ($code, $userId, $flavor) = @_;
 	$flavor ||= 'own';
@@ -117,8 +100,8 @@ sub _getRTCacheKey {
 	                 $flavor);
 }
 
-# SPOTTY-NG (Phase 2, plan 04 follow-up / FIX-11) — pre-04 3-segment RT cache key shape.
-# Used only for the legacy-key read fallback in _lookupRefreshToken below; never written.
+# Pre-migration 3-segment RT cache key shape. Used only for the legacy-key read
+# fallback in _lookupRefreshToken below; never written after upgrade.
 sub _getRTCacheKeyLegacy {
 	my ($code, $userId) = @_;
 	return join('_', 'spotty_refresh_token',
@@ -126,11 +109,12 @@ sub _getRTCacheKeyLegacy {
 	                 Slim::Utils::Unicode::utf8toLatin1Transliterate($userId));
 }
 
-# SPOTTY-NG (Phase 2, plan 04 follow-up / FIX-11) — graceful migration of pre-04 RT cache entries.
+# Graceful migration helper for pre-migration RT cache entries.
 # Looks up the new 4-segment key first; on miss, falls back to the legacy 3-segment key for
-# flavor='own' only (the pre-04 default), and on legacy hit opportunistically writes the value
-# under the new key so subsequent reads are direct. Best-effort migration: a write failure
-# does not block the read. Bundled flavor never has a legacy entry, so the fallback is skipped.
+# flavor='own' only (the pre-migration default), and on legacy hit opportunistically writes the
+# value under the new key so subsequent reads are direct. Best-effort migration: a write
+# failure does not block the read. Bundled flavor never has a legacy entry, so the fallback
+# is skipped.
 sub _lookupRefreshToken {
 	my ($code, $userId, $flavor) = @_;
 	$flavor ||= 'own';
@@ -141,38 +125,20 @@ sub _lookupRefreshToken {
 	my $legacyKey = _getRTCacheKeyLegacy($code, $userId);
 	$rt = $spottyCache->get($legacyKey) || $cache->get($legacyKey);
 	if (defined($rt) && length($rt)) {
-		# SPOTTY-NG (Phase 2.6, plan 03 / HARDEN-10 / closes 02-REVIEW.md WR-07) — opportunistically
-		# migrate the value forward AND remove the legacy entry. Pre-fix code only wrote forward
-		# and left the legacy key indefinitely; on a future Spotify RT rotation, _gotTokenInfo
-		# writes the new RT only to the 4-segment key, leaving the legacy key holding a stale
-		# (now-revoked-by-Spotify) RT. A user rolling back to pre-Phase-2 code would read the
-		# legacy entry, get a 401 from Spotify, and be forced to re-authorize. Removing the
-		# legacy key after migration eliminates that rollback hazard and tidies up bundled-OAuth
-		# side-trip flush sequences.
+		# Opportunistically migrate the value forward AND remove the legacy entry so a future
+		# Spotify RT rotation doesn't leave the legacy key holding a stale (now-revoked) RT.
 		#
 		# Implementation note: Plugins::Spotty::API::Cache (the namespaced wrapper bound to
-		# $spottyCache) does not expose ->remove; its internal Slim::Utils::Cache instance does
-		# (proxied through the standard `remove` method). Reach through the documented
-		# `cache` slot of the wrapper, plus the module-level $cache (the default LMS namespace)
-		# in case a legacy entry was historically read from there too. Both removes are
-		# best-effort under eval — a remove failure does not block the read.
+		# $spottyCache) exposes a public ->remove method; we prefer that over direct slot access.
+		# The module-level $cache (the default LMS namespace) is also cleared in case a legacy
+		# entry was historically written there too. Both removes are best-effort under eval.
 		eval { $spottyCache->set($newKey, $rt) };
-		# SPOTTY-NG (Phase 3, plan 02 / POLISH-09 / closes 02.6-REVIEW.md IN-04) — soft fix
-		# for the encapsulation breach. Pre-fix code reaches into `$spottyCache->{cache}` to
-		# call `->remove`, which works today (Plugins::Spotty::API::Cache exposes the slot)
-		# but would silently regress to a no-op if a future refactor renames or hides the
-		# slot. The clean fix is to add a `remove` method to Plugins::Spotty::API::Cache and
-		# proxy through it — but that expands the file scope to Spotty-Plugin/API/Cache.pm,
-		# which D3-13 explicitly forbids in Phase 3. Instead, surface a WARN log when the
-		# slot is unreachable so a future regression doesn't go silent. (Eval-wrap stays so
-		# any other failure mode — e.g. a Slim::Utils::Cache implementation that throws on
-		# remove of a non-existent key — also doesn't kill the migration write.)
+		# Soft-guard: warn if the internal cache slot is unexpectedly absent, so a future
+		# encapsulation change in API::Cache doesn't silently turn the remove into a no-op.
 		if (!defined $spottyCache->{cache}) {
-			$log->warn('[SPOTTY-NG] _lookupRefreshToken: cannot remove legacy RT key — '
-			          . 'Plugins::Spotty::API::Cache internal `cache` slot is undef. Encapsulation '
-			          . 'changed in a way that hides the slot; legacy keys will accumulate. '
-			          . 'See 02.6-REVIEW.md IN-04 / 03-PATTERNS.md POLISH-09 for the clean-fix '
-			          . 'option (add a public ->remove method to Plugins::Spotty::API::Cache).');
+			$log->warn('_lookupRefreshToken: cannot remove legacy RT key — '
+			          . 'Plugins::Spotty::API::Cache internal `cache` slot is undef; '
+			          . 'legacy keys will accumulate until their natural TTL expires.');
 		}
 		else {
 			eval { $spottyCache->{cache}->remove($legacyKey) };
@@ -184,7 +150,7 @@ sub _lookupRefreshToken {
 	return $rt;
 }
 
-# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware access-token cache writer.
+# Flavor-aware access-token cache writer.
 sub cacheAccessToken {
 	my ($class, $code, $userId, $token, $expiration, $flavor) = @_;
 	$flavor ||= 'own';
@@ -199,7 +165,7 @@ sub cacheAccessToken {
 	$cache->set($cacheKey, $token, $expiration);
 }
 
-# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor-aware refresh-token cache writer.
+# Flavor-aware refresh-token cache writer.
 sub cacheRefreshToken {
 	my ($class, $code, $userId, $token, $flavor) = @_;
 	$flavor ||= 'own';
@@ -235,39 +201,30 @@ sub get {
 	my ($class, $api, $cb, $args) = @_;
 	$args ||= {};
 
-	# SPOTTY-NG (Phase 3, plan 02 / POLISH-02 / closes 02.6-REVIEW.md WR-02) — defense-in-depth
-	# cooldown gate. Mirrors the API.pm::getToken pattern at lines 140-148. Pre-Phase-2,
-	# Token::get was only invoked through getToken (which gates on cooldown); Phase 2's
-	# plan-05 made Token::get directly callable from _call's closure (and from $bundledCb's
-	# bundled-flavor token resolve), so the gate must apply at this level too. The check
-	# must respect the `$cb`-may-be-undef contract — same as the existing cached-AT
-	# early-return at lines 201-206 (`return $cb ? $cb->($token) : $token;`). Returns the
-	# `-429` sentinel that all callers of Token::get (or its API.pm wrappers) already
-	# recognise via _callOneShot's `^-(\d+)$` test (API.pm:1235-1242).
+	# Defense-in-depth cooldown gate. Mirrors the API.pm::getToken pattern. Token::get is
+	# directly callable from _call's closure (and from bundled-flavor token resolve), so the
+	# gate must apply at this level too. Returns the -429 sentinel that _callOneShot already
+	# recognises via the `^-(\d+)$` test.
 	if ($cache->get('spotty_rate_limit_exceeded')) {
 		return $cb ? $cb->(-429) : -429;
 	}
 
-	# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — flavor extraction and bundled-code resolution.
 	my $flavor = $args->{flavor} || 'own';
 
 	my $userId = $args->{userId} || ($api && $api->userId);
 	Slim::Utils::Log::logBacktrace("No userId found") if !$userId;
 	$userId ||= (main::SCANNER ? '_scanner' : 'generic');
 
-	# SPOTTY-NG: under bundled flavor, derive $code from the bundled icon basename when caller
-	# didn't pass one. Caller may still pass an explicit code to override — preserves test ergonomics.
+	# Under bundled flavor, derive $code from the bundled icon basename when caller didn't
+	# pass one. Caller may still pass an explicit code to override.
 	my $code = $args->{code};
 	if (!$code && $flavor eq 'bundled') {
 		$code = Plugins::Spotty::Plugin->initIcon();
 	}
 
-	# SPOTTY-NG (Phase 2.6, plan 03 / HARDEN-08 / closes 02-REVIEW.md WR-05) — build a local
-	# copy of $args carrying the resolved flavor + code, so we don't mutate the caller's hash.
-	# Pre-fix code wrote the resolved flavor and code values back into $args, which surprised
-	# callers passing long-lived or shared hashes (none today, but a future change could). All
-	# downstream callees (_gotTokenInfo, $api->refreshToken) read these from the args/argsref
-	# they receive, so passing $localArgs preserves behavior bit-for-bit.
+	# Build a local copy of $args carrying the resolved flavor + code so we don't mutate
+	# the caller's hash. All downstream callees (_gotTokenInfo, $api->refreshToken) read
+	# from the args hash they receive, so passing $localArgs preserves behavior bit-for-bit.
 	my $localArgs = { %$args, flavor => $flavor };
 	$localArgs->{code} = $code if $code;
 
@@ -281,8 +238,8 @@ sub get {
 		$log->info("Didn't find cached token. Need to refresh. $userId");
 	}
 
-	# SPOTTY-NG (Phase 2, plan 04 follow-up) — _lookupRefreshToken handles new-key first,
-	# legacy 3-segment fallback for flavor='own', and opportunistic key migration on legacy hit.
+	# _lookupRefreshToken handles new-key first, legacy 3-segment fallback for flavor='own',
+	# and opportunistic key migration on legacy hit.
 	my $refreshToken = _lookupRefreshToken($code, $userId, $flavor);
 
 	if (main::SCANNER) {
@@ -301,8 +258,7 @@ sub get {
 			return;
 		}
 
-		# SPOTTY-NG (Phase 2.6, plan 03 / HARDEN-09 / closes 02-REVIEW.md WR-06) — dedup key is
-		# now the (refreshToken, flavor) tuple, not refreshToken alone.
+		# Dedup key is the (refreshToken, flavor) tuple so dedup is flavor-scoped.
 		my $dedupKey = "$refreshToken|$flavor";
 
 		if ($cb) {
@@ -315,8 +271,7 @@ sub get {
 			return;
 		}
 
-		# SPOTTY-NG (Phase 2, plan 04 / D-07 / FIX-11) — pass _client_id so API.pm::_tokenCall (plan 05)
-		# can override the iconCode pref lookup with the flavor-correct Client ID.
+		# Pass _client_id so _tokenCall can use the flavor-correct Client ID on /api/token.
 		$api->refreshToken(
 			sub {
 				my $accessToken = _gotTokenInfo(shift, $userId, $localArgs);
@@ -349,11 +304,9 @@ sub _keymasterFallback {
 	return;
 }
 
-# SPOTTY-NG (Phase 2, plan 04 / D-09 / FIX-13) — probe helper for try-own-then-fallback dispatch.
-# API::_call (plan 05) calls this BEFORE attempting a bundled-flavor retry, so we can surface a
-# clear sentinel error when no bundled refresh token is cached (instead of letting refreshToken
-# log "No refresh token found" mid-callback — that line predates the routing logic and reads
-# misleadingly when the routing chose to attempt the retry).
+# Probe helper for try-own-then-fallback dispatch. API::_call calls this before attempting a
+# bundled-flavor retry so we can surface a clear sentinel error when no bundled refresh token
+# is cached (instead of letting refreshToken log "No refresh token found" mid-callback).
 sub hasRefreshToken {
 	my ($class, $api, %args) = @_;
 	my $flavor = $args{flavor} || 'own';
@@ -363,7 +316,6 @@ sub hasRefreshToken {
 	if (!$code && $flavor eq 'bundled') {
 		$code = Plugins::Spotty::Plugin->initIcon();
 	}
-	# SPOTTY-NG (Phase 2, plan 04 follow-up) — share the legacy-fallback lookup with get().
 	my $rt = _lookupRefreshToken($code, $userId, $flavor);
 	return defined($rt) && length($rt);
 }
