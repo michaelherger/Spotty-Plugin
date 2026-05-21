@@ -66,42 +66,33 @@ my @KNOWN_DEPRECATED_FAMILIES = (
 	qr{^users/[^/?]+/playlists\b},
 	qr{^artists/[^/?]+/top-tracks\b},
 	qr{^artists/[^/?]+/related-artists\b},
-	# SPOTTY-NG (Phase 2.6 plan-02 / HARDEN-03 / closes 02-REVIEW.md CR-03) — Spotify-curated
-	# playlists (Mix der Woche, Release Radar, Discover Weekly, Daily Mix, "Made For You",
-	# Genre/Mood charts) consistently use the `37i9` ID prefix as the editorial-content
-	# subnamespace (stable since ~2016, with sub-prefixes like `37i9dQZ` for personalised
-	# mixes). User-owned playlist IDs are random base62 — the narrowed regex matches ONLY
-	# the curated `37i9` subnamespace, so a deleted user playlist 404 STAYS ON OWN FLAVOR
-	# and surfaces the 404 to the caller as before (per the invariant documented at the
-	# comment block in the _call body, line ~1383). Collision probability between random
-	# base62 and the `37i9` prefix is ~1 in 14.7M; even on collision the user-owned
-	# playlist returns 200 under own with no harm done. The broader `37i9` prefix (rather
-	# than the narrower `37i9dQZ`) is intentional — it covers all curated subnamespaces
-	# including future sub-prefixes Spotify might introduce while keeping `37i9` stable.
-	# Per D2.6-10: if Spotify changes the curated prefix scheme, fail gracefully — bundled
-	# retries simply won't fire on the new scheme until the regex is updated. No proactive
-	# detection logic.
+	# Spotify-curated playlists (Mix der Woche, Release Radar, Discover Weekly, Daily Mix,
+	# "Made For You", Genre/Mood charts) consistently use the `37i9` ID prefix. User-owned
+	# playlist IDs are random base62 — the narrowed regex matches ONLY the curated `37i9`
+	# subnamespace, so a deleted user playlist 404 STAYS ON OWN FLAVOR and surfaces the 404
+	# to the caller. Collision probability between random base62 and the `37i9` prefix is
+	# ~1 in 14.7M; even on collision the user-owned playlist returns 200 under own.
 	qr{^playlists/37i9[A-Za-z0-9]+\b},
 );
 
 # 24h TTL — long enough to avoid burning the 2x cost on every Start-menu browse,
 # short enough to self-heal if Spotify reverses a deprecation.
-use constant SPOTTY_NG_BUNDLED_HINT_TTL => 86400;
-use constant SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX => 'spotty_ng_bundled_hint_';
+use constant BUNDLED_HINT_TTL => 86400;
+use constant BUNDLED_HINT_KEY_PREFIX => 'spotty_bundled_hint_';
 
 # Sentinel cache flag for "this user needs bundled-default OAuth".
 # 7d TTL = long enough to span an evening-after-morning gap, short enough that any flag we
 # miss-clearing self-heals within a week. Authoritative source is the render-time probe in
 # Settings.pm; this flag is belt-and-suspenders, not load-bearing.
-use constant SPOTTY_NG_NEEDS_BUNDLED_AUTH_TTL        => 7 * 24 * 3600;
-use constant SPOTTY_NG_NEEDS_BUNDLED_AUTH_KEY_PREFIX => 'spotty_ng_needs_bundled_auth_';
+use constant NEEDS_BUNDLED_AUTH_TTL        => 7 * 24 * 3600;
+use constant NEEDS_BUNDLED_AUTH_KEY_PREFIX => 'spotty_needs_bundled_auth_';
 
 # me/* family guard for the routing decision.
 # Matches v1/me, v1/me/*, v1/me?... — i.e. the userId-scoped endpoint family that MUST
 # stay on own flavor (Liked Songs, Saved Albums, etc.). Tested AT THE TOP of _call's
 # routing decision so a transient 403 on me/tracks (e.g. Spotify glitch) cannot fall
 # back to bundled and silently return wrong data.
-my $_spottyNgMeFamilyRegex = qr{^me(?:$|/|\?)};
+my $_meFamilyRegex = qr{^me(?:$|/|\?)};
 {
 	__PACKAGE__->mk_accessor( rw => qw(
 		client
@@ -149,15 +140,12 @@ sub getToken {
 sub codeExchange {
 	my ( $self, $cb, $args ) = @_;
 
-	# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — propagate the
-	# caller's `_client_id` override into the params handed to _tokenCall, so the
-	# flavor-correct Client ID lands on Spotify's /api/token endpoint at
-	# code-exchange time. Mirrors the existing refreshToken fix below (Phase 2-07
-	# follow-up commit 7e233a6). Without this, a bundled-flavor authorization_code
-	# (minted at /authorize under the bundled-default Client ID via oauthRedirect)
-	# gets exchanged with the user's own Dev ID — Spotify rejects with 400 Bad
-	# Request because /api/token requires the same client_id at code exchange as
-	# was used at /authorize. Discovered during Phase 2.5 Probe 5 (HUMAN-UAT).
+	# Propagate the caller's `_client_id` override into _tokenCall so the
+	# flavor-correct Client ID lands on Spotify's /api/token endpoint at code-exchange
+	# time. Without this, a bundled-flavor authorization_code (minted at /authorize
+	# under the bundled-default Client ID) gets exchanged with the user's own Dev ID —
+	# Spotify rejects with 400 Bad Request because /api/token requires the same
+	# client_id at code exchange as was used at /authorize.
 	$self->_tokenCall($cb, {
 		grant_type => 'authorization_code',
 		code => $args->{code},
@@ -170,13 +158,10 @@ sub codeExchange {
 sub refreshToken {
 	my ( $self, $cb, $args ) = @_;
 
-	# SPOTTY-NG (Phase 2, plan 05 follow-up / FIX-11 / D-07) — propagate the caller's
-	# `_client_id` override into the params handed to _tokenCall so the flavor-correct
+	# Propagate the caller's `_client_id` override into _tokenCall so the flavor-correct
 	# Client ID lands on Spotify's /api/token endpoint. Without this, bundled-flavor
 	# refresh tokens (minted under the bundled-default Client ID) get sent with the
-	# user's own Dev ID, and Spotify replies 400 Bad Request — the bundled-fallback
-	# silently fails and OPML.pm:204 sets $customClientLimitations++ on the empty
-	# featuredPlaylists() result. Discovered during plan-07 validation.
+	# user's own Dev ID, and Spotify replies 400 Bad Request.
 	$self->_tokenCall($cb, {
 		grant_type => 'refresh_token',
 		refresh_token => $args->{refreshToken},
@@ -1234,27 +1219,20 @@ sub _getTimestamp {
 	return $timestamp;
 }
 
-# SPOTTY-NG (Phase 2, plan 05 / D-05 / FIX-09) — single-shot HTTP dispatch helper.
-# Extracted from the body of _call's inner $call closure (Phase-1 shape) so the
+# Single-shot HTTP dispatch helper. Extracted from _call's inner closure so the
 # try-own-then-fallback retry path can re-dispatch with a different flavor without
 # recursing back into _call (which would re-trigger the hint-cache lookup, response
-# cache check, Pipeline correlation, etc. — Pitfall #2 in 02-RESEARCH.md).
+# cache check, Pipeline correlation, etc.).
 #
 # Caller contract:
 # - $token: the bearer string already obtained for the chosen flavor
 # - $self, $url, $cb, $type, $params: same as _call
-# - $params->{_spottyNgFlavor}: flavor in use ('own' | 'bundled') for log/REQ correlation
+# - $params->{_flavor}: flavor in use ('own' | 'bundled')
 sub _callOneShot {
 	my ($self, $token, $url, $cb, $type, $params) = @_;
 
-	# SPOTTY-NG (Phase 3, plan 01 / POLISH-03 / closes 02.6-REVIEW.md WR-03) — restructure
-	# the `$1` capture so it's only read inside the branch where the regex actually
-	# matched. Pre-fix code used `if (!$token || $token =~ /^-(\d+)$/) { my $error = $1 || ... }`
-	# which relies on Perl's dynamic-scope `$1` carrying whatever the previous regex match
-	# in the same scope last captured when the LHS short-circuit fired (i.e. when $token was
-	# empty/undef, the regex on the RHS never ran). Practically safe today (no other regex
-	# in _callOneShot's frame), but a future refactor adding any regex match earlier would
-	# silently change the value of $1. Make the capture intent explicit.
+	# Read $1 only inside the branch where the regex matched — avoids relying on
+	# dynamic-scope $1 from an earlier regex in the same frame.
 	my $error;
 	if (!$token) {
 		$error = 'NO_ACCESS_TOKEN';
@@ -1281,14 +1259,9 @@ sub _callOneShot {
 	my $cached;
 	my $cache_key;
 	if (!$params->{_nocache} && $type eq 'GET') {
-		# SPOTTY-NG (Phase 3, plan 01 / POLISH-11 / closes 02-REVIEW.md IN-01 / promoted from
-		# .planning/todos/pending/HARDEN-DEFER-IN-01.md) — strip the bearer from the cache key
-		# for `browse/*` URLs. Pre-fix code keyed `me|browse` URLs by token, which under the
-		# Phase 2 try-own-then-fallback dispatch caused browse responses to be cached TWICE
-		# (once under the own-flavor bearer's MD5, once under the bundled-flavor bearer's MD5).
-		# Browse responses are functionally identical across flavor (only the routing differs);
-		# `me/*` continues to scope by token (different users see different Liked Songs).
-		# Post-fix: bundled and own browse responses share a single cache row.
+		# Strip bearer from cache key for browse/* URLs — browse responses are functionally
+		# identical across flavor (own vs bundled); me/* continues to scope by token
+		# (different users see different Liked Songs).
 		$cache_key = md5_hex($url . ($url =~ /^me\b/ ? $token : ''));
 	}
 
@@ -1305,31 +1278,6 @@ sub _callOneShot {
 		main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
 	}
 
-	# SPOTTY-NG instrumentation (Phase 1, plan 03) — REQ-side log emission (D-08, D-16).
-	# Gated on DEBUG of plugin.spotty so default WARN produces zero output (D-14).
-	my $_spottyNgPipe   = $params->{_pipeline};
-	my $_spottyNgPipeId = (ref $_spottyNgPipe && $_spottyNgPipe->can('_pipeId')) ? $_spottyNgPipe->_pipeId : '--------';
-	my $_spottyNgPerPipeInflight = (ref $_spottyNgPipe && $_spottyNgPipe->can('_inflight')) ? $_spottyNgPipe->_inflight : 0;
-	my $_spottyNgIssuedAt = int(Time::HiRes::time() * 1000);    # ms-resolution
-
-	Plugins::Spotty::API::_spottyNgIncGlobalInflight();
-
-	if ( main::DEBUGLOG && $log->is_debug ) {
-		my $_ts = strftime('%Y-%m-%dT%H:%M:%S', localtime) . sprintf('.%03dZ', $_spottyNgIssuedAt % 1000);
-		my $_method = uc($type || 'GET');
-		my $_fullUrl = sprintf(API_URL, $url);
-		my $_hdrs = _spottyNgFormatHeaders($headers);
-		my $_flavor = $params->{_spottyNgFlavor} || 'own';
-		# SPOTTY-NG (Phase 2, plan 05 / D-15 / FIX-14) — drop the `+ 1` over-count; Pipeline._inflight
-		# is already incremented by plan-05 wiring upstream of this emit, so the as-of-emission value
-		# IS the right one to render.
-		# SPOTTY-NG (Phase 2, plan 05 / D-05) — append flavor=<own|bundled> field for log readability;
-		# this is in addition to (not replacing) the AUTH redaction that _spottyNgFormatHeaders does.
-		$log->debug(sprintf('[%s] [SPOTTY-NG pipe=%s inflight=%d/%d flavor=%s] REQ %s %s hdrs=%s',
-			$_ts, $_spottyNgPipeId, $_spottyNgPerPipeInflight, $_spottyNgGlobalInflight,
-			$_flavor, $_method, $_fullUrl, $_hdrs));
-	}
-
 	my $http = Plugins::Spotty::API::AsyncRequest->new(
 		\&_gotResponse,
 		\&_gotError,
@@ -1341,10 +1289,6 @@ sub _callOneShot {
 			self => $self,
 			cb => $cb,
 			cache_key => $cache_key,
-			# SPOTTY-NG (Phase 1, plan 03) — for response-side log correlation (plan 04).
-			_spottyNgIssuedAt => $_spottyNgIssuedAt,
-			_spottyNgPipeId   => $_spottyNgPipeId,
-			_spottyNgPipe     => $_spottyNgPipe,
 		},
 	);
 
@@ -1364,33 +1308,10 @@ sub _call {
 
 	$params ||= {};
 
-	# SPOTTY-NG (Phase 3, plan 01 / POLISH-01 / closes 02.6-REVIEW.md WR-01) — `_call`
-	# cooldown gate: blocks ALL `_call` entries during cooldown, including the
-	# `_token`-injected literal-token bypass below and `me/*` calls (which previously
-	# could reuse a cached access token without going through token resolution). This
-	# is BROADER than the pre-Phase-2 `getToken`-only gate — intentional, for
-	# conservative 429 backoff: every observed 429 from Spotify is a clear signal
-	# from the server that we should stop sending traffic for the Retry-After window,
-	# even traffic that would technically reuse pre-cached state. The flag setter in
-	# `error429` / `_gotResponse` is unchanged from Phase 2.
-	#
-	# Originally landed in Phase 2.6 (HARDEN-01 / closes 02-REVIEW.md CR-01); the prior
-	# comment described this gate as "restoring the pre-Phase-2 reactive 429 contract"
-	# which understated the scope (pre-Phase-2 cooldown only fired during AT/RT
-	# resolve, not during cached-AT reuse). See 02.6-REVIEW.md WR-01 for the rationale
-	# of widening the documentation to match the implementation.
-	#
-	# Per D2.6-04: gate is placed at the head of _call (before any flavor decision);
-	# per D2.6-05: ordering — gate fires before hint-cache lookup so we don't waste a
-	# `$cache->get` on a known-rate-limited account.
-	#
-	# `_callOneShot` already recognises a leading-`-(\d+)` $token as a sentinel (see
-	# its own body, line ~1232-1242) and converts `-429` to the user-facing
-	# PLUGIN_SPOTTY_ERROR_429 reply via `string()` lookup — same path that `tracks()`
-	# (the only existing `getToken` caller post-Phase-2) takes when it sees the same
-	# `-429` value out of `getToken`. Routing the cooldown response through
-	# `_callOneShot` here keeps the user-facing error symmetrical with the pre-Phase-2
-	# behavior without re-implementing the lookup.
+	# Cooldown gate: blocks ALL _call entries during a 429 cooldown window, including
+	# cached-token paths. Conservative backoff — every Spotify 429 means stop sending
+	# for the Retry-After window. Gate is at the head of _call (before any flavor
+	# decision) so it fires before the hint-cache lookup.
 	if ($cache->get('spotty_rate_limit_exceeded')) {
 		return _callOneShot($self, '-429', $url, $cb, $type, $params);
 	}
@@ -1402,35 +1323,24 @@ sub _call {
 		return _callOneShot($self, $params->{_token}, $url, $cb, $type, $params);
 	}
 
-	# SPOTTY-NG (Phase 2, plan 05 / D-05 / D-06 / FIX-09 / FIX-10 / FIX-13) — try-own-then-fallback dispatch.
+	# Try-own-then-fallback dispatch.
 	# Strip leading slash so URL matches the @KNOWN_DEPRECATED_FAMILIES regex anchors.
 	my $cleanUrl = $url;
 	$cleanUrl =~ s/^\///;
 
 	# Step 0: me/* family guard. me/* MUST stay on own — Pitfall #1 in 02-RESEARCH.md.
 	# If the URL is in the me/* family, dispatch under own flavor and SKIP the retry path.
-	my $isMeFamily = ($cleanUrl =~ $_spottyNgMeFamilyRegex);
+	my $isMeFamily = ($cleanUrl =~ $_meFamilyRegex);
 
 	# Step 1: hint-cache lookup — for non-me URLs only. If the URL pattern was
 	# learned in a previous bundled-fallback success, dispatch directly to bundled.
-	my $hintFlavor = $isMeFamily ? undef : _spottyNgLookupBundledHint($cleanUrl);
+	my $hintFlavor = $isMeFamily ? undef : _lookupBundledHint($cleanUrl);
 	my $startFlavor = $hintFlavor || 'own';
 
-	# SPOTTY-NG (Phase 3 follow-up / Case-A UAT 2026-05-09 regression close) —
-	# Standard-User-mode dispatch bypass. When the user has NOT configured their
-	# own Spotify Developer App (`iconCode == initIcon()`), no own-flavor refresh
-	# token is ever cached: HARDEN-13's cache-write side at
-	# Settings/Callback.pm:331-333 lands OAuth output under flavor=bundled in this
-	# mode. Without this override, $startFlavor='own' here causes
-	# Token::get(flavor=>'own') to hard-fail at API/Token.pm:275-279, the user
-	# callback is invoked with undef, me/* and featuredPlaylists return empty, and
-	# OPML.pm:204 increments customClientLimitations (hides "Start"). Mirroring the
-	# write-side predicate (iconCode == initIcon → flavor=bundled) here restores
-	# upstream-equivalent behavior for default-bundled installs without affecting
-	# the Power-User flow (hasDefaultIcon() returns 0 when own iconCode is set).
-	# Placed AFTER the me-family guard and the hint-cache lookup so me/* calls in
-	# Standard-User mode also dispatch directly under bundled (the only flavor
-	# with a cached RT in this mode).
+	# Standard-User-mode dispatch bypass: when the user has NOT configured their own
+	# Spotify Developer App, no own-flavor refresh token is cached. Force bundled flavor
+	# for all calls so me/* and browse/* work without a power-user Client ID.
+	# Placed after the me-family guard and hint-cache lookup.
 	if (Plugins::Spotty::Plugin->hasDefaultIcon()) {
 		$startFlavor = 'bundled';
 	}
@@ -1451,7 +1361,7 @@ sub _call {
 
 		# Build a per-attempt $params copy that carries the flavor marker for the
 		# REQ-emit log line. Shallow copy preserves _pipeline ref (gotcha #6).
-		my $attemptParams = { %$params, _spottyNgFlavor => $flavor };
+		my $attemptParams = { %$params, _flavor => $flavor };
 
 		# Build the inner $cb that intercepts 403/410 and decides to retry or surface.
 		my $interceptCb = sub {
@@ -1463,24 +1373,13 @@ sub _call {
 			# NOT me/* (defense-in-depth — already gated above but cheap to re-assert),
 			# AND we haven't already retried, attempt the bundled fallback.
 			#
-			# SPOTTY-NG (Phase 2 plan-07 follow-up): empirically, post-Feb-2026 Spotify
-			# returns 404 (not 403/410) on the dev-mode-deprecated browse/* endpoints —
-			# discovered when browse/featured-playlists started consistently returning
-			# `RES 404 body=<error: 404 Not Found>` under own Dev ID. To avoid false
-			# positives on legitimate "resource not found" responses, 404 only triggers
-			# the fallback when the URL matches @KNOWN_DEPRECATED_FAMILIES.
+			# Post-Feb-2026 Spotify returns 404 (not 403/410) on dev-mode-deprecated
+			# browse/* endpoints. To avoid false positives on legitimate "resource not
+			# found" responses, 404 only triggers the fallback when the URL matches
+			# @KNOWN_DEPRECATED_FAMILIES.
 			#
-			# SPOTTY-NG (Phase 2.6 plan-02 / HARDEN-03): the playlists/{id} entry was
-			# narrowed to the `37i9` Spotify-curated subnamespace prefix (Mix der Woche,
-			# Release Radar, Discover Weekly, Daily Mix, etc. — including sub-prefixes
-			# like `37i9dQZ`). See the regex comment in @KNOWN_DEPRECATED_FAMILIES at
-			# the top of this file. A user-owned playlist 404 (e.g. a deleted playlist)
-			# NO LONGER triggers a bundled retry, eliminating the contradiction the
-			# comment had with the pre-2.6 broad regex.
-			# SPOTTY-NG (Phase 3, plan 01 / POLISH-05 / closes 02.6-REVIEW.md IN-02) —
-			# capture the matched regex object so the success-path `_spottyNgRememberBundledHint`
-			# call below doesn't re-walk @KNOWN_DEPRECATED_FAMILIES. Cosmetic; impact is
-			# microscopic (the inner `for` loop iterates 3-9 entries on an HTTP-retry path).
+			# Capture the matched regex object so the success-path _rememberBundledHint
+			# call below can skip re-walking @KNOWN_DEPRECATED_FAMILIES.
 			my $is404Deprecated = 0;
 			my $matchedRx;
 			if ($code eq '404' && !$isMeFamily) {
@@ -1495,27 +1394,21 @@ sub _call {
 				# structured sentinel — DO NOT trigger inline OAuth (Phase 2.5 owns that).
 				if (!Plugins::Spotty::API::Token->hasRefreshToken($self, flavor=>'bundled')) {
 					$log->error(sprintf(
-						'[SPOTTY-NG] bundled-fallback unavailable: no refresh token under flavor=bundled for user=%s url=%s',
+						'bundled-fallback unavailable: no refresh token under flavor=bundled for user=%s url=%s',
 						($self->userId // '<unknown>'), $cleanUrl));
-					# SPOTTY-NG (Phase 2.5 / D-2.5-02(1)) — flag this user as needing bundled-default OAuth
-					# so the next Settings render surfaces an "Authorize browsing" link in the credentials table.
-					_spottyNgRememberNeedsBundledAuth($self->userId) if $self->userId;
+					# Flag this user as needing bundled-default OAuth so the next Settings
+					# render surfaces an "Authorize browsing" link in the credentials table.
+					_rememberNeedsBundledAuth($self->userId) if $self->userId;
 					return $userCb->($result, $response);
 				}
 
 				main::INFOLOG && $log->is_info &&
-					$log->info(sprintf('[SPOTTY-NG] retrying under bundled flavor: status=%s url=%s', $code, $cleanUrl));
+					$log->info(sprintf('retrying under bundled flavor: status=%s url=%s', $code, $cleanUrl));
 
-				# SPOTTY-NG (Phase 2.6, plan 02 / HARDEN-02 / closes 02-REVIEW.md CR-02) — wrap the
-				# bundled-attempt $cb so we cache the URL pattern hint ONLY when the bundled retry
-				# actually succeeds (HTTP 2xx). Pre-fix code wrote the hint unconditionally before
-				# the retry ran, which violated D-06's self-healing TTL semantic ("when a 403/410 →
-				# bundled-fallback succeeds, cache the URL pattern hint for 24h"): a transient
-				# bundled-side failure (revoked RT, 5xx, network blip) would lock the URL pattern
-				# in cache for 24h and route subsequent calls to a known-broken bundled path.
-				#
-				# $userCb is still invoked exactly once via the $userCbCalled guard at the top of
-				# this closure; $bundledCb is just an interceptor on the way to $userCb.
+				# Wrap the bundled-attempt $cb so we cache the URL pattern hint ONLY when
+				# the bundled retry actually succeeds (HTTP 2xx). Prevents locking a URL
+				# pattern in cache for 24h after a transient bundled-side failure.
+				# $userCb is still invoked exactly once via the $userCbCalled guard.
 				my $bundledCb = sub {
 					my ($bundledResult, $bundledResponse) = @_;
 					my $bundledCode = $bundledResponse ? eval { $bundledResponse->code } : undef;
@@ -1526,7 +1419,7 @@ sub _call {
 						# helper can skip its own iteration. $matchedRx may be undef on the
 						# 403/410 path (the iteration is gated on $code eq '404'); the helper
 						# falls back to its own iteration when $matchedRx is undef.
-						_spottyNgRememberBundledHint($cleanUrl, $matchedRx);
+						_rememberBundledHint($cleanUrl, $matchedRx);
 					}
 					$userCb->($bundledResult, $bundledResponse);
 				};
@@ -1536,7 +1429,7 @@ sub _call {
 				Plugins::Spotty::API::Token->get($self, sub {
 					my ($bundledToken) = @_;
 					return _callOneShot($self, $bundledToken, $url, $bundledCb, $type,
-					                    { %$attemptParams, _spottyNgFlavor => 'bundled' });
+					                    { %$attemptParams, _flavor => 'bundled' });
 				}, { flavor => 'bundled' });
 				return;
 			}
@@ -1558,9 +1451,9 @@ sub _call {
 sub _tokenCall {
 	my ( $self, $cb, $params ) = @_;
 
-	# SPOTTY-NG (Phase 2, plan 05 / D-07 / FIX-11) — honor caller-injected _client_id for
-	# flavor-aware OAuth refresh. Token.pm (plan 04) passes `_client_id => <bundled-icon>`
-	# when refreshing under flavor='bundled'; absent override, today's behavior is preserved.
+	# Honor caller-injected _client_id for flavor-aware OAuth refresh. Token.pm passes
+	# `_client_id => <bundled-icon>` when refreshing under flavor='bundled'; absent
+	# override, falls back to the user's configured iconCode.
 	$params->{client_id} = delete $params->{_client_id} || $prefs->get('iconCode');
 	my ($url, $content, $headers) = _prepareCall('POST', '', $params);
 
@@ -1586,16 +1479,16 @@ sub _tokenCall {
 # URL-pattern hint cache lookup.
 # Returns 'bundled' if (a) the URL matches one of the known-deprecated families AND
 # (b) we've previously seen a successful 403/410 → bundled-fallback for that family
-# within SPOTTY_NG_BUNDLED_HINT_TTL seconds. Otherwise returns undef (caller proceeds
+# within BUNDLED_HINT_TTL seconds. Otherwise returns undef (caller proceeds
 # to the own-flavor first attempt). Tested AFTER the me/* guard, NEVER for me/* URLs.
-sub _spottyNgLookupBundledHint {
+sub _lookupBundledHint {
 	my ($url) = @_;
 	return undef unless defined $url && length $url;
 
 	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
 		if ($url =~ $rx) {
 			my $patternKey = "$rx";   # stringify the qr{} for use in cache key
-			return 'bundled' if $cache->get(SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX . $patternKey);
+			return 'bundled' if $cache->get(BUNDLED_HINT_KEY_PREFIX . $patternKey);
 			return undef;     # known family but not yet learned at runtime
 		}
 	}
@@ -1604,26 +1497,21 @@ sub _spottyNgLookupBundledHint {
 
 # URL-pattern hint cache write.
 # Called after a 403/410/404 → bundled-fallback succeeds. Caches the matching pattern
-# key for SPOTTY_NG_BUNDLED_HINT_TTL seconds (24h) so subsequent matching URLs hit
+# key for BUNDLED_HINT_TTL seconds (24h) so subsequent matching URLs hit
 # bundled directly. If the URL doesn't match any known family, log a warn line.
 #
-# SPOTTY-NG (Phase 3, plan 01 / POLISH-05 / closes 02.6-REVIEW.md IN-02) — accepts an optional
-# pre-matched regex object from the caller's closure scope. When provided, the iteration over
-# @KNOWN_DEPRECATED_FAMILIES is skipped; the helper writes the hint key derived from $matchedRx
-# directly. When undef (e.g. the caller didn't capture it, like the 403/410 trigger path), the
-# helper falls back to its own iteration. Backward-compatible — the 1-arg call shape still works.
-sub _spottyNgRememberBundledHint {
+sub _rememberBundledHint {
 	my ($url, $matchedRx) = @_;
 	return unless defined $url && length $url;
 
 	# Fast path: caller already matched a regex; trust it and skip the iteration.
 	if (defined $matchedRx) {
 		my $patternKey = "$matchedRx";
-		$cache->set(SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX . $patternKey,
-		            1, SPOTTY_NG_BUNDLED_HINT_TTL);
+		$cache->set(BUNDLED_HINT_KEY_PREFIX . $patternKey,
+		            1, BUNDLED_HINT_TTL);
 		main::INFOLOG && $log->is_info &&
-			$log->info(sprintf('[SPOTTY-NG] cached bundled-hint pattern=%s ttl=%ds (matched url=%s, fast-path)',
-				$patternKey, SPOTTY_NG_BUNDLED_HINT_TTL, $url));
+			$log->info(sprintf('cached bundled-hint pattern=%s ttl=%ds (matched url=%s, fast-path)',
+				$patternKey, BUNDLED_HINT_TTL, $url));
 		return;
 	}
 
@@ -1631,11 +1519,11 @@ sub _spottyNgRememberBundledHint {
 	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
 		if ($url =~ $rx) {
 			my $patternKey = "$rx";
-			$cache->set(SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX . $patternKey,
-			            1, SPOTTY_NG_BUNDLED_HINT_TTL);
+			$cache->set(BUNDLED_HINT_KEY_PREFIX . $patternKey,
+			            1, BUNDLED_HINT_TTL);
 			main::INFOLOG && $log->is_info &&
 				$log->info(sprintf('cached bundled-hint pattern=%s ttl=%ds (matched url=%s)',
-					$patternKey, SPOTTY_NG_BUNDLED_HINT_TTL, $url));
+					$patternKey, BUNDLED_HINT_TTL, $url));
 			return;
 		}
 	}
@@ -1646,14 +1534,14 @@ sub _spottyNgRememberBundledHint {
 # attempted but no bundled refresh token is cached, and after own-flavor OAuth completes
 # but bundled RT is still absent. Best-effort signal — the render-time probe in Settings.pm
 # is authoritative. Self-clears on successful bundled-OAuth via $cache->remove.
-sub _spottyNgRememberNeedsBundledAuth {
+sub _rememberNeedsBundledAuth {
 	my ($userId) = @_;
 	return unless defined $userId && length $userId;
-	my $key = SPOTTY_NG_NEEDS_BUNDLED_AUTH_KEY_PREFIX . $userId;
-	$cache->set($key, 1, SPOTTY_NG_NEEDS_BUNDLED_AUTH_TTL);
+	my $key = NEEDS_BUNDLED_AUTH_KEY_PREFIX . $userId;
+	$cache->set($key, 1, NEEDS_BUNDLED_AUTH_TTL);
 	main::INFOLOG && $log->is_info &&
 		$log->info(sprintf('flagged user=%s as needing bundled-default OAuth (ttl=%ds)',
-			$userId, SPOTTY_NG_NEEDS_BUNDLED_AUTH_TTL));
+			$userId, NEEDS_BUNDLED_AUTH_TTL));
 }
 
 # Flush all bundled-hint cache entries. Called at OAuth completion so any successful
@@ -1661,11 +1549,11 @@ sub _spottyNgRememberNeedsBundledAuth {
 # Slim::Utils::Cache does NOT expose a prefix-iterate method; we iterate
 # @KNOWN_DEPRECATED_FAMILIES (same list the writer uses) to derive keys — guaranteeing
 # no orphaned hint rows. Best-effort: remove() returns undef on missing key without throwing.
-sub _spottyNgFlushBundledHints {
+sub _flushBundledHints {
 	my $removed = 0;
 	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
 		my $patternKey = "$rx";
-		my $cacheKey = SPOTTY_NG_BUNDLED_HINT_KEY_PREFIX . $patternKey;
+		my $cacheKey = BUNDLED_HINT_KEY_PREFIX . $patternKey;
 		if (defined $cache->get($cacheKey)) {
 			$cache->remove($cacheKey);
 			$removed++;
