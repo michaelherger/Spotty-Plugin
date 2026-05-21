@@ -368,10 +368,21 @@ sub oauthCallback {
 
 			$renderCb->($error);
 		},
+		# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — flavor-aware
+		# _client_id for /api/token authorization_code exchange. Mirrors the
+		# oauthRedirect-side selection at lines 120-123: when state-JSON decoded
+		# $params->{flavor} == 'bundled', the /authorize URL was built with
+		# bundled initIcon, so the matching exchange MUST use the same Client ID.
+		# Without this, the inner $api->codeExchange falls through to the iconCode
+		# pref default (own Dev-ID) and Spotify replies 400 Bad Request. $prefs is
+		# NOT mutated; per-call _client_id arg only.
 		{
 			code => $params->{code},
 			callbackUrl => CALLBACK_URL,
 			codeVerifier => $cache->get(PKCE_CODE_VERIFIER_CACHEKEY),
+			_client_id => ((($params->{flavor} // '') eq 'bundled')
+				? Plugins::Spotty::Plugin->initIcon()
+				: $prefs->get('iconCode')),
 		},
 	);
 }
