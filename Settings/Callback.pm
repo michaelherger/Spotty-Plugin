@@ -10,23 +10,17 @@ use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
-# SPOTTY-NG (Phase 2, plan 04 follow-up / FIX-11) — needed for initIcon() in the
-# flavor-aware OAuth cache write below. Plugin.pm is normally loaded before any
-# Settings page is rendered; the explicit `use` makes the dependency visible to
-# perl -c and avoids relying on import ordering.
 use Plugins::Spotty::Plugin;
 
 use constant CALLBACK_PATH => 'plugins/Spotty/settings/callback';
 use constant REDIRECT_PATH => 'plugins/Spotty/settings/redirect';
 use constant PKCE_AUTH_URL => 'https://accounts.spotify.com/authorize?client_id=%s&response_type=code&redirect_uri=%s&code_challenge=%s&code_challenge_method=S256&scope=%s&state=%s';
 use constant PKCE_CODE_VERIFIER_CACHEKEY => 'spotty_auth_code_verifier';
-# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — flavor is also cached
-# server-side because api.lms-community.org's relay strips Spotify's `state` query
-# parameter when bouncing the callback to LMS (only `code` survives). The state-JSON
-# decode in oauthCallback therefore cannot recover the flavor in the relayed path;
-# this cache key acts as a server-side fallback. TTL covers a typical OAuth
-# click-through (login + MFA + consent + relay hop).
-use constant OAUTH_PENDING_FLAVOR_CACHEKEY => 'spotty_ng_oauth_pending_flavor';
+# Flavor is also cached server-side because api.lms-community.org's relay strips
+# Spotify's `state` query parameter when bouncing the callback to LMS (only `code`
+# survives). The state-JSON decode in oauthCallback therefore cannot recover the
+# flavor in the relayed path; this cache key acts as a server-side fallback.
+use constant OAUTH_PENDING_FLAVOR_CACHEKEY => 'spotty_oauth_pending_flavor';
 use constant OAUTH_PENDING_FLAVOR_TTL      => 600;  # seconds; one-shot, cleared in oauthCallback
 
 use constant CALLBACK_URL => 'https://api.lms-community.org/auth/callback';
@@ -121,7 +115,6 @@ sub oauthRedirect {
 
 					$cache->set(PKCE_CODE_VERIFIER_CACHEKEY, $code_verifier);
 
-					# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05) — flavor-aware client_id selection without
 					# pref mutation. When ?flavor=bundled query-param is present (the basic.html "Authorize
 					# browsing" link, plan-03), build the PKCE-AUTH-URL with the bundled-default Client ID
 					# rather than the user's iconCode pref. $prefs is NOT touched — per-request override only.
@@ -130,7 +123,6 @@ sub oauthRedirect {
 						? Plugins::Spotty::Plugin->initIcon()
 						: $prefs->get('iconCode');
 
-					# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — server-side flavor
 					# cache. The state-JSON encoded below is sent to Spotify's /authorize and survives
 					# Spotify's echo, but api.lms-community.org's auth/callback relay strips state
 					# when bouncing the request to LMS (it only forwards code). Cache the flavor
@@ -139,7 +131,6 @@ sub oauthRedirect {
 					# also a global non-nonce-keyed entry). One-shot — cleared in oauthCallback.
 					$cache->set(OAUTH_PENDING_FLAVOR_CACHEKEY, $flavor, OAUTH_PENDING_FLAVOR_TTL);
 
-					# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05 / closes 02.5-REVIEW.md CR-01 + WR-02) —
 					# Build the OAuth state value as URL-safe base64 with NO embedded newlines.
 					# CR-01: encode_base64 with default eol='\n' inserts \n every 76 chars; HTTP::Response
 					# folds those into obs-fold continuations in the Location: header, producing a URL
@@ -208,13 +199,11 @@ sub oauthCallback {
 
 	my $code = $params->{code};
 
-	# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05) — decode the OAuth state param to recover
 	# the flavor query-param oauthRedirect encoded into state JSON at lines 121-126. Spotify
 	# echoes `state` verbatim per OAuth 2.0 spec; pre-Phase-2.5 callbacks (no flavor in state)
 	# leave $params->{flavor} undef and the downstream flavor decision falls through to
 	# HARDEN-13's iconCode-vs-initIcon test (backward-compat preserved).
 	if ($params->{state}) {
-		# SPOTTY-NG (Phase 2.5 / D-2.5-04 / SETUP-05 / closes 02.5-REVIEW.md CR-01 + WR-02
 		# decode side) — symmetric to the oauthRedirect encode-side base64url substitution.
 		# Spotify echoes the state value verbatim per OAuth 2.0 spec, so the value we
 		# receive here is the URL-safe form ([A-Za-z0-9_-], no = padding) the encode site
@@ -231,7 +220,6 @@ sub oauthCallback {
 		}
 	}
 
-	# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — relay-strip fallback.
 	# api.lms-community.org's auth/callback relay strips Spotify's `state` parameter
 	# when forwarding the callback to LMS (only `code` survives). When state is gone,
 	# the decode block above leaves $params->{flavor} undef. Recover the flavor from
@@ -254,7 +242,6 @@ sub oauthCallback {
 
 	main::INFOLOG && $log->is_info && $log->info("Exchange code for access token");
 
-	# SPOTTY-NG (Phase 2.6, plan 06 / HARDEN-13 / closes 02-REVIEW.md IN-04) — re-read iconCode
 	# AT OAUTH COMPLETION (inside the me-callback below), NOT at OAuth start. Pre-fix code
 	# captured the iconCode pref value here, which becomes stale if the user flips iconCode
 	# mid-OAuth — exactly what the documented bundled-OAuth side-trip workflow requires
@@ -340,7 +327,6 @@ sub oauthCallback {
 
 							`$cmd 2>&1`;
 
-							# SPOTTY-NG (Phase 2.5 / D-2.5-02(2) / SETUP-07) — post-OAuth probe. When this
 							# completion was an OWN-flavor OAuth (the user just configured their own Dev-ID
 							# for the first time, or re-OAuthed under their own Dev-ID), check whether they
 							# have a bundled-flavor RT cached. If not, set the needs-bundled-auth flag so the
@@ -351,7 +337,7 @@ sub oauthCallback {
 							if ($oauthFlavor eq 'own' && $userId
 									&& !Plugins::Spotty::API::Token->hasRefreshToken(
 											$api, flavor => 'bundled', userId => $userId)) {
-								Plugins::Spotty::API::_spottyNgRememberNeedsBundledAuth($userId);
+								Plugins::Spotty::API::_rememberNeedsBundledAuth($userId);
 							}
 						}
 
@@ -368,7 +354,6 @@ sub oauthCallback {
 
 			$renderCb->($error);
 		},
-		# SPOTTY-NG (Phase 2.5 follow-up / closes GAP-02.5-VFY-01) — flavor-aware
 		# _client_id for /api/token authorization_code exchange. Mirrors the
 		# oauthRedirect-side selection at lines 120-123: when state-JSON decoded
 		# $params->{flavor} == 'bundled', the /authorize URL was built with

@@ -16,7 +16,6 @@
 	[% END; END %]
 
 	[% IF credentials; WRAPPER setting desc="" %]
-		[%# SPOTTY-NG (Phase 2.5 / D-2.5-03 / SETUP-03) — summary when an account needs bundled-default OAuth %]
 		[% IF needsBundledAuth.keys.size %]
 			<div style="color: orange">[% "PLUGIN_SPOTTY_BUNDLED_AUTH_NEEDED_SUMMARY" | string %]</div>
 		[% END %]

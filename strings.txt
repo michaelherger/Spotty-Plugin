@@ -1193,8 +1193,6 @@ PLUGIN_SPOTTY_PLAYLIST_TRACKS
 	HU	Lejátszási lista zeneszámok
 	NL	Afspeellijst Nummers
 
-# SPOTTY-NG (Phase 2.5 / D-2.5-10) — needs-bundled-default-OAuth UI in basic.html.
-# CS/DA/FR/HU/NL translations are best-effort; pending upstream review per HARDEN-04 pattern.
 PLUGIN_SPOTTY_BUNDLED_AUTH_NEEDED_SUMMARY
 	CS	Některé účty vyžadují další autorizaci pro plné zpřístupnění nabídky procházení (Mix týdne, Release Radar, Discover Weekly atd.).
 	DA	Nogle konti kræver yderligere godkendelse for at aktivere den fulde browsermenuen (Ugens mix, Release Radar, Discover Weekly osv.).
