@@ -36,7 +36,7 @@ my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.spotty');
 
 # the file upload is handled through a custom request handler, dealing with multi-part POST requests
-Slim::Web::Pages->addRawFunction("plugins/spotty/uploadPlaylistFolderData", \&handleUpload);
+Slim::Web::Pages->addRawFunction("plugins/spotty/uploadPlaylistFolderData", \&handleUpload) if main::WEBUI;
 Slim::Web::Pages->addPageFunction("plugins/spotty/playlistFolder", \&handlePage) if main::WEBUI;
 
 sub parse {
