@@ -802,49 +802,49 @@ PLUGIN_SPOTTY_CLIENT_ID
 	HU	Spotify ügyfél-azonosító (Client ID)
 
 PLUGIN_SPOTTY_CLIENT_ID_DESC
-	CS	<div>Použití vlastního Client ID může pomoci, pokud narazíte na problémy s překročením míry přístupů („chyba 429“). Chcete-li získat vlastní Client ID, postupujte podle následujících jednoduchých kroků:</div>
+	CS	<div>Použití vlastního Spotify Developer Client ID vám poskytne samostatnou kvótu API oddělenou od výchozího Spotty — užitečné, pokud sdílíte Spotty s více účty (např. rodinné plány). Navíc Spotty využívá vaše Client ID pro přístup k vaší osobní knihovně (oblíbené skladby, uložená alba, sledované playlisty), což zajišťuje spolehlivější přístup k vašim favoritům. Pozn.: aplikace v dev-mode mají u Spotify menší kvótu a některé koncové body (kurátorské procházení, doporučení, dynamické playlisty) jsou omezené; Spotty tyto požadavky automaticky směruje přes výchozí Client ID. Chcete-li získat vlastní Client ID, postupujte podle těchto jednoduchých kroků:</div>
 	CS	<ul style="list-style:initial">
 	CS	<li>Přejděte na <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a> a v případě potřeby se přihlaste.</li>
 	CS	<li>Klikněte na možnost „Create app“ a postupujte podle pokynů.</li>
 	CS	<li>Zkopírujte nově vytvořené Client ID do nastavení Spotty.</li>
 	CS	<li>Pokud plánujete se Spotty používat více účtů Spotify (např. rodinný účet), budete je muset přidat do části „User Management“ v nově vytvořené konfiguraci.</li>
 	CS	</ul>
-	DA	<div>Brug af et brugerdefineret klient ID kan hjælpe, hvis du støder på problemer med hastighedsbegrænsning ("fejl 429"). Følg disse enkle trin for at få dit eget klient ID:</div>
+	DA	<div>Brug af dit eget Spotify Developer Client ID giver dig en separat API-kvote adskilt fra Spotty's standard — nyttigt hvis du deler Spotty med flere konti (f.eks. familieabonnementer). Derudover bruger Spotty dit Client ID til at tilgå dit personlige bibliotek (yndlingsnumre, gemte albums, fulgte playlister), hvilket giver mere pålidelig adgang til dine favoritter. Bemærk: Spotify's dev-mode apps har en mindre kvote og nogle endpoints (kurateret browsing, anbefalinger, dynamiske playlister) er begrænsede; Spotty dirigerer automatisk disse kald gennem standard Client ID. Følg disse enkle trin for at få dit eget Client ID:</div>
 	DA	<ul style="list-style:initial">
 	DA	<li>Gå til <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, login hvis nødvendigt.</li>
 	DA	<li>Klik "Create app", følg instruktionerne.</li>
 	DA	<li>Kopier det oprettede klient ID til dine Spotty indstillinger.</li>
 	DA	<li>Hvis du planlægger at bruge flere Spotify-konti med Spotty (f.eks. en familiekonto), skal du tilføje konti til afsnittet "Brugere og adgang" i den nyoprettede konfiguration.</li>
 	DA	</ul>
-	DE	<div>Die Verwendung einer eigenen Client ID kann helfen, falls Sie Probleme mit dem "Rate Limiting" haben (Fehler 429). Um eine solche Client ID zu erhalten, befolgen Sie diese einfachen Schritte:</div>
+	DE	<div>Mit Ihrer eigenen Spotify Developer Client ID erhalten Sie eine separate API-Quote, getrennt vom Standard von Spotty — nützlich, wenn Sie Spotty mit mehreren Konten teilen (z.B. Familien-Tarife). Außerdem nutzt Spotty Ihre Client ID für den Zugriff auf Ihre persönliche Bibliothek (Lieder, gespeicherte Alben, gefolgte Playlisten), was einen zuverlässigeren Zugriff auf Ihre Favoriten ermöglicht. Hinweis: Spotify-Apps im Dev-Modus haben eine kleinere Quote und einige Endpunkte (kuratiertes Stöbern, Empfehlungen, dynamische Playlisten) sind eingeschränkt; Spotty leitet diese Aufrufe automatisch über die Standard-Client-ID weiter. Um eine eigene Client ID zu erhalten, befolgen Sie diese einfachen Schritte:</div>
 	DE	<ul style="list-style:initial">
 	DE	<li>Besuchen Sie das <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify Developer Portal</a>, melden Sie sich falls nötig an.</li>
 	DE	<li>Klicken Sie "Create app", und folgen Sie den Anweisungen.</li>
 	DE	<li>Kopieren Sie die neu erstellte Client ID, und fügen Sie sie in den Spotty Einstellungen ein.</li>
 	DE	<li>Falls Sie einen Familienaccount verwenden, oder sonst mehrere Konten in Spotty verwenden möchten, fügen Sie die entsprechenden Konten bei der neu erstellten Konfiguration unter "User Management" hinzu.</li>
 	DE	</ul>
-	EN	<div>Using a custom Client ID can help if you hit issues with rate limiting ("error 429"). In order to get your own Client ID please follow these simple steps:</div>
+	EN	<div>Using your own Spotify Developer Client ID gives you a separate API quota bucket from the bundled Spotty default — useful if you share Spotty with multiple accounts (e.g. family plans). Additionally, Spotty uses your Client ID to access your personal library (Liked Songs, saved albums, followed playlists), providing more reliable access to your favorites. Note: Spotify's dev-mode apps have a smaller quota and some endpoints (curated browse, recommendations, dynamic playlists) are restricted; Spotty automatically routes those calls through the bundled default Client ID. To get your own Client ID:</div>
 	EN	<ul style="list-style:initial">
 	EN	<li>Go to <a href="https://developer.spotify.com/dashboard/applications" target="_blank">the Spotify Developer Portal</a>, sign in if needed.</li>
 	EN	<li>Click "Create app", follow the instructions.</li>
 	EN	<li>Copy the newly created Client ID to your Spotty Settings.</li>
 	EN	<li>If you plan to use multiple Spotify accounts with Spotty (eg. a family account), you'll need to add the accounts to the "User Management" section in the newly created configuration.</li>
 	EN	</ul>
-	FR	<div>L'utilisation d'un ID client personnalisé peut vous aider si vous rencontrez des problèmes de limitation de débit ("erreur 429"). Pour obtenir votre propre identifiant client, veuillez suivre ces étapes simples :</div>
+	FR	<div>L'utilisation de votre propre Spotify Developer Client ID vous donne un quota d'API distinct de celui par défaut de Spotty — utile si vous partagez Spotty avec plusieurs comptes (par ex. comptes famille). De plus, Spotty utilise votre Client ID pour accéder à votre bibliothèque personnelle (titres favoris, albums sauvegardés, playlists suivies), ce qui offre un accès plus fiable à vos favoris. Note : les apps Spotify en mode développeur ont un quota plus petit et certains points d'accès (parcours organisé, recommandations, playlists dynamiques) sont restreints ; Spotty redirige automatiquement ces appels via l'ID client par défaut. Pour obtenir votre propre identifiant client, suivez ces étapes simples :</div>
 	FR	<ul style="list-style:initial">
 	FR	<li>Accédez au <a href="https://developer.spotify.com/dashboard/applications" target="_blank">portail des développeurs Spotify</a> et connectez-vous si nécessaire.</li>
 	FR	<li>Cliquez sur "Create app" et suivez les instructions.</li>
 	FR	<li>Copiez l'ID client nouvellement créé dans vos paramètres Spotty.</li>
 	FR	<li>Si vous prévoyez d'utiliser plusieurs comptes Spotify avec Spotty (par exemple, un compte familial), vous devrez ajouter les comptes à la section "Utilisateurs et accès" dans la configuration nouvellement créée.</li>
 	FR	</ul>
-	HU	<div>Egyéni ügyfél-azonosító használata segíthet, ha problémába ütközik a sebességkorlátozással ("429-es hiba"). A saját ügyfél-azonosító megszerzéséhez kövesse az alábbi egyszerű lépéseket:</div>
+	HU	<div>A saját Spotify Developer ügyfél-azonosító használata külön API kvótát biztosít a Spotty alapértelmezettjétől — hasznos, ha a Spotty-t több fiókkal osztja meg (pl. családi csomagok). Ezenkívül a Spotty az Ön Client ID-ját használja a személyes könyvtárához való hozzáféréshez (kedvenc dalok, mentett albumok, követett lejátszási listák), megbízhatóbb hozzáférést biztosítva kedvenceihez. Megjegyzés: a Spotify dev-módú alkalmazásai kisebb kvótát kapnak, és bizonyos végpontok (válogatott böngészés, ajánlások, dinamikus lejátszási listák) korlátozottak; a Spotty ezeket a hívásokat automatikusan az alapértelmezett ügyfél-azonosítón keresztül irányítja. A saját ügyfél-azonosító megszerzéséhez kövesse az alábbi egyszerű lépéseket:</div>
 	HU	<ul style="list-style:initial">
 	HU	<li>Nyissa meg a <a href="https://developer.spotify.com/dashboard/applications" target="_blank">Spotify fejlesztői portált</a>, és jelentkezzen be, ha szükséges.</li>
 	HU	<li>Kattintson az "Alkalmazás létrehozása" lehetőségre, és kövesse az utasításokat.</li>
 	HU	<li>Másolja az újonnan létrehozott ügyfél-azonosítót a Spotty beállításokba.</li>
 	HU	<li>Ha több Spotify-fiókot szeretne használni a Spotty szolgáltatással (pl. családi fiók), akkor hozzá kell adnia a fiókokat az újonnan létrehozott konfiguráció „Felhasználók és hozzáférés” részéhez.</li>
 	HU	</ul>
-	NL	<div>Het gebruik van een aangepaste Client ID kan helpen als er problemen zijn met de snelheidsbeperking ("error 429"). Volg deze eenvoudige stappen om een eigen klant-ID te krijgen:</div>
+	NL	<div>Met je eigen Spotify Developer Client ID krijg je een aparte API-quota, gescheiden van die van Spotty — handig als je Spotty deelt met meerdere accounts (bijv. familieplannen). Daarnaast gebruikt Spotty je Client ID om toegang te krijgen tot je persoonlijke bibliotheek (favoriete nummers, opgeslagen albums, gevolgde afspeellijsten), wat zorgt voor betrouwbaardere toegang tot je favorieten. Let op: Spotify-apps in dev-modus hebben een kleinere quota en sommige endpoints (geredigeerde browse, aanbevelingen, dynamische afspeellijsten) zijn beperkt; Spotty stuurt deze aanroepen automatisch via de standaard Client ID. Volg deze eenvoudige stappen om je eigen Client ID te krijgen:</div>
 	NL	<ul style="list-style:initial">
 	NL	<li>Ga naar <a href="https://developer.spotify.com/dashboard/applications" target="_blank">de Spotify Developer Portal</a>, log indien nodig in.</li>
 	NL	<li>Klik op "Create app", volg de instructies.</li>
@@ -1192,3 +1192,21 @@ PLUGIN_SPOTTY_PLAYLIST_TRACKS
 	FR	Morceaux de la liste de lecture
 	HU	Lejátszási lista zeneszámok
 	NL	Afspeellijst Nummers
+
+PLUGIN_SPOTTY_BUNDLED_AUTH_NEEDED_SUMMARY
+	CS	Některé účty vyžadují další autorizaci pro plné zpřístupnění nabídky procházení (Mix týdne, Release Radar, Discover Weekly atd.).
+	DA	Nogle konti kræver yderligere godkendelse for at aktivere den fulde browsermenuen (Ugens mix, Release Radar, Discover Weekly osv.).
+	DE	Einige Konten benötigen eine zusätzliche Autorisierung, um das vollständige Stöbern-Menü zu aktivieren (Mix der Woche, Release Radar, Discover Weekly usw.).
+	EN	Some accounts need additional authorization to enable the full browse menu (Mix of the Week, Release Radar, Discover Weekly etc.).
+	FR	Certains comptes nécessitent une autorisation supplémentaire pour activer le menu de navigation complet (Mix de la semaine, Release Radar, Discover Weekly, etc.).
+	HU	Néhány fiókhoz további engedélyezés szükséges a teljes böngészési menü aktiválásához (Heti mix, Release Radar, Discover Weekly stb.).
+	NL	Sommige accounts hebben aanvullende autorisatie nodig om het volledige browsmenu te activeren (Mix van de week, Release Radar, Discover Weekly enz.).
+
+PLUGIN_SPOTTY_BUNDLED_AUTH_LINK_LABEL
+	CS	Autorizovat procházení
+	DA	Autoriser browsing
+	DE	Stöbern autorisieren
+	EN	Authorize browsing
+	FR	Autoriser la navigation
+	HU	Böngészés engedélyezése
+	NL	Browsen autoriseren

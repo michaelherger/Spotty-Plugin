@@ -9,6 +9,7 @@ use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string);
 use Plugins::Spotty::Plugin;
 use Plugins::Spotty::AccountHelper;
+use Plugins::Spotty::API::Token;
 use Plugins::Spotty::Settings::Auth;
 use Plugins::Spotty::Settings::Player;
 use Plugins::Spotty::Settings::PlaylistFolders;
@@ -98,6 +99,30 @@ sub handler {
 	}
 
 	$paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
+
+	my $needsBundledAuth = {};
+	# In Standard-User mode (no own Dev ID configured, iconCode == initIcon) the runtime
+	# dispatches all me/* + browse calls under the bundled flavor directly, so the probe
+	# below would surface a misleading "Authentication required" banner even when API traffic
+	# is healthy. Skip the probe in Standard-User mode so the UI is accurate.
+	unless (Plugins::Spotty::Plugin->hasDefaultIcon()) {
+		for my $cred (@{$paramRef->{credentials} || []}) {
+			# cred is { spotifyUsername => cacheFolderName } (from AccountHelper::getSortedCredentialTupels).
+			# hasRefreshToken needs the Spotify username (the KEY) to build the correct cache-key shape
+			# (spotty_refresh_token_<code>_<username>_<flavor>). The template keys needsBundledAuth on
+			# the cache-folder name (the VALUE, same as `userId` in the FOREACH loop at basic.html:32),
+			# so we must populate the hash with the VALUE but probe with the KEY.
+			my ($spotifyUsername) = keys %$cred;
+			my ($cacheFolder)     = values %$cred;
+			next unless $cacheFolder;
+			if (!Plugins::Spotty::API::Token->hasRefreshToken(
+					undef, flavor => 'bundled', userId => $spotifyUsername)) {
+				$needsBundledAuth->{$cacheFolder} = 1;
+			}
+		}
+	}
+	$paramRef->{needsBundledAuth} = $needsBundledAuth;
+
 	$paramRef->{displayNames} = { map {
 		my ($id) = each %$_;
 		$id => Plugins::Spotty::AccountHelper->getDisplayName($id);
