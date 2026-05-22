@@ -42,7 +42,7 @@ sub new {
 	
 	$self->_data({});
 	$self->_chunks(delete $self->params->{chunks} || {});
-	
+
 	return $self;
 }
 
@@ -58,14 +58,14 @@ sub get {
 	else {
 		$self->spottyAPI->_call($self->method, sub {
 			my ($result, $response) = @_;
-			
+
 			# tell follow-up queries to return cached data without re-validation, if we got a cached result back
 			if ($response && ref $response && $response->headers && ref $response->headers && $response->headers->{'x-spotty-cached-response'}) {
 				$self->params->{_no_revalidate} = 1;
 			}
-			
+
 			my ($count, $next) = $self->_extract(0, $result);
-			
+
 #			warn Data::Dump::dump($count, $self->params->{limit}, $self->limit, SPOTIFY_LIMIT, $next);
 			# no need to run more requests if there's no more than the received results
 			if ( $count <= $self->params->{limit} || $self->limit <= $self->params->{limit} ) {
@@ -116,10 +116,10 @@ sub _iterateChunks {
 
 sub _followAfter {
 	my ($self, $id) = @_;
-	
+
 	$self->spottyAPI->_call($self->method, sub {
 		my ($count, $next) = $self->_extract($id, shift);
-		
+
 		if ( $next && $next !~ /\boffset=/ && $next =~ /\bafter=([a-zA-Z0-9]{22})\b/ ) {
 			$self->_followAfter($1);
 		}
