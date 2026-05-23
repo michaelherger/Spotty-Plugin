@@ -1,4 +1,4 @@
-package Plugins::Spotty::API::AsyncRequestLegacy;
+package Plugins::Spotty::API::AsyncRequest;
 
 =pod
 	This class extends Slim::Networking::SimpleAsyncHTTP to add PUT support,
