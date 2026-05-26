@@ -184,7 +184,14 @@ sub removeRefreshToken {
 	}
 	main::INFOLOG && $log->is_info && $log->info("Removing refresh token for $userId (flavor=$flavor).");
 	eval { $spottyCache->remove(_getRTCacheKey($code, $userId, $flavor)) };
-	$log->warn("removeRefreshToken: cache layer threw on remove for $userId (flavor=$flavor): $@") if $@;
+	$log->warn("removeRefreshToken: new-key remove failed for $userId (flavor=$flavor): $@") if $@;
+	if ($flavor eq 'own') {
+		my $legacyKey = _getRTCacheKeyLegacy($code, $userId);
+		eval { $spottyCache->remove($legacyKey) };
+		$log->warn("removeRefreshToken: legacy spottyCache remove failed for $userId: $@") if $@;
+		eval { $cache->remove($legacyKey) };
+		$log->warn("removeRefreshToken: legacy cache remove failed for $userId: $@") if $@;
+	}
 }
 
 # singleton shortcut to the main class

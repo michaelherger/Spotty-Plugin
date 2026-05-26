@@ -1266,10 +1266,7 @@ sub _callOneShot {
 	my $cached;
 	my $cache_key;
 	if (!$params->{_nocache} && $type eq 'GET') {
-		# Strip the bearer from the cache key for non-me/* URLs so own-flavor and
-		# bundled-flavor browse responses share a single cache row. `me/*` continues
-		# to scope by token (different users see different Liked Songs).
-		$cache_key = md5_hex($url . ($url =~ /^me\b/ ? $token : ''));
+		$cache_key = md5_hex($url . ($url =~ /^(?:me|browse)\b/ ? $token : ''));
 	}
 
 	main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");

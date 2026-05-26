@@ -216,18 +216,19 @@ sub deleteCacheFolder {
 		# (a) Refresh-token cache scrub — both flavors.
 		Plugins::Spotty::API::Token->removeRefreshToken(undef, $userId, 'own');
 		Plugins::Spotty::API::Token->removeRefreshToken(undef, $userId, 'bundled');
+	}
 
-		# (b) Player-prefs scrub — iterate live roster, remove 'account' binding from any
-		# client whose account == the deleted $id. Mirrors setAccount / getAccount primitive.
-		foreach my $client ( Slim::Player::Client::clients() ) {
-			next unless $client;
-			my $bound = $prefs->client($client)->get('account');
-			next unless defined $bound && $bound eq $id;
+	# (b) Player-prefs scrub — iterate live roster, remove 'account' binding from any
+	# client whose account == the deleted $id. Matches on $id (always available), not
+	# $userId, so it runs even when credentials.json is missing/corrupt.
+	foreach my $client ( Slim::Player::Client::clients() ) {
+		next unless $client;
+		my $bound = $prefs->client($client)->get('account');
+		next unless defined $bound && $bound eq $id;
 
-			$prefs->client($client)->remove('account');
-			$client->pluginData( api => '' );
-			main::INFOLOG && $log->is_info && $log->info("Cleared player account binding: client=" . $client->id . " (was bound to $id)");
-		}
+		$prefs->client($client)->remove('account');
+		$client->pluginData( api => '' );
+		main::INFOLOG && $log->is_info && $log->info("Cleared player account binding: client=" . $client->id . " (was bound to $id)");
 	}
 
 	$class->purgeCache();
