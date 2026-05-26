@@ -201,6 +201,30 @@ sub _findBin {
 	return wantarray ? @binaries : $binary;
 }
 
+sub getKeymasterToken {
+	my ($class, $cacheDir) = @_;
+
+	my $helperPath = $class->get();
+	return unless $helperPath && $cacheDir && -d $cacheDir;
+	return unless $class->getCapability('keymaster-token');
+
+	my $cmd = sprintf('%s --keymaster-token -c "%s" 2>/dev/null', $helperPath, $cacheDir);
+	my $output = `$cmd`;
+
+	if ($output && $output =~ /^\{/) {
+		my $result = eval { from_json($output) };
+		if ($result && $result->{accessToken}) {
+			main::INFOLOG && $log->is_info && $log->info(
+				"Got access token via keymaster (expires in " . ($result->{expiresIn} || '?') . "s)"
+			);
+			return $result;
+		}
+	}
+
+	$log->warn("Failed to get keymaster token from helper binary");
+	return;
+}
+
 sub isLowCaloriesPi {
 	return $isLowCaloriesPi;
 }

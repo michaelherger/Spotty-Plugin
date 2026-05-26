@@ -8,6 +8,7 @@ use lib catdir($Bin, 'Plugins', 'Spotty', 'lib');
 use Hash::Merge qw(merge);
 
 use Slim::Utils::Cache;
+use Slim::Utils::Log;
 
 use constant CACHE_TTL => 86400 * 7;
 use constant TTL => 86400 * 90;
@@ -53,6 +54,30 @@ sub new {
 sub get {
 	my ($self, $uri) = @_;
 	return $self->{cache}->get($uri);
+}
+
+# Public remove primitive. Wraps the underlying Slim::Utils::Cache->remove the same way
+# get/set wrap their underlying primitives. Used by Plugins::Spotty::API::Token's
+# removeRefreshToken helper for the account-delete orphan-state scrub. Resolves the
+# encapsulation smell in Plugins::Spotty::API::Token::_lookupRefreshToken's legacy-key
+# cleanup block (the existing `eval { $spottyCache->{cache}->remove }` reach-into
+# pattern) by surfacing remove as a first-class API of this wrapper class. The legacy
+# reach-into site keeps its existing form deliberately — its WARN-on-undef-slot log
+# is a useful regression sentinel that should fire for any future encapsulation breakage.
+sub remove {
+	my ($self, $key) = @_;
+	# Symmetry with the WARN-on-undef regression sentinel in API::Token's legacy-key
+	# cleanup block. `new` always sets $self->{cache}; an undef slot here means a future
+	# encapsulation regression, and silently no-opping would defeat the purpose of the
+	# sentinel pattern. Surface it instead.
+	if (!$self->{cache}) {
+		logger('plugin.spotty')->warn(
+			'Plugins::Spotty::API::Cache::remove: internal `cache` slot is undef. '
+		  . 'Encapsulation regression — Plugins::Spotty::API::Cache constructor failed to populate the slot.'
+		);
+		return;
+	}
+	return $self->{cache}->remove($key);
 }
 
 sub set {

@@ -291,15 +291,12 @@ sub handleFeed {
 			};
 		}
 
-		# only give access to the tracks list if the user is using his own client ID
-		if ( _enableAdvancedFeatures() ) {
-			unshift @$personalItems, {
-				name  => cstring($client, 'PLUGIN_SPOTTY_SONGS_LIST'),
-				type  => 'playlist',
-				image => IMG_SONG,
-				url  => \&mySongs,
-			}
-		}
+		unshift @$personalItems, {
+			name  => cstring($client, 'PLUGIN_SPOTTY_SONGS_LIST'),
+			type  => 'playlist',
+			image => IMG_SONG,
+			url  => \&mySongs,
+		};
 
 		my $homeItem = {
 			name  => cstring($client, 'PLUGIN_SPOTTY_HOME'),
