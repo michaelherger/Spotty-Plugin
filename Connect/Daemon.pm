@@ -99,6 +99,10 @@ sub start {
 		$self->_streamMode(1);
 		push @helperArgs, '--connect-stream';
 
+		if ( Plugins::Spotty::Helper->getCapability('autoplay') ) {
+			push @helperArgs, '--autoplay', ($prefs->client($client)->get('enableAutoplay') ? 'on' : 'off');
+		}
+
 		# Log the command BEFORE adding --lms-auth (security: no password in log, per T-08-03)
 		if (main::INFOLOG && $log->is_info) {
 			$log->info("Starting Spotty Connect daemon (HTTP stream mode): \n$helperPath " . join(' ', @helperArgs));
@@ -163,6 +167,10 @@ sub start {
 	else {
 		# Non-stream mode: legacy single-track invocation
 		$self->_streamMode(0);
+
+		if ( Plugins::Spotty::Helper->getCapability('autoplay') ) {
+			push @helperArgs, '--autoplay', ($prefs->client($client)->get('enableAutoplay') ? 'on' : 'off');
+		}
 
 		# Log the command BEFORE adding --lms-auth (security: no password in log, per T-08-03)
 		if (main::INFOLOG && $log->is_info) {

@@ -12,6 +12,8 @@ use Scalar::Util qw(blessed);
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
+use Plugins::Spotty::API::Token;
+
 use constant CACHE_PURGE_INTERVAL => 86400;
 use constant CACHE_PURGE_MAX_AGE => 60 * 60;
 use constant CACHE_PURGE_INTERVAL_COUNT => 15;
@@ -132,6 +134,12 @@ sub renameCacheFolder {
 		$newId = substr( md5_hex(Slim::Utils::Unicode::utf8toLatin1Transliterate($credentials->{username} || '')), 0, 8 );
 	}
 
+	# Silence the misleading backtrace when Settings::Auth::cleanup() invokes us with the
+	# __AUTHENTICATE__ sentinel after the OAuth-pre-completion subdir was already removed:
+	# there is no credentials.json to read, the getCredentials-derivation block above
+	# produced no $newId, and the rename is a no-op anyway.
+	return if defined($oldId) && $oldId eq '__AUTHENTICATE__' && !$newId;
+
 	main::INFOLOG && $log->info("Trying to rename $oldId to $newId");
 
 	if (main::DEBUGLOG && $log->is_debug && !$newId) {
@@ -182,9 +190,6 @@ sub deleteCacheFolder {
 	my ($class, $id) = @_;
 
 	# Read credentials before unlink so we can scrub orphan state.
-	# Safe against recursion: if entered from the corruption path in
-	# getCredentials, the corrupted file was already unlinked there,
-	# so getCredentials sees an absent file and returns undef.
 	my $credentials = $class->getCredentials($id);
 	my $userId = $credentials && ref $credentials ? $credentials->{username} : undef;
 
@@ -193,20 +198,20 @@ sub deleteCacheFolder {
 		$credsCache = undef;
 	}
 
-	# Orphan-state scrub: remove refresh token and stale player-pref bindings
 	if ($userId) {
-		main::INFOLOG && $log->is_info && $log->info("Account delete orphan-state scrub: id=$id userId=$userId");
+		main::INFOLOG && $log->is_info && $log->info("Removing account data for id=$id userId=$userId");
 
-		# Drop the refresh token row from spotty.db
-		Plugins::Spotty::API::Token->removeRefreshToken(undef, $userId);
+		Plugins::Spotty::API::Token->removeRefreshToken(undef, $userId, 'own');
+		Plugins::Spotty::API::Token->removeRefreshToken(undef, $userId, 'bundled');
+	}
 
-		# Clear player-pref bindings for the deleted account
-		for my $client (Slim::Player::Client::clients()) {
-			if (($prefs->client($client)->get('account') || '') eq $id) {
-				$prefs->client($client)->remove('account');
-				$client->pluginData( api => '' );
-			}
-		}
+	foreach my $client ( Slim::Player::Client::clients() ) {
+		next unless $client;
+		my $bound = $prefs->client($client)->get('account');
+		next unless defined $bound && $bound eq $id;
+
+		$prefs->client($client)->remove('account');
+		$client->pluginData( api => '' );
 	}
 
 	$class->purgeCache();
@@ -338,9 +343,10 @@ sub getCredentials {
 
 				require File::Copy;
 				File::Copy::copy($credentialsFile, $backupName);
-
-				# Remove the corrupted file before cleanup to prevent recursive
-				# re-entry via deleteCacheFolder -> getCredentials on the same corrupt content.
+				# Remove the corrupted credentials file before recursive cleanup. deleteCacheFolder
+				# calls getCredentials($id) to read the username for orphan-state scrub; without this
+				# unlink the recursive call would re-enter this corruption block on the same content
+				# (File::Copy::copy leaves the original in place), looping until stack exhaustion.
 				unlink $credentialsFile;
 
 				$class->deleteCacheFolder($id);

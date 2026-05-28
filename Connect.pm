@@ -154,6 +154,10 @@ sub getNextTrack {
 						});
 						$song->duration(($trackInfo->{duration_ms} || 0) / 1000)
 							if $trackInfo->{duration_ms};
+						$client->streamingProgressBar({
+							url      => $song->streamUrl,
+							duration => $trackInfo->{duration_ms} / 1000,
+						}) if $trackInfo->{duration_ms};
 						Slim::Control::Request::notifyFromArray($client, ['newmetadata']);
 					}
 				}, $trackUri);
@@ -465,6 +469,13 @@ sub _connectEvent {
 
 	my $cmd = $request->getParam('_cmd');
 
+	# Flag pending start so the seek handler can defer position to _onNewSong.
+	# Must be set synchronously — the seek event arrives before the async API
+	# callback that issues playlist play.
+	if ($cmd eq 'start') {
+		$client->pluginData(pendingConnect => 1);
+	}
+
 	main::INFOLOG && $log->is_info && $log->info(sprintf(
 		'Got called from spotty helper for %s: %s', $client->id, $cmd
 	));
@@ -511,16 +522,27 @@ sub _connectEvent {
 			main::INFOLOG && $log->is_info && $log->info("Seek to $position");
 
 			if (_isStreamMode($client)) {
-				# Stream-mode: binary already seeked internally. Adjust startOffset
-				# so songTime reports the correct position without triggering
-				# _JumpToTime → _Stop + _Stream (which restarts the FIFO).
-				my $song = $client->playingSong();
-				if ($song) {
-					my $elapsed = $client->songElapsedSeconds() || 0;
-					$song->startOffset(int($position) - $elapsed);
+				if ($client->pluginData('pendingConnect')) {
+					# Seek arrived before playlist play — the song object will
+					# be replaced. Store position for _onNewSong to apply after
+					# the new song is created.
+					$client->pluginData(progress => $position);
+					$client->pluginData(pendingConnect => 0);
 					main::INFOLOG && $log->is_info && $log->info(
-						"Stream mode seek: adjusted startOffset to " . $song->startOffset()
+						"Stream mode seek deferred: progress=$position (pending connect)"
 					);
+				} else {
+					# Stream-mode: binary already seeked internally. Adjust startOffset
+					# so songTime reports the correct position without triggering
+					# _JumpToTime → _Stop + _Stream (which restarts the FIFO).
+					my $song = $client->playingSong();
+					if ($song) {
+						my $elapsed = $client->songElapsedSeconds() || 0;
+						$song->startOffset(int($position) - $elapsed);
+						main::INFOLOG && $log->is_info && $log->info(
+							"Stream mode seek: adjusted startOffset to " . $song->startOffset()
+						);
+					}
 				}
 			} else {
 				my $seekReq = Slim::Control::Request->new($client->id, ['time', int($position)]);
@@ -600,6 +622,18 @@ sub _connectEvent {
 		# In stream mode the FIFO carries continuous PCM; the binary drives track
 		# progression — no new transcoding process should be spawned.
 		if ($cmd eq 'change' && _isStreamMode($client)) {
+			# Reset progress bar for the new track: in stream mode,
+			# songElapsedSeconds counts from the original stream start,
+			# so startOffset must compensate to reset songTime to ~0.
+			# Clear pluginData progress to prevent _onNewSong from overriding
+			# with the stale API position (which still reports the old track's end).
+			if ($song) {
+				my $elapsed = $client->songElapsedSeconds() || 0;
+				$song->startOffset(0 - $elapsed);
+				$client->playPoint(undef);
+				$client->pluginData(progress => 0);
+			}
+
 			my $eventTrackId = $request->getParam('_p2');
 			if ($eventTrackId && $song) {
 				# Full async fetch for track metadata (title, artist, album, artwork, duration)
@@ -633,6 +667,10 @@ sub _connectEvent {
 						# Update song duration for progress bar
 						$song->duration(($trackInfo->{duration_ms} || 0) / 1000)
 							if $trackInfo->{duration_ms};
+						$client->streamingProgressBar({
+							url      => $song->streamUrl,
+							duration => $trackInfo->{duration_ms} / 1000,
+						}) if $trackInfo->{duration_ms};
 
 						# Fire newmetadata notification so LMS refreshes Now Playing
 						Slim::Control::Request::notifyFromArray($client, ['newmetadata']);
@@ -640,12 +678,10 @@ sub _connectEvent {
 				}, "spotify:track:$eventTrackId");
 			}
 
-			# Store mid-track progress so _onNewSong can set startOffset correctly.
-			# Mirrors the start-branch pattern (lines 1003-1008).
-			$result->{progress} ||= ($result->{progress_ms} / 1000) if $result->{progress_ms};
-			if ($result->{progress} && $result->{progress} > 10) {
-				$client->pluginData(progress => $result->{progress});
-			}
+			# In stream mode, startOffset is reset directly above — do NOT
+			# store the API's progress here: on track change the API still
+			# reports the OLD track's end position, and _onNewSong would
+			# override our reset with that stale value.
 
 			return;  # D-05: no fall-through to change-to-start upgrade / playlist play
 		}
