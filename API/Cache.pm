@@ -64,13 +64,24 @@ sub set {
 	return if ($fast && $cached);
 
 	my $merged;
-	if ($cached && ref $data && ref $cached) {
+	if ($cached) {
 		$merged = merge($cached, $data);
 	}
 
 	$self->{cache}->set($uri, $merged || $data, time() + TTL);
 
 	return $merged || $data;
+}
+
+sub remove {
+	my ($self, $key) = @_;
+
+	if (!$self->{cache}) {
+		logger('plugin.spotty')->warn("Cache not initialized - cannot remove key");
+		return;
+	}
+
+	return $self->{cache}->remove($key);
 }
 
 sub getLargestArtwork {

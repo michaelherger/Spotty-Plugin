@@ -181,9 +181,32 @@ sub removeAllAccounts {
 sub deleteCacheFolder {
 	my ($class, $id) = @_;
 
+	# Read credentials before unlink so we can scrub orphan state.
+	# Safe against recursion: if entered from the corruption path in
+	# getCredentials, the corrupted file was already unlinked there,
+	# so getCredentials sees an absent file and returns undef.
+	my $credentials = $class->getCredentials($id);
+	my $userId = $credentials && ref $credentials ? $credentials->{username} : undef;
+
 	if ( my $credentialsFile = $class->hasCredentials($id) ) {
 		unlink $credentialsFile;
 		$credsCache = undef;
+	}
+
+	# Orphan-state scrub: remove refresh token and stale player-pref bindings
+	if ($userId) {
+		main::INFOLOG && $log->is_info && $log->info("Account delete orphan-state scrub: id=$id userId=$userId");
+
+		# Drop the refresh token row from spotty.db
+		Plugins::Spotty::API::Token->removeRefreshToken(undef, $userId);
+
+		# Clear player-pref bindings for the deleted account
+		for my $client (Slim::Player::Client::clients()) {
+			if (($prefs->client($client)->get('account') || '') eq $id) {
+				$prefs->client($client)->remove('account');
+				$client->pluginData( api => '' );
+			}
+		}
 	}
 
 	$class->purgeCache();
@@ -315,6 +338,10 @@ sub getCredentials {
 
 				require File::Copy;
 				File::Copy::copy($credentialsFile, $backupName);
+
+				# Remove the corrupted file before cleanup to prevent recursive
+				# re-entry via deleteCacheFolder -> getCredentials on the same corrupt content.
+				unlink $credentialsFile;
 
 				$class->deleteCacheFolder($id);
 			}

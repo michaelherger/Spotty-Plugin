@@ -58,10 +58,50 @@ sub formatOverride {
 	# this needs to be done from whatever code being run once per track
 	Plugins::Spotty::AccountHelper->purgeAudioCacheAfterXTracks();
 
+	# D-07: return 'spc' (Spotify Connect stream via FIFO) when a streaming
+	# daemon is active for this client. The spc content type routes LMS to
+	# the [cat] $FIFO$ transcoding entry registered in custom-convert.conf.
+	if (Plugins::Spotty::Plugin->isSpotifyConnect($song->master)) {
+		require Plugins::Spotty::Connect::DaemonManager;
+		my $helper = Plugins::Spotty::Connect::DaemonManager->helperForClient($song->master);
+		if ($helper && $helper->_streamMode) {
+			return 'spc';
+		}
+	}
+
 	return 'spt';
 }
 
 sub canDirectStream { 0 }
+
+sub canDoAction {
+	my ($class, $client, $url, $action) = @_;
+
+	if (Plugins::Spotty::Plugin->isSpotifyConnect($client)) {
+		return 0 if $action eq 'stop';
+	}
+
+	return 1;
+}
+
+sub isRepeatingStream {
+	my ( undef, $song ) = @_;
+
+	return $song && Plugins::Spotty::Plugin->isSpotifyConnect($song->master());
+}
+
+sub getNextTrack {
+	my ( $class, $song, $successCb, $errorCb ) = @_;
+
+	my $client = $song->master();
+
+	if (Plugins::Spotty::Plugin->isSpotifyConnect($client)) {
+		Plugins::Spotty::Connect->getNextTrack($song, $successCb, $errorCb);
+		return;
+	}
+
+	$successCb->();
+}
 
 # P = Chosen by the user
 sub audioScrobblerSource { 'P' }
@@ -77,7 +117,10 @@ sub explodePlaylist {
 	}
 
 	main::INFOLOG && $log->is_info && $log->info("Explode URI: $uri");
-	if (my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client)) {
+	if ($uri =~ m|/connect-\d+|) {
+		$cb->([$uri]);
+	}
+	elsif (my $spotty = Plugins::Spotty::Plugin->getAPIHandler($client)) {
 		$spotty->tracksFromURI(sub {
 			my $result = shift || [];
 			my $firstItem = $result->[0];
@@ -130,6 +173,11 @@ sub getMetadataFor {
 
 	$meta = undef;
 
+	# sometimes we wouldn't get a song object, and an outdated url. Get latest data instead!
+	if ((!$url || $url =~ /connect-/) && !$song && Plugins::Spotty::Plugin->isSpotifyConnect($client) && ($song = $client->playingSong)) {
+		$url = $song->streamUrl;
+	}
+
 	if ( $client && ($song ||= $client->currentSongForUrl($url)) ) {
 		# we store a copy of the metadata in the song object - no need to read from the disk cache
 		my $info = $song->pluginData('info');
@@ -176,7 +224,7 @@ sub getMetadataFor {
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($meta));
 	}
 
-	if (!$meta) {
+	if (!$meta && $uri !~ /^spotify:connect-/) {
 		# grab missing metadata asynchronously
 		main::INFOLOG && $log->is_info && $log->info("No metadata found - need to look online: $uri");
 		$class->getBulkMetadata($client, $song ? undef : $url);

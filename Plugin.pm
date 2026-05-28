@@ -19,6 +19,7 @@ use Plugins::Spotty::Helper;
 use Plugins::Spotty::OPML;
 use Plugins::Spotty::ProtocolHandler;
 
+use constant CONNECT_HELPER_VERSION => '2.1.0';
 use constant CAN_IMPORTER => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 use constant KILL_PROCESS_INTERVAL => 3600;
 
@@ -67,6 +68,9 @@ sub initPlugin {
 			'recently-played' => -1,
 		},
 		accountSwitcherMenu => 0,
+		disableDiscovery => 0,
+		disableSpotifyConnect => 0,
+		checkDaemonConnected => 0,
 		displayNames => {},
 		products => {},
 		helper => '',
@@ -150,6 +154,8 @@ sub postinitPlugin { if (main::TRANSCODING) {
 	my $class = shift;
 
 	Plugins::Spotty::OPML->init();
+
+	$class->canSpotifyConnect();
 
 	# we're going to hijack the Spotify URI schema
 	Slim::Player::ProtocolHandlers->registerHandler('spotify', 'Plugins::Spotty::ProtocolHandler');
@@ -278,6 +284,20 @@ sub updateTranscodingTable {
 
 			main::INFOLOG && $log->is_info && $log->info($commandTable->{$_});
 		}
+		elsif ( $_ =~ /^spc-/ ) {
+			# Stream mode: inject FIFO path for this player's Connect daemon
+			require Plugins::Spotty::Connect::DaemonManager;
+			my $fifoPath = Plugins::Spotty::Connect::DaemonManager->fifoPathForClient($client);
+			if ($fifoPath) {
+				$commandTable->{$_} =~ s/\$FIFO\$/$fifoPath/g;
+				main::INFOLOG && $log->is_info && $log->info($commandTable->{$_});
+			}
+			else {
+				main::INFOLOG && $log->is_info && $log->info(
+					"spc entry: no FIFO path available yet for client " . ($client ? $client->id : 'undef')
+				);
+			}
+		}
 	}
 }
 
@@ -325,6 +345,30 @@ sub getAPIHandler {
 
 sub canDiscovery { 1 }
 
+sub canSpotifyConnect {
+	my ($class, $dontInit) = @_;
+
+	# global master switch — if disabled, short-circuit before any binary check
+	return if $prefs->get('disableSpotifyConnect');
+
+	# we need a minimum helper application version
+	if ( !Slim::Utils::Versions->checkVersion(Plugins::Spotty::Helper->getVersion(), CONNECT_HELPER_VERSION, 10) ) {
+		$log->error("Cannot support Spotty Connect, need at least helper version " . CONNECT_HELPER_VERSION);
+		return;
+	}
+
+	require Plugins::Spotty::Connect;
+
+	Plugins::Spotty::Connect->init() unless $dontInit;
+
+	return 1;
+}
+
+sub isSpotifyConnect {
+	my $class = shift;
+	return $class->canSpotifyConnect(1) && Plugins::Spotty::Connect->isSpotifyConnect(@_);
+}
+
 sub killHangingProcesses {
 	my ($class, $force) = @_;
 
@@ -343,14 +387,31 @@ sub killHangingProcesses {
 		my $helper = Plugins::Spotty::Helper->get();
 		my $helperName = basename($helper) if $helper;
 
+		# REG-01: collect active Connect daemon PIDs to exclude them from the kill
+		my %connectPids;
+		if ( $class->canSpotifyConnect(1) ) {
+			require Plugins::Spotty::Connect::DaemonManager;
+			for my $pid (Plugins::Spotty::Connect::DaemonManager->helperPids()) {
+				$connectPids{$pid} = 1 if $pid;
+			}
+		}
+
 		eval {
 			if (main::ISWINDOWS) {
 				system("taskkill /IM $helperName /F 1>nul 2>&1") if $helperName;
 				system('taskkill /IM spotty-custom.exe /F 1>nul 2>&1') unless $helperName && $helper ne 'spotty-custom';
 			}
 			else {
-				`pkill -f $helper` if $helper;
-				`pkill -f spotty-custom` unless $helper && $helper =~ /spotty-custom/;
+				if ($helper) {
+					my @pids = split /\n/, `pgrep -f $helper 2>/dev/null`;
+					my @orphans = grep { $_ && !$connectPids{$_} } @pids;
+					kill('TERM', @orphans) if @orphans;
+				}
+				unless ($helper && $helper =~ /spotty-custom/) {
+					my @pids = split /\n/, `pgrep -f spotty-custom 2>/dev/null`;
+					my @orphans = grep { $_ && !$connectPids{$_} } @pids;
+					kill('TERM', @orphans) if @orphans;
+				}
 			}
 		};
 
@@ -363,6 +424,11 @@ sub killHangingProcesses {
 # we only run when transcoding is enabled, but shutdown would be called no matter what
 sub shutdownPlugin { if (main::TRANSCODING) {
 	Plugins::Spotty::AccountHelper->purgeAudioCache(1);
+
+	if (__PACKAGE__->canSpotifyConnect(1)) {
+		Plugins::Spotty::Connect->shutdown();
+	}
+
 	__PACKAGE__->killHangingProcesses(1);
 } }
 
