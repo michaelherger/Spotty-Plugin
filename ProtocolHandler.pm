@@ -58,9 +58,10 @@ sub formatOverride {
 	# this needs to be done from whatever code being run once per track
 	Plugins::Spotty::AccountHelper->purgeAudioCacheAfterXTracks();
 
-	# D-07: return 'spc' (Spotify Connect stream via FIFO) when a streaming
+	# D-07: return 'spc' (Spotify Connect stream via HTTP direct stream) when a streaming
 	# daemon is active for this client. The spc content type routes LMS to
-	# the [cat] $FIFO$ transcoding entry registered in custom-convert.conf.
+	# the spc-pcm passthrough entry (command '-') registered in custom-convert.conf,
+	# which enables the canDirectStream check at Slim::Player::Song line 469.
 	if (Plugins::Spotty::Plugin->isSpotifyConnect($song->master)) {
 		require Plugins::Spotty::Connect::DaemonManager;
 		my $helper = Plugins::Spotty::Connect::DaemonManager->helperForClient($song->master);
@@ -72,7 +73,22 @@ sub formatOverride {
 	return 'spt';
 }
 
-sub canDirectStream { 0 }
+sub canDirectStream {
+	my ($class, $client, $url) = @_;
+
+	return 0 unless $client;
+
+	$client = $client->master if $client->can('master');
+
+	return 0 unless Plugins::Spotty::Plugin->isSpotifyConnect($client);
+
+	require Plugins::Spotty::Connect::DaemonManager;
+	my $helper = Plugins::Spotty::Connect::DaemonManager->helperForClient($client->id);
+
+	return 0 unless $helper && $helper->_streamMode && $helper->_streamPort;
+
+	return 'http://127.0.0.1:' . $helper->_streamPort . '/stream';
+}
 
 sub canDoAction {
 	my ($class, $client, $url, $action) = @_;

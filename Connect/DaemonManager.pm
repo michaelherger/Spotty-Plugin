@@ -34,8 +34,7 @@ sub init {
 	}, [['client'], ['new', 'disconnect']]);
 
 	# sync group changes: differential restart — stop each daemon via stopForSync
-	# (which preserves FIFO and resets stream-backoff) rather than calling
-	# shutdown() (which destroys FIFO + cache and triggers FIX-01 / FIX-02 bugs).
+	# (which clears the stream port and resets stream-backoff) then re-init.
 	# Instances are intentionally kept in %helperInstances so initHelpers can
 	# detect the dead-but-present state and call startHelper -> $helper->start.
 	# A 0.1s micro-delay is used instead of DAEMON_INIT_DELAY (2s) so the Spirc
@@ -84,7 +83,7 @@ sub init {
 	$prefs->setChange(sub {
 		my ($pref, $new, undef, $old) = @_;
 
-		return if !($new || $old) && $new eq $old;
+		return if defined $new && defined $old && $new eq $old;
 
 		Slim::Utils::Timers::killTimers( $class, \&initHelpers );
 
@@ -277,12 +276,12 @@ sub helperForClient {
 	return $helperInstances{$clientId};
 }
 
-sub fifoPathForClient {
+sub streamPortForClient {
 	my ($class, $clientId) = @_;
 
 	$clientId = $clientId->id if $clientId && blessed $clientId;
 	my $helper = $helperInstances{$clientId} || return;
-	return $helper->_fifoPath;
+	return $helper->_streamPort;
 }
 
 sub helperInstances {

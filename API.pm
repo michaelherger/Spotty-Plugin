@@ -49,7 +49,56 @@ my $libraryCache = Plugins::Spotty::API::Cache->new();
 
 my $prefs = preferences('plugin.spotty');
 my $error429;
-my %tokenHandlers;
+
+# try-own-then-fallback routing state.
+# `@KNOWN_DEPRECATED_FAMILIES` is the canonical pattern-key derivation list for the URL-pattern
+# hint cache. The hint cache is NOT pre-warmed at init — these regexes are
+# used only to derive a stable pattern KEY when a 403/410 → bundled-fallback succeeds at runtime,
+# so similar URLs hit the cached hint on subsequent calls. First call after server restart pays
+# the 2x cost (own attempt → 403/410 → bundled retry); subsequent calls within 24h hit bundled
+# directly. List sourced from Spotify Feb-2026
+# migration guide. Anchored at the start of the URL (after _call's leading-slash strip).
+# The `me/*` family is NOT here — `me/*` MUST stay on own flavor.
+my @KNOWN_DEPRECATED_FAMILIES = (
+	qr{^browse/featured-playlists\b},
+	qr{^browse/categories/[^/?]+/playlists\b},
+	qr{^browse/categories\b},
+	qr{^browse/new-releases\b},
+	qr{^recommendations\b},
+	qr{^users/[^/?]+/playlists\b},
+	qr{^artists/[^/?]+/top-tracks\b},
+	qr{^artists/[^/?]+/related-artists\b},
+	# Spotify-curated playlists (Mix der Woche, Release Radar, Discover Weekly, Daily Mix,
+	# "Made For You", Genre/Mood charts) consistently use the `37i9` ID prefix as the
+	# editorial-content subnamespace (stable since ~2016, with sub-prefixes like `37i9dQZ`
+	# for personalised mixes). User-owned playlist IDs are random base62 — the narrowed
+	# regex matches ONLY the curated `37i9` subnamespace, so a deleted user playlist 404
+	# STAYS ON OWN FLAVOR and surfaces the 404 to the caller as before. Collision
+	# probability between random base62 and the `37i9` prefix is ~1 in 14.7M; even on
+	# collision the user-owned playlist returns 200 under own with no harm done. The
+	# broader `37i9` prefix (rather than the narrower `37i9dQZ`) intentionally covers all
+	# curated subnamespaces including future sub-prefixes Spotify might introduce.
+	qr{^playlists/37i9[A-Za-z0-9]+\b},
+);
+
+# 24h TTL — long enough to avoid burning the 2x cost on every Start-menu browse,
+# short enough to self-heal if Spotify reverses a deprecation.
+use constant BUNDLED_HINT_TTL => 86400;
+use constant BUNDLED_HINT_KEY_PREFIX => 'spotty_bundled_hint_';
+
+# Sentinel cache flag for "this user needs bundled-default OAuth".
+# 7d TTL = long enough to span an evening-after-morning gap, short enough that any flag we
+# miss-clearing self-heals within a week. Authoritative source is the render-time probe in
+# Settings.pm; this flag is belt-and-suspenders, not load-bearing.
+use constant NEEDS_BUNDLED_AUTH_TTL        => 7 * 24 * 3600;
+use constant NEEDS_BUNDLED_AUTH_KEY_PREFIX => 'spotty_needs_bundled_auth_';
+
+# me/* family guard for the routing decision.
+# Matches v1/me, v1/me/*, v1/me?... — i.e. the userId-scoped endpoint family that MUST
+# stay on own flavor (Liked Songs, Saved Albums, etc.). Tested AT THE TOP of _call's
+# routing decision so a transient 403 on me/tracks (e.g. Spotify glitch) cannot fall
+# back to bundled and silently return wrong data.
+my $_meFamilyRegex = qr{^me(?:$|/|\?)};
 
 {
 	__PACKAGE__->mk_accessor( rw => qw(
@@ -98,20 +147,33 @@ sub getToken {
 sub codeExchange {
 	my ( $self, $cb, $args ) = @_;
 
+	# Propagate the caller's `_client_id` override into the params handed to _tokenCall,
+	# so the flavor-correct Client ID lands on Spotify's /api/token endpoint at
+	# code-exchange time. Without this, a bundled-flavor authorization_code
+	# (minted at /authorize under the bundled-default Client ID via oauthRedirect)
+	# gets exchanged with the user's own Dev ID — Spotify rejects with 400 Bad
+	# Request because /api/token requires the same client_id at code exchange as
+	# was used at /authorize.
 	$self->_tokenCall($cb, {
 		grant_type => 'authorization_code',
 		code => $args->{code},
 		redirect_uri => $args->{callbackUrl},
 		code_verifier => $args->{codeVerifier},
+		_client_id => $args->{_client_id},
 	}, $cb);
 }
 
 sub refreshToken {
 	my ( $self, $cb, $args ) = @_;
 
+	# Propagate the caller's `_client_id` override into the params handed to _tokenCall
+	# so the flavor-correct Client ID lands on Spotify's /api/token endpoint. Without
+	# this, bundled-flavor refresh tokens (minted under the bundled-default Client ID)
+	# get sent with the user's own Dev ID, and Spotify replies 400 Bad Request.
 	$self->_tokenCall($cb, {
 		grant_type => 'refresh_token',
 		refresh_token => $args->{refreshToken},
+		_client_id => $args->{_client_id},
 	}, $cb);
 }
 
@@ -302,28 +364,6 @@ sub playerPrevious {
 			POST => $args
 		);
 	}, $device);
-}
-
-sub playerQueue {
-	my ( $self, $cb ) = @_;
-
-	$self->_call('me/player/queue',
-		sub {
-			my $result = $_[0];
-
-			if ($result && ref $result && ref $result->{queue} eq 'ARRAY'
-				&& scalar @{$result->{queue}})
-			{
-				$cb->($result->{queue}->[0]);
-				return;
-			}
-
-			$cb->();
-		},
-		GET => {
-			_nocache => 1,
-		}
-	);
 }
 
 sub playerSeek {
@@ -1345,95 +1385,228 @@ sub _getTimestamp {
 	return $timestamp;
 }
 
+# Single-shot HTTP dispatch helper.
+# Extracted so the try-own-then-fallback retry path can re-dispatch with a different
+# flavor without recursing back into _call (which would re-trigger the hint-cache
+# lookup, response cache check, etc.).
+#
+# Caller contract:
+# - $token: the bearer string already obtained for the chosen flavor
+# - $self, $url, $cb, $type, $params: same as _call
+sub _callOneShot {
+	my ($self, $token, $url, $cb, $type, $params) = @_;
+
+	# Read $1 only inside the branch where the regex matched; avoids relying on
+	# dynamic-scope $1 from a previous match when the token is empty/undef.
+	my $error;
+	if (!$token) {
+		$error = 'NO_ACCESS_TOKEN';
+	}
+	elsif ($token =~ /^-(\d+)$/) {
+		$error = $1;
+		$error = 'NO_ACCESS_TOKEN' if $error !~ /429/;
+	}
+	if ($error) {
+		$cb->({
+			name => string('PLUGIN_SPOTTY_ERROR_' . $error),
+			type => 'text'
+		});
+		return;
+	}
+
+	$type ||= 'GET';
+	$url =~ s/^\///;
+
+	my ($content, $headers);
+	($url, $content, $headers) = _prepareCall($type, $url, $params);
+	push @$headers, 'Authorization' => 'Bearer ' . $token;
+
+	my $cached;
+	my $cache_key;
+	if (!$params->{_nocache} && $type eq 'GET') {
+		$cache_key = md5_hex($url . ($url =~ /^(?:me|browse)\b/ ? $token : ''));
+	}
+
+	main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");
+
+	if ( $cache_key && ($cached = $cache->get($cache_key)) ) {
+		main::INFOLOG && $log->is_info && $log->info("Returning cached data for $url");
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
+		$cb->($cached);
+		return;
+	}
+	elsif ( main::INFOLOG && $log->is_info ) {
+		$log->info("API call: $url");
+		main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
+	}
+
+	my $http = Plugins::Spotty::API::AsyncRequest->new(
+		\&_gotResponse,
+		\&_gotError,
+		{
+			cache => $params->{_nocache} ? 0 : 1,
+			expires => $params->{_expires} || 3600,
+			timeout => 30,
+			no_revalidate => $params->{_no_revalidate},
+			self => $self,
+			cb => $cb,
+			cache_key => $cache_key,
+		},
+	);
+
+	if ( $type eq 'POST' ) {
+		$http->post(sprintf(API_URL, $url), @$headers, $content);
+	}
+	elsif ( $type eq 'PUT' ) {
+		$http->put(sprintf(API_URL, $url), @$headers, $content);
+	}
+	else {
+		$http->get(sprintf(API_URL, $url), @$headers);
+	}
+}
+
 sub _call {
 	my ( $self, $url, $cb, $type, $params ) = @_;
 
-	my $args = {};
-	# https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
-	# one year later it now looks as if this wouldn't work any more and we'd have to go back to where we were before?!?
-	# if ($url =~ m{^browse/|^recommendations|^artists/.*/related-artists|^playlists/.*/tracks}) {
-	# 	$args->{code} = Plugins::Spotty::API::Web::_code();
-	# }
+	$params ||= {};
 
-	my $call = sub {
-		my ($token) = @_;
+	# Cooldown gate: blocks ALL `_call` entries during a 429 cooldown window,
+	# including the `_token`-injected literal-token bypass below and `me/*` calls.
+	# Conservative 429 backoff — every observed 429 from Spotify is a signal to
+	# stop sending traffic for the Retry-After window. Gate is placed at the head
+	# of _call (before any flavor decision) so hint-cache lookup is skipped too.
+	if ($cache->get('spotty_rate_limit_exceeded')) {
+		return _callOneShot($self, '-429', $url, $cb, $type, $params);
+	}
 
-		if ( !$token || $token =~ /^-(\d+)$/ ) {
-			my $error = $1 || 'NO_ACCESS_TOKEN';
-			$error = 'NO_ACCESS_TOKEN' if $error !~ /429/;
+	# If the caller injected a literal token (extremely rare path), bypass the routing.
+	if ($params->{_token}) {
+		return _callOneShot($self, $params->{_token}, $url, $cb, $type, $params);
+	}
 
-			$cb->({
-				name => string('PLUGIN_SPOTTY_ERROR_' . $error),
-				type => 'text'
-			});
-		}
-		else {
-			$type ||= 'GET';
+	# Try-own-then-fallback dispatch: strip leading slash so URL matches regex anchors.
+	my $cleanUrl = $url;
+	$cleanUrl =~ s/^\///;
 
-			# $uri must not have a leading slash
-			$url =~ s/^\///;
+	# Step 0: me/* family guard. me/* MUST stay on own flavor.
+	# If the URL is in the me/* family, dispatch under own and SKIP the retry path.
+	my $isMeFamily = ($cleanUrl =~ $_meFamilyRegex);
 
-			my ($content, $headers);
-			($url, $content, $headers) = _prepareCall($type, $url, $params);
-			push @$headers, 'Authorization' => 'Bearer ' . $token;
+	# Step 1: hint-cache lookup — for non-me URLs only. If the URL pattern was
+	# learned in a previous bundled-fallback success, dispatch directly to bundled.
+	my $hintFlavor = $isMeFamily ? undef : _lookupBundledHint($cleanUrl);
+	my $startFlavor = $hintFlavor || 'own';
 
-			my $cached;
-			my $cache_key;
-			if (!$params->{_nocache} && $type eq 'GET') {
-				$cache_key = md5_hex($url . ($url =~ /^(?:me|browse)\b/ ? $token : ''));
-			}
+	# Standard-User-mode dispatch bypass. When the user has NOT configured their
+	# own Spotify Developer App (iconCode == initIcon()), OAuth output lands under
+	# flavor=bundled. Override $startFlavor so Token::get resolves the correct RT.
+	# Placed AFTER the me-family guard and the hint-cache lookup.
+	if (Plugins::Spotty::Plugin->hasDefaultIcon()) {
+		$startFlavor = 'bundled';
+	}
 
-			main::INFOLOG && $log->is_info && $cache_key && $log->info("Trying to read from cache for $url");
-
-			if ( $cache_key && ($cached = $cache->get($cache_key)) ) {
-				main::INFOLOG && $log->is_info && $log->info("Returning cached data for $url");
-				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
-				$cb->($cached);
-				return;
-			}
-			elsif ( main::INFOLOG && $log->is_info ) {
-				$log->info("API call: $url");
-				main::DEBUGLOG && $content && $log->is_debug && $log->debug($content);
-			}
-
-			my $http = Plugins::Spotty::API::AsyncRequest->new(
-				\&_gotResponse,
-				\&_gotError,
-				{
-					cache => $params->{_nocache} ? 0 : 1,
-					expires => $params->{_expires} || 3600,
-					timeout => 30,
-					no_revalidate => $params->{_no_revalidate},
-					self => $self,
-					cb => $cb,
-					cache_key => $cache_key,
-				},
-			);
-
-			if ( $type eq 'POST' ) {
-				$http->post(sprintf(API_URL, $url), @$headers, $content);
-			}
-			elsif ( $type eq 'PUT' ) {
-				$http->put(sprintf(API_URL, $url), @$headers, $content);
-			}
-			else {
-				$http->get(sprintf(API_URL, $url), @$headers);
-			}
-		}
+	# Closure-wrapped retry: invoke once with $startFlavor; on 403/410 from the
+	# own-flavor result (and ONLY 403/410), re-issue under bundled flavor. Always
+	# call user $cb exactly once via the $userCbCalled guard (gotcha #1 in §1).
+	my ($callOnce, $userCb);
+	my $userCbCalled = 0;
+	$userCb = sub {
+		return if $userCbCalled++;
+		$cb->(@_);
 	};
 
-	if ($params->{_token}) {
-		$call->($params->{_token});
-	}
-	else {
-		$self->getToken($call, $args);
-	}
+	$callOnce = sub {
+		my ($flavor, $isRetry) = @_;
+		$isRetry //= 0;
+
+		# Shallow copy of params for this attempt.
+		my $attemptParams = { %$params };
+
+		# Build the inner $cb that intercepts 403/410 and decides to retry or surface.
+		my $interceptCb = sub {
+			my ($result, $response) = @_;
+			my $code = $response ? eval { $response->code } : undef;
+			$code //= '';
+
+			# If we just dispatched under own flavor and got 403/410/404, AND the URL is
+			# NOT me/* (defense-in-depth — already gated above but cheap to re-assert),
+			# AND we haven't already retried, attempt the bundled fallback.
+			#
+			# Post-Feb-2026 Spotify returns 404 (not 403/410) on dev-mode-deprecated
+			# browse/* endpoints. To avoid false positives on legitimate "resource not
+			# found" responses, 404 only triggers the fallback when the URL matches
+			# @KNOWN_DEPRECATED_FAMILIES. The playlists/{id} entry is narrowed to the
+			# `37i9` Spotify-curated subnamespace so user-owned playlist 404s do not
+			# trigger a bundled retry. Capture the matched regex to pass to
+			# _rememberBundledHint so it can skip re-walking @KNOWN_DEPRECATED_FAMILIES.
+			my $is404Deprecated = 0;
+			my $matchedRx;
+			if ($code eq '404' && !$isMeFamily) {
+				for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
+					if ($cleanUrl =~ $rx) { $is404Deprecated = 1; $matchedRx = $rx; last; }
+				}
+			}
+			if (!$isRetry && $flavor eq 'own' && !$isMeFamily
+					&& ($code eq '403' || $code eq '410' || $is404Deprecated)) {
+				# Probe BEFORE attempting bundled retry. If bundled refresh token is
+				# missing, surface the original 403/410 to the caller and log a
+				# structured sentinel — do NOT trigger inline OAuth.
+				if (!Plugins::Spotty::API::Token->hasRefreshToken($self, flavor=>'bundled')) {
+					$log->error(sprintf(
+						'Bundled-fallback unavailable: no refresh token for flavor=bundled user=%s url=%s',
+						($self->userId // '<unknown>'), $cleanUrl));
+					# Flag this user as needing bundled-default OAuth so the next Settings render
+					# surfaces an "Authorize browsing" link in the credentials table.
+					_rememberNeedsBundledAuth($self->userId) if $self->userId;
+					return $userCb->($result, $response);
+				}
+
+				main::INFOLOG && $log->is_info &&
+					$log->info(sprintf('Retrying under bundled flavor: status=%s url=%s', $code, $cleanUrl));
+
+				# Wrap the bundled-attempt $cb so we cache the URL pattern hint ONLY when the
+				# bundled retry actually succeeds (HTTP 2xx). $userCb is invoked exactly once.
+				my $bundledCb = sub {
+					my ($bundledResult, $bundledResponse) = @_;
+					my $bundledCode = $bundledResponse ? eval { $bundledResponse->code } : undef;
+					if (defined $bundledCode && $bundledCode =~ /^2\d\d$/) {
+						# Bundled retry succeeded — cache the URL pattern hint for future calls.
+						_rememberBundledHint($cleanUrl, $matchedRx);
+					}
+					$userCb->($bundledResult, $bundledResponse);
+				};
+
+				# Retry under bundled flavor. Issue a fresh getToken call to fetch the
+				# bundled-flavor bearer; do NOT recurse into _call (would re-trigger
+				# hint-cache lookup, response-cache check, etc.).
+				Plugins::Spotty::API::Token->get($self, sub {
+					my ($bundledToken) = @_;
+					return _callOneShot($self, $bundledToken, $url, $bundledCb, $type,
+					                    $attemptParams);
+				}, { flavor => 'bundled' });
+				return;
+			}
+
+			# Not a 403/410 retry-trigger (or we already retried, or me/*). Surface.
+			$userCb->($result, $response);
+		};
+
+		# Fetch the flavor-correct bearer and dispatch.
+		Plugins::Spotty::API::Token->get($self, sub {
+			my ($token) = @_;
+			return _callOneShot($self, $token, $url, $interceptCb, $type, $attemptParams);
+		}, { flavor => $flavor });
+	};
+
+	$callOnce->($startFlavor, 0);
 }
 
 sub _tokenCall {
 	my ( $self, $cb, $params ) = @_;
 
-	$params->{client_id} = $prefs->get('iconCode');
+	# Honor caller-injected _client_id for flavor-aware OAuth refresh.
+	# Token.pm passes `_client_id => <bundled-icon>` when refreshing under flavor='bundled'.
+	$params->{client_id} = delete $params->{_client_id} || $prefs->get('iconCode');
 	my ($url, $content, $headers) = _prepareCall('POST', '', $params);
 
 	push @$headers, 'Content-Type' => 'application/x-www-form-urlencoded';
@@ -1453,6 +1626,95 @@ sub _tokenCall {
 	);
 
 	$req->post(TOKEN_URL, @$headers, $content);
+}
+
+
+
+# URL-pattern hint cache lookup.
+# Returns 'bundled' if (a) the URL matches one of the known-deprecated families AND
+# (b) we've previously seen a successful 403/410 → bundled-fallback for that family
+# within BUNDLED_HINT_TTL seconds. Otherwise returns undef. Called only for non-me/* URLs.
+sub _lookupBundledHint {
+	my ($url) = @_;
+	return undef unless defined $url && length $url;
+
+	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
+		if ($url =~ $rx) {
+			my $patternKey = "$rx";   # stringify the qr{} for use in cache key
+			return 'bundled' if $cache->get(BUNDLED_HINT_KEY_PREFIX . $patternKey);
+			return undef;     # known family but not yet learned at runtime
+		}
+	}
+	return undef;
+}
+
+# URL-pattern hint cache write. Called after a 403/410/404 → bundled-fallback succeeds.
+# Caches the matching pattern key for BUNDLED_HINT_TTL seconds (24h). Accepts an optional
+# pre-matched regex from the caller to skip re-walking @KNOWN_DEPRECATED_FAMILIES.
+sub _rememberBundledHint {
+	my ($url, $matchedRx) = @_;
+	return unless defined $url && length $url;
+
+	# Fast path: caller already matched a regex; trust it and skip the iteration.
+	if (defined $matchedRx) {
+		my $patternKey = "$matchedRx";
+		$cache->set(BUNDLED_HINT_KEY_PREFIX . $patternKey,
+		            1, BUNDLED_HINT_TTL);
+		main::INFOLOG && $log->is_info &&
+			$log->info(sprintf('Cached bundled-hint pattern=%s ttl=%ds (matched url=%s, fast-path)',
+				$patternKey, BUNDLED_HINT_TTL, $url));
+		return;
+	}
+
+	# Slow path: caller didn't pre-match; iterate ourselves.
+	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
+		if ($url =~ $rx) {
+			my $patternKey = "$rx";
+			$cache->set(BUNDLED_HINT_KEY_PREFIX . $patternKey,
+			            1, BUNDLED_HINT_TTL);
+			main::INFOLOG && $log->is_info &&
+				$log->info(sprintf('Cached bundled-hint pattern=%s ttl=%ds (matched url=%s)',
+					$patternKey, BUNDLED_HINT_TTL, $url));
+			return;
+		}
+	}
+	$log->warn(sprintf('Bundled-fallback succeeded for url=%s — no matching pattern; hint NOT cached. Either the bundled retry was triggered by a non-deprecation 403/410 (e.g. permission), or Spotify deprecated a new endpoint family — review regex list.', $url));
+}
+
+# Flag a user as needing bundled-default OAuth. Called when bundled retry is attempted
+# but no bundled refresh token is cached, or when own-flavor OAuth completes but bundled
+# RT is still absent. Best-effort signal — the render-time probe in Settings.pm is
+# authoritative. Self-clears on successful bundled-OAuth via $cache->remove in Callback.pm.
+sub _rememberNeedsBundledAuth {
+	my ($userId) = @_;
+	return unless defined $userId && length $userId;
+	my $key = NEEDS_BUNDLED_AUTH_KEY_PREFIX . $userId;
+	$cache->set($key, 1, NEEDS_BUNDLED_AUTH_TTL);
+	main::INFOLOG && $log->is_info &&
+		$log->info(sprintf('Flagged user=%s as needing bundled-default OAuth (ttl=%ds)',
+			$userId, NEEDS_BUNDLED_AUTH_TTL));
+}
+
+# Flush all bundled-hint cache entries. Called at OAuth completion so any re-OAuth
+# invalidates routing decisions made under the previous identity. Event-driven flush
+# (rather than TTL shortening) because the 24h TTL is correct when identity is stable;
+# only identity transitions (re-OAuth) require an immediate flush.
+#
+# Slim::Utils::Cache has no prefix-iterate, so we re-derive keys from
+# @KNOWN_DEPRECATED_FAMILIES (same list the writer uses) to guarantee no orphaned rows.
+sub _flushBundledHints {
+	my $removed = 0;
+	for my $rx (@KNOWN_DEPRECATED_FAMILIES) {
+		my $patternKey = "$rx";
+		my $cacheKey = BUNDLED_HINT_KEY_PREFIX . $patternKey;
+		if (defined $cache->get($cacheKey)) {
+			$cache->remove($cacheKey);
+			$removed++;
+		}
+	}
+	main::INFOLOG && $log->is_info &&
+		$log->info(sprintf('Flushed %d bundled-hint cache row(s) (called from OAuth completion)', $removed));
+	return $removed;
 }
 
 sub _prepareCall {
@@ -1663,6 +1925,3 @@ sub _PLAYLIST_CACHE_TTL {
 }
 
 1;
-
-__DATA__
-3635623730383037336663303438306561393261303737323333636138376264

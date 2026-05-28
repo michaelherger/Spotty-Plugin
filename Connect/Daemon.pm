@@ -4,11 +4,10 @@ use strict;
 
 use base qw(Slim::Utils::Accessor);
 
-use Fcntl qw(O_RDONLY O_NONBLOCK);
 use File::Path qw(rmtree);
 use File::Spec::Functions qw(catdir);
+use IO::Select;
 use MIME::Base64 qw(encode_base64);
-use POSIX qw(mkfifo);
 use Proc::Background;
 
 use Slim::Utils::Log;
@@ -35,8 +34,7 @@ __PACKAGE__->mk_accessor( rw => qw(
 	_startTimes
 	_streamStartTimes
 	_streamMode
-	_fifoPath
-	_keepaliveFh
+	_streamPort
 ) );
 
 my $prefs = preferences('plugin.spotty');
@@ -74,7 +72,7 @@ sub start {
 	$self->cache(Plugins::Spotty::Connect->cacheFolder($self->mac));
 
 	$self->_checkStartTimes();
-	my $streamBackoff = Plugins::Spotty::Helper->getCapability('connect-stream')
+	my $streamBackoff = Plugins::Spotty::Helper->getCapability('http-stream')
 		? $self->_checkStreamStartTimes()
 		: 0;
 
@@ -96,39 +94,71 @@ sub start {
 		push @helperArgs, '--ap-port=12321';
 	}
 
-	if ( !$streamBackoff && Plugins::Spotty::Helper->getCapability('connect-stream') ) {
-		# Stream mode: binary writes continuous PCM to FIFO; LMS reads via cat
+	if ( !$streamBackoff && Plugins::Spotty::Helper->getCapability('http-stream') ) {
+		# HTTP stream mode: binary announces stream_port=N on stdout; LMS connects via HTTP
 		$self->_streamMode(1);
-		# Reuse existing FIFO and keep-alive FD if they are still valid (prevents FD leak on restart)
-		my $fifo = ($self->_fifoPath && -p $self->_fifoPath)
-			? $self->_fifoPath
-			: $self->_createFifo();
 		push @helperArgs, '--connect-stream';
 
 		# Log the command BEFORE adding --lms-auth (security: no password in log, per T-08-03)
 		if (main::INFOLOG && $log->is_info) {
-			$log->info("Starting Spotty Connect daemon (stream mode): \n$helperPath " . join(' ', @helperArgs));
-			push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');
+			$log->info("Starting Spotty Connect daemon (HTTP stream mode): \n$helperPath " . join(' ', @helperArgs));
 		}
+		push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');
 
 		# add authentication data (after the log statement, so credentials never appear in logs)
 		if ( $serverPrefs->get('authorize') ) {
 			if ( Plugins::Spotty::Helper->getCapability('lms-auth') ) {
 				main::INFOLOG && $log->is_info && $log->info("Adding authentication data to Spotty Connect daemon configuration.");
-				push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')));
+				push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')), '');
 			}
 			else {
 				$log->error("Your Lyrion Music Server is password protected, but your spotty helper can't deal with it! Spotty will NOT work. Please update.");
 			}
 		}
 
+		# Pipe for synchronous port capture (D-01)
+		pipe(my $port_r, my $port_w)
+			or do { $log->error("pipe() failed for port capture: $!"); return; };
+
 		eval {
 			$self->_proc( Proc::Background->new(
-				{ 'die_upon_destroy' => 1 },
-				'/bin/sh', '-c',
-				"$helperPath " . join(' ', @helperArgs) . " > $fifo"
+				{ 'die_upon_destroy' => 1, stdout => $port_w },
+				$helperPath,
+				@helperArgs,
 			) );
 		};
+
+		close($port_w);  # MUST close write-end in parent — otherwise readline blocks forever
+
+		if ($@ || !$self->_proc) {
+			$log->warn("Failed to launch the Spotty Connect daemon: $@");
+			close($port_r);
+			$self->_streamPort(undef);
+			return;
+		}
+
+		# Synchronous port read with 5s timeout (D-02)
+		# Use IO::Select instead of alarm() to avoid SIGALRM interference with
+		# LMS's event loop (single-threaded select/EV process).
+		my $port_line;
+		my $sel = IO::Select->new($port_r);
+		if ($sel->can_read(5)) {
+			$port_line = readline($port_r);
+		}
+		close($port_r);
+
+		if (!defined $port_line || $port_line !~ /^stream_port=(\d+)/) {
+			my $reason = defined $port_line ? "unexpected output: $port_line" : "timeout";
+			$log->warn("Spotty daemon did not announce HTTP stream port ($reason) - aborting");
+			$self->_proc->die if $self->_proc && $self->_proc->alive;
+			$self->_streamPort(undef);
+			return;
+		}
+
+		$self->_streamPort($1 + 0);
+		main::INFOLOG && $log->is_info && $log->info(
+			"Spotty HTTP stream daemon started, port=" . $self->_streamPort
+		);
 	}
 	else {
 		# Non-stream mode: legacy single-track invocation
@@ -137,14 +167,14 @@ sub start {
 		# Log the command BEFORE adding --lms-auth (security: no password in log, per T-08-03)
 		if (main::INFOLOG && $log->is_info) {
 			$log->info("Starting Spotty Connect daemon: \n$helperPath " . join(' ', @helperArgs));
-			push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');
 		}
+		push @helperArgs, '--verbose' if Plugins::Spotty::Helper->getCapability('debug');
 
 		# add authentication data (after the log statement, so credentials never appear in logs)
 		if ( $serverPrefs->get('authorize') ) {
 			if ( Plugins::Spotty::Helper->getCapability('lms-auth') ) {
 				main::INFOLOG && $log->is_info && $log->info("Adding authentication data to Spotty Connect daemon configuration.");
-				push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')));
+				push @helperArgs, '--lms-auth', encode_base64(sprintf("%s:%s", $serverPrefs->get('username'), $serverPrefs->get('password')), '');
 			}
 			else {
 				$log->error("Your Lyrion Music Server is password protected, but your spotty helper can't deal with it! Spotty will NOT work. Please update.");
@@ -221,7 +251,8 @@ sub stop {
 	if ($self->alive) {
 		main::INFOLOG && $log->is_info && $log->info("Quitting Spotty Connect daemon for " . $self->mac);
 		$self->_proc->die;
-		$self->_cleanupFifo();
+		# No FIFO cleanup needed — _streamPort is just an integer, no file to remove
+		$self->_streamPort(undef);
 
 		rmtree catdir(preferences('server')->get('cachedir'), 'spotty', $self->id);
 	}
@@ -233,46 +264,19 @@ sub stop {
 sub stopForSync {
 	my $self = shift;
 
-	# Stop the daemon process for a sync-group change, but preserve the FIFO and
-	# cache directory so LMS's cat process does not get EOF and the next start()
-	# call can reuse them immediately (FIX-01, FIX-02).
-	#
-	# Unlike stop(), this method deliberately does NOT call _cleanupFifo() or
-	# rmtree the cache directory. The FIFO keep-alive FD stays open so the pipe
-	# remains intact during the brief restart window.
-	#
-	# The _streamStartTimes counter is reset so the planned restart is not counted
-	# as a crash by _checkStreamStartTimes, which would otherwise trigger the
-	# stream-mode backoff after repeated sync/unsync cycles.
+	# HTTP mode: plain process kill — no FIFO to preserve, no FD-preservation needed.
+	# LMS receives the new port via canDirectStream at the next getNextTrack call.
+	# Cache-dir (Spotify credentials) is intentionally NOT removed here, same as before.
 	if ($self->alive) {
-		main::INFOLOG && $log->is_info && $log->info("Stopping Spotty Connect daemon for sync (preserving FIFO): " . $self->mac);
+		main::INFOLOG && $log->is_info && $log->info("Stopping Spotty Connect daemon for sync: " . $self->mac);
 		$self->_proc->die;
+		$self->_streamPort(undef);   # clear stale port; start() will set the new one
 		$self->_streamStartTimes([]);
 		$self->_startTimes([]);
 	}
 	elsif (main::INFOLOG && $log->is_info) {
 		$log->info("This daemon is dead already (stopForSync called on dead daemon for " . $self->mac . ")");
 	}
-}
-
-sub _createFifo {
-	my ($self) = @_;
-	my $path = "/tmp/spotty-stream-" . $self->id . ".pcm";
-	POSIX::mkfifo($path, 0600) unless -p $path;
-	sysopen(my $fh, $path, O_RDONLY | O_NONBLOCK)
-		or $log->warn("spotty FIFO keep-alive open failed: $!");
-	$self->_fifoPath($path);
-	$self->_keepaliveFh($fh);
-	main::INFOLOG && $log->is_info && $log->info("Created spotty stream FIFO: $path");
-	return $path;
-}
-
-sub _cleanupFifo {
-	my ($self) = @_;
-	close($self->_keepaliveFh) if $self->_keepaliveFh;
-	unlink $self->_fifoPath if $self->_fifoPath && -p $self->_fifoPath;
-	$self->_fifoPath(undef);
-	$self->_keepaliveFh(undef);
 }
 
 sub spotifyId {

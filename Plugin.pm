@@ -285,18 +285,9 @@ sub updateTranscodingTable {
 			main::INFOLOG && $log->is_info && $log->info($commandTable->{$_});
 		}
 		elsif ( $_ =~ /^spc-/ ) {
-			# Stream mode: inject FIFO path for this player's Connect daemon
-			require Plugins::Spotty::Connect::DaemonManager;
-			my $fifoPath = Plugins::Spotty::Connect::DaemonManager->fifoPathForClient($client);
-			if ($fifoPath) {
-				$commandTable->{$_} =~ s/\$FIFO\$/$fifoPath/g;
-				main::INFOLOG && $log->is_info && $log->info($commandTable->{$_});
-			}
-			else {
-				main::INFOLOG && $log->is_info && $log->info(
-					"spc entry: no FIFO path available yet for client " . ($client ? $client->id : 'undef')
-				);
-			}
+			# HTTP stream mode: spc pcm entry uses passthrough (-); canDirectStream provides
+			# the stream URL directly. No command substitution needed.
+			main::INFOLOG && $log->is_info && $log->info($commandTable->{$_});
 		}
 	}
 }
