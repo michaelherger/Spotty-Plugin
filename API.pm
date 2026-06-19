@@ -1345,8 +1345,9 @@ sub _gotResponse {
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
 
 		if ( !$result || (ref $result && ref $result eq 'HASH' && $result->{error}) ) {
+			$result ||= {};
 			$result = {
-				error => 'Error: ' . ($result->{error_message} || 'Unknown error')
+				error => 'Error: ' . ($result->{error_message} || $result->{error} || 'Unknown error')
 			};
 			$log->error($result->{error} . ' (' . $url . ')');
 		}

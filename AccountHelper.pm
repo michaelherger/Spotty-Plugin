@@ -345,6 +345,16 @@ sub getAllCredentials {
 	return $credentials;
 }
 
+sub getIdByUserId {
+	my ($class, $userId) = @_;
+
+	if ( my $credentials = $class->getAllCredentials() ) {
+		return $credentials->{$userId};
+	}
+
+	return;
+}
+
 sub getSortedCredentialTupels {
 	my ($class) = @_;
 

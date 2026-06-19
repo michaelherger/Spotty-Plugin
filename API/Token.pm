@@ -9,6 +9,7 @@ use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
+use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::API::Cache;
 
 # override the scope list hard-coded in to the spotty helper application
@@ -29,6 +30,7 @@ use constant SPOTIFY_SCOPE => join(',', qw(
 ));
 
 use constant DEFAULT_EXPIRATION => 3600;
+use constant REFRESH_TOKEN_TTL => '6M'; # 6 months, as per https://developer.spotify.com/documentation/web-api/tutorials/refreshing-tokens
 
 my $cache = Slim::Utils::Cache->new();
 my $spottyCache = Plugins::Spotty::API::Cache->new();
@@ -59,6 +61,10 @@ sub _gotTokenInfo {
 
 		__PACKAGE__->cacheAccessToken($args->{code}, $userId, $accessToken, $expiresIn);
 		__PACKAGE__->cacheRefreshToken($args->{code}, $userId, $result->{refresh_token}) if $result->{refresh_token};
+	}
+	elsif ($result->{error} && $result->{error} eq 'invalid_grant') {
+		$log->error("Failed to refresh access token for user: $userId - " . $result->{error});
+		__PACKAGE__->resetAccount($args->{code}, $userId);
 	}
 
 	$log->error("Failed to refresh access token: " . ($result->{error} || 'Unknown error')) if $result->{error} || !$result->{access_token};
@@ -93,7 +99,18 @@ sub cacheAccessToken {
 sub cacheRefreshToken {
 	my ($class, $code, $userId, $token) = @_;
 	main::INFOLOG && $log->is_info && $log->info("Caching refresh token for $userId.");
-	$spottyCache->set(_getRTCacheKey($code, $userId), $token) if $token;
+	$spottyCache->setWithExpiry(_getRTCacheKey($code, $userId), $token, REFRESH_TOKEN_TTL) if $token;
+}
+
+sub resetAccount {
+	my ($class, $code, $userId) = @_;
+
+	$cache->set(_getATCacheKey($code, $userId), undef, 1);
+	$spottyCache->setWithExpiry(_getRTCacheKey($code, $userId), undef, 1);
+
+	Plugins::Spotty::AccountHelper->deleteCacheFolder(
+		Plugins::Spotty::AccountHelper->getIdByUserId($userId)
+	);
 }
 
 # singleton shortcut to the main class
@@ -115,8 +132,7 @@ sub get {
 	}
 
 	my $rtCacheKey = _getRTCacheKey($args->{code}, $userId);
-	# temporary fallback code: from global to app own cache
-	my $refreshToken = $spottyCache->get($rtCacheKey) || $cache->get($rtCacheKey);
+	my $refreshToken = $spottyCache->get($rtCacheKey);
 
 	if (main::SCANNER) {
 		my $tokenInfo = Plugins::Spotty::API::Sync->refreshToken(
@@ -128,6 +144,7 @@ sub get {
 	else {
 		if (!$refreshToken) {
 			$log->error("No refresh token found - can't refresh access token. $userId");
+			$class->resetAccount($args->{code}, $userId);
 			$cb->() if $cb;
 			return;
 		}

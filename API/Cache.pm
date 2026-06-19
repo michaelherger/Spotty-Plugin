@@ -68,9 +68,14 @@ sub set {
 		$merged = merge($cached, $data);
 	}
 
-	$self->{cache}->set($uri, $merged || $data, time() + TTL);
+	$self->setWithExpiry($uri, $merged || $data, time() + TTL);
 
 	return $merged || $data;
+}
+
+sub setWithExpiry {
+	my ($self, $key, $data, $expiry) = @_;
+	$self->{cache}->set($key, $data, $expiry);
 }
 
 sub getLargestArtwork {
