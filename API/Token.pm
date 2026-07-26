@@ -3,7 +3,6 @@ package Plugins::Spotty::API::Token;
 use strict;
 
 use File::Slurp;
-# use JSON::XS::VersionOneAndTwo;
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;

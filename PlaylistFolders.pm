@@ -10,7 +10,7 @@ use File::Next;
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile);
 use HTTP::Status qw(RC_MOVED_TEMPORARILY);
-use JSON::XS::VersionOneAndTwo;
+use JSON::XS qw(encode_json);
 use Tie::Cache::LRU::Expires;
 use URI::Escape qw(uri_unescape);
 
@@ -409,7 +409,7 @@ sub handleUpload {
 		return Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \"" );
 	}
 
-	my $content = to_json($result);
+	my $content = encode_json($result);
 	$response->header( 'Content-Length' => length($content) );
 	$response->code($result->{code} || 200);
 	$response->header('Connection' => 'close');

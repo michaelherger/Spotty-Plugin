@@ -6,7 +6,7 @@ use Digest::MD5 qw(md5_hex);
 use File::Path qw(rmtree);
 use File::Slurp;
 use File::Spec::Functions qw(catdir catfile tmpdir);
-use JSON::XS::VersionOneAndTwo;
+use JSON::XS qw(decode_json);
 use Scalar::Util qw(blessed);
 
 use Slim::Utils::Log;
@@ -303,7 +303,7 @@ sub getCredentials {
 			$log->error("Failed to read credentials file, or credentials file was empty for $id: $credentialsFile");
 		}
 		else {
-			my $credentials = eval { from_json($credentialsFileContent) };
+			my $credentials = eval { decode_json($credentialsFileContent) };
 
 			if ( ($@ && !$credentials) || !ref $credentials ) {
 				$log->error("Corrupted credentials file, or invalid credentials information discovered. Removing configuration. " . ($@ || ''));

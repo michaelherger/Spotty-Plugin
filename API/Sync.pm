@@ -6,7 +6,7 @@ use base qw(Slim::Utils::Accessor);
 
 use Digest::MD5 qw(md5_hex);
 use IO::Socket::SSL;
-use JSON::XS::VersionOneAndTwo;
+use JSON::XS qw(decode_json);
 use URI::Escape qw(uri_escape_utf8);
 
 use Slim::Networking::SimpleSyncHTTP;

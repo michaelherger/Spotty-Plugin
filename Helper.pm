@@ -3,7 +3,7 @@ package Plugins::Spotty::Helper;
 use strict;
 use File::Slurp;
 use File::Spec::Functions qw(catdir);
-use JSON::XS::VersionOneAndTwo;
+use JSON::XS qw(decode_json);
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
@@ -77,7 +77,7 @@ sub getAll {
 
 			$check =~ /\n(.*)/s;
 			my $helperCapabilities = eval {
-				from_json($1);
+				decode_json($1);
 			};
 
 			$candidates->{$candidate} = $helperCapabilities || { version => $helperVersion };
@@ -106,7 +106,7 @@ sub helperCheck {
 
 		if ( $$check =~ /\n(.*)/s ) {
 			$helperCapabilities = eval {
-				from_json($1);
+				decode_json($1);
 			};
 
 			main::INFOLOG && $log->is_info && $helperCapabilities && $log->info("Found helper capabilities table: " . Data::Dump::dump($helperCapabilities));

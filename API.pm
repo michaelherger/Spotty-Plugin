@@ -24,7 +24,7 @@ BEGIN {
 use base qw(Slim::Utils::Accessor);
 
 use Digest::MD5 qw(md5_hex);
-use JSON::XS::VersionOneAndTwo;
+use JSON::XS qw(decode_json);
 use List::Util qw(min max);
 use POSIX qw(strftime);
 use Scalar::Util qw(blessed);

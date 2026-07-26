@@ -6,7 +6,7 @@ use base qw(Slim::Web::Settings);
 use File::Path qw(mkpath);
 use File::Spec::Functions qw(catdir);
 use HTTP::Status qw(RC_MOVED_TEMPORARILY);
-use JSON::XS::VersionOneAndTwo;
+use JSON::XS qw(encode_json);
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
@@ -79,7 +79,7 @@ sub checkCredentials {
 		hasCredentials => Plugins::Spotty::AccountHelper->hasCredentials(AUTHENTICATE)
 	};
 
-	my $content = to_json($result);
+	my $content = encode_json($result);
 	$response->header( 'Content-Length' => length($content) );
 	$response->code(200);
 	$response->header('Connection' => 'close');

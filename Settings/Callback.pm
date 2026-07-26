@@ -3,7 +3,7 @@ package Plugins::Spotty::Settings::Callback;
 use strict;
 
 use Digest::SHA;
-use JSON::XS::VersionOneAndTwo;
+use JSON::XS qw(encode_json decode_json);
 use MIME::Base64 qw(encode_base64);
 
 use Slim::Utils::Cache;
@@ -112,7 +112,7 @@ sub oauthRedirect {
 						CALLBACK_URL,
 						$code_challenge,
 						SCOPE,
-						encode_base64(to_json({
+						encode_base64(encode_json({
 							nonce => $nonce
 						})),
 					);
@@ -148,7 +148,7 @@ sub oauthRedirect {
 		}
 	)->post(REGISTER_CALLBACK_URL,
 		Slim::Utils::Misc->can('apiHeaders') ? Slim::Utils::Misc::apiHeaders(PLUGIN_PACKAGE) : ('X-LMS-Plugin-ID' => PLUGIN_PACKAGE),
-		to_json($body),
+		encode_json($body),
 	);
 
 	main::INFOLOG && $log->is_info && $log->info("Registering callback: " . Data::Dump::dump($body, REGISTER_CALLBACK_URL));
