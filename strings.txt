@@ -84,10 +84,16 @@ PLUGIN_SPOTTY_AUTH_NAME
 	NL	Spotify Autorisatie
 
 PLUGIN_SPOTTY_ADD_PLAYER_ACCOUNT
-	EN	Authorize playback
+	DE	Wiedergabe autorisieren
+	EN	Authorize Playback
+	FR	Autoriser la lecture
+	NL	Afspelen autoriseren
 
 PLUGIN_SPOTTY_REMOVE_PLAYER_ACCOUNT
+	DE	Wiedergabe-Autorisierung zurücksetzen
 	EN	Reset playback authorization
+	FR	Réinitialiser l'autorisation de lecture
+	NL	Afspeelauthorisatie resetten
 
 PLUGIN_SPOTTY_PREMIUM_REQUIRED
 	CS	Vyžaduje placené předplatné Spotify
