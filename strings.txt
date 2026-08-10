@@ -83,6 +83,12 @@ PLUGIN_SPOTTY_AUTH_NAME
 	HU	Spotify fiók belépés
 	NL	Spotify Autorisatie
 
+PLUGIN_SPOTTY_ADD_PLAYER_ACCOUNT
+	EN	Authorize playback
+
+PLUGIN_SPOTTY_REMOVE_PLAYER_ACCOUNT
+	EN	Reset playback authorization
+
 PLUGIN_SPOTTY_PREMIUM_REQUIRED
 	CS	Vyžaduje placené předplatné Spotify
 	DE	Spotify Bezahlabo notwendig

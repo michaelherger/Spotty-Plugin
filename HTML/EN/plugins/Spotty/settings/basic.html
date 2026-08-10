@@ -53,6 +53,11 @@
 
 	[% WRAPPER setting title="" desc="" %]
 		<input name="addAccount" type=submit value="[% "PLUGIN_SPOTTY_ADD_ACCOUNT" | string %]" class="stdclick" />
+		[% IF credentials && !hasPlayerCredentials && credentials.size >= 1 %]
+			<input name="addPlayerAccount" type=submit value="[% "PLUGIN_SPOTTY_ADD_PLAYER_ACCOUNT" | string %]" class="stdclick" />
+		[% ELSIF credentials && hasPlayerCredentials %]
+			<input name="removePlayerAccount" type=submit value="[% "PLUGIN_SPOTTY_REMOVE_PLAYER_ACCOUNT" | string %]" class="stdclick" />
+		[% END %]
 	[% END %]
 
 	[% IF credentials && credentials.size > 1 %]

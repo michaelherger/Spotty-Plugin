@@ -239,7 +239,7 @@ sub updateTranscodingTable {
 	my $id = Plugins::Spotty::AccountHelper->getAccount($client);
 
 	# modify the transcoding helper table to inject our cache folder
-	my $cacheDir = Plugins::Spotty::AccountHelper->cacheFolder($id);
+	my $cacheDir = Plugins::Spotty::AccountHelper->playerAuthFolder();
 
 	my $bitrate = '';
 	my ($helper, $helperVersion) = Plugins::Spotty::Helper->get();

@@ -11,6 +11,7 @@ use Plugins::Spotty::Plugin;
 use Plugins::Spotty::AccountHelper;
 use Plugins::Spotty::Settings::Auth;
 use Plugins::Spotty::Settings::Player;
+use Plugins::Spotty::Settings::PlayerAuth;
 use Plugins::Spotty::Settings::PlaylistFolders;
 
 use constant SETTINGS_URL => 'plugins/Spotty/settings/basic.html';
@@ -22,6 +23,7 @@ sub new {
 
 	Plugins::Spotty::Settings::Auth->new();
 	Plugins::Spotty::Settings::Player->new();
+	Plugins::Spotty::Settings::PlayerAuth->new();
 	Plugins::Spotty::Settings::PlaylistFolders->new();
 
 	if (!Slim::Networking::Async::HTTP->hasSSL()) {
@@ -96,6 +98,17 @@ sub handler {
 		$response->header('Location' => 'authentication.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 	}
+	elsif ( !$paramRef->{helperMissing} && $paramRef->{addPlayerAccount} ) {
+		$response->code(RC_MOVED_TEMPORARILY);
+		$response->header('Location' => 'player-auth.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
+		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
+	}
+	elsif ( $paramRef->{removePlayerAccount} ) {
+		Plugins::Spotty::AccountHelper->deletePlayerCredentials();
+	}
+
+	# make sure our authentication helper isn't running
+	Plugins::Spotty::Settings::PlayerAuth->shutdownHelper();
 
 	$paramRef->{credentials}  = Plugins::Spotty::AccountHelper->getSortedCredentialTupels();
 	$paramRef->{displayNames} = { map {
@@ -160,6 +173,7 @@ sub beforeRender {
 	$paramRef->{canApPort}      = !Plugins::Spotty::Helper->getCapability('no-ap-port');
 
 	$paramRef->{hasDefaultIcon} = Plugins::Spotty::Plugin->hasDefaultIcon();
+	$paramRef->{hasPlayerCredentials} = Plugins::Spotty::AccountHelper->hasPlayerCredentials();
 
 	$paramRef->{dontImportAccounts} = $prefs->get('dontImportAccounts') || {};
 

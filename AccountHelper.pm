@@ -99,6 +99,11 @@ sub cacheFolder {
 	return $cacheDir;
 }
 
+sub playerAuthFolder {
+	my ($class) = @_;
+	return catdir($serverPrefs->get('cachedir'), 'spotty');
+}
+
 sub cacheFolders {
 	my ($class) = @_;
 
@@ -270,6 +275,24 @@ sub purgeAudioCache {
 	Slim::Utils::Timers::setTimer($class, time() + CACHE_PURGE_INTERVAL, \&purgeAudioCache);
 
 	$prefs->set('tracksSincePurge', 0);
+}
+
+sub hasPlayerCredentials {
+	my ($class) = @_;
+	my $credentialsFile = $class->getPlayerCredentials();
+	return $credentialsFile ? -f $credentialsFile : 0;
+}
+
+sub getPlayerCredentials {
+	my ($class) = @_;
+	my $credentialsFile = catfile($class->playerAuthFolder(), 'credentials.json');
+	return -f $credentialsFile ? $credentialsFile : '';
+}
+
+sub deletePlayerCredentials {
+	my ($class) = @_;
+	my $credentialsFile = $class->getPlayerCredentials();
+	unlink $credentialsFile if -f $credentialsFile;
 }
 
 sub hasCredentials {
