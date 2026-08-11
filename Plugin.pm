@@ -33,6 +33,8 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	logGroups    => 'SCANNER',
 } );
 
+my $noWarningTill = 0;
+
 
 sub initPlugin {
 	my $class = shift;
@@ -248,6 +250,11 @@ sub updateTranscodingTable {
 	}
 
 	$helper = basename($helper) if $helper;
+
+	if ( $noWarningTill < time() && !Plugins::Spotty::AccountHelper->hasPlayerCredentials() ) {
+		$log->error("Playback is not authorized - go to Spotty settings to enable playback!");
+		$noWarningTill = time() + 3600;
+	}
 
 	my $tmpDir = Plugins::Spotty::AccountHelper->getTmpDir();
 	if ($tmpDir) {

@@ -154,7 +154,9 @@ sub handleFeed {
 
 		return;
 	}
-	elsif ( !Plugins::Spotty::AccountHelper->hasCredentials() || !Plugins::Spotty::AccountHelper->getAccount($client) ) {
+	elsif ( !Plugins::Spotty::AccountHelper->hasCredentials() || !Plugins::Spotty::AccountHelper->getAccount($client)
+		|| !Plugins::Spotty::AccountHelper->hasPlayerCredentials()
+	) {
 		$cb->({
 			items => [{
 				name => cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED') . "\n" . cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT'),

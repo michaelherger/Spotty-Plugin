@@ -93,12 +93,16 @@ sub handler {
 		$paramRef->{pref_cleanupTags} ||= 0;
 	}
 
-	if ( !$paramRef->{helperMissing} && !$paramRef->{forceBasicSettings} && ($paramRef->{addAccount} || !Plugins::Spotty::AccountHelper->hasCredentials()) ) {
+	my $hasCredentials = Plugins::Spotty::AccountHelper->hasCredentials();
+	if ( !$paramRef->{helperMissing} && !$paramRef->{forceBasicSettings} && ($paramRef->{addAccount} || !$hasCredentials) ) {
 		$response->code(RC_MOVED_TEMPORARILY);
 		$response->header('Location' => 'authentication.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
 	}
-	elsif ( !$paramRef->{helperMissing} && $paramRef->{addPlayerAccount} ) {
+	# redirect if playback is not authorized
+	elsif ( (!$paramRef->{helperMissing} && $paramRef->{addPlayerAccount})
+		|| ($hasCredentials && !Plugins::Spotty::AccountHelper->hasPlayerCredentials())
+	) {
 		$response->code(RC_MOVED_TEMPORARILY);
 		$response->header('Location' => 'player-auth.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
 		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
