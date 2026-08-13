@@ -67,9 +67,6 @@ sub handler {
 	$paramRef->{helperPath}     = $helperPath;
 	$paramRef->{helperVersion}  = $helperVersion ? "v$helperVersion" : string('PLUGIN_SPOTTY_HELPER_ERROR');
 
-	# discovery doesn't work on Windows
-	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
-
 	return $class->SUPER::handler($client, $paramRef);
 }
 

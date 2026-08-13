@@ -1,6 +1,6 @@
 [% PROCESS "plugins/Spotty/settings/auth-header.html" %]
 
-	[% IF canDiscovery; WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
+	[% WRAPPER setting title="PLUGIN_SPOTTY_AUTH" desc="" %]
 		<div style="padding-bottom: 7px;">Pour utiliser votre Squeezebox avec Spotify, Lyrion Music Server doit &ecirc;tre approuv&eacute; &agrave; l'aide d'une application Spotify.
 		Il peut s'agir d'une de leurs applications pour ordinateurs ou pour mobiles.
 		Veuillez noter que l'authentification n'est pas possible via le client Web de Spotify.
@@ -24,7 +24,11 @@
 		</div>
 
 		<div style="padding-bottom: 7px;">C'est fait ! Cet &eacute;cran devrait dispara&icirc;tre.</div>
-	[% END; END %]
+
+		<div>
+			<br/><a href="basic.html?forceBasicSettings=1">[% "PLUGIN_SPOTTY_BACK_TO_BASICS" | string %]</a>
+		</div>
+	[% END %]
 
 [% PROCESS "plugins/Spotty/settings/auth-footer.html" %]
  No newline at end of file

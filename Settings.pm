@@ -93,22 +93,25 @@ sub handler {
 		$paramRef->{pref_cleanupTags} ||= 0;
 	}
 
-	my $hasCredentials = Plugins::Spotty::AccountHelper->hasCredentials();
-	if ( !$paramRef->{helperMissing} && !$paramRef->{forceBasicSettings} && ($paramRef->{addAccount} || !$hasCredentials) ) {
-		$response->code(RC_MOVED_TEMPORARILY);
-		$response->header('Location' => 'authentication.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
-		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
-	}
-	# redirect if playback is not authorized
-	elsif ( (!$paramRef->{helperMissing} && $paramRef->{addPlayerAccount})
-		|| ($hasCredentials && !Plugins::Spotty::AccountHelper->hasPlayerCredentials())
-	) {
-		$response->code(RC_MOVED_TEMPORARILY);
-		$response->header('Location' => 'player-auth.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
-		return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
-	}
-	elsif ( $paramRef->{removePlayerAccount} ) {
+	if ( $paramRef->{removePlayerAccount} ) {
 		Plugins::Spotty::AccountHelper->deletePlayerCredentials();
+	}
+
+	my $hasCredentials = Plugins::Spotty::AccountHelper->hasCredentials();
+	if (!$paramRef->{forceBasicSettings}) {
+		if ( !$paramRef->{helperMissing} && ($paramRef->{addAccount} || !$hasCredentials) ) {
+			$response->code(RC_MOVED_TEMPORARILY);
+			$response->header('Location' => 'authentication.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
+			return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
+		}
+		# redirect if playback is not authorized
+		elsif ( (!$paramRef->{helperMissing} && $paramRef->{addPlayerAccount})
+			|| ($hasCredentials && !Plugins::Spotty::AccountHelper->hasPlayerCredentials())
+		) {
+			$response->code(RC_MOVED_TEMPORARILY);
+			$response->header('Location' => 'player-auth.html?ajaxUpdate=' . $paramRef->{ajaxUpdate});
+			return Slim::Web::HTTP::filltemplatefile($class->page, $paramRef);
+		}
 	}
 
 	# make sure our authentication helper isn't running
@@ -121,7 +124,6 @@ sub handler {
 	} @{$paramRef->{credentials}} };
 	$paramRef->{products}     = $prefs->get('products') || {};
 
-	$paramRef->{canDiscovery} = Plugins::Spotty::Plugin->canDiscovery();
 	$paramRef->{error429}     = Plugins::Spotty::API->hasError429();
 	$paramRef->{isLowCaloriesPi} = Plugins::Spotty::Helper->isLowCaloriesPi();
 

@@ -330,6 +330,7 @@ sub getAPIHandler {
 	return $api;
 }
 
+# unused, left back in for backwards compatibility
 sub canDiscovery { 1 }
 
 sub killHangingProcesses {
