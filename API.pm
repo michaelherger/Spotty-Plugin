@@ -14,7 +14,7 @@ BEGIN {
 	use constant RECOMMENDATION_LIMIT => 100;		# for whatever reason this call does support a maximum chunk size of 100
 	use constant DEFAULT_LIMIT => 200;
 	use constant MAX_LIMIT => 10_000;
-	use constant SPOTIFY_LIMIT => 50;
+	use constant SPOTIFY_LIMIT => 10;
 	use constant PERSONAL_MIX_CATEGORY => '0JQ5DAt0tbjZptfcdMSKl3';   # https://community.spotify.com/t5/Spotify-for-Developers/How-can-I-get-access-to-Made-for-You-playlist-by-Web-API/m-p/5905136/highlight/true#M12816
 
 	use Exporter::Lite;
