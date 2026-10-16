@@ -16,6 +16,7 @@ use constant PKCE_AUTH_URL => 'https://accounts.spotify.com/authorize?client_id=
 use constant PKCE_CODE_VERIFIER_CACHEKEY => 'spotty_auth_code_verifier';
 
 use constant CALLBACK_URL => 'https://api.lms-community.org/auth/callback';
+# use constant REGISTER_CALLBACK_URL => 'http://localhost:8787/auth/prepare';
 use constant REGISTER_CALLBACK_URL => 'https://api.lms-community.org/auth/prepare';
 
 use constant SCOPE => join('+', qw(

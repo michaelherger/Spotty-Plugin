@@ -111,11 +111,9 @@ sub getMetadataFor {
 		duration  => 0,
 		cover     => IMG_TRACK,
 		icon      => IMG_TRACK,
-		bitrate   => 0,
-		originalType => 'Ogg Vorbis (Spotify)',
+		bitrate   => $prefs->get('bitrate') . 'k VBR',
+		type      => 'ogg',
 	};
-
-	$meta->{type} = $meta->{originalType};
 
 	if ( !Plugins::Spotty::AccountHelper->hasCredentials() ) {
 		$meta->{artist} = cstring($client, 'PLUGIN_SPOTTY_NOT_AUTHORIZED_HINT');
@@ -134,20 +132,8 @@ sub getMetadataFor {
 		# we store a copy of the metadata in the song object - no need to read from the disk cache
 		my $info = $song->pluginData('info');
 		if ( $info->{title} && $info->{duration} && ($info->{url} eq $url) ) {
-			my $bitrate = $song->streambitrate;
-			if ($bitrate) {
-				$info->{bitrate} = Slim::Schema::Track->buildPrettyBitRate( $bitrate );
-			}
-
-			# Append "...converted to [format]" if stream has been transcoded
-			my $converted = $song->streamformat;
-			if ($converted && $converted ne 'ogg') {
-				my $convertedString = Slim::Utils::Strings::getString(uc($converted));
-				if ( $converted =~ /.{2,4}/ && $converted ne $convertedString ) {
-					$converted = $convertedString;
-				}
-				$info->{type} = sprintf('%s (%s %s)', $info->{originalType}, cstring($client, 'CONVERTED_TO'), $converted);
-			}
+			$info->{samplesize} = $song->samplesize || 16;
+			$info->{samplerate} = $song->samplerate || 44100;
 
 			$song->duration($info->{duration});
 
@@ -185,8 +171,7 @@ sub getMetadataFor {
 
 	$meta ||= {};
 	$meta->{bitrate} ||= $prefs->get('bitrate') . 'k VBR';
-	$meta->{originalType} ||= 'Ogg Vorbis (Spotify)';
-	$meta->{type}    = $meta->{originalType};
+	$meta->{type}    ||= 'ogg';
 	$meta->{cover}   ||= IMG_TRACK;
 	$meta->{icon}    ||= IMG_TRACK;
 
@@ -200,6 +185,8 @@ sub getMetadataFor {
 			$song->duration($meta->{duration});
 		}
 		$meta->{url} = $url;
+		$meta->{samplesize} = $song->samplesize || 16;
+		$meta->{samplerate} = $song->samplerate || 44100;
 
 		$song->pluginData( info => $meta );
 	}
