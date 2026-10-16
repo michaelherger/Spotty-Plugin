@@ -111,7 +111,7 @@ sub getMetadataFor {
 		duration  => 0,
 		cover     => IMG_TRACK,
 		icon      => IMG_TRACK,
-		bitrate   => $prefs->get('bitrate') . 'k VBR',
+		bitrate   => $prefs->get('bitrate') . cstring($client, 'KBPS'),
 		type      => 'ogg',
 	};
 
@@ -170,7 +170,7 @@ sub getMetadataFor {
 	}
 
 	$meta ||= {};
-	$meta->{bitrate} ||= $prefs->get('bitrate') . 'k VBR';
+	$meta->{bitrate} ||= $prefs->get('bitrate') . cstring($client, 'KBPS');
 	$meta->{type}    ||= 'ogg';
 	$meta->{cover}   ||= IMG_TRACK;
 	$meta->{icon}    ||= IMG_TRACK;
